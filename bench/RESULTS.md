@@ -46,6 +46,26 @@ Long tasks: 4 tasks of 15–27 actions each (shop checkout, admin edits, a 5-ste
 On short tasks Mantis and the tree are about even. On long tasks the tree uses 1.6–1.9x Mantis's tokens,
 because every step re-reads more of the page. Time and cost are in the results files.
 
+## Local tasks, Sarvam pilot (one model)
+
+Agent `deepseek-v4.1-flash` (Sarvam V2 API) only. Results for this model alone; they are not Luna/Haiku numbers and not a general claim.
+25 local tasks x 3 approaches x 3 runs = 225 runs, graded by code (page state plus exact match on the final answer; no judge).
+Five failed cells were re-run once after a grader fix and harness repairs (cookie-cart/mantis, churned-max, booking-date, long-shop, long-admin on screenshots);
+the merged table uses the re-run result for those cells, and the other failures are kept as model mistakes.
+
+| | Mantis | Accessibility tree | Screenshots |
+|---|---:|---:|---:|
+| Correct | 74/75 | **75/75** | 71/75 |
+| Median tool calls | **4** | 6 | 10 |
+| Median input tokens | **10.9k** | 22.8k | 18.3k |
+| Median time | **16.5s** | 31.9s | 39.6s |
+| Total cost (INR) | **11.7** | 23.7 | 73.4 |
+| Total input tokens | **1.99M** | 6.35M | 10.62M |
+
+- Failures: Mantis `longlist-item` run 3 (answered the page title, not the heading it was shown); screenshots `long-shop` runs 1 (timeout, 600s) and 3, `long-admin` run 3, `long-onboard` run 2.
+- Accuracy is at the ceiling for the tree, so this separates the approaches on cost and speed, not success.
+- Files: [merged](results/broad-deepseek-v4.1-flash-merged.json) · [original 225](results/broad-deepseek-v4.1-flash.md) · [re-runs](results/rerun5-mantis.md), [screenshots](results/rerun5-screenshot.md).
+
 ## Token replay
 
 14 scripted tasks, no LLM ([results](results/latest.md)). Per step, Mantis returns a median of 28 tokens,

@@ -1,13 +1,11 @@
 # Mantis skill for Claude Code
 
-`SKILL.md` teaches Claude to browse with the Mantis MCP tools (numbered text, act by `#number`)
-instead of screenshots, and how to use the fallback tools (`data`, `ocr`, `look`, `ask_human`).
-The skill only gives instructions; the MCP server does the browsing, and the skill does nothing
-without it.
+[`SKILL.md`](SKILL.md) teaches Claude to read numbered Mantis output and use its tools.
+It requires the Mantis MCP server.
 
 ## Install
 
-1. Add the Mantis MCP server: see the [quick start](../README.md#quick-start).
+1. Add the Mantis MCP server: see the [install instructions](../docs/SETUP.md#install).
 
 2. Copy the skill into your skills folder:
 

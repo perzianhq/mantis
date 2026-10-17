@@ -4,7 +4,6 @@
 
 [perzian.dev/mantis](https://perzian.dev/mantis/) · by [Perzian](https://perzian.dev)
 
-Mantis shows the agent what a person would notice on a page, in a few lines, and lets it act by number.
 It works with Claude Code, Codex, Cursor or your own agent as an MCP server. [Install in two commands](docs/SETUP.md#install).
 
 ## How it works
@@ -17,15 +16,16 @@ It works with Claude Code, Codex, Cursor or your own agent as an MCP server. [In
 
 ## Results
 
-30 real-site tasks, Codex `gpt-6-luna` as the agent, graded by a blind judge (`gpt-6.1-sol`):
+Early numbers, and they come from Mantis's own test pages: 25 local tasks graded by code, one model (`deepseek-v4.1-flash`), 3 runs each.
 
-| | Correct | Tokens per task | Tool calls | Time per task |
-|---|---:|---:|---:|---:|
-| **Mantis** | **14/30** | **190k** | **8.7** | **61s** |
-| Accessibility tree (Playwright MCP) | 11/30 | 435k | 13.3 | 67s |
-| Screenshots | 9/30 | 346k | 22.2 | 77s |
+| | Mantis | Accessibility tree | Screenshots |
+|---|---:|---:|---:|
+| Correct | 74/75 | 75/75 | 71/75 |
+| Median tool calls | 4 | 6 | 10 |
+| Median input tokens | 10.9k | 22.8k | 18.3k |
+| Median time | 16.5s | 31.9s | 39.6s |
 
-Method and caveats: [bench/RESULTS.md](bench/RESULTS.md).
+All three mostly succeed, so the difference is cost and speed: Mantis used about half the median input tokens of the tree and about a sixth of the screenshots' total cost. Real-site accuracy is not yet measured on a reviewed set. Method and caveats: [bench/RESULTS.md](bench/RESULTS.md).
 
 ## Learn more
 

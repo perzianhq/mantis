@@ -1,0 +1,2318 @@
+{
+  "runs": [
+    {
+      "run": "broad-deepseek-v4.1-flash\\article-deep-fact--mantis--1--attempt-1-1792251796928-ex8ls9.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 1,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\article-deep-fact--mantis--2--attempt-1-1792251839923-1628xv.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 3,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\article-deep-fact--mantis--3--attempt-1-1792251867383-guh7sw.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 1,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\article-deep-fact--screenshot--1--attempt-1-1792251808924-bcbu3l.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\article-deep-fact--screenshot--2--attempt-1-1792251856969-3o94q0.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\article-deep-fact--screenshot--3--attempt-1-1792251900061-o87pe0.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\article-deep-fact--tree--1--attempt-1-1792251802942-2iuvku.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 2,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\article-deep-fact--tree--2--attempt-1-1792251846060-38av9g.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 2,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\article-deep-fact--tree--3--attempt-1-1792251891295-w4su1a.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 2,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\booking-date--mantis--1--attempt-1-1792251481916-gje9ns.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\booking-date--mantis--2--attempt-1-1792251564788-k1b4rv.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\booking-date--mantis--3--attempt-1-1792251772564-xl3ewg.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\booking-date--screenshot--1--attempt-1-1792251531087-h5d17a.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 55,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\booking-date--screenshot--2--attempt-1-1792251617026-yu2qh7.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 42,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\booking-date--screenshot--3--attempt-1-1792251788984-mxgssr.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 39,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\booking-date--tree--1--attempt-1-1792251495380-vymuev.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 5,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\booking-date--tree--2--attempt-1-1792251599927-p3caw7.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 6,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\booking-date--tree--3--attempt-1-1792251780635-q3gb5f.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 5,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\chart-march--mantis--1--attempt-1-1792253168761-g9ocqu.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 2,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\chart-march--mantis--2--attempt-1-1792253212126-7xopdp.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 2,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\chart-march--mantis--3--attempt-1-1792253235222-9zl7tb.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 2,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\chart-march--screenshot--1--attempt-1-1792253194839-pimka1.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\chart-march--screenshot--2--attempt-1-1792253226116-03vv6p.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 2,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\chart-march--screenshot--3--attempt-1-1792253254521-j8uedu.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 2,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\chart-march--tree--1--attempt-1-1792253178953-fqybt9.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 6,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\chart-march--tree--2--attempt-1-1792253214914-oy583a.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 8,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\chart-march--tree--3--attempt-1-1792253242771-w5lt8e.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 6,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\checkout-steps--mantis--1--attempt-1-1792251191704-bclvx1.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 8,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\checkout-steps--mantis--2--attempt-1-1792251287773-zuz545.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 8,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\checkout-steps--mantis--3--attempt-1-1792251369278-jji3zh.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 8,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\checkout-steps--screenshot--1--attempt-1-1792251249286-lv647g.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 21,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 1,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\checkout-steps--screenshot--2--attempt-1-1792251321507-1839hl.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 39,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 2,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\checkout-steps--screenshot--3--attempt-1-1792251444588-x5igu6.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 29,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 1,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\checkout-steps--tree--1--attempt-1-1792251236772-6pk7gz.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 10,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\checkout-steps--tree--2--attempt-1-1792251318542-rkyaya.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 10,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\checkout-steps--tree--3--attempt-1-1792251410545-coz1xu.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 10,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\churned-max--mantis--1--attempt-1-1792251990385-mu5876.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 3,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\churned-max--mantis--2--attempt-1-1792252016353-fxsyza.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\churned-max--mantis--3--attempt-1-1792252052775-ml7i6y.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 3,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\churned-max--screenshot--1--attempt-1-1792252016133-tmlb9f.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 10,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\churned-max--screenshot--2--attempt-1-1792252046812-4gaa5s.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 10,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\churned-max--screenshot--3--attempt-1-1792252085738-udii08.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 8,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\churned-max--tree--1--attempt-1-1792251992041-j73hvr.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 3,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\churned-max--tree--2--attempt-1-1792252033717-8dcotb.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 2,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\churned-max--tree--3--attempt-1-1792252078394-l839q4.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 3,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\cookie-cart--mantis--1--attempt-1-1792250585880-7qelnj.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\cookie-cart--mantis--2--attempt-1-1792250638043-x45nxn.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 3,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\cookie-cart--mantis--3--attempt-1-1792250655951-u8exn9.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 3,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\cookie-cart--screenshot--1--attempt-1-1792250598056-i3zi2u.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 6,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\cookie-cart--screenshot--2--attempt-1-1792250645693-c2c5jw.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 6,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\cookie-cart--screenshot--3--attempt-1-1792250691988-6uszc9.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 6,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\cookie-cart--tree--1--attempt-1-1792250595159-yecd00.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 5,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\cookie-cart--tree--2--attempt-1-1792250640103-wexr20.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 5,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\cookie-cart--tree--3--attempt-1-1792250658122-0e9djo.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 6,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\dashboard-refresh--mantis--1--attempt-1-1792250890523-9clf6g.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 3,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\dashboard-refresh--mantis--2--attempt-1-1792250927765-5n4t9l.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 3,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\dashboard-refresh--mantis--3--attempt-1-1792250953822-khffye.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 3,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\dashboard-refresh--screenshot--1--attempt-1-1792250901333-mby34d.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 6,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\dashboard-refresh--screenshot--2--attempt-1-1792250943058-6srxpo.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 6,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\dashboard-refresh--screenshot--3--attempt-1-1792250961787-epzx4b.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 6,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\dashboard-refresh--tree--1--attempt-1-1792250892694-0s2zdd.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 5,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\dashboard-refresh--tree--2--attempt-1-1792250942340-jx1jyv.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\dashboard-refresh--tree--3--attempt-1-1792250956761-xs3u2x.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\faq-refund--mantis--1--attempt-1-1792252957714-fus7ps.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 3,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\faq-refund--mantis--2--attempt-1-1792252992040-5098ck.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 3,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\faq-refund--mantis--3--attempt-1-1792253010803-bbhia8.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 3,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\faq-refund--screenshot--1--attempt-1-1792252976218-2mnfyg.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\faq-refund--screenshot--2--attempt-1-1792253006414-9lqfer.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\faq-refund--screenshot--3--attempt-1-1792253033341-dyi64v.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\faq-refund--tree--1--attempt-1-1792252972914-docyyb.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\faq-refund--tree--2--attempt-1-1792252994691-btpkcn.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\faq-refund--tree--3--attempt-1-1792253031073-8ylarw.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\feed-scroll--mantis--1--attempt-1-1792252274578-qv2r91.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 9,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 3,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\feed-scroll--mantis--2--attempt-1-1792252331280-14coc7.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 11,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 3,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\feed-scroll--mantis--3--attempt-1-1792252400021-5nf6yj.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 9,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 3,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\feed-scroll--screenshot--1--attempt-1-1792252314541-wnxnfy.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 14,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\feed-scroll--screenshot--2--attempt-1-1792252380534-i0qo3w.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 10,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 4,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\feed-scroll--screenshot--3--attempt-1-1792252445412-ttzjc4.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 14,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\feed-scroll--tree--1--attempt-1-1792252296674-5wl8qu.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 7,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 1,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\feed-scroll--tree--2--attempt-1-1792252377299-niybh0.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 7,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 1,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\feed-scroll--tree--3--attempt-1-1792252405358-ptbm1i.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 9,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\form-subscribe--mantis--1--attempt-1-1792250264441-o7bk23.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\form-subscribe--mantis--2--attempt-1-1792250276005-55524s.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 5,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\form-subscribe--mantis--3--attempt-1-1792250351889-xd41nb.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 5,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\form-subscribe--screenshot--1--attempt-1-1792250274345-x09lbn.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 18,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 1,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\form-subscribe--screenshot--2--attempt-1-1792250327979-mlkl41.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 19,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 1,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\form-subscribe--screenshot--3--attempt-1-1792250395084-e0dzen.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 18,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 1,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\form-subscribe--tree--1--attempt-1-1792250264450-a3ufnm.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 6,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\form-subscribe--tree--2--attempt-1-1792250284947-xuj9te.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 6,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\form-subscribe--tree--3--attempt-1-1792250391020-5zvxg5.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 6,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\iframe-pay--mantis--1--attempt-1-1792253050767-80um3m.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\iframe-pay--mantis--2--attempt-1-1792253070067-o12snd.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\iframe-pay--mantis--3--attempt-1-1792253120936-0fxjz3.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\iframe-pay--screenshot--1--attempt-1-1792253066283-w3qfzt.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 10,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\iframe-pay--screenshot--2--attempt-1-1792253111505-2aeumb.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 10,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\iframe-pay--screenshot--3--attempt-1-1792253154864-hfi3wa.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 10,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\iframe-pay--tree--1--attempt-1-1792253051589-zmx8m6.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 5,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\iframe-pay--tree--2--attempt-1-1792253094704-hoduv0.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 5,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\iframe-pay--tree--3--attempt-1-1792253136865-74mxyk.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 5,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\inventory-lookup--mantis--1--attempt-1-1792251913938-jgfe6q.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 1,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\inventory-lookup--mantis--2--attempt-1-1792251948087-42qgzu.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 1,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\inventory-lookup--mantis--3--attempt-1-1792251975932-j66egr.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 1,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\inventory-lookup--screenshot--1--attempt-1-1792251923285-txneus.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\inventory-lookup--screenshot--2--attempt-1-1792251964705-s3w3ew.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\inventory-lookup--screenshot--3--attempt-1-1792251985192-9zy0ye.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\inventory-lookup--tree--1--attempt-1-1792251918605-9g3a77.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 2,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\inventory-lookup--tree--2--attempt-1-1792251956138-df6ase.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 2,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\inventory-lookup--tree--3--attempt-1-1792251980108-v8ww8c.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 2,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\login--mantis--1--attempt-1-1792250405405-uasfd1.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\login--mantis--2--attempt-1-1792250460495-31evhk.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\login--mantis--3--attempt-1-1792250516834-7vg27u.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\login--screenshot--1--attempt-1-1792250458638-p9owiy.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 8,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\login--screenshot--2--attempt-1-1792250477728-nkmfbq.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 28,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\login--screenshot--3--attempt-1-1792250541432-nczde0.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 8,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\login--tree--1--attempt-1-1792250421281-dnjagi.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 5,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\login--tree--2--attempt-1-1792250474986-x5a7im.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 5,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\login--tree--3--attempt-1-1792250525811-2chneh.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 5,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\long-admin--mantis--1--attempt-1-1792254025045-8rj5rj.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 17,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\long-admin--mantis--2--attempt-1-1792254352155-s83z1t.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 21,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\long-admin--mantis--3--attempt-1-1792254548691-0d1bfg.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 26,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\long-admin--screenshot--1--attempt-1-1792254218787-4dxkad.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 58,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\long-admin--screenshot--2--attempt-1-1792254457173-lgjwof.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 21,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\long-admin--screenshot--3--attempt-1-1792254612417-vpkt6z.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 100,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 35,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\long-admin--tree--1--attempt-1-1792254087408-1floia.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 28,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\long-admin--tree--2--attempt-1-1792254432316-9mia7r.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 30,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {
+        "not_found": {
+          "events": 1,
+          "recovered": 0,
+          "unresolved": 1
+        }
+      },
+      "suspectedMisleadingHints": [
+        {
+          "step": 9,
+          "tool": "browser_type",
+          "suggested": "capturing",
+          "laterSucceededWith": "browser_type"
+        }
+      ]
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\long-admin--tree--3--attempt-1-1792254568742-gm1er6.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 15,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\long-laptops--mantis--1--attempt-1-1792255449295-58rc3c.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 8,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\long-laptops--mantis--2--attempt-1-1792255708807-7pykee.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 8,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\long-laptops--mantis--3--attempt-1-1792255851428-akdolh.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 8,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\long-laptops--screenshot--1--attempt-1-1792255539911-cdu662.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 22,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\long-laptops--screenshot--2--attempt-1-1792255825583-btyqcp.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 32,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\long-laptops--screenshot--3--attempt-1-1792255947466-74q8tg.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 30,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\long-laptops--tree--1--attempt-1-1792255476031-4zzeyi.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 16,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\long-laptops--tree--2--attempt-1-1792255730458-3s1ixi.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 16,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\long-laptops--tree--3--attempt-1-1792255876005-rwklk8.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 16,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\long-onboard--mantis--1--attempt-1-1792254649717-sgyh2y.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 23,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\long-onboard--mantis--2--attempt-1-1792255008523-dvydfx.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 24,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\long-onboard--mantis--3--attempt-1-1792255268679-sxi82f.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 23,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\long-onboard--screenshot--1--attempt-1-1792254860092-istr90.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 104,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 9,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\long-onboard--screenshot--2--attempt-1-1792255256725-tmlsks.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 18,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\long-onboard--screenshot--3--attempt-1-1792255367809-cygdfu.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 86,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 2,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\long-onboard--tree--1--attempt-1-1792254737845-v9jx1m.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 31,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\long-onboard--tree--2--attempt-1-1792255096766-lv0aot.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 31,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\long-onboard--tree--3--attempt-1-1792255338214-m3m3o8.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 34,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\long-shop--mantis--1--attempt-1-1792253270383-4yzohx.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 20,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 3,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\long-shop--mantis--2--attempt-1-1792253403369-efnkiv.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 26,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\long-shop--mantis--3--attempt-1-1792253745012-3t8ob7.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 20,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 3,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\long-shop--screenshot--1--attempt-1-1792253353181-vollmi.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 93,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 4,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\long-shop--screenshot--2--attempt-1-1792253660168-itz5tf.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 94,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 1,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\long-shop--screenshot--3--attempt-1-1792253971511-bhdjrb.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 100,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 5,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\long-shop--tree--1--attempt-1-1792253274528-4pnjan.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 31,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 2,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {
+        "not_found": {
+          "events": 1,
+          "recovered": 0,
+          "unresolved": 1
+        }
+      },
+      "suspectedMisleadingHints": [
+        {
+          "step": 17,
+          "tool": "browser_click",
+          "suggested": "capturing",
+          "laterSucceededWith": "browser_snapshot"
+        }
+      ]
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\long-shop--tree--2--attempt-1-1792253512030-3yya2u.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 36,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {
+        "not_found": {
+          "events": 2,
+          "recovered": 0,
+          "unresolved": 2
+        }
+      },
+      "suspectedMisleadingHints": [
+        {
+          "step": 9,
+          "tool": "browser_click",
+          "suggested": "capturing",
+          "laterSucceededWith": "browser_snapshot"
+        },
+        {
+          "step": 22,
+          "tool": "browser_click",
+          "suggested": "capturing",
+          "laterSucceededWith": "browser_snapshot"
+        }
+      ]
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\long-shop--tree--3--attempt-1-1792253817384-umbfjl.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 38,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 3,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {
+        "not_found": {
+          "events": 1,
+          "recovered": 0,
+          "unresolved": 1
+        }
+      },
+      "suspectedMisleadingHints": [
+        {
+          "step": 23,
+          "tool": "browser_click",
+          "suggested": "capturing",
+          "laterSucceededWith": "browser_snapshot"
+        }
+      ]
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\longlist-item--mantis--1--attempt-1-1792250700430-zbuafz.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\longlist-item--mantis--2--attempt-1-1792250715132-v5u5kt.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 7,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {
+        "tool_error": {
+          "events": 1,
+          "recovered": 0,
+          "unresolved": 1
+        }
+      },
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\longlist-item--mantis--3--attempt-1-1792250766187-dl0kig.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\longlist-item--screenshot--1--attempt-1-1792250712515-my1r8t.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 7,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\longlist-item--screenshot--2--attempt-1-1792250763707-wjuprz.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 7,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\longlist-item--screenshot--3--attempt-1-1792250781750-s5x7o7.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 7,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\longlist-item--tree--1--attempt-1-1792250705498-pmdtz1.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\longlist-item--tree--2--attempt-1-1792250755063-08vc9k.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\longlist-item--tree--3--attempt-1-1792250780379-d939qw.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\menu-settings--mantis--1--attempt-1-1792252588602-lo48cg.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 6,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\menu-settings--mantis--2--attempt-1-1792252650986-uqbszn.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 6,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\menu-settings--mantis--3--attempt-1-1792252694714-ydq3r4.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 6,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\menu-settings--screenshot--1--attempt-1-1792252614821-ar2127.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 10,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\menu-settings--screenshot--2--attempt-1-1792252685553-fbbize.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 10,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\menu-settings--screenshot--3--attempt-1-1792252727862-q143kx.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 14,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\menu-settings--tree--1--attempt-1-1792252612740-n5tiyq.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 9,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\menu-settings--tree--2--attempt-1-1792252651578-7lb1ts.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 9,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\menu-settings--tree--3--attempt-1-1792252715878-odktmf.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 9,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\modal-delete--mantis--1--attempt-1-1792252451308-twop5y.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 5,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\modal-delete--mantis--2--attempt-1-1792252511065-spti04.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 5,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\modal-delete--mantis--3--attempt-1-1792252550849-bwowtp.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 5,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\modal-delete--screenshot--1--attempt-1-1792252500718-l6zybw.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 6,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\modal-delete--screenshot--2--attempt-1-1792252534048-cwrque.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 6,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\modal-delete--screenshot--3--attempt-1-1792252573862-itvu2i.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 6,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\modal-delete--tree--1--attempt-1-1792252476196-esvyf3.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 6,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\modal-delete--tree--2--attempt-1-1792252517284-yqpt56.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 6,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\modal-delete--tree--3--attempt-1-1792252562385-8qr74i.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 6,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\plans-pick--mantis--1--attempt-1-1792252879427-4gwzxc.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 3,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\plans-pick--mantis--2--attempt-1-1792252908436-09trm4.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 3,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\plans-pick--mantis--3--attempt-1-1792252932596-4xjwrm.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 3,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\plans-pick--screenshot--1--attempt-1-1792252891752-hbh8tw.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\plans-pick--screenshot--2--attempt-1-1792252924197-vy1ugv.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\plans-pick--screenshot--3--attempt-1-1792252944989-c3yymb.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\plans-pick--tree--1--attempt-1-1792252880930-886nb0.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\plans-pick--tree--2--attempt-1-1792252916506-wzogrz.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\plans-pick--tree--3--attempt-1-1792252941125-smixk3.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\pricing-team--mantis--1--attempt-1-1792250818277-hcl1k3.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 2,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\pricing-team--mantis--2--attempt-1-1792250833423-cpoms2.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 2,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\pricing-team--mantis--3--attempt-1-1792250870437-8wxbcc.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 2,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\pricing-team--screenshot--1--attempt-1-1792250827876-vhnqp2.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\pricing-team--screenshot--2--attempt-1-1792250845824-81tub5.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\pricing-team--screenshot--3--attempt-1-1792250883288-uywnf4.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\pricing-team--tree--1--attempt-1-1792250823462-d0iaf2.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\pricing-team--tree--2--attempt-1-1792250835028-5u45v6.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\pricing-team--tree--3--attempt-1-1792250877970-9w5k92.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 4,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\search-pagination--mantis--1--attempt-1-1792252091902-8jhbxy.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 6,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\search-pagination--mantis--2--attempt-1-1792252157343-2e004h.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 6,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\search-pagination--mantis--3--attempt-1-1792252214348-wekkip.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 5,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\search-pagination--screenshot--1--attempt-1-1792252114815-noxzez.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 12,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\search-pagination--screenshot--2--attempt-1-1792252175980-ww1l1r.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 10,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\search-pagination--screenshot--3--attempt-1-1792252236435-22weyo.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 14,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\search-pagination--tree--1--attempt-1-1792252112848-o9nc3c.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 10,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\search-pagination--tree--2--attempt-1-1792252171742-ilufkv.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 10,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\search-pagination--tree--3--attempt-1-1792252224724-juqfg6.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 10,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\signup-validation--mantis--1--attempt-1-1792250992674-rovm4u.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 7,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\signup-validation--mantis--2--attempt-1-1792251053285-megc26.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 6,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\signup-validation--mantis--3--attempt-1-1792251113281-wwcdaf.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 7,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\signup-validation--screenshot--1--attempt-1-1792251009694-z1w00l.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 30,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 11,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\signup-validation--screenshot--2--attempt-1-1792251108772-guesln.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 22,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 1,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\signup-validation--screenshot--3--attempt-1-1792251176437-mjxj4h.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 33,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 14,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\signup-validation--tree--1--attempt-1-1792251007178-d8nh4l.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 8,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\signup-validation--tree--2--attempt-1-1792251071590-4fwwug.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 8,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\signup-validation--tree--3--attempt-1-1792251132967-s8z107.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 8,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\spa-team--mantis--1--attempt-1-1792252761231-93kywi.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 3,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\spa-team--mantis--2--attempt-1-1792252809616-qnmxm1.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 3,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\spa-team--mantis--3--attempt-1-1792252835207-6a7jdz.jsonl",
+      "approach": "mantis",
+      "stepsToFinish": 3,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\spa-team--screenshot--1--attempt-1-1792252777169-1sqjcf.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 6,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\spa-team--screenshot--2--attempt-1-1792252822314-60umtl.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 6,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\spa-team--screenshot--3--attempt-1-1792252859576-yswp5t.jsonl",
+      "approach": "screenshot",
+      "stepsToFinish": 6,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\spa-team--tree--1--attempt-1-1792252775894-uo5st7.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 6,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\spa-team--tree--2--attempt-1-1792252811327-ojf0qo.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 6,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    },
+    {
+      "run": "broad-deepseek-v4.1-flash\\spa-team--tree--3--attempt-1-1792252851120-e4csjy.jsonl",
+      "approach": "tree",
+      "stepsToFinish": 6,
+      "stepsAfterLastUsefulObservation": 0,
+      "repeatedIdenticalActions": 0,
+      "coveredOrBlockedClickLoops": 0,
+      "toolErrors": {},
+      "suspectedMisleadingHints": []
+    }
+  ]
+}

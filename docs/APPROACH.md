@@ -1,53 +1,13 @@
 # Approach
 
-How Mantis turns a web page into something an AI agent can read and act on, and why
-it does this differently from the two ways agents browse today.
-
----
+How Mantis turns a web page into numbered text an agent can read and act on.
 
 ## 1. How agents browse today
 
-```mermaid
-flowchart TB
-    subgraph S["Screenshots"]
-        direction LR
-        S1(["Take screenshot<br/><b>~1,400 tokens</b>"]) --> S2["Model reads<br/>the pixels"] --> S3["Guesses<br/>x, y"] --> S4(["Click"])
-        S4 -. "screenshot again to check" .-> S1
-    end
-    subgraph A["Accessibility tree"]
-        direction LR
-        A1(["Dump the whole tree<br/><b>up to ~150k tokens</b>"]) --> A2["Model reads<br/>every node"] --> A3["Picks a ref<br/>e.g. e42"] --> A4(["Click"])
-        A4 -. "re-dump after every action" .-> A1
-    end
-    S ~~~ A
-
-    classDef cost fill:#fee2e2,stroke:#dc2626,color:#7f1d1d
-    classDef step fill:#f8fafc,stroke:#94a3b8,color:#0f172a
-    class S1,A1 cost
-    class S2,S3,S4,A2,A3,A4 step
-    style S fill:transparent,stroke:#dc2626,stroke-width:2px
-    style A fill:transparent,stroke:#d97706,stroke-width:2px
-```
-
-**Screenshots.** The agent sees the page the way a person does, but every look costs
-~1,400 tokens (1280×800), clicks are pixel guesses, and it needs another screenshot to
-check what happened.
-
-**The accessibility tree.** Browsers keep a second, text-only version of every page for
-screen readers: each element as a *role* and a *name* (`button "Sign in"`,
-`textbox "Email"`) plus states (`checked`, `disabled`). Tools such as Playwright MCP's
-snapshot and browser-extension agents hand this tree, more or less as-is, to the model.
-It is text, so it is cheaper than pixels and acts by reference instead of by
-coordinate. But it has limits:
-
-| The accessibility tree… | …so the agent |
-|---|---|
-| describes the DOM, not what is on screen | clicks a button hidden behind a cookie popup |
-| depends on developers labelling things (many icon buttons have no name) | sees `button` with no idea what it does |
-| only knows about errors/emphasis if the developer set ARIA for it | misses the red "Invalid email" text, can't tell the primary button |
-| is the whole page, every time (a Wikipedia article: ~150k tokens) | burns context on pages it only needed to skim |
-| has to be re-dumped after every action | re-reads the whole page to learn "a dialog opened" |
-| has nothing for canvas / charts | can't read the numbers in a chart |
+Screenshots cost ~1,400 tokens per look (1280×800) and use coordinate clicks.
+The accessibility tree gives roles, names and states (`button "Sign in"`, `checked`, `disabled`)
+so agents act by reference. Mantis adds visual cues and compacts repeated content;
+[the comparison](#3-mantis-vs-the-accessibility-tree) lists the differences.
 
 ## 2. The Mantis approach
 
@@ -134,30 +94,11 @@ sequenceDiagram
     end
 ```
 
-The agent never re-reads the whole page just to learn what one click did, and numbers
-don't shift under it between steps.
-
 ### When text isn't enough: the fallback ladder
 
-```mermaid
-flowchart LR
-    R(["<b>read()</b><br/>numbered text"]) -- "chart or image" --> D["<b>data(id)</b><br/>alt text, SVG labels,<br/>chart values"]
-    D -- "text baked<br/>into pixels" --> O["<b>ocr(id)</b><br/>text only"]
-    O -- "still unclear" --> L["<b>look(id)</b><br/>image of ONE element"]
-    L -- "CAPTCHA, 2FA,<br/>payment" --> H(["<b>ask_human()</b><br/>a person takes over"])
-
-    classDef t1 fill:#dcfce7,stroke:#16a34a,color:#052e16
-    classDef t2 fill:#fef9c3,stroke:#ca8a04,color:#422006
-    classDef t3 fill:#ffedd5,stroke:#ea580c,color:#431407
-    classDef t5 fill:#ede9fe,stroke:#7c3aed,color:#2e1065
-    class R t1
-    class D,O t2
-    class L t3
-    class H t5
-```
-
-Cheapest first; the agent climbs only when it has to. Only `look` returns an image,
-and never of the full page. Mantis never solves CAPTCHAs.
+Follow the [skill's fallback ladder](../skill/SKILL.md#tools): `media`/`data` → `ocr` →
+`look` (one element, ≤800px) → `ask_human` (5-minute default). Only `look` returns an image.
+The human handoff carries browser storage state into a headed window. Mantis never solves CAPTCHAs.
 
 ## 3. Mantis vs the accessibility tree
 
@@ -175,31 +116,26 @@ and never of the full page. Mantis never solves CAPTCHAs.
 | Iframes (payment, login widgets) | per frame | inline under `[iframe "Payment"]`, own numbers |
 | Size | whole page | budgeted, compacted |
 
-**Measured:** the numbers are in [bench/RESULTS.md](../bench/RESULTS.md). How to read them:
-
-- The replay's total-token gap is driven by a few huge pages, and on some of them Mantis shows a
-  trimmed view while the tree sends everything. "Orients on the page cheaply" is fair; "reads the
-  whole article cheaply" is not.
-- Mantis used to fail 4 replay tasks because trimming hid what the agent needed. Now short text is
-  kept, long lists name their items, and `find` reaches the rest. `test/coverage.test.ts` checks
-  that every name in Chrome's accessibility tree is reachable through Mantis on 29 pages.
-- With real agents, Mantis matches the tree on short tasks and uses fewer tokens on long ones,
-  where every step re-reads more of the page.
+Measured results and their limits: [bench/RESULTS.md](../bench/RESULTS.md).
 
 ## 4. Decisions along the way
 
+- **Capture and actions.** An in-page walker records role, name, state, box, visibility and coverage.
+  Playwright resolves numbered elements and supplies actionability checks and auto-wait.
+- **Stable ids.** A `WeakMap<Element, number>` on `window` keeps each element's number while it lives;
+  numbers are never reused within a page load.
+- **Text format and budget.** `#N role "name" (states)`; regions in `[brackets]`, headings without ids.
+  Target a typical `read()` at ≤~1,500 tokens and an action result at ≤~300; compact long lists without hiding access.
 - **No information loss.** Short standalone text (list items, status messages, footers) is kept;
-  collapsed lists name their items; `find("text")` reaches anything trimmed. The coverage test runs
+  collapsed lists name their items; `find("text")` reaches anything trimmed. The [coverage test](../test/coverage.test.ts) runs
   on every test and benchmark page, and a change that breaks it does not ship, however many tokens it saves.
 - **Speed.** The page scan returns one JSON string instead of Playwright's structured serializer
   (3x faster on big pages). When an in-page counter says nothing changed (DOM, scroll, input, focus,
   hover), the last scan is reused as the diff's "before". After an action Mantis waits 150 ms of DOM
   quiet; short timers and requests are tracked separately, so delayed effects are still caught.
+  Chrome `computedName` was rejected because scanning was roughly 25x slower.
 - **Beyond the tree.** Elements made clickable only by script (a click listener, or where a pointer
   cursor starts) show as `clickable`, containers excluded. Visible iframes, cross-origin included,
   are read inline under `[iframe "title"]` with their own number range (`#10001…`).
-- **Names from Chrome: tried, not shipped.** Chrome can give its computed name per element, but
-  reading it made the scan ~25x slower (15 → 378 ms on a 200-link page). Mantis keeps its own name
-  logic and the coverage test checks it against Chrome's names.
 
 The test for every change: lose nothing the tree has, use fewer tokens, add meaning, don't get slower.
