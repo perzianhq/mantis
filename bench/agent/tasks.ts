@@ -43,6 +43,19 @@ const control = (event: FixtureObservation, id: string, value: string, checked?:
 };
 const target = (event: FixtureObservation, id: string): boolean => event.target.id === id;
 const esc = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+/** Match a decimal answer at a numeric boundary, allowing harmless trailing precision zeros. */
+const decimalWithTrailingZeros = (value: string): string => {
+  const withoutTrailingZeros = value.replace(/0+$/, '');
+  return `(?<![\\w,])${esc(withoutTrailingZeros)}0*(?![\\w,]|\\.\\d)`;
+};
+
+/** Normalize the answer field before every local-task regex is evaluated. */
+export function normalizeGradedAnswer(answer: string): string {
+  const trimmed = answer.trim();
+  const pairs: Record<string, string> = { '"': '"', '\u201c': '\u201d', '\u2018': '\u2019' };
+  const closing = pairs[trimmed[0] ?? ''];
+  return closing && trimmed.endsWith(closing) ? trimmed.slice(1, -1).trim() : trimmed;
+}
 
 const LOCAL_AND_LIVE_TASKS: AgentTask[] = [
   {
@@ -121,7 +134,7 @@ const LOCAL_AND_LIVE_TASKS: AgentTask[] = [
     category: 'forms',
     site: 'local',
     prompt: (b) => `Open ${b}/checkout and complete the order for Ada Lovelace, shipping to Berlin, with Express delivery. What is the order number and the total charged?`,
-    expect: /A1042[\s\S]*27\.50|27\.50[\s\S]*A1042/,
+    expect: new RegExp(`\\bA1042\\b[^]*${decimalWithTrailingZeros('27.50')}|${decimalWithTrailingZeros('27.50')}[^]*\\bA1042\\b`),
     check: check((e) => {
       const nextShipping = leadsTo(e, 'click', '/checkout', (x) => target(x, 'n1') && control(x, 'nm', 'Ada Lovelace') && control(x, 'city', 'Berlin'), (x) => target(x, 'n1') && /Step 2 of 3: Delivery/.test(x.text));
       const nextDelivery = leadsTo(e, 'click', '/checkout', (x) => target(x, 'n2') && control(x, 'd', 'exp', true), (x) => target(x, 'n2') && /Ship to Ada Lovelace, Berlin\s*·\s*Express/.test(x.text));
@@ -256,7 +269,7 @@ const LOCAL_AND_LIVE_TASKS: AgentTask[] = [
     category: 'long',
     site: 'local',
     prompt: (b) => `Open ${b}/shop. Add to the cart: 2 Trail Mug, 1 Canvas Tote, 3 Beeswax Wrap and 1 Linen Apron (only those products, nothing else). Apply the coupon SPRING10. Check out shipping to Grace Hopper, 12 Navy Way, Arlington, ZIP 22201, with Standard delivery, and pay with the test card 4242 4242 4242 4242, expiry 12/30, CVC 123. What is the order number and the total charged?`,
-    expect: new RegExp(`${esc(LONG_EXPECT.shop.order)}[^]*${esc(LONG_EXPECT.shop.total)}|${esc(LONG_EXPECT.shop.total)}[^]*${esc(LONG_EXPECT.shop.order)}`),
+    expect: new RegExp(`${esc(LONG_EXPECT.shop.order)}[^]*${decimalWithTrailingZeros(LONG_EXPECT.shop.total)}|${decimalWithTrailingZeros(LONG_EXPECT.shop.total)}[^]*${esc(LONG_EXPECT.shop.order)}`),
     check: check((e) => has(e, (x) => x.path === '/shop' && x.kind === 'settled' && x.text.includes(`Order #${LONG_EXPECT.shop.order} confirmed. Total charged: $${LONG_EXPECT.shop.total}.`))),
   },
   {
@@ -280,7 +293,7 @@ const LOCAL_AND_LIVE_TASKS: AgentTask[] = [
     category: 'long',
     site: 'local',
     prompt: (b) => `Open ${b}/laptops. Among the laptops that cost under $1,000, which one has the longest battery life (video playback)? Tell me its name and its weight in kg.`,
-    expect: new RegExp(`${esc(LONG_EXPECT.laptops.name)}[^]*${esc(LONG_EXPECT.laptops.weight)}|${esc(LONG_EXPECT.laptops.weight)}[^]*${esc(LONG_EXPECT.laptops.name)}`),
+    expect: new RegExp(`${esc(LONG_EXPECT.laptops.name)}[^]*(?<![\\d.])${esc(LONG_EXPECT.laptops.weight)}(?!\\d|\\.\\d)|(?<![\\d.])${esc(LONG_EXPECT.laptops.weight)}(?!\\d|\\.\\d)[^]*${esc(LONG_EXPECT.laptops.name)}`),
     check: check((e) => LONG_EXPECT.laptops.paths.every((path) => has(e, (x) => x.path === path && x.kind === 'load'))),
   },
 ];

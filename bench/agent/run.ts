@@ -20,9 +20,9 @@ import path from 'node:path';
 import { chromiumForMcp } from '../adapters.js';
 import { startFixtures } from '../fixtures.js';
 import { benchUserAgent } from '../../src/userAgent.js';
-import { PILOT, TASKS } from './tasks.js';
+import { normalizeGradedAnswer, PILOT, TASKS } from './tasks.js';
 import type { AgentTask } from './tasks.js';
-import { aggregateUsage, assertCompatibleResume, classifyAttempt, hashSources, makeMetadata, parseClaudeStream, validateFlag, validatePositiveInt } from './integrity.js';
+import { aggregateUsage, assertCompatibleResume, classifyAttempt, extractGradedAnswer, hashSources, isHarnessFailure, makeMetadata, nextHarnessFailureStreak, parseClaudeStream, validateFlag, validatePositiveInt, wrongAnswerDetail } from './integrity.js';
 import type { AttemptStatus, RunMetadata, StreamUsage } from './integrity.js';
 import { codexArgs, rawMcpToolName } from './codex-config.js';
 import { PAGE_STATE_FUNCTION, packEvidence, parsePageState, toCapturedFrame } from './evidence.js';
@@ -32,7 +32,7 @@ import type { McpProxy } from './mcp-proxy.js';
 import { parseCodexStream } from './codex.js';
 import type { ParsedCodexStream } from './codex.js';
 import { SarvamClient, loadSarvamEnv, sarvamModelSupportsImages } from './sarvam.js';
-import { runSarvamAgent } from './sarvam-agent.js';
+import { runSarvamAgent, sarvamMaxTokens } from './sarvam-agent.js';
 import type { SarvamAgentResult } from './sarvam-agent.js';
 
 const REPO = path.resolve(import.meta.dirname, '..', '..');
@@ -50,6 +50,7 @@ const RUNS = validatePositiveInt('AGENT_RUNS', process.env.AGENT_RUNS, 1, 1000);
 const TIMEOUT_S = validatePositiveInt('AGENT_TIMEOUT_S', process.env.AGENT_TIMEOUT_S, 600, 86_400);
 const TIMEOUT_MS = TIMEOUT_S * 1000;
 const SARVAM_MAX_STEPS = validatePositiveInt('AGENT_MAX_STEPS', process.env.AGENT_MAX_STEPS, 100, 1_000);
+const SARVAM_MAX_TOKENS = PROVIDER === 'sarvam' ? sarvamMaxTokens() : null;
 /** Runs in flight at once. Each run is its own provider CLI process, MCP server and browser. */
 const CONCURRENCY = validatePositiveInt('AGENT_CONCURRENCY', process.env.AGENT_CONCURRENCY, PROVIDER === 'sarvam' ? 2 : 3, 64);
 const RESUME = validateFlag('AGENT_RESUME', process.env.AGENT_RESUME);
@@ -307,6 +308,7 @@ interface AttemptResult {
   timedOut: boolean;
   fixtureCheck: { ok: boolean | null; details?: string } | null;
   diagnostics: string[];
+  harnessFailure: boolean;
 }
 
 interface RunResult {
@@ -314,6 +316,7 @@ interface RunResult {
   finalScreenshotPath?: string | null;
   evidencePath: string | null; evidenceFrames: string[];
   status: AttemptStatus; ok: boolean; error: string; answer: string;
+  harnessFailure: boolean;
   /** A connection failure is excluded from correctness; a timeout after launch remains attempted. */
   valid: boolean;
   turns: number | null; toolCalls: number; toolErrors: number; observationChars: number; observationImages: number;
@@ -521,15 +524,16 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
     try { rmSync(dir, { recursive: true, force: true }); } catch { /* temporary profile cleanup is best effort */ }
     cleanupMs = Date.now() - cleanupStart;
   }
-  const answer = (task.judged
-    ? (parsed.resultText ?? '').replace(/^\s*FINAL_URL:.*$/gim, '')
-    : (/ANSWER:\s*(.+)/i.exec(parsed.resultText ?? '')?.[1] ?? (parsed.resultText ?? '').slice(-200))).trim().slice(0, 160);
+  const rawResultText = parsed.resultText ?? '';
+  const rawAnswer = extractGradedAnswer(rawResultText, task.judged);
+  const gradedAnswer = normalizeGradedAnswer(rawAnswer);
+  const answer = gradedAnswer.slice(0, 160);
   const connected = parsed.connected;
   const connectionState = connected ? 'connected' : parsed.sawInit ? 'failed' : 'unknown';
   let status = classifyAttempt({
     sawInit: parsed.sawInit, connected, sawResult: parsed.sawResult, resultError: parsed.resultError,
     timedOut: processResult.timedOut, launchError: processResult.launchError ?? startupError,
-    exitCode: processResult.exitCode, answerMatches: task.expect.test(parsed.resultText ?? ''),
+    exitCode: processResult.exitCode, answerMatches: task.judged ? task.expect.test(parsed.resultText ?? '') : task.expect.test(gradedAnswer),
     hasFixtureCheck: !!task.check, fixtureOk: fixtureCheck?.ok ?? null,
   });
   const codexConfigFailure = PROVIDER === 'codex' && (parsed as ParsedCodexStream).diagnostics.some((message: string) =>
@@ -544,10 +548,11 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
     ? 'Codex Code Mode host is unavailable; check the installed CLI companion executable and configuration.'
     : PROVIDER === 'codex' && 'policyViolation' in parsed && parsed.policyViolation
     ? 'Codex used a local command tool outside the browser MCP comparison.'
-    : (parsed.resultText ?? `${PROVIDER} CLI returned no result`).slice(0, 200);
-  else if (status === 'wrong_answer') error = fixtureCheck?.details || 'answer did not match the expected result';
+    : `${PROVIDER} CLI returned an error result`;
+  else if (status === 'wrong_answer') error = wrongAnswerDetail(PROVIDER, rawResultText, parsed.sawResult, fixtureCheck?.details);
   const cliExitAt = processResult.exitAt;
   const cliWallMs = cliStart === null || cliExitAt === null ? null : cliExitAt - cliStart;
+  const diagnostics = [...(('diagnostics' in parsed ? parsed.diagnostics as string[] : [])), ...(captureFailures ? [`${captureFailures} step capture(s) failed or timed out`] : [])];
   return {
     attempt, finalScreenshotPath, evidencePath, evidenceFrames, status, connected, connectionState, error, answer, initModel: parsed.initModel, resolvedModels: parsed.resolvedModels,
     turns: parsed.turns, toolCalls: parsed.toolCalls, toolErrors: parsed.toolErrors,
@@ -564,7 +569,7 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
       cliWallMs, verificationMs, cleanupMs, captureMs,
     },
     exitCode: processResult.exitCode, signal: processResult.signal, timedOut: processResult.timedOut, fixtureCheck,
-    diagnostics: [...(('diagnostics' in parsed ? parsed.diagnostics as string[] : [])), ...(captureFailures ? [`${captureFailures} step capture(s) failed or timed out`] : [])],
+    diagnostics, harnessFailure: isHarnessFailure({ status, error, diagnostics }),
   };
 }
 
@@ -686,7 +691,7 @@ if (outputExists && !RESUME && !OVERWRITE) {
 if (!existsSync(jsonPath) && RESUME) throw new Error(`AGENT_RESUME=1 requested, but ${jsonPath} does not exist.`);
 const settings = {
   provider: PROVIDER,
-  tasks: tasks.map((t) => t.id), approaches, runs: RUNS, model: MODEL, reasoning: PROVIDER === 'codex' ? REASONING : PROVIDER === 'sarvam' ? `max-steps:${SARVAM_MAX_STEPS}` : 'not-applicable', timeoutMs: TIMEOUT_MS, concurrency: CONCURRENCY,
+  tasks: tasks.map((t) => t.id), approaches, runs: RUNS, model: MODEL, reasoning: PROVIDER === 'codex' ? REASONING : PROVIDER === 'sarvam' ? `max-steps:${SARVAM_MAX_STEPS}` : 'not-applicable', timeoutMs: TIMEOUT_MS, concurrency: CONCURRENCY, sarvamMaxTokens: SARVAM_MAX_TOKENS,
   toolRestrictions: {
     builtins: PROVIDER === 'codex'
       ? ['shell', 'apps', 'plugins', 'multi_agent', 'goals', 'sleep_tool', 'skill_search', 'view_image', 'browser_use', 'computer_use', 'in_app_browser', 'web_search']
@@ -739,11 +744,13 @@ function save(): void {
   writeFileSync(markdownPath, report(results, approaches, tasks, metadata));
 }
 
+let abortReason: string | null = null;
 const fx = await startFixtures({ checks: tasks.map((t) => ({ taskId: t.id, check: t.check })) });
 try {
   let next = 0;
+  let consecutiveHarnessFailures = 0;
   const worker = async (): Promise<void> => {
-    while (next < todo.length) {
+    while (!abortReason && next < todo.length) {
       const { t, a, run } = todo[next++]!;
       const attempts: AttemptResult[] = [];
       let attempt = 1;
@@ -752,14 +759,14 @@ try {
         finalAttempt = await runOnce(t, a, fx.base, run, attempt, fx, path.join(OUT, 'agent-logs', name));
         attempts.push(finalAttempt);
         attempt++;
-      } while (finalAttempt.status === 'connection_failure' && attempt <= 2);
+      } while (!abortReason && finalAttempt.status === 'connection_failure' && attempt <= 2);
       const usage = aggregateUsage(attempts.map((x) => ({ usage: x.usage, complete: x.usageComplete })));
       const nullableSum = (key: keyof StreamUsage): number | null => usage[key];
       const allTurnsKnown = attempts.every((x) => x.turns !== null);
       const r: RunResult = {
         task: t.id, approach: a, run, status: finalAttempt.status, finalScreenshotPath: finalAttempt.finalScreenshotPath,
         evidencePath: finalAttempt.evidencePath, evidenceFrames: finalAttempt.evidenceFrames,
-        valid: finalAttempt.status !== 'connection_failure', ok: finalAttempt.status === 'success',
+        valid: finalAttempt.status !== 'connection_failure', ok: finalAttempt.status === 'success', harnessFailure: finalAttempt.harnessFailure,
         error: finalAttempt.error, answer: finalAttempt.answer,
         turns: allTurnsKnown ? attempts.reduce((s, x) => s + (x.turns ?? 0), 0) : null,
         toolCalls: attempts.reduce((s, x) => s + x.toolCalls, 0),
@@ -784,6 +791,11 @@ try {
       };
       results.push(r);
       save();
+      consecutiveHarnessFailures = nextHarnessFailureStreak(consecutiveHarnessFailures, r.attempts);
+      if (consecutiveHarnessFailures >= 3 && !abortReason) {
+        abortReason = r.error || r.attempts.find((x) => x.harnessFailure)?.error || 'infrastructure diagnostics';
+        console.error(`ABORTED: harness failure after ${consecutiveHarnessFailures} consecutive completed runs: ${abortReason}`);
+      }
       console.log(`[agent] (${results.length}/${jobs.length}) ${t.id} / ${a} / run ${run} ... ${r.status} · ${r.toolCalls} tool calls · ${fmtMaybe(r.totalInputTokens)} input · ${r.timings.cliWallMs === null ? 'CLI time unknown' : `${(r.timings.cliWallMs / 1000).toFixed(1)}s`}${r.error ? ` · ${r.error}` : ''}`);
     }
   };
@@ -793,4 +805,8 @@ try {
   await fx.close();
 }
 save();
+if (abortReason) {
+  console.error(`ABORTED: harness failure queue stopped; ${results.length}/${jobs.length} completed.`);
+  process.exitCode = 1;
+}
 console.log(`[agent] wrote bench/results/${name}.{json,md}`);

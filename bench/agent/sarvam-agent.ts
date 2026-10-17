@@ -26,6 +26,14 @@ export interface SarvamAgentOptions {
   /** Cancels completion, limiter waits, and outstanding harness tool calls. */
   signal?: AbortSignal;
 }
+
+export function sarvamMaxTokens(value = process.env.SARVAM_MAX_TOKENS): number {
+  if (value === undefined) return 8192;
+  if (!/^[1-9]\d*$/.test(value) || !Number.isSafeInteger(Number(value))) {
+    throw new Error(`SARVAM_MAX_TOKENS must be a positive integer; received ${JSON.stringify(value)}.`);
+  }
+  return Number(value);
+}
 export interface SarvamAgentResult {
   connected: boolean;
   initModel: string | null;
@@ -139,16 +147,18 @@ export async function runSarvamAgent(options: SarvamAgentOptions): Promise<Sarva
   const tools = mcpToolsToOpenAi(toolsResult, options.server, options.allow, options.deny ?? []);
   trace({ type: 'sarvam.init', model: options.model, tools: tools.length });
   const messages: SarvamMessage[] = [{ role: 'user', content: options.prompt }];
+  const maxTokens = sarvamMaxTokens();
   let usage: SarvamUsage = { promptTokens: 0, completionTokens: 0, cachedTokens: 0, totalTokens: 0 };
   let usageKnown = true, calls = 0, errors = 0, chars = 0, images = 0, malformed = 0, apiAttempts = 0, rateLimits = 0;
   const models = new Set<string>(); const diagnostics: string[] = [];
+  let truncatedPrefix = '';
   for (let turn = 1; turn <= options.maxSteps; turn++) {
     if (aborted()) return result(abortMessage(), true, turn - 1, true);
     const resolved = resolveSarvamModel(options.model);
     const reasoning = ['deepseekv4.1-flash', 'glm5.3'].includes(resolved);
     let reply;
     try {
-      reply = await options.client.complete({ model: options.model, messages, tools, tool_choice: 'auto', max_tokens: 2048, signal: options.signal,
+      reply = await options.client.complete({ model: options.model, messages, tools, tool_choice: 'auto', max_tokens: maxTokens, signal: options.signal,
         ...(resolved === 'sarvam-105b' ? { reasoning_effort: null } : reasoning ? { reasoning_effort: 'low' } : {}) });
     } catch (error) {
       if (aborted()) return result(abortMessage(), true, turn - 1, true);
@@ -159,8 +169,17 @@ export async function runSarvamAgent(options: SarvamAgentOptions): Promise<Sarva
     apiAttempts += reply.attempts ?? 1; rateLimits += reply.rateLimits ?? 0;
     trace({ type: 'sarvam.completion', turn, model: reply.model, finishReason: reply.finishReason ?? null, content: reply.content ?? '', toolCalls: reply.toolCalls ?? [],
       attempts: reply.attempts ?? 1, rateLimits: reply.rateLimits ?? 0, promptTokens: reply.usage.promptTokens, completionTokens: reply.usage.completionTokens });
+    if (reply.finishReason === 'length') truncatedPrefix += reply.content ?? '';
+    if (reply.finishReason === 'length' && turn === options.maxSteps) {
+      return result('Sarvam completion token limit (length).', true, turn, true);
+    }
     if (!reply.toolCalls?.length) {
-      return result(reply.content ?? '', false, turn, true);
+      if (reply.finishReason === 'length') {
+        messages.push({ role: 'assistant', content: reply.content, ...(reply.reasoningContent ? { reasoning_content: reply.reasoningContent } : {}) });
+        messages.push({ role: 'user', content: 'Continue from where you stopped and finish the task.' });
+        continue;
+      }
+      return result(truncatedPrefix + (reply.content ?? ''), false, turn, true);
     }
     messages.push({ role: 'assistant', content: reply.content, tool_calls: reply.toolCalls, ...(reply.reasoningContent ? { reasoning_content: reply.reasoningContent } : {}) });
     const imageObservations: SarvamContentPart[] = [];
@@ -194,13 +213,19 @@ export async function runSarvamAgent(options: SarvamAgentOptions): Promise<Sarva
         // Sarvam accepts tool results as text only.  A multimodal `tool` message caused
         // 400s after screenshot tools; retain the required tool response, then put any
         // supported image in a separate ordinary user turn.
-        const rendered = content.text || (content.images.length ? `[${content.images.length} image result omitted: this model does not support image tool results]` : JSON.stringify(object(response)?.content ?? response));
+        const forwardsImages = sarvamModelSupportsImages(options.model) && content.images.length > 0;
+        const rendered = content.text || (content.images.length
+          ? (forwardsImages
+            ? `[${content.images.length} image result; image observations follow in a separate message.]`
+            : `[${content.images.length} image result; this model cannot receive image observations.]`)
+          : JSON.stringify(object(response)?.content ?? response));
         messages.push({ role: 'tool', tool_call_id: call.id ?? `tool-${calls}`, content: rendered });
-        if (sarvamModelSupportsImages(options.model)) imageObservations.push(...content.images);
+        if (forwardsImages) imageObservations.push(...content.images);
         trace({ type: 'sarvam.tool_result', name: call.function.name, arguments: args, error: isError, resultText: rendered, chars: content.count, images: content.images.length });
       } catch (error) {
         if (aborted()) return result(abortMessage(), true, turn, true);
-        errors++; diagnostics.push(`MCP tool failed: ${call.function.name}`);
+        const detail = error instanceof Error ? error.message : String(error);
+        errors++; diagnostics.push(`MCP tool failed: ${call.function.name}${detail ? `: ${detail}` : ''}`);
         messages.push({ role: 'tool', tool_call_id: call.id ?? `tool-${calls}`, content: 'The browser tool failed. Choose another action or retry.' });
         trace({ type: 'sarvam.tool_error', name: call.function.name, arguments: args, error: 'mcp_failed', resultText: 'The browser tool failed. Choose another action or retry.' });
       }

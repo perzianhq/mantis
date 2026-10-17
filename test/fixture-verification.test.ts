@@ -4,7 +4,8 @@ import type { Browser, Page } from 'playwright';
 import { chromiumExecutable } from '../src/userAgent.js';
 import { MantisBrowser } from '../src/index.js';
 import { startFixtures } from '../bench/fixtures.js';
-import { TASKS } from '../bench/agent/tasks.js';
+import { normalizeGradedAnswer, TASKS } from '../bench/agent/tasks.js';
+import { extractGradedAnswer } from '../bench/agent/integrity.js';
 import { LONG_EXPECT } from '../bench/fixtures-long.js';
 import { spawn } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
@@ -28,6 +29,51 @@ const crc32 = (buf: Uint8Array): number => {
   for (const b of buf) { c ^= b; for (let k = 0; k < 8; k++) c = (c >>> 1) ^ (0xedb88320 & -(c & 1)); }
   return ~c >>> 0;
 };
+
+it('matches a quoted fixture answer but still rejects a quoted near miss', () => {
+  const cart = TASKS.find((entry) => entry.id === 'cookie-cart')!;
+  expect(cart.expect.test(normalizeGradedAnswer('"Added to cart (1 item)."'))).toBe(true);
+  // Near miss: wrapping quotes do not hide an incorrect item count.
+  expect(cart.expect.test(normalizeGradedAnswer('"Added to cart (2 items)."'))).toBe(false);
+});
+
+it('accepts trailing decimal zeros without matching numeric suffixes', () => {
+  const checkout = TASKS.find((entry) => entry.id === 'checkout-steps')!;
+  expect(checkout.expect.test('A1042; $27.5')).toBe(true);
+  expect(checkout.expect.test('A1042; $27.50')).toBe(true);
+  expect(checkout.expect.test('A10420; $27.50')).toBe(false);
+  expect(checkout.expect.test('A1042; $1,027.50')).toBe(false);
+
+  const shop = TASKS.find((entry) => entry.id === 'long-shop')!;
+  expect(shop.expect.test(`Order ${LONG_EXPECT.shop.order}; $${LONG_EXPECT.shop.total}0`)).toBe(true);
+  expect(shop.expect.test(`Order ${LONG_EXPECT.shop.order}; $1,${LONG_EXPECT.shop.total}`)).toBe(false);
+  expect(shop.expect.test(`Order ${LONG_EXPECT.shop.order}; 1${LONG_EXPECT.shop.total}`)).toBe(false);
+  expect(shop.expect.test(`Order ${LONG_EXPECT.shop.order}; $${LONG_EXPECT.shop.total}00x`)).toBe(false);
+});
+
+it('keeps both halves of multi-part fixture answers around an explicit answer line', () => {
+  const signup = TASKS.find((entry) => entry.id === 'signup-validation')!;
+  const answer = extractGradedAnswer('Password must be at least 8 characters\nANSWER: Welcome, new@example.com', false);
+  expect(signup.expect.test(normalizeGradedAnswer(answer))).toBe(true);
+  // Near miss: keeping only the explicit answer must not accidentally satisfy the two-part grader.
+  expect(signup.expect.test(normalizeGradedAnswer(extractGradedAnswer('ANSWER: Welcome, new@example.com', false)))).toBe(false);
+});
+
+it('extracts prose plus ANSWER for every other multi-part fixture grader', () => {
+  const answers: Array<[string, string, string, string]> = [
+    ['dashboard-refresh', 'Last updated: just now.', 'Initech 3: $4,218.', 'Initech 3: $4,2180.'],
+    ['checkout-steps', 'Order A1042.', 'Total: $27.5.', 'Total: $1,027.50.'],
+    ['inventory-lookup', 'Widget 30 is W-1203.', 'There are 113 in stock.', 'There are 1130 in stock.'],
+    ['churned-max', 'Acme 6 has the highest amount.', 'It is $9,950.', 'It is $9,951.'],
+    ['long-shop', `Order ${LONG_EXPECT.shop.order}.`, `Total: $${LONG_EXPECT.shop.total}0.`, `Total: $${LONG_EXPECT.shop.total}00x.`],
+    ['long-laptops', `${LONG_EXPECT.laptops.name} is the best match.`, `It weighs ${LONG_EXPECT.laptops.weight} kg.`, `It weighs ${LONG_EXPECT.laptops.weight}5 kg.`],
+  ];
+  for (const [taskId, prose, answer, nearMiss] of answers) {
+    const task = TASKS.find((entry) => entry.id === taskId)!;
+    expect(task.expect.test(normalizeGradedAnswer(extractGradedAnswer(`${prose}\nANSWER: ${answer}`, false))), taskId).toBe(true);
+    expect(task.expect.test(normalizeGradedAnswer(extractGradedAnswer(`${prose}\nANSWER: ${nearMiss}`, false))), taskId).toBe(false);
+  }
+});
 
 it('marks only a universal cross-approach site failure as site_broken', () => {
   const judged = (approach: string, verdict: JudgedRun['verdict'], siteFailure = false): JudgedRun => ({

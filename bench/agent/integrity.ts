@@ -6,6 +6,32 @@ export const RESULT_SCHEMA_VERSION = 3;
 
 export type AttemptStatus = 'success' | 'wrong_answer' | 'connection_failure' | 'timeout' | 'crash' | 'cli_error';
 
+/** Infrastructure failures are deliberately identified from harness diagnostics, never model output. */
+export function isHarnessFailure(input: { status: AttemptStatus; error: string; diagnostics?: string[] }): boolean {
+  if (input.status === 'connection_failure') return true;
+  const detail = [input.error, ...(input.diagnostics ?? [])].join('\n');
+  return /\bHTTP\s*[45]\d\d\b|\b(?:ECONNRESET|ECONNREFUSED|ECONNABORTED|ENETUNREACH|EHOSTUNREACH|ENOTFOUND|EAI_AGAIN|ETIMEDOUT)\b|\bfetch failed\b|\bnetwork request failed\b|\bnetwork(?:ing)? error\b|\b(?:MCP|JSON-RPC|protocol|transport)\b.*\b(?:connection|handshake|closed|disconnect|unavailable|timeout)\b|\b(?:browser|chromium|playwright)\b.*(?:\b(?:launch|start)\b.*\b(?:failed|error|exited)\b|\bfailed to (?:launch|start)\b)/i.test(detail);
+}
+
+/** A recovered retry is not an unrecovered harness failure and resets the abort streak. */
+export function nextHarnessFailureStreak(previous: number, attempts: readonly { harnessFailure: boolean }[]): number {
+  return attempts.at(-1)?.harnessFailure ? previous + 1 : 0;
+}
+
+/** Prefer an explicit one-line answer, while preserving prose-only answers for multi-part expectations. */
+export function extractGradedAnswer(resultText: string, judged: boolean): string {
+  if (judged) return resultText.replace(/^\s*FINAL_URL:.*$/gim, '');
+  // Fixture tasks can require facts reported before an explicit final answer too.
+  // Keep the complete reply rather than privileging the marker and losing those facts.
+  return resultText;
+}
+
+/** Keep a normal empty completion distinguishable from an answer that simply did not match. */
+export function wrongAnswerDetail(provider: string, resultText: string, sawResult: boolean, fixtureDetail?: string): string {
+  const empty = !resultText.trim() && sawResult ? `${provider} returned an empty response after a normal stop` : null;
+  return fixtureDetail ? (empty ? `${empty}; fixture check failed: ${fixtureDetail}` : fixtureDetail) : (empty ?? 'answer did not match the expected result');
+}
+
 export function classifyAttempt(input: {
   sawInit: boolean; connected: boolean; sawResult: boolean; resultError: boolean; timedOut: boolean;
   launchError: string | null; exitCode: number | null; answerMatches: boolean;
@@ -166,6 +192,7 @@ export interface ConfigForFingerprint {
   reasoning: string;
   timeoutMs: number;
   concurrency: number;
+  sarvamMaxTokens: number | null;
   toolRestrictions: Record<string, unknown>;
   runtime: { nodeVersion: string; platform: string; arch: string };
   environment: Record<string, string | null>;
