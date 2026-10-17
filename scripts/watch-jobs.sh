@@ -42,9 +42,14 @@ while true; do
   done
   for l in "$dir"/*.log; do
     [ -e "$l" ] || continue
-    lines=$(wc -l < "$l")
-    size=$(stat -c %s "$l" 2>/dev/null || wc -c < "$l")
-    first_hash=$(sed -n '1p' "$l" | cksum | awk '{print $1}')
+    # Derive every cursor field from one immutable copy. Reading the live log
+    # separately for its size and checksum can record a self-inconsistent cursor
+    # if the job appends between those reads.
+    snapshot=$(mktemp "$dir/.watch-snapshot.XXXXXX")
+    cat "$l" > "$snapshot"
+    lines=$(wc -l < "$snapshot")
+    size=$(stat -c %s "$snapshot" 2>/dev/null || wc -c < "$snapshot")
+    first_hash=$(sed -n '1p' "$snapshot" | cksum | awk '{print $1}')
     previous=$(awk -F '\t' -v path="$l" '$1 == path { value=$2 } END { print value + 0 }' "$cursor")
     previous_size=$(awk -F '\t' -v path="$l" '$1 == path { value=$3 } END { print value + 0 }' "$cursor")
     previous_hash=$(awk -F '\t' -v path="$l" '$1 == path { value=$4 } END { print value }' "$cursor")
@@ -55,18 +60,20 @@ while true; do
     if [ "$lines" -lt "$previous" ] || [ "$size" -lt "$previous_size" ] || { [ -n "$previous_hash" ] && [ "$first_hash" != "$previous_hash" ]; }; then
       replaced=1
     elif [ "$previous_size" -gt 0 ] && [ -n "$previous_content_hash" ]; then
-      consumed_hash=$(head -c "$previous_size" "$l" | cksum | awk '{print $1 ":" $2}')
+      consumed_hash=$(head -c "$previous_size" "$snapshot" | cksum | awk '{print $1 ":" $2}')
       [ "$consumed_hash" = "$previous_content_hash" ] || replaced=1
     fi
     [ "$replaced" -eq 1 ] && previous=0
-    content_hash=$(cksum < "$l" | awk '{print $1 ":" $2}')
+    content_hash=$(cksum < "$snapshot" | awk '{print $1 ":" $2}')
     awk -F '\t' -v path="$l" '$1 != path' "$cursor" > "$cursor.tmp" && mv "$cursor.tmp" "$cursor"
     printf '%s\t%s\t%s\t%s\t%s\n' "$l" "$lines" "$size" "$first_hash" "$content_hash" >> "$cursor"
     if [ "$lines" -gt "$previous" ]; then
-      if sed -n "$((previous + 1)),$lines p" "$l" | grep -q -E '^(ABORTED: harness|Error: .*network request failed)'; then
+      if sed -n "$((previous + 1)),$lines p" "$snapshot" | grep -q -E '^(ABORTED: harness|Error: .*network request failed)'; then
+        rm -f "$snapshot"
         W_MSG="Harness error in $(basename "$l")"; alert "$W_MSG"; exit 0
       fi
     fi
+    rm -f "$snapshot"
   done
   if [ "$running" -eq 0 ]; then W_MSG="No Codex jobs running"; alert "$W_MSG"; exit 0; fi
   sleep "$interval"

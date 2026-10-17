@@ -33,20 +33,27 @@ const crc32 = (buf: Uint8Array): number => {
 it('matches a quoted fixture answer but still rejects a quoted near miss', () => {
   const cart = TASKS.find((entry) => entry.id === 'cookie-cart')!;
   expect(cart.expect.test(normalizeGradedAnswer('"Added to cart (1 item)."'))).toBe(true);
+  expect(cart.expect.test(normalizeGradedAnswer('ANSWER: "Added to cart (1 item)."'))).toBe(true);
   // Near miss: wrapping quotes do not hide an incorrect item count.
   expect(cart.expect.test(normalizeGradedAnswer('"Added to cart (2 items)."'))).toBe(false);
+  expect(cart.expect.test(normalizeGradedAnswer('ANSWER: "Added to cart (2 items)."'))).toBe(false);
 });
 
 it('accepts trailing decimal zeros without matching numeric suffixes', () => {
   const checkout = TASKS.find((entry) => entry.id === 'checkout-steps')!;
   expect(checkout.expect.test('A1042; $27.5')).toBe(true);
   expect(checkout.expect.test('A1042; $27.50')).toBe(true);
+  expect(checkout.expect.test('A1042; $27.50, paid successfully.')).toBe(true);
   expect(checkout.expect.test('A10420; $27.50')).toBe(false);
-  expect(checkout.expect.test('A1042; $1,027.50')).toBe(false);
+  expect(checkout.expect.test('A1042; $1,101.29')).toBe(false);
+  expect(checkout.expect.test('A1042; $101.2900x')).toBe(false);
 
   const shop = TASKS.find((entry) => entry.id === 'long-shop')!;
   expect(shop.expect.test(`Order ${LONG_EXPECT.shop.order}; $${LONG_EXPECT.shop.total}0`)).toBe(true);
+  expect(shop.expect.test(`Order ${LONG_EXPECT.shop.order}; $101.290,`)).toBe(true);
   expect(shop.expect.test(`Order ${LONG_EXPECT.shop.order}; $1,${LONG_EXPECT.shop.total}`)).toBe(false);
+  expect(shop.expect.test(`Order ${LONG_EXPECT.shop.order}; 1101.29`)).toBe(false);
+  expect(shop.expect.test(`Order ${LONG_EXPECT.shop.order}; 101.2900x`)).toBe(false);
   expect(shop.expect.test(`Order ${LONG_EXPECT.shop.order}; 1${LONG_EXPECT.shop.total}`)).toBe(false);
   expect(shop.expect.test(`Order ${LONG_EXPECT.shop.order}; $${LONG_EXPECT.shop.total}00x`)).toBe(false);
 });

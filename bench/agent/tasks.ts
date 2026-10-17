@@ -46,15 +46,19 @@ const esc = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 /** Match a decimal answer at a numeric boundary, allowing harmless trailing precision zeros. */
 const decimalWithTrailingZeros = (value: string): string => {
   const withoutTrailingZeros = value.replace(/0+$/, '');
-  return `(?<![\\w,])${esc(withoutTrailingZeros)}0*(?![\\w,]|\\.\\d)`;
+  return `(?<![\\w,])${esc(withoutTrailingZeros)}0*(?!\\w|\\.\\d)`;
 };
 
 /** Normalize the answer field before every local-task regex is evaluated. */
 export function normalizeGradedAnswer(answer: string): string {
   const trimmed = answer.trim();
   const pairs: Record<string, string> = { '"': '"', '\u201c': '\u201d', '\u2018': '\u2019' };
-  const closing = pairs[trimmed[0] ?? ''];
-  return closing && trimmed.endsWith(closing) ? trimmed.slice(1, -1).trim() : trimmed;
+  const unquote = (value: string): string => {
+    const closing = pairs[value[0] ?? ''];
+    return closing && value.endsWith(closing) ? value.slice(1, -1).trim() : value;
+  };
+  const answerPrefix = /^(ANSWER:\s*)([\s\S]*)$/i.exec(trimmed);
+  return answerPrefix ? `${answerPrefix[1]}${unquote(answerPrefix[2].trim())}` : unquote(trimmed);
 }
 
 const LOCAL_AND_LIVE_TASKS: AgentTask[] = [

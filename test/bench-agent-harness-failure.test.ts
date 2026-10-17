@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { extractGradedAnswer, isHarnessFailure, makeMetadata, nextHarnessFailureStreak, wrongAnswerDetail } from '../bench/agent/integrity.js';
-import { appendFileSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { spawn } from 'node:child_process';
 import os from 'node:os';
 import { join, resolve } from 'node:path';
@@ -42,6 +42,26 @@ describe('harness failure classification', () => {
       // A replacement can keep the first line while changing already-consumed content.
       writeFileSync(log, 'replacement header\nABORTED: harness replacement failure\n');
       await expect(watch()).resolves.toContain('Harness error in job.log');
+
+      // While a job is writing, the saved byte count and checksum must be for
+      // the same captured content, rather than two different live-file reads.
+      writeFileSync(log, 'ordinary progress\n');
+      const polling = spawn('bash', [resolve('scripts/watch-jobs.sh')], {
+        env: { ...process.env, WATCH_JOBS_DIR: folder, WATCH_JOBS_INTERVAL: '0.02', WATCH_JOBS_NO_NOTIFY: '1' },
+      });
+      const appending = setInterval(() => appendFileSync(log, 'ordinary progress detail\n'), 1);
+      try {
+        await new Promise((resolveDelay) => setTimeout(resolveDelay, 1_200));
+      } finally {
+        clearInterval(appending);
+        polling.kill();
+      }
+      await new Promise<void>((resolveExit) => polling.once('exit', () => resolveExit()));
+      const cursor = readFileSync(join(folder, '.watch-cursors'), 'utf8').trim()
+        .split(/\r?\n/).filter((line) => line.startsWith(`${log}\t`)).at(-1)!.split('\t');
+      expect(cursor[2]).toBe(cursor[4]?.split(':')[1]);
+      // Near miss: a cursor must not be empty just because normal log lines were appended.
+      expect(Number(cursor[1])).toBeGreaterThan(1);
     } finally {
       rmSync(folder, { recursive: true, force: true });
     }
