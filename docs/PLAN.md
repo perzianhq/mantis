@@ -30,6 +30,16 @@ Eval pipeline (Sol review, 2026-10-17: deterministic checks carry the main score
 
 Deferred by that review: mandatory judging of every real-site run, the 20-deterministic/10-ambiguous split, broad judge calibration trials, the all-step tool judge below.
 
+Mantis weak-spot fixes (Sol analysis of the 225-run table, 2026-10-17). Each needs a synthetic test with a near miss first, then 25 tasks x 3 runs. Protect 74/75 correct, median 4 calls and 10.9k input tokens; confirm on Luna/Haiku:
+
+- **Prose in action diffs.** `src/diff.ts` indexes only text/headings, so added or changed paragraphs report "no visible change" (plans-pick, faq-refund, modal-delete). Do first. Verify on those three, then signup-validation, checkout-steps, menu-settings.
+- **Shorter tool descriptions.** About 1k tokens of repeated schema overhead per run (chart-march). Measure offline first, then chart-march and the small interaction tasks.
+- **`find` returns bounded row/following-paragraph context** (churned-max, feed-scroll). Test adjacent-row confusion.
+- **Document `press("End")` for feeds** (feed-scroll took 6 scrolls vs the tree's 3). Check virtualized lists.
+- **Explicit, bounded truncation recovery.** Render trims at 6k chars; capture stops at 3,000 nodes. Test deep-text pages.
+- **Visual/canvas coverage tests** before changing any fallback policy.
+- **Leave alone:** the longlist-item miss (model error) and the timing medians. Recheck both x5 under matched scheduling.
+
 Also pending: Luna and Haiku confirmation runs of the fixture table.
 
 5. **Tool judge (deferred).** Extend [offline tool diagnostics](../bench/README.md#tool-diagnostics)
