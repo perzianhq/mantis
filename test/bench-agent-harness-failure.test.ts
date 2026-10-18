@@ -1,21 +1,32 @@
 import { describe, expect, it } from 'vitest';
 import { extractGradedAnswer, isHarnessFailure, makeMetadata, nextHarnessFailureStreak, wrongAnswerDetail } from '../bench/agent/integrity.js';
-import { appendFileSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { spawn } from 'node:child_process';
 import os from 'node:os';
 import { join, resolve } from 'node:path';
+
+// Windows' `bash.exe` can be a WSL launcher with no installed distribution.
+// Prefer the Git-for-Windows shell when it is available because this test executes
+// the repository's Bash watcher directly.
+const bash = process.platform === 'win32' && existsSync('C:\\Program Files\\Git\\bin\\bash.exe')
+  ? 'C:\\Program Files\\Git\\bin\\bash.exe'
+  : 'bash';
 
 describe('harness failure classification', () => {
   it('watches newly appended alerts and resets its cursor for replaced logs', async () => {
     const folder = mkdtempSync(join(os.tmpdir(), 'mantis-watch-'));
     const log = join(folder, 'job.log');
+    // Git Bash writes globbed paths with forward slashes while Node returns
+    // backslashes on Windows. Give the watcher and its seed cursor one spelling.
+    const watchFolder = folder.replace(/\\/g, '/');
+    const watchLog = log.replace(/\\/g, '/');
     writeFileSync(join(folder, 'job.status'), 'label=job\nstate=running\nexit=\n');
     writeFileSync(log, 'ABORTED: harness old failure\n');
     // Simulate a prior watcher having already consumed the old alert.
-    writeFileSync(join(folder, '.watch-cursors'), `${log}\t1\n`);
+    writeFileSync(join(folder, '.watch-cursors'), `${watchLog}\t1\n`);
     const watch = () => new Promise<string>((resolveOutput, reject) => {
-      const child = spawn('bash', [resolve('scripts/watch-jobs.sh')], {
-        env: { ...process.env, WATCH_JOBS_DIR: folder, WATCH_JOBS_INTERVAL: '0.02', WATCH_JOBS_NO_NOTIFY: '1' },
+      const child = spawn(bash, [resolve('scripts/watch-jobs.sh')], {
+        env: { ...process.env, WATCH_JOBS_DIR: watchFolder, WATCH_JOBS_INTERVAL: '0.02', WATCH_JOBS_NO_NOTIFY: '1' },
       });
       let output = ''; child.stdout.on('data', (data) => { output += data; });
       const timer = setTimeout(() => { child.kill(); reject(new Error('watcher did not alert')); }, 10_000);
@@ -46,8 +57,8 @@ describe('harness failure classification', () => {
       // While a job is writing, the saved byte count and checksum must be for
       // the same captured content, rather than two different live-file reads.
       writeFileSync(log, 'ordinary progress\n');
-      const polling = spawn('bash', [resolve('scripts/watch-jobs.sh')], {
-        env: { ...process.env, WATCH_JOBS_DIR: folder, WATCH_JOBS_INTERVAL: '0.02', WATCH_JOBS_NO_NOTIFY: '1' },
+      const polling = spawn(bash, [resolve('scripts/watch-jobs.sh')], {
+        env: { ...process.env, WATCH_JOBS_DIR: watchFolder, WATCH_JOBS_INTERVAL: '0.02', WATCH_JOBS_NO_NOTIFY: '1' },
       });
       const appending = setInterval(() => appendFileSync(log, 'ordinary progress detail\n'), 1);
       try {
@@ -58,7 +69,7 @@ describe('harness failure classification', () => {
       }
       await new Promise<void>((resolveExit) => polling.once('exit', () => resolveExit()));
       const cursor = readFileSync(join(folder, '.watch-cursors'), 'utf8').trim()
-        .split(/\r?\n/).filter((line) => line.startsWith(`${log}\t`)).at(-1)!.split('\t');
+        .split(/\r?\n/).filter((line) => line.startsWith(`${watchLog}\t`)).at(-1)!.split('\t');
       expect(cursor[2]).toBe(cursor[4]?.split(':')[1]);
       // Near miss: a cursor must not be empty just because normal log lines were appended.
       expect(Number(cursor[1])).toBeGreaterThan(1);
