@@ -77,8 +77,6 @@ const ROW_FILLER = new Set(['by', 'at', 'of', 'on', 'in', 'to', 'from', 'via', '
 interface LineOpts {
   omitRole?: boolean;
   showHref?: boolean;
-  /** This table-row dropdown has the exact same option description as an earlier control. */
-  sharedOptionsWith?: number;
   /** Clip the name to this many chars (0/undefined: no clipping). */
   maxName?: number;
 }
@@ -88,7 +86,7 @@ export function interactiveLine(n: RawNode, o: LineOpts = {}): string {
   const parts = n.states.map((s) => (s === 'error' && n.errorText ? `error: "${quote(clip(n.errorText, 60))}"` : s));
   if (n.requiresOpen) parts.push(`open #${n.requiresOpen.id} "${quote(n.requiresOpen.name)}" first`);
   if (n.value) parts.push(`value "${quote(n.value)}"`);
-  if (n.options?.length) parts.push(o.sharedOptionsWith === undefined ? `options: ${n.options.map(quote).join(' | ')}` : `options: same as #${o.sharedOptionsWith}`);
+  if (n.options?.length) parts.push(`options: ${n.options.map(quote).join(' | ')}`);
   if (n.href && o.showHref) parts.push(`href ${n.href}`);
   if (n.covered) parts.push('covered');
   const shown = o.maxName ? clip(n.name, o.maxName) : n.name;
@@ -286,37 +284,7 @@ function renderBody(nodes: RawNode[], lvl: Level, ctx: Ctx): { lines: string[]; 
     const copies = ctx.dupNames.get(norm(n.name)) ?? 0;
     return GENERIC_LINK.test(n.name) || (copies >= 2 && copies <= 3);
   };
-  // Native select options are repeated verbatim in dense tables. Share only an exact
-  // ordered list, and only with another select from this table's repeated-row group.
-  // The control's disabled state is part of the description and must not be borrowed.
-  // A definition is recorded only after it was rendered: filtered regions, collapsed
-  // site-memory regions, dropped offscreen rows, and blocking-dialog reordering must
-  // never leave a reference to an option list absent from this response.
-  const emittedOptionDefinitions = new Map<string, number>();
-  const optionKey = (n: RawNode): string | undefined => {
-    if (ctx.full || n.kind !== 'interactive' || !n.tableRow || n.rowGroup === undefined || n.id === undefined || !n.options?.length) return undefined;
-    return `${n.rowGroup}\u0000${n.states.includes('disabled') ? 'disabled' : 'enabled'}\u0000${JSON.stringify(n.options)}`;
-  };
-  interface RenderedControl {
-    text: string;
-    /** Recorded only after this control's text reaches the response. */
-    definition?: { key: string; id: number };
-  }
-  const line = (n: RawNode, o: LineOpts = {}): RenderedControl => {
-    const key = optionKey(n);
-    const sharedOptionsWith = key === undefined ? undefined : emittedOptionDefinitions.get(key);
-    return {
-      text: interactiveLine(n, { ...o, showHref: showHref(n), sharedOptionsWith }),
-      // Do not register a definition while merely considering it for a compact
-      // run.  In particular, an over-budget candidate must not become an
-      // anchor for a later control.
-      definition: key !== undefined && sharedOptionsWith === undefined ? { key, id: n.id! } : undefined,
-    };
-  };
-  const emit = (rendered: RenderedControl): string => {
-    if (rendered.definition) emittedOptionDefinitions.set(rendered.definition.key, rendered.definition.id);
-    return rendered.text;
-  };
+  const line = (n: RawNode, o: LineOpts = {}): string => interactiveLine(n, { ...o, showHref: showHref(n) });
 
   const survives = (n: RawNode): boolean => {
     if (n.kind === 'region' || n.inViewport) return true;
@@ -343,7 +311,7 @@ function renderBody(nodes: RawNode[], lvl: Level, ctx: Ctx): { lines: string[]; 
     idxs.forEach((ix, p) => {
       const n = nodes[ix];
       if (n.kind === 'interactive') {
-        parts.push(emit(line(n, { omitRole: n.role === lastRole, maxName: lvl.rowName })));
+        parts.push(line(n, { omitRole: n.role === lastRole, maxName: lvl.rowName }));
         lastRole = n.role;
         return;
       }
@@ -370,8 +338,8 @@ function renderBody(nodes: RawNode[], lvl: Level, ctx: Ctx): { lines: string[]; 
   };
 
   /** Row runs (>=3 similar consecutive rows with >=2 controls each): start position -> one line per row. */
-  const compactRows = (items: number[]): Map<number, { end: number; idxs: number[]; showRole: boolean }> => {
-    const out = new Map<number, { end: number; idxs: number[]; showRole: boolean }>();
+  const compactRows = (items: number[]): Map<number, { end: number; text: string }> => {
+    const out = new Map<number, { end: number; text: string }>();
     if (ctx.full) return out;
     interface Seg { start: number; end: number; group: number; ok: boolean; shape: string[] }
     const segs: Seg[] = [];
@@ -394,14 +362,7 @@ function renderBody(nodes: RawNode[], lvl: Level, ctx: Ctx): { lines: string[]; 
         segs[e + 1].group === segs[s].group && similar(segs[e].shape, segs[e + 1].shape)) e++;
       if (e - s + 1 >= 3) {
         for (let q = s; q <= e; q++) {
-          // Do not preformat here: rowLine() registers option definitions as it
-          // renders them.  A compact row may later be omitted by the budget, or
-          // an earlier non-compact row may render first.
-          out.set(segs[q].start, {
-            end: segs[q].end,
-            idxs: items.slice(segs[q].start, segs[q].end + 1),
-            showRole: q === s,
-          });
+          out.set(segs[q].start, { end: segs[q].end, text: rowLine(items.slice(segs[q].start, segs[q].end + 1), q === s) });
         }
       }
       s = e + 1;
@@ -419,8 +380,7 @@ function renderBody(nodes: RawNode[], lvl: Level, ctx: Ctx): { lines: string[]; 
     while (k < items.length) {
       const compact = rows.get(k);
       if (compact) {
-        const text = rowLine(compact.idxs, compact.showRole);
-        if (text) out.push(pad + text);
+        if (compact.text) out.push(pad + compact.text);
         k = compact.end + 1;
         continue;
       }
@@ -458,7 +418,7 @@ function renderBody(nodes: RawNode[], lvl: Level, ctx: Ctx): { lines: string[]; 
             let lastRole = '';
             for (const ix of links.slice(0, cap)) {
               const l = nodes[ix];
-              parts.push(emit(line(l, { omitRole: l.role === lastRole, maxName: ctx.full ? 0 : 40 })));
+              parts.push(line(l, { omitRole: l.role === lastRole, maxName: ctx.full ? 0 : 40 }));
               lastRole = l.role;
             }
             if (links.length > cap) {
@@ -474,7 +434,7 @@ function renderBody(nodes: RawNode[], lvl: Level, ctx: Ctx): { lines: string[]; 
         const j = runEnd(items, k);
         const runLen = j - k + 1;
         if (runLen > lvl.over && runLen - lvl.keep >= 2) {
-          for (let m = k; m < k + lvl.keep; m++) out.push(pad + emit(line(nodes[items[m]])));
+          for (let m = k; m < k + lvl.keep; m++) out.push(pad + line(nodes[items[m]]));
           // Name the rest compactly while it fits, so collapsing does not hide what the run contains.
           const rest = items.slice(k + lvl.keep, j + 1);
           const named: string[] = [];
@@ -482,10 +442,10 @@ function renderBody(nodes: RawNode[], lvl: Level, ctx: Ctx): { lines: string[]; 
           // A short rest (a nav's last few tabs) is always named: hiding it saves almost nothing.
           const cap = rest.length <= 6 ? Infinity : lvl.listChars;
           for (const ix of rest) {
-            const rendered = line(nodes[ix], { omitRole: true, maxName: 40 });
-            if (used + rendered.text.length + 3 > cap) break;
-            named.push(emit(rendered));
-            used += rendered.text.length + 3;
+            const s = line(nodes[ix], { omitRole: true, maxName: 40 });
+            if (used + s.length + 3 > cap) break;
+            named.push(s);
+            used += s.length + 3;
           }
           if (named.length) out.push(pad + named.join(' · '));
           const left = rest.slice(named.length);
@@ -496,7 +456,7 @@ function renderBody(nodes: RawNode[], lvl: Level, ctx: Ctx): { lines: string[]; 
           }
           k = j + 1;
         } else {
-          out.push(pad + emit(line(n)));
+          out.push(pad + line(n));
           k++;
         }
       } else if (n.kind === 'heading') {
@@ -504,7 +464,7 @@ function renderBody(nodes: RawNode[], lvl: Level, ctx: Ctx): { lines: string[]; 
         const hashes = '#'.repeat(Math.min(n.level ?? 1, 4));
         if (next?.kind === 'interactive' && norm(next.name) === norm(n.name)) {
           // Heading that is just a link (article cards): one line, keeps the id.
-          out.push(`${pad}${hashes} ${emit(line(next))}`);
+          out.push(`${pad}${hashes} ${line(next)}`);
           k += 2;
         } else {
           out.push(`${pad}${hashes} ${quote(n.name)}`);
@@ -520,7 +480,7 @@ function renderBody(nodes: RawNode[], lvl: Level, ctx: Ctx): { lines: string[]; 
           out.push(`${pad}${textLine(n)}`);
           k++;
         } else if (next?.kind === 'interactive' && !next.inline && runEnd(items, k + 1) - k <= lvl.over) {
-          out.push(`${pad}"${quote(n.name)}" ${emit(line(next))}`);
+          out.push(`${pad}"${quote(n.name)}" ${line(next)}`);
           k += 2;
         } else {
           out.push(`${pad}"${quote(n.name)}"`);

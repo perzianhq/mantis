@@ -50,8 +50,6 @@ export interface RawNode {
   row?: number;
   /** Id of the sibling group the row belongs to; rows of one group are candidates for compaction. */
   rowGroup?: number;
-  /** This repeated row came from a native or ARIA table/grid, rather than a list or card layout. */
-  tableRow?: boolean;
   /** Text nodes only: this is a live message (role=alert / status / aria-live), kept for diffs. */
   live?: 'alert' | 'status';
   /** Inside a prose paragraph (an inline link in running text). */
@@ -679,7 +677,6 @@ export function walker(includeSrOnly = false): WalkResult {
   // ---- repeated sibling rows (tr, li, cards) ---------------------------------
   let curRow = -1;
   let curGroup = -1;
-  let curTableRow = false;
   let nextRow = 1;
   let inProse = false;
   let suppressText = false;
@@ -687,20 +684,16 @@ export function walker(includeSrOnly = false): WalkResult {
   const BLOCK_SEL =
     'div,p,ul,ol,table,section,article,h1,h2,h3,h4,h5,h6,blockquote,pre,form,nav,header,footer,aside,main,li,dl,dt,dd,tr,td,fieldset,figure,details,hr';
 
-  /** Rows among `kids`: runs of repeated blocks (three normally, two for tables) of 1-3 siblings. */
-  function detectRows(kids: Element[], tableRows: boolean): Map<Element, { row: number; group: number; tableRow: boolean }> | null {
-    // Tables commonly have only two data rows. That is enough to share a repeated
-    // dropdown description, while list/card row compaction remains deliberately
-    // conservative at three.
-    const minReps = tableRows ? 2 : 3;
-    if (kids.length < minReps) return null;
+  /** Rows among `kids`: runs of >=3 repeats of a block of 1-3 siblings (by tag + classes). */
+  function detectRows(kids: Element[]): Map<Element, { row: number; group: number }> | null {
+    if (kids.length < 3) return null;
     // Only things that are rows/cards in practice; bare <td>, <span>, <a>... siblings are layout, not rows.
     const rowish = (e: Element): boolean =>
       /^(tr|li|article|dt|dd)$/.test(e.localName) || e.getAttribute('role') === 'row' || e.getAttribute('role') === 'listitem' ||
       (/^(div|section|a)$/.test(e.localName) && e.classList.length > 0);
     if (!kids.every(rowish) && kids.filter(rowish).length < 3) return null;
     const sig = kids.map((k) => k.localName + '.' + Array.from(k.classList).sort().join('.'));
-    let out: Map<Element, { row: number; group: number; tableRow: boolean }> | null = null;
+    let out: Map<Element, { row: number; group: number }> | null = null;
     let i = 0;
     while (i < kids.length) {
       let found = false;
@@ -712,7 +705,7 @@ export function walker(includeSrOnly = false): WalkResult {
         };
         while (i + (reps + 1) * k <= kids.length && same(i, i + reps * k)) reps++;
         const distinct = new Set(sig.slice(i, i + k)).size;
-        if (reps >= minReps && kids.slice(i, i + k).every(rowish) && (k === 1 || distinct >= 2)) {
+        if (reps >= 3 && kids.slice(i, i + k).every(rowish) && (k === 1 || distinct >= 2)) {
           // A row is a small unit (a table row, a card): a "row" holding half the page is a layout wrapper.
           let small = true;
           for (let rr = 0; rr < reps && small; rr++) {
@@ -728,7 +721,7 @@ export function walker(includeSrOnly = false): WalkResult {
             out ??= new Map();
             for (let rr = 0; rr < reps; rr++) {
               const row = nextRow++;
-              for (let t = 0; t < k; t++) out.set(kids[i + rr * k + t], { row, group, tableRow: tableRows });
+              for (let t = 0; t < k; t++) out.set(kids[i + rr * k + t], { row, group });
             }
           }
           i += reps * k;
@@ -742,11 +735,7 @@ export function walker(includeSrOnly = false): WalkResult {
 
   function stamp(n: RawNode, r: DOMRect): RawNode {
     n.box = [Math.round(r.left + window.scrollX), Math.round(r.top + window.scrollY), Math.round(r.width), Math.round(r.height)];
-    if (curRow >= 0) {
-      n.row = curRow;
-      n.rowGroup = curGroup;
-      if (curTableRow) n.tableRow = true;
-    }
+    if (curRow >= 0) { n.row = curRow; n.rowGroup = curGroup; }
     if (inProse && n.kind === 'interactive') n.inline = true;
     return n;
   }
@@ -1314,8 +1303,7 @@ export function walker(includeSrOnly = false): WalkResult {
   /** Visit child nodes of `el`, tagging repeated sibling rows; text nodes become `text` nodes. */
   function visitChildren(el: Element, parent: number, depth: number, r: DOMRect, textShown = false, inheritedSr = false, inheritedOpen?: { id: number; name: string }): void {
     const kids = childrenOf(el);
-    const tableRows = el.closest('table,[role=table],[role=grid],[role=treegrid]') !== null;
-    const rows = curRow < 0 ? detectRows(kids.filter((c): c is Element => c.nodeType === 1), tableRows) : null;
+    const rows = curRow < 0 ? detectRows(kids.filter((c): c is Element => c.nodeType === 1)) : null;
     for (const c of kids) {
       if (c.nodeType === 3) {
         const t = collapse(c.nodeValue ?? '');
@@ -1329,10 +1317,8 @@ export function walker(includeSrOnly = false): WalkResult {
         if (info) {
           curRow = info.row;
           curGroup = info.group;
-          curTableRow = info.tableRow;
           visit(c as Element, parent, depth, r, inheritedSr, inheritedOpen);
           curRow = curGroup = -1;
-          curTableRow = false;
         } else {
           visit(c as Element, parent, depth, r, inheritedSr, inheritedOpen);
         }
