@@ -26,7 +26,41 @@ Eval pipeline (Sol review, 2026-10-17: deterministic checks carry the main score
 1. **Grader hardening.** Stricter answer normalization (no correct token inside a wrong sentence; `18` must not match `18.5`; check state proves the end state, not just page load). Add contradiction, wrong-path and valid-alternative near-miss cases to `test/fixture-verification.test.ts`.
 2. **Offline metrics from saved traces.** Tool-use (error/repeat/blocked-click rates, action postconditions) and information coverage (required facts present in tool output vs ignored by the model), from the 225 broad-run traces. Add cost per success including failed attempts.
 3. **Seeded fixture variants and one self-hosted app.** Breaks the ceiling (tree is 75/75); only if Luna/Haiku runs don't separate the approaches.
-4. **Frozen real-site set.** Reviewed answer keys (see item 6 below); judge only the unkeyed remainder, calibrated against human labels.
+   - Keep the benchmark harness in this repo: pinned app version/image, Docker Compose, deterministic seed/reset command, task manifests, executable final-state checks, and run instructions.
+   - Run the app only locally/CI for evaluation. It is not part of the Mantis server, published npm package, or a requirement for ordinary Mantis users.
+   - Prefer a small open-source CRM or commerce admin. Cover normal product work: locate/filter a record, edit a field, create an order/invite, save, and verify the persisted final state.
+   - Compare Mantis, tree, and screenshot under matched model, browser, retry, timeout, and token budgets; publish seed, image digest, traces, per-task outcomes, cost, and failures.
+4. **Frozen real-site set.** Reviewed read-only answer keys (see item 6 below); judge only the unkeyed remainder, calibrated against human labels. Use this after controlled variants/self-hosted coverage so live-site failures can be separated from page drift, consent, or bot defenses.
+
+### Evaluation ladder
+
+```text
+Fixed fixtures
+  → seeded fixture variants
+  → self-hosted real app
+  → frozen live-site set
+  → publish benchmark
+```
+
+| Stage | Cases | Where it runs | What is checked |
+| --- | --- | --- | --- |
+| Fixed fixtures | Forms, lookup/reading, tables and pagination, dialogs, SPA navigation, dynamic content, charts, iframes, and long shop/admin/onboarding flows. Include wrong-row, partial-state, and stale-state near misses. | Existing local fixture server; developer machine and CI. | Executable DOM/state oracle. Fast regression suite; no network. |
+| Seeded variants | Same workflows, but generated product/customer names, prices, IDs, row order, wording, pagination size, and correct answer. | Local fixture server and CI; record the seed per result. | Oracle derived from that seed. Ensures tools/models read the page rather than rely on a fixed answer. |
+| Self-hosted real app | Ordinary product work: filter/find a record, edit a field, create an order or invite, save, reload, and verify final persisted state. | Local Docker Compose or CI service container, with a pinned image/version and resettable seeded database. | Database/UI final-state oracle after every run. Never part of the Mantis runtime. |
+| Frozen live-site set | Read-only navigation, retrieval, comparison, and multi-page tasks on public sites. No account changes, purchases, invitations, or irreversible actions. | A scheduled/manual networked benchmark run; capture date, URL, page evidence, model, and browser version. | Reviewed answer key where possible; human/judge only for genuinely unkeyed outcomes. |
+| Publish benchmark | Matched runs of Mantis, tree, and screenshot approaches across the preceding stages. | Reproducible local/CI commands plus documented live-site procedure. | Per-task results, seeds/image digests, raw traces, costs, time, tool calls, and failures—not just an aggregate score. |
+
+Run all approaches with the same model, browser, retry policy, timeout, and token budget. Start with fixed/seeded cases for every code change; run self-hosted and live-site suites at milestone releases or after browser/tooling changes.
+
+### Current execution plan (after `5feb975` hardening)
+
+Use **DeepSeek v4.1 Flash through Sarvam only** for the fresh local baseline. The historical 225-run set predates persisted terminal evidence, so repeat the same model first: it isolates the effect of the hardening. A second Sarvam model adds a variable without closing that evidence gap. Treat Sarvam credits as a ceiling, not a target.
+
+1. **Free gate:** run the build plus focused `diff`, `prose-diff`, `actions-diff`, `fixture-verification`, `offline-analysis`, `realsite`, and `coverage` tests. Regenerate the saved offline reports. Do not spend model credits unless all pass.
+2. **Paid smoke:** run DeepSeek on `plans-pick`, `faq-refund`, `modal-delete`, `long-shop`, `long-admin`, and `long-onboard` with Mantis, tree, and screenshot: **6 tasks × 3 approaches × 1 run = 18 runs**. Inspect full replies, attempt IDs, terminal fixture evidence, costs including failed attempts, and traces before promotion.
+3. **Frozen seeded baseline:** only if the smoke evidence is usable and infrastructure is sound, generate one held-out seeded version of each of the 25 local tasks, freeze the seed manifest and executable oracles, then run **25 seeded tasks × 3 approaches × 3 runs = 225 runs** with the same DeepSeek configuration. Do not duplicate the already-published fixed-fixture 225. Keep model failures; repair infrastructure failures before starting a fresh, separately named dataset.
+4. **Independent confirmation:** run a representative six-task seeded matrix at **3 runs per approach = 54 runs per model**, first on Luna and then separately on Haiku. This tests model transfer; it is more valuable than a second Sarvam model.
+5. **Increase difficulty only if needed:** if the seeded baseline is still near the ceiling, build the self-hosted app with executable state oracles before expanding the frozen live-site set.
 
 Deferred by that review: mandatory judging of every real-site run, the 20-deterministic/10-ambiguous split, broad judge calibration trials, the all-step tool judge below.
 
