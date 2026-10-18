@@ -3,7 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { abortableSleep, SarvamClient, estimateSarvamCost, loadSarvamEnv, resetSarvamLimiterForTests, resolveSarvamModel, sarvamTransportStats, sleepFor } from '../bench/agent/sarvam.js';
+import { abortableSleep, SARVAM_DEFAULT_CONCURRENCY, SARVAM_DEFAULT_RPM, SarvamClient, estimateSarvamCost, loadSarvamEnv, resetSarvamLimiterForTests, resolveSarvamModel, sarvamTransportStats, sleepFor } from '../bench/agent/sarvam.js';
 
 const key = 'test-only-secret';
 const completion = (extra: Record<string, unknown> = {}) => Response.json({
@@ -207,6 +207,11 @@ describe('SarvamClient', () => {
 });
 
 describe('Sarvam configuration and cost', () => {
+  it('uses the measured benchmark defaults for request rate and API concurrency', () => {
+    expect(SARVAM_DEFAULT_RPM).toBe(50);
+    expect(SARVAM_DEFAULT_CONCURRENCY).toBe(16);
+  });
+
   it('only resolves known aliases and handles prototype-like near misses', () => {
     expect(resolveSarvamModel(' DEEPSEEK-V4.1-FLASH ')).toBe('deepseekv4.1-flash');
     expect(resolveSarvamModel('constructor')).toBe('constructor');

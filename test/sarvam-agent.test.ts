@@ -17,6 +17,7 @@ describe('Sarvam benchmark agent loop', () => {
     await expect(transform(source, { loader: 'ts', format: 'esm', target: 'node20' })).resolves.toMatchObject({ code: expect.any(String) });
     expect(source).toContain("process.env.BENCH_SCREENSHOT_MCP");
     expect(source).toContain("SCREENSHOT_MCP.endsWith('.ts')");
+    expect(source).toContain("PROVIDER === 'sarvam' ? 10 : 3");
   });
 
   it('round-trips an OpenAI-style tool call through fake MCP using mocked fetch', async () => {

@@ -226,11 +226,18 @@ class SarvamLimiter {
   }
 }
 
+export const SARVAM_DEFAULT_RPM = 50;
+export const SARVAM_DEFAULT_CONCURRENCY = 16;
+
 let sharedLimiter: SarvamLimiter | undefined;
 const limiter = (sleep: Sleep): SarvamLimiter => {
   // The process-wide limiter is intentionally configured once: changing env vars
   // midway through a run must not let a later client evade the shared budget.
-  return sharedLimiter ??= new SarvamLimiter(numberFromEnv('SARVAM_RPM', 30, 1, 10_000), numberFromEnv('SARVAM_CONCURRENCY', 2, 1, 100), sleep);
+  return sharedLimiter ??= new SarvamLimiter(
+    numberFromEnv('SARVAM_RPM', SARVAM_DEFAULT_RPM, 1, 10_000),
+    numberFromEnv('SARVAM_CONCURRENCY', SARVAM_DEFAULT_CONCURRENCY, 1, 100),
+    sleep,
+  );
 };
 /** Test-only escape hatch; production code never needs to reset a process limiter. */
 export function resetSarvamLimiterForTests(): void {

@@ -27,10 +27,10 @@ Plan on the strong model; delegate coding to the cheaper one with files and acce
 - Put `SARVAM_API_KEY` only in gitignored `.env`.
 
 ## Testing and evals
-- Use the highest parallelism this 12-core machine allows: vitest's default thread pool (don't serialise); `AGENT_CONCURRENCY` as high as RAM allows (about 6 browsers).
+- Use the highest parallelism this 12-core machine allows: vitest's default thread pool (don't serialise). Sarvam defaults to 10 scheduled cases; each case starts a browser, so lower it if RAM becomes constrained.
 - Don't run the unit suite while a big eval is running; they compete for RAM.
 - Run long work (evals, full suites) in the background and report when it finishes.
-- Run Sarvam jobs one at a time: 30 RPM and 429 cooldowns are shared across processes. `SARVAM_CONCURRENCY` is a harness setting, not a provider guarantee; see the measured 2026-10-18 probe notes in [bench/README.md](bench/README.md#sarvam-judge-and-capability-probe) before changing it.
+- Run Sarvam jobs one at a time: the default 50 RPM budget and 429 cooldowns are shared across processes. `AGENT_CONCURRENCY=10` schedules benchmark cases; `SARVAM_CONCURRENCY=16` caps active model API calls. These are harness settings, not provider guarantees; see the measured probe notes in [bench/README.md](bench/README.md#sarvam-judge-and-capability-probe) before changing them.
 
 ## Commands
 See [setup](docs/SETUP.md#build-and-test) for build/test; [benchmarks](bench/README.md) for commands, `AGENT_*` env vars and result format.
