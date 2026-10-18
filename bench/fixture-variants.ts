@@ -24,11 +24,16 @@ export interface FixtureVariant {
  * turn "Product" or "Profile" into "Businessduct" / "Businessfile").
  */
 const apply = (text: string, replacements: readonly (readonly [string, string])[]): string =>
-  replacements.reduce((result, [from, to]) => {
-    const escaped = from.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const word = /^[A-Za-z0-9]+$/.test(from);
-    return result.replace(new RegExp(`${word ? '\\b' : ''}${escaped}${word ? '\\b' : ''}`, 'g'), to);
-  }, text);
+  // Attempt URLs are harness identities, not fixture data. Transforming a slug
+  // such as `faq-refund` breaks the verifier's attempt lookup.
+  text.split(/(https?:\/\/[^\s)"'`]+)/g).map((part, index) => {
+    if (index % 2) return part;
+    return replacements.reduce((result, [from, to]) => {
+      const escaped = from.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const word = /^[A-Za-z0-9]+$/.test(from);
+      return result.replace(new RegExp(`${word ? '\\b' : ''}${escaped}${word ? '\\b' : ''}`, 'g'), to);
+    }, part);
+  }).join('');
 
 const transform = (value: unknown, replace: (text: string) => string): unknown => {
   if (typeof value === 'string') return replace(value);

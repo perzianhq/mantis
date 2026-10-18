@@ -26,8 +26,10 @@ export function normalizeGradedAnswer(answer: string): string {
     const closing = pairs[value[0] ?? ''];
     return closing && value.endsWith(closing) ? value.slice(1, -1).trim() : value;
   };
-  const prefixed = /^(ANSWER:\s*)([\s\S]*)$/i.exec(trimmed);
-  return prefixed ? `${prefixed[1]}${unquote(prefixed[2].trim())}` : unquote(trimmed);
+  const answerLine = /(^|[\r\n])(ANSWER:\s*)([\s\S]*)$/i.exec(trimmed);
+  return answerLine
+    ? `${trimmed.slice(0, answerLine.index)}${answerLine[1]}${answerLine[2]}${unquote(answerLine[3].trim())}`
+    : unquote(trimmed);
 }
 
 const numericPattern = (raw: string | number): string => {

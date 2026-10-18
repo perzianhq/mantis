@@ -30,6 +30,14 @@ it('uses seeded task answers, rejecting stale canonical answers', () => {
   expect(gradeTaskAnswer(faq, 'You can ask within 30 days.').pass).toBe(false);
 });
 
+it('preserves harness attempt URLs and accepts a quoted final answer after prose', () => {
+  const variant = fixtureVariant(20261018);
+  const attemptUrl = 'http://fixture/faq-refund-mantis-1-1-123';
+  expect(variant.task(task('faq-refund')).prompt(attemptUrl)).toContain(attemptUrl);
+  const cart = variant.task(task('cookie-cart'));
+  expect(gradeTaskAnswer(cart, 'Completed the action.\nANSWER: "Cart updated (1 item)."').pass).toBe(true);
+});
+
 it('changes the prompt or answer oracle for every one of the 25 local tasks', () => {
   const variant = fixtureVariant(20261018);
   const local = TASKS.filter((entry) => entry.site === 'local');
