@@ -44,6 +44,8 @@ export interface SarvamCompletion {
   /** Transport-only counters; no provider payload is retained. */
   attempts?: number;
   rateLimits?: number;
+  /** Timing split for quota contention versus active provider work. */
+  timing?: SarvamTiming;
 }
 export interface SarvamClientOptions {
   apiKey?: string;
@@ -55,7 +57,32 @@ export interface SarvamClientOptions {
   sleep?: (ms: number) => Promise<void>;
 }
 
-export interface SarvamTransportStats { attempts: number; rateLimits: number }
+export interface SarvamTiming {
+  /** Waiting for this process's request slot or the shared RPM window. */
+  limiterQueueMs: number;
+  /** Waiting for a provider-published 429 cooldown. */
+  cooldownMs: number;
+  /** Backoff after transport/5xx failures (429 uses shared cooldown above). */
+  retryBackoffMs: number;
+  /** Time with a request active at the provider boundary. */
+  activeRequestMs: number;
+}
+export interface SarvamTransportStats { attempts: number; rateLimits: number; timing: SarvamTiming }
+const emptyTiming = (): SarvamTiming => ({ limiterQueueMs: 0, cooldownMs: 0, retryBackoffMs: 0, activeRequestMs: 0 });
+const addTiming = (total: SarvamTiming, next: SarvamTiming): void => {
+  total.limiterQueueMs += next.limiterQueueMs;
+  total.cooldownMs += next.cooldownMs;
+  total.retryBackoffMs += next.retryBackoffMs;
+  total.activeRequestMs += next.activeRequestMs;
+};
+
+/** A terminal transport error still exposes safe counters and timing. */
+export class SarvamRequestError extends Error {
+  constructor(message: string, readonly stats: SarvamTransportStats) { super(message); this.name = 'SarvamRequestError'; }
+}
+export function sarvamTransportStats(error: unknown): SarvamTransportStats | null {
+  return error instanceof SarvamRequestError ? error.stats : null;
+}
 
 /** Capabilities observed by the probe, keyed by the API model id. */
 const MODEL_CAPABILITIES: Record<string, { images: boolean }> = {
@@ -152,28 +179,39 @@ class SarvamLimiter {
     return () => { this.active--; this.waiters.shift()?.(); };
   }
 
-  async acquire(signal?: AbortSignal): Promise<() => void> {
+  async acquire(signal?: AbortSignal): Promise<{ release: () => void; timing: Pick<SarvamTiming, 'limiterQueueMs' | 'cooldownMs'> }> {
+    const timing = { limiterQueueMs: 0, cooldownMs: 0 };
+    const slotStarted = performance.now();
     const release = await this.processSlot(signal);
+    timing.limiterQueueMs += performance.now() - slotStarted;
     try {
       for (;;) {
         throwIfAborted(signal);
         const unlock = await lockFile(this.sleep, signal);
         let wait = 0;
+        let waitingForCooldown = false;
         try {
           const now = Date.now();
           const state = readLimitState();
           state.timestamps = state.timestamps.filter((at) => at > now - WINDOW_MS && at <= now + WINDOW_MS);
           // Re-read after every wait: another worker may have extended this deadline.
-          if (state.cooldownUntil > now) { wait = state.cooldownUntil - now; }
+          if (state.cooldownUntil > now) { waitingForCooldown = true; wait = state.cooldownUntil - now; }
           else if (state.timestamps.length >= this.rpm) wait = Math.max(1, state.timestamps[0]! + WINDOW_MS - now);
           else {
             state.timestamps.push(now);
             writeFileSync(LIMIT_FILE, JSON.stringify(state), 'utf8');
-            return release;
+            return { release, timing };
           }
           writeFileSync(LIMIT_FILE, JSON.stringify(state), 'utf8');
         } finally { unlock(); }
+        const waitStarted = performance.now();
         await abortableSleep(this.sleep, wait, signal);
+        if (wait > 0) {
+          // Classify according to the state that caused this wait. A later worker
+          // may extend the deadline; the next loop accounts for that separately.
+          if (waitingForCooldown) timing.cooldownMs += performance.now() - waitStarted;
+          else timing.limiterQueueMs += performance.now() - waitStarted;
+        }
       }
     } catch (error) { release(); throw error; }
   }
@@ -245,7 +283,7 @@ export class SarvamClient {
   private readonly retries: number;
   private readonly sleep: Sleep;
   private readonly limiter: SarvamLimiter;
-  private stats: SarvamTransportStats = { attempts: 0, rateLimits: 0 };
+  private stats: SarvamTransportStats = { attempts: 0, rateLimits: 0, timing: emptyTiming() };
 
   constructor(options: SarvamClientOptions = {}) {
     this.apiKey = options.apiKey ?? process.env.SARVAM_API_KEY ?? '';
@@ -266,20 +304,33 @@ export class SarvamClient {
     this.limiter = limiter(this.sleep);
   }
 
-  transportStats(): SarvamTransportStats { return { ...this.stats }; }
+  transportStats(): SarvamTransportStats { return { ...this.stats, timing: { ...this.stats.timing } }; }
 
   private async request(endpoint: string, body?: unknown, signal?: AbortSignal): Promise<{ data: unknown; stats: SarvamTransportStats }> {
-    const requestStats: SarvamTransportStats = { attempts: 0, rateLimits: 0 };
+    const requestStats: SarvamTransportStats = { attempts: 0, rateLimits: 0, timing: emptyTiming() };
+    const fail = (message: string): never => { throw new SarvamRequestError(message, { ...requestStats, timing: { ...requestStats.timing } }); };
     for (let attempt = 0; ; attempt++) {
       // Queue behind the shared limiter first: waiting for a slot or cooldown must not eat the request timeout.
       throwIfAborted(signal);
-      const release = await this.limiter.acquire(signal);
+      let acquired: Awaited<ReturnType<SarvamLimiter['acquire']>>;
+      try { acquired = await this.limiter.acquire(signal); }
+      catch (error) { throw error; }
+      addTiming(requestStats.timing, { ...acquired.timing, retryBackoffMs: 0, activeRequestMs: 0 });
+      addTiming(this.stats.timing, { ...acquired.timing, retryBackoffMs: 0, activeRequestMs: 0 });
       const controller = new AbortController();
       const abort = (): void => controller.abort(signal?.reason);
       signal?.addEventListener('abort', abort, { once: true });
       const timer = setTimeout(() => controller.abort(), this.timeoutMs);
       try {
         let response: Response;
+        const activeStarted = performance.now();
+        let activeRecorded = false;
+        const recordActive = (): void => {
+          if (activeRecorded) return;
+          activeRecorded = true;
+          const activeMs = performance.now() - activeStarted;
+          requestStats.timing.activeRequestMs += activeMs; this.stats.timing.activeRequestMs += activeMs;
+        };
         try {
           requestStats.attempts++; this.stats.attempts++;
           response = await this.fetcher(`${this.baseUrl}${endpoint}`, {
@@ -288,20 +339,30 @@ export class SarvamClient {
               ...(body === undefined ? {} : { body: JSON.stringify(body) }), signal: controller.signal,
             });
         } catch {
-          if (attempt >= this.retries) throw new Error(controller.signal.aborted ? 'Sarvam request timed out' : 'Sarvam network request failed');
-          await abortableSleep(this.sleep, this.backoff(attempt), signal);
+          // Preserve the retry's slot ownership, but do not charge its sleep to
+          // provider-active time.
+          recordActive();
+          if (attempt >= this.retries) fail(controller.signal.aborted ? 'Sarvam request timed out' : 'Sarvam network request failed');
+          const delay = this.backoff(attempt), backoffStarted = performance.now();
+          await abortableSleep(this.sleep, delay, signal);
+          const backoffMs = performance.now() - backoffStarted;
+          requestStats.timing.retryBackoffMs += backoffMs; this.stats.timing.retryBackoffMs += backoffMs;
           continue;
-        } finally { release(); }
+        } finally {
+          recordActive();
+          acquired.release();
+        }
         if (!response.ok) {
           const retry = (response.status === 429 || response.status >= 500) && attempt < this.retries;
           if (!retry) {
+            if (response.status === 429) { requestStats.rateLimits++; this.stats.rateLimits++; }
             // Sarvam's validation details are the only useful diagnosis for a 400.
             // Keep a finite error in case a proxy sends an unexpectedly large body.
             if (response.status === 400) {
               const detail = (await response.text()).trim().slice(0, 4_000);
-              throw new Error(`Sarvam HTTP 400${detail ? `: ${detail}` : ''}`);
+              fail(`Sarvam HTTP 400${detail ? `: ${detail}` : ''}`);
             }
-            throw new Error(`Sarvam HTTP ${response.status}`);
+            fail(`Sarvam HTTP ${response.status}`);
           }
           let delay = this.backoff(attempt);
           if (response.status === 429) {
@@ -314,11 +375,16 @@ export class SarvamClient {
           await response.body?.cancel().catch(() => {});
           // A 429 publishes a shared cooldown; the next acquire performs that
           // wait once for this worker and every other worker observes it too.
-          if (response.status !== 429) await abortableSleep(this.sleep, delay, signal);
+          if (response.status !== 429) {
+            const backoffStarted = performance.now();
+            await abortableSleep(this.sleep, delay, signal);
+            const backoffMs = performance.now() - backoffStarted;
+            requestStats.timing.retryBackoffMs += backoffMs; this.stats.timing.retryBackoffMs += backoffMs;
+          }
           continue;
         }
         try { return { data: await response.json(), stats: requestStats }; }
-        catch { throw new Error(controller.signal.aborted ? 'Sarvam request timed out' : 'Sarvam response was not valid JSON'); }
+        catch { fail(controller.signal.aborted ? 'Sarvam request timed out' : 'Sarvam response was not valid JSON'); }
       } finally {
         clearTimeout(timer);
         signal?.removeEventListener('abort', abort);
@@ -378,6 +444,7 @@ export class SarvamClient {
       model: typeof data?.model === 'string' ? data.model : model,
       attempts: response.stats.attempts,
       rateLimits: response.stats.rateLimits,
+      timing: response.stats.timing,
       ...(typeof message.reasoning_content === 'string' ? { reasoningContent: message.reasoning_content } : {}),
       ...(Array.isArray(choices) && typeof object(choices[0])?.finish_reason === 'string'
         ? { finishReason: object(choices[0])!.finish_reason as string } : {}),

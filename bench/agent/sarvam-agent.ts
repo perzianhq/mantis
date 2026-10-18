@@ -2,8 +2,8 @@
  * The small, provider-owned part of the agent benchmark.  Keeping it independent
  * from the process runner makes the model/tool protocol testable without a browser.
  */
-import { estimateSarvamCost, resolveSarvamModel, sarvamModelSupportsImages } from './sarvam.js';
-import type { SarvamClient, SarvamContentPart, SarvamMessage, SarvamToolCall, SarvamUsage } from './sarvam.js';
+import { estimateSarvamCost, resolveSarvamModel, sarvamModelSupportsImages, sarvamTransportStats } from './sarvam.js';
+import type { SarvamClient, SarvamContentPart, SarvamMessage, SarvamToolCall, SarvamUsage, SarvamTiming } from './sarvam.js';
 import type { StreamUsage } from './integrity.js';
 
 export interface SarvamMcp {
@@ -54,6 +54,7 @@ export interface SarvamAgentResult {
   costInr: number | null;
   apiAttempts: number;
   rateLimits: number;
+  timing: SarvamTiming;
   diagnostics: string[];
 }
 
@@ -150,6 +151,14 @@ export async function runSarvamAgent(options: SarvamAgentOptions): Promise<Sarva
   const maxTokens = sarvamMaxTokens();
   let usage: SarvamUsage = { promptTokens: 0, completionTokens: 0, cachedTokens: 0, totalTokens: 0 };
   let usageKnown = true, calls = 0, errors = 0, chars = 0, images = 0, malformed = 0, apiAttempts = 0, rateLimits = 0;
+  const timing: SarvamTiming = { limiterQueueMs: 0, cooldownMs: 0, retryBackoffMs: 0, activeRequestMs: 0 };
+  const addTiming = (next: SarvamTiming | undefined): void => {
+    if (!next) return;
+    timing.limiterQueueMs += next.limiterQueueMs;
+    timing.cooldownMs += next.cooldownMs;
+    timing.retryBackoffMs += next.retryBackoffMs;
+    timing.activeRequestMs += next.activeRequestMs;
+  };
   const models = new Set<string>(); const diagnostics: string[] = [];
   let truncatedPrefix = '';
   for (let turn = 1; turn <= options.maxSteps; turn++) {
@@ -162,11 +171,16 @@ export async function runSarvamAgent(options: SarvamAgentOptions): Promise<Sarva
         ...(resolved === 'sarvam-105b' ? { reasoning_effort: null } : reasoning ? { reasoning_effort: 'low' } : {}) });
     } catch (error) {
       if (aborted()) return result(abortMessage(), true, turn - 1, true);
-      throw error;
+      const transport = sarvamTransportStats(error);
+      if (!transport) throw error;
+      apiAttempts += transport.attempts; rateLimits += transport.rateLimits; addTiming(transport.timing);
+      diagnostics.push(`Sarvam request failed: ${error instanceof Error ? error.message : String(error)}`);
+      return result('Sarvam request failed.', true, turn - 1, true);
     }
     models.add(reply.model); usageKnown &&= reply.usage.promptTokens !== null && reply.usage.completionTokens !== null;
     usage = addUsage(usage, reply.usage);
     apiAttempts += reply.attempts ?? 1; rateLimits += reply.rateLimits ?? 0;
+    addTiming(reply.timing);
     trace({ type: 'sarvam.completion', turn, model: reply.model, finishReason: reply.finishReason ?? null, content: reply.content ?? '', toolCalls: reply.toolCalls ?? [],
       attempts: reply.attempts ?? 1, rateLimits: reply.rateLimits ?? 0, promptTokens: reply.usage.promptTokens, completionTokens: reply.usage.completionTokens });
     if (reply.finishReason === 'length') truncatedPrefix += reply.content ?? '';
@@ -245,6 +259,6 @@ export async function runSarvamAgent(options: SarvamAgentOptions): Promise<Sarva
     stream.cacheWriteTokens = 0; stream.outputTokens = usageKnown ? usage.completionTokens : null;
     const complete = usageKnown && usage.promptTokens !== null && usage.completionTokens !== null;
     trace({ type: 'sarvam.summary', resultText: text, attempts: apiAttempts, rateLimits, promptTokens: usage.promptTokens, completionTokens: usage.completionTokens });
-    return { connected: true, initModel: [...models][0] ?? resolveSarvamModel(options.model), resolvedModels: [...models], toolCalls: calls, toolErrors: errors, observationChars: chars, observationImages: images, turns, resultText: text, resultError, sawResult, sawInit: true, mcpStatuses: ['connected'], usage: stream, totalInputTokens: usageKnown ? usage.promptTokens : null, usageComplete: complete, costInr: complete ? estimateSarvamCost(options.model, usage) : null, apiAttempts, rateLimits, diagnostics };
+    return { connected: true, initModel: [...models][0] ?? resolveSarvamModel(options.model), resolvedModels: [...models], toolCalls: calls, toolErrors: errors, observationChars: chars, observationImages: images, turns, resultText: text, resultError, sawResult, sawInit: true, mcpStatuses: ['connected'], usage: stream, totalInputTokens: usageKnown ? usage.promptTokens : null, usageComplete: complete, costInr: complete ? estimateSarvamCost(options.model, usage) : null, apiAttempts, rateLimits, timing, diagnostics };
   }
 }

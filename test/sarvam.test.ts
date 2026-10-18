@@ -1,9 +1,9 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { spawnSync } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { abortableSleep, SarvamClient, estimateSarvamCost, loadSarvamEnv, resetSarvamLimiterForTests, resolveSarvamModel, sleepFor } from '../bench/agent/sarvam.js';
+import { abortableSleep, SarvamClient, estimateSarvamCost, loadSarvamEnv, resetSarvamLimiterForTests, resolveSarvamModel, sarvamTransportStats, sleepFor } from '../bench/agent/sarvam.js';
 
 const key = 'test-only-secret';
 const completion = (extra: Record<string, unknown> = {}) => Response.json({
@@ -13,6 +13,7 @@ const completion = (extra: Record<string, unknown> = {}) => Response.json({
 const request = { model: 'gemma-4-31b', messages: [{ role: 'user', content: 'Hello' }] };
 
 afterEach(() => { vi.unstubAllEnvs(); vi.restoreAllMocks(); resetSarvamLimiterForTests(); });
+beforeEach(() => { resetSarvamLimiterForTests(); });
 
 describe('SarvamClient', () => {
   it('uses the verified endpoint/header, resolves model aliases, and normalizes usage', async () => {
@@ -91,6 +92,29 @@ describe('SarvamClient', () => {
     expect(result).toMatchObject({ attempts: 2, rateLimits: 1, usage: { promptTokens: 100, completionTokens: 20 } });
   });
 
+  it('separates limiter queue, cooldown, retry, and active-request timing', async () => {
+    vi.stubEnv('SARVAM_CONCURRENCY', '1');
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 12));
+      return completion();
+    });
+    const client = new SarvamClient({ apiKey: key, fetch: fetcher });
+    const [first, second] = await Promise.all([client.complete(request), client.complete(request)]);
+    expect(first.timing).toMatchObject({ limiterQueueMs: expect.any(Number), cooldownMs: expect.any(Number), retryBackoffMs: expect.any(Number), activeRequestMs: expect.any(Number) });
+    expect(second.timing?.limiterQueueMs).toBeGreaterThan(5);
+    expect(first.timing?.activeRequestMs).toBeGreaterThan(5);
+  });
+
+  it('retains terminal 429 telemetry for callers that report failed attempts', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response('', { status: 429 }));
+    try {
+      await new SarvamClient({ apiKey: key, fetch: fetcher, retries: 0 }).complete(request);
+      throw new Error('expected terminal 429');
+    } catch (error) {
+      expect(sarvamTransportStats(error)).toMatchObject({ attempts: 1, rateLimits: 1, timing: { activeRequestMs: expect.any(Number) } });
+    }
+  });
+
   it('retries network failures without exposing exceptions', async () => {
     const fetcher = vi.fn<typeof fetch>().mockRejectedValueOnce(new Error(key)).mockResolvedValueOnce(completion());
     const sleep = vi.fn<(ms: number) => Promise<void>>().mockResolvedValue();
@@ -98,6 +122,16 @@ describe('SarvamClient', () => {
     expect(sleep.mock.calls.some(([ms]) => ms >= 250 && ms <= 750)).toBe(true);
     fetcher.mockRejectedValue(new Error(key));
     await expect(new SarvamClient({ apiKey: key, fetch: fetcher, retries: 0 }).complete(request)).rejects.toThrow('Sarvam network request failed');
+  });
+
+  it('excludes injected network-retry backoff from active request timing', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const fetcher = vi.fn<typeof fetch>().mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce(completion());
+    const sleep = async (): Promise<void> => { await new Promise((resolve) => setTimeout(resolve, 40)); };
+    const result = await new SarvamClient({ apiKey: key, fetch: fetcher, sleep }).complete(request);
+    expect(result.timing?.retryBackoffMs).toBeGreaterThanOrEqual(30);
+    expect(result.timing?.activeRequestMs).toBeLessThan(20);
+    expect(result.timing?.activeRequestMs).toBeLessThan(result.timing.retryBackoffMs ?? 0);
   });
 
   it('rejects malformed JSON without reflecting response bodies', async () => {

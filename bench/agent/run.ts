@@ -37,6 +37,7 @@ import type { ParsedCodexStream } from './codex.js';
 import { SarvamClient, loadSarvamEnv, sarvamModelSupportsImages } from './sarvam.js';
 import { runSarvamAgent, sarvamMaxTokens } from './sarvam-agent.js';
 import type { SarvamAgentResult } from './sarvam-agent.js';
+import { sarvamExecutionExcludingWaits } from './timing.js';
 
 const REPO = path.resolve(import.meta.dirname, '..', '..');
 const OUT = path.join(REPO, 'bench', 'results');
@@ -320,7 +321,7 @@ interface AttemptResult {
   apiAttempts: number;
   rateLimits: number;
   usage: StreamUsage;
-  timings: { mcpStartupMs: number; cliStartupMs: number | null; cliExecutionMs: number | null; cliWallMs: number | null; verificationMs: number; cleanupMs: number; /** Harness frame capture (steps + final); not part of any CLI timing. */ captureMs: number };
+  timings: { mcpStartupMs: number; cliStartupMs: number | null; cliExecutionMs: number | null; cliWallMs: number | null; verificationMs: number; cleanupMs: number; /** Harness frame capture (steps + final); not part of any CLI timing. */ captureMs: number; /** Sarvam-only quota waits and active request time; omitted by older and non-Sarvam runs. */ sarvamLimiterQueueMs?: number; sarvamCooldownMs?: number; sarvamRetryBackoffMs?: number; sarvamActiveRequestMs?: number; /** CLI execution excluding Sarvam limiter, cooldown, and retry-backoff waits. */ sarvamExecutionMs?: number | null };
   exitCode: number | null;
   signal: string | null;
   timedOut: boolean;
@@ -346,7 +347,7 @@ interface RunResult {
   /** Legacy total of normal + cache input tokens. */
   totalInputTokens: number | null;
   outputTokens: number | null; costUsd: number | null; costInr: number | null;
-  timings: { mcpStartupMs: number; cliStartupMs: number | null; cliExecutionMs: number | null; cliWallMs: number | null; verificationMs: number; cleanupMs: number; /** Harness frame capture (steps + final); not part of any CLI timing. */ captureMs: number };
+  timings: { mcpStartupMs: number; cliStartupMs: number | null; cliExecutionMs: number | null; cliWallMs: number | null; verificationMs: number; cleanupMs: number; /** Harness frame capture (steps + final); not part of any CLI timing. */ captureMs: number; sarvamLimiterQueueMs?: number; sarvamCooldownMs?: number; sarvamRetryBackoffMs?: number; sarvamActiveRequestMs?: number; sarvamExecutionMs?: number | null };
   resolvedModels: string[];
   attempts: AttemptResult[];
 }
@@ -595,6 +596,11 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
       mcpStartupMs, cliStartupMs: processResult.initAt === null || cliStart === null ? null : processResult.initAt - cliStart,
       cliExecutionMs: processResult.initAt === null || cliExitAt === null ? null : cliExitAt - processResult.initAt,
       cliWallMs, verificationMs, cleanupMs, captureMs,
+      ...(PROVIDER === 'sarvam' ? (() => {
+        const timing = (parsed as SarvamAgentResult).timing ?? { limiterQueueMs: 0, cooldownMs: 0, retryBackoffMs: 0, activeRequestMs: 0 };
+        const execution = sarvamExecutionExcludingWaits(cliWallMs, timing);
+        return { sarvamLimiterQueueMs: timing.limiterQueueMs, sarvamCooldownMs: timing.cooldownMs, sarvamRetryBackoffMs: timing.retryBackoffMs, sarvamActiveRequestMs: timing.activeRequestMs, sarvamExecutionMs: execution };
+      })() : {}),
     },
     exitCode: processResult.exitCode, signal: processResult.signal, timedOut: processResult.timedOut, fixtureCheck, fixtureEvidence,
     grading: task.judged ? null : { version: 1, hash: createHash('sha256').update(JSON.stringify(answerGrade!.requirements)).digest('hex'), requirements: answerGrade!.requirements },
@@ -617,7 +623,7 @@ function report(results: RunResult[], approaches: Approach[], tasks: AgentTask[]
   L.push(`- Date: ${new Date().toISOString().slice(0, 10)}; runs per task and approach: ${RUNS}; ${CONCURRENCY} runs in parallel.`);
   L.push(`- Scope: ${tasks.length} tasks × ${approaches.length} approaches × ${RUNS} runs = ${tasks.length * approaches.length * RUNS} logical runs; ${results.length} recorded so far; ${results.reduce((n, r) => n + r.attempts.length, 0)} total attempts including retries.`);
   L.push(`- ${providerShort} runtime: ${metadata.cliVersion ?? 'unknown'}; resolved model(s): ${[...new Set(results.flatMap((r) => r.attempts.flatMap((a) => a.resolvedModels)))].join(', ') || 'unknown'}.`);
-  L.push(`- MCP startup (spawn + warm-up) is separate from ${providerShort} execution time. Execution runs from ${PROVIDER === 'sarvam' ? 'the first API request to the final response' : `process launch to exit; startup is launch to first ${PROVIDER === 'codex' ? '`thread.started`' : 'init'} event`}. Fixture verification and cleanup are timed separately. These include contention from parallel runs.`);
+  L.push(`- MCP startup (spawn + warm-up) is separate from ${providerShort} execution time. Execution runs from ${PROVIDER === 'sarvam' ? 'the first API request to the final response' : `process launch to exit; startup is launch to first ${PROVIDER === 'codex' ? '`thread.started`' : 'init'} event`}. Fixture verification and cleanup are timed separately. These include contention from parallel runs.${PROVIDER === 'sarvam' ? ' Sarvam also reports execution excluding limiter, cooldown, and retry-backoff waits separately; use that comparison metric, while retaining end-to-end wall time and retry telemetry.' : ''}`);
   L.push(`- Browser observation size counts text characters and image blocks returned by browser MCP tools. It is a separate diagnostic from ${PROVIDER === 'codex' ? 'Codex-reported' : 'Claude-reported'} input tokens; the benchmark does not subtract it to estimate overhead.`);
   L.push('- Mantis: all its tools. Accessibility tree: Playwright MCP 0.0.83 (headless, isolated) without its JavaScript-running tools. ' +
     'Screenshots: a minimal computer-use-style server (bench/agent/screenshot-mcp.ts): screenshot, click(x,y), type, key, scroll, back.');
@@ -649,6 +655,13 @@ function report(results: RunResult[], approaches: Approach[], tasks: AgentTask[]
   if (PROVIDER === 'sarvam') {
     L.push(`| Sarvam API attempts (including retries) | ${approaches.map((a) => fmt(by(a).reduce((n, r) => n + r.attempts.reduce((total, attempt) => total + attempt.apiAttempts, 0), 0))).join(' | ')} |`);
     L.push(`| Sarvam HTTP 429 responses | ${approaches.map((a) => fmt(by(a).reduce((n, r) => n + r.attempts.reduce((total, attempt) => total + attempt.rateLimits, 0), 0))).join(' | ')} |`);
+    const sarvamTime = (runs: RunResult[], key: 'sarvamExecutionMs' | 'sarvamLimiterQueueMs' | 'sarvamCooldownMs' | 'sarvamRetryBackoffMs' | 'sarvamActiveRequestMs'): number | null => {
+      const values = runs.map((run) => run.timings[key]);
+      return values.length === 0 || values.some((value) => value === null || value === undefined) ? null : values.reduce<number>((sum, value) => sum + (value ?? 0), 0);
+    };
+    L.push(`| Sarvam execution excl. quota/retry wait (total, s) | ${approaches.map((a) => { const value = sarvamTime(by(a), 'sarvamExecutionMs'); return value === null ? 'unknown' : (value / 1000).toFixed(1); }).join(' | ')} |`);
+    L.push(`| Sarvam limiter queue / cooldown (total, s) | ${approaches.map((a) => { const queue = sarvamTime(by(a), 'sarvamLimiterQueueMs'); const cooldown = sarvamTime(by(a), 'sarvamCooldownMs'); return queue === null || cooldown === null ? 'unknown' : `${(queue / 1000).toFixed(1)} / ${(cooldown / 1000).toFixed(1)}`; }).join(' | ')} |`);
+    L.push(`| Sarvam active request / retry backoff (total, s) | ${approaches.map((a) => { const active = sarvamTime(by(a), 'sarvamActiveRequestMs'); const retry = sarvamTime(by(a), 'sarvamRetryBackoffMs'); return active === null || retry === null ? 'unknown' : `${(active / 1000).toFixed(1)} / ${(retry / 1000).toFixed(1)}`; }).join(' | ')} |`);
   }
   L.push(`| MCP tool errors (including retries) | ${approaches.map((a) => fmt(sumNumber(by(a), 'toolErrors'))).join(' | ')} |`);
   L.push(`| Browser observation text (observed chars) | ${approaches.map((a) => fmt(sumNumber(by(a), 'observationChars'))).join(' | ')} |`);
@@ -817,6 +830,12 @@ try {
           verificationMs: attempts.reduce((s, x) => s + x.timings.verificationMs, 0),
           cleanupMs: attempts.reduce((s, x) => s + x.timings.cleanupMs, 0),
           captureMs: attempts.reduce((s, x) => s + x.timings.captureMs, 0),
+          ...(PROVIDER === 'sarvam' ? (() => {
+            const sum = (key: 'sarvamLimiterQueueMs' | 'sarvamCooldownMs' | 'sarvamRetryBackoffMs' | 'sarvamActiveRequestMs'): number => attempts.reduce((total, item) => total + (item.timings[key] ?? 0), 0);
+            const execution = attempts.every((item) => item.timings.sarvamExecutionMs !== null && item.timings.sarvamExecutionMs !== undefined)
+              ? attempts.reduce((total, item) => total + (item.timings.sarvamExecutionMs ?? 0), 0) : null;
+            return { sarvamLimiterQueueMs: sum('sarvamLimiterQueueMs'), sarvamCooldownMs: sum('sarvamCooldownMs'), sarvamRetryBackoffMs: sum('sarvamRetryBackoffMs'), sarvamActiveRequestMs: sum('sarvamActiveRequestMs'), sarvamExecutionMs: execution };
+          })() : {}),
         }, attempts,
         resolvedModels: [...new Set(attempts.flatMap((x) => x.resolvedModels))],
       };

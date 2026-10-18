@@ -35,6 +35,13 @@ describe('Sarvam benchmark agent loop', () => {
     expect(JSON.parse(fetcher.mock.calls[0]![1]?.body as string)).toMatchObject({ max_tokens: 8192 });
   });
 
+  it('keeps terminal rate-limit telemetry in the completed agent result', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response('', { status: 429 }));
+    const mcp = { call: vi.fn().mockResolvedValue(tools) };
+    const result = await base(new SarvamClient({ apiKey: key, fetch: fetcher, retries: 0 }), mcp);
+    expect(result).toMatchObject({ resultError: true, apiAttempts: 1, rateLimits: 1, timing: { activeRequestMs: expect.any(Number) } });
+  });
+
   it('gives 105b a completion budget and explicitly disables its thinking mode', async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(reply({ content: 'ANSWER: done' }));
     const mcp = { call: vi.fn().mockResolvedValue(tools) };
