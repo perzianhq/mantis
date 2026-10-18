@@ -39,9 +39,11 @@ Keep model, browser, retry policy, timeout, and token budget matched across appr
 
 1. Run build and focused free tests: diff, prose/action diff, fixture verification, offline analysis, real-site, and coverage.
 2. Freeze the seeded local manifest and executable oracles.
-3. Run the DeepSeek/Sarvam local baseline: **25 tasks × 3 approaches × 3 runs = 225**. Compare score, calls, p50/p90 latency, tokens, and cost against the prior seeded baseline; disclose harness/browser differences.
-4. Freeze the local baseline. Do not tune fixtures further.
-5. Add coverage-matrix fixtures, then establish the frozen read-only live-site set. No self-hosted-app stage is planned.
+3. **Timeout protocol:** a 600s active-work budget excludes locally measured Sarvam queue, cooldown, and retry wait; retain a generous wall-clock safety cap and report reliability telemetry.
+4. Run the 18 quota-induced timeout rows at frozen **50 RPM** as a diagnostic. Do not merge them into the completed 30-RPM result.
+5. If they recover, run a clean DeepSeek/Sarvam local baseline at the frozen configuration: **25 tasks × 3 approaches × 3 runs = 225**. Compare score, calls, p50/p90 latency, tokens, and cost; disclose harness/browser differences.
+6. Freeze the local baseline. Do not tune fixtures further.
+7. Add coverage-matrix fixtures, then establish the frozen read-only live-site set. No self-hosted-app stage is planned.
 
 ## Deferred work
 
