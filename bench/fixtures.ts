@@ -4,6 +4,7 @@ import type { AddressInfo } from 'node:net';
 import type { Server } from 'node:http';
 import { moreRoute } from './fixtures-more.js';
 import { LONG_PAGES } from './fixtures-long.js';
+import type { FixtureVariant } from './fixture-variants.js';
 
 export interface FixtureObservation {
   /** Server-assigned receipt order; actionId resets on navigations and is not a terminal-state clock. */
@@ -239,7 +240,7 @@ function route(path: string): string | null {
 }
 
 /** Start the fixture server on a random localhost port. Each attempt token has isolated evidence. */
-export async function startFixtures(options: { checks?: FixtureCheckEntry[] } = {}): Promise<{
+export async function startFixtures(options: { checks?: FixtureCheckEntry[]; variant?: FixtureVariant | null } = {}): Promise<{
   base: string;
   baseFor: (taskId: string, attemptId: string) => string;
   verify: (taskId: string, attemptId?: string) => Promise<FixtureVerification | null>;
@@ -277,14 +278,14 @@ export async function startFixtures(options: { checks?: FixtureCheckEntry[] } = 
     const long = LONG_PAGES[path];
     const more = long === undefined ? moreRoute(path) : { body: long, type: 'text/html; charset=utf-8' };
     if (more) {
-      res.writeHead(200, { 'content-type': more.type }).end(more.type.startsWith('text/html') ? instrument(more.body) : more.body);
+      res.writeHead(200, { 'content-type': more.type }).end(more.type.startsWith('text/html') ? instrument(options.variant?.html(more.body) ?? more.body) : more.body);
       return;
     }
     const html = route(path);
     if (html === null) {
       res.writeHead(404, { 'content-type': 'text/html' }).end(page('Not found', '<h1>Not found</h1>'));
     } else {
-      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }).end(instrument(html));
+      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }).end(instrument(options.variant?.html(html) ?? html));
     }
   });
   await new Promise<void>((ok) => server.listen(0, '127.0.0.1', ok));
@@ -306,7 +307,7 @@ export async function startFixtures(options: { checks?: FixtureCheckEntry[] } = 
       await quiet(state);
       if (state && state.taskId !== taskId) return { ok: false, details: 'attempt belongs to a different task', provenance: { version: 1, taskId, attemptId, observationCount: 0, events: [] } };
       const events = state?.events ?? [];
-      const result = check(events);
+      const result = check(options.variant ? events.map((event) => options.variant!.canonicalObservation(event)) : events);
       attempts.delete(attemptId);
       const checked = typeof result === 'boolean' ? { ok: result, details: result ? undefined : `fixture check failed (${events.length} observations)` } : result;
       return { ...checked, provenance: { version: 1, taskId, attemptId, observationCount: events.length, events: [...events] } };

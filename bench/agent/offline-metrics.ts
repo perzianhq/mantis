@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { diagnoseTrace, parseTrace, type TraceDiagnostics } from './tool-diagnostics.js';
 import { matchesAnswerRequirement, type AnswerRequirement } from './grading.js';
 import { TASKS } from './tasks.js';
+import { fixtureVariant } from '../fixture-variants.js';
 
 type Json = Record<string, unknown>;
 type RequirementLike = AnswerRequirement;
@@ -247,13 +248,17 @@ export function offlineMetricsMarkdown(report: OfflineMetricsReport): string {
   return `${lines.join('\n')}\n`;
 }
 
-function catalog(): { categories: Record<string, string>; requirements: Record<string, RequirementLike[]>; source: string; currentSources: Record<string, string> } {
+function catalog(input: SavedResults): { categories: Record<string, string>; requirements: Record<string, RequirementLike[]>; source: string; currentSources: Record<string, string> } {
   // tasks.ts is task data and deterministic graders only; this module intentionally never imports run.ts.
+  const settings = input.metadata?.settings as Json | undefined;
+  const seed = settings?.fixtureSeed;
+  const variant = typeof seed === 'number' ? fixtureVariant(seed) : null;
+  const catalogTasks = variant ? TASKS.map((task) => variant.task(task)) : TASKS;
   return {
-    categories: Object.fromEntries(TASKS.map((task) => [task.id, task.category])),
-    requirements: Object.fromEntries(TASKS.map((task) => [task.id, task.answerRequirements ?? []])),
-    source: 'current bench/agent/tasks.ts task IDs/categories/answer requirements',
-    currentSources: Object.fromEntries(['tasks.ts', 'grading.ts'].map((name) => [name, hash(readFileSync(path.resolve(import.meta.dirname, name), 'utf8'))])),
+    categories: Object.fromEntries(catalogTasks.map((task) => [task.id, task.category])),
+    requirements: Object.fromEntries(catalogTasks.map((task) => [task.id, task.answerRequirements ?? []])),
+    source: variant ? `current seeded task catalog (seed ${variant.seed})` : 'current bench/agent/tasks.ts task IDs/categories/answer requirements',
+    currentSources: Object.fromEntries(['tasks.ts', 'grading.ts', '../fixture-variants.ts'].map((name) => [name, hash(readFileSync(path.resolve(import.meta.dirname, name), 'utf8'))])),
   };
 }
 function main(): void {
@@ -261,7 +266,7 @@ function main(): void {
   if (!name) throw new Error('Pass a result name/path or set OFFLINE_METRICS_IN.');
   const resultsRoot = path.resolve(import.meta.dirname, '..', 'results'); const inputPath = existsSync(name) ? path.resolve(name) : path.join(resultsRoot, `${name.replace(/\.json$/i, '')}.json`);
   const inputText = readFileSync(inputPath, 'utf8'); const parsed = savedResults(inputText); const resultName = path.basename(inputPath, '.json');
-  const data = catalog(); const traceDirectory = path.join(resultsRoot, 'agent-logs', resultName);
+  const data = catalog(parsed); const traceDirectory = path.join(resultsRoot, 'agent-logs', resultName);
   const report = buildOfflineMetrics(parsed, { inputName: path.relative(path.resolve(import.meta.dirname, '..', '..'), inputPath), inputText, traceDirectory, ...data, categoryCatalog: data.source });
   const stem = process.env.OFFLINE_METRICS_OUT ?? `${resultName}-offline-metrics`;
   const jsonOut = path.resolve(resultsRoot, `${stem}.json`); const markdownOut = path.resolve(resultsRoot, `${stem}.md`);

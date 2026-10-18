@@ -185,6 +185,7 @@ export function parseClaudeStream(stream: string): ParsedStream {
 
 export interface ConfigForFingerprint {
   provider: 'codex' | 'claude' | 'sarvam';
+  fixtureSeed: number | null;
   tasks: string[];
   approaches: string[];
   runs: number;

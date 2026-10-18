@@ -39,6 +39,7 @@ AGENT_OUT=my-subset AGENT_APPROACHES=mantis,tree npm run bench:agent            
 |---|---|---|
 | `AGENT_PROVIDER` | `codex` | `codex`, `claude`, or `sarvam` |
 | `AGENT_TASKS` | pilot | `all`, task ids, or `cat:<category>`, comma-separated |
+| `AGENT_FIXTURE_SEED` | unset | frozen local-fixture variant seed; requires `AGENT_TASKS=local` or explicit local task IDs. Current seed: `20261018` is one frozen profile spanning all 25 local tasks; it is not 25 independently generated profiles. |
 | `AGENT_APPROACHES` | `mantis,tree,screenshot` | also `devtools`, `browseruse` |
 | `AGENT_RUNS` | 1 | runs per task and approach |
 | `AGENT_MODEL` | `gpt-6.1-sol` (Codex), `claude-haiku-5-5` (Claude) | model of the selected provider |

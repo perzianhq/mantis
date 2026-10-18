@@ -21,6 +21,7 @@ import path from 'node:path';
 import { chromiumForMcp } from '../adapters.js';
 import { startFixtures } from '../fixtures.js';
 import type { FixtureVerification } from '../fixtures.js';
+import { fixtureVariantFromEnv } from '../fixture-variants.js';
 import { benchUserAgent } from '../../src/userAgent.js';
 import { gradeTaskAnswer, normalizeGradedAnswer, PILOT, TASKS } from './tasks.js';
 import type { AgentTask } from './tasks.js';
@@ -57,6 +58,7 @@ const SARVAM_MAX_TOKENS = PROVIDER === 'sarvam' ? sarvamMaxTokens() : null;
 const CONCURRENCY = validatePositiveInt('AGENT_CONCURRENCY', process.env.AGENT_CONCURRENCY, PROVIDER === 'sarvam' ? 2 : 3, 64);
 const RESUME = validateFlag('AGENT_RESUME', process.env.AGENT_RESUME);
 const OVERWRITE = validateFlag('AGENT_OVERWRITE', process.env.AGENT_OVERWRITE);
+const FIXTURE_VARIANT = fixtureVariantFromEnv();
 if (RESUME && OVERWRITE) throw new Error('AGENT_RESUME=1 and AGENT_OVERWRITE=1 cannot be used together.');
 if (!MODEL.trim() || /[\r\n\0]/.test(MODEL)) throw new Error(`AGENT_MODEL must be a non-empty single-line model name; received ${JSON.stringify(MODEL)}.`);
 
@@ -393,8 +395,8 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
     const taskBase = task.site === 'local' ? fixtures.baseFor(task.id, attemptId) : base;
     // Judged real-site prompts already say how to end the reply (FINAL_URL line); the judge reads the whole reply.
     const prompt = task.judged
-      ? `${task.prompt(taskBase)}\n\nUse only the browser tools you have.`
-      : `${task.prompt(taskBase)}\n\nUse only the browser tools you have. When you are done, end your reply with one line: ANSWER: <answer>`;
+      ? `${FIXTURE_VARIANT?.forward(task.prompt(taskBase)) ?? task.prompt(taskBase)}\n\nUse only the browser tools you have.`
+      : `${FIXTURE_VARIANT?.forward(task.prompt(taskBase)) ?? task.prompt(taskBase)}\n\nUse only the browser tools you have. When you are done, end your reply with one line: ANSWER: <answer>`;
     const a = APPROACHES[approach];
     const codexServer = {
       name, command: node, args: bridge.args,
@@ -537,6 +539,8 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
   const rawResultText = parsed.resultText ?? '';
   const rawAnswer = extractGradedAnswer(rawResultText, task.judged ?? false);
   const gradedAnswer = normalizeGradedAnswer(rawAnswer);
+  // Grade agent-visible seeded facts. Fixture event state is canonicalized
+  // separately inside startFixtures so action checks remain deterministic.
   const answerGrade = task.judged ? null : gradeTaskAnswer(task, rawAnswer);
   const answer = gradedAnswer.slice(0, 160);
   const connected = parsed.connected;
@@ -668,13 +672,15 @@ const want = process.env.AGENT_TASKS ?? PILOT.join(',');
 const picks = want.split(',');
 const categories = [...new Set(TASKS.map((t) => t.category))];
 for (const pick of picks) {
-  if (pick !== 'all' && !TASKS.some((t) => t.id === pick) && !categories.includes(pick.replace(/^cat:/, '') as AgentTask['category'])) {
+  if (pick !== 'all' && pick !== 'local' && !TASKS.some((t) => t.id === pick) && !categories.includes(pick.replace(/^cat:/, '') as AgentTask['category'])) {
     throw new Error(`unknown AGENT_TASKS entry ${JSON.stringify(pick)}; ids: ${TASKS.map((t) => t.id).join(', ')}`);
   }
 }
 // "all" means the deterministic tasks; judged real-site tasks must be asked for (cat:realsite).
-const tasks = want === 'all' ? TASKS.filter((t) => !t.judged) : TASKS.filter((t) => picks.includes(t.id) || picks.includes(`cat:${t.category}`) || picks.includes(t.category));
+const selectedTasks = want === 'all' ? TASKS.filter((t) => !t.judged) : want === 'local' ? TASKS.filter((t) => t.site === 'local') : TASKS.filter((t) => picks.includes(t.id) || picks.includes(`cat:${t.category}`) || picks.includes(t.category));
+const tasks = FIXTURE_VARIANT ? selectedTasks.map((task) => FIXTURE_VARIANT.task(task)) : selectedTasks;
 if (!tasks.length) throw new Error(`no tasks match AGENT_TASKS=${want}; ids: ${TASKS.map((t) => t.id).join(', ')}`);
+if (FIXTURE_VARIANT && tasks.some((task) => task.site !== 'local')) throw new Error('AGENT_FIXTURE_SEED requires local tasks only; use AGENT_TASKS=local or explicit local task IDs.');
 const approaches = (process.env.AGENT_APPROACHES ?? 'mantis,tree,screenshot').split(',') as Approach[];
 const validApproaches: Approach[] = ['mantis', 'tree', 'devtools', 'browseruse', 'screenshot'];
 if (!approaches.length || approaches.some((a) => !validApproaches.includes(a)) || new Set(approaches).size !== approaches.length) {
@@ -702,7 +708,7 @@ if (outputExists && !RESUME && !OVERWRITE) {
 }
 if (!existsSync(jsonPath) && RESUME) throw new Error(`AGENT_RESUME=1 requested, but ${jsonPath} does not exist.`);
 const settings = {
-  provider: PROVIDER,
+  provider: PROVIDER, fixtureSeed: FIXTURE_VARIANT?.seed ?? null,
   tasks: tasks.map((t) => t.id), approaches, runs: RUNS, model: MODEL, reasoning: PROVIDER === 'codex' ? REASONING : PROVIDER === 'sarvam' ? `max-steps:${SARVAM_MAX_STEPS}` : 'not-applicable', timeoutMs: TIMEOUT_MS, concurrency: CONCURRENCY, sarvamMaxTokens: SARVAM_MAX_TOKENS,
   toolRestrictions: {
     builtins: PROVIDER === 'codex'
@@ -728,7 +734,7 @@ const settings = {
 };
 preflightApproaches(approaches);
 const sourceFiles = [
-  'bench/agent/run.ts', 'bench/agent/integrity.ts', 'bench/agent/tasks.ts', 'bench/agent/bridge.mjs',
+  'bench/agent/run.ts', 'bench/agent/integrity.ts', 'bench/agent/tasks.ts', 'bench/agent/bridge.mjs', 'bench/fixture-variants.ts',
   'bench/agent/codex.ts', 'bench/agent/codex-config.ts', 'bench/agent/sarvam.ts', 'bench/agent/sarvam-agent.ts', 'bench/agent/realsite.ts', 'bench/agent/grading.ts', 'bench/agent/evidence.ts', 'bench/agent/png.ts', 'bench/agent/mcp-proxy.ts',
   ...(existsSync(path.join(REPO, 'bench', 'agent', 'realsite-tasks.json')) ? ['bench/agent/realsite-tasks.json'] : []),
   'bench/agent/screenshot-mcp.ts', 'bench/fixtures.ts', 'bench/fixtures-more.ts', 'bench/fixtures-long.ts', 'bench/adapters.ts',
@@ -757,7 +763,7 @@ function save(): void {
 }
 
 let abortReason: string | null = null;
-const fx = await startFixtures({ checks: tasks.map((t) => ({ taskId: t.id, check: t.check })) });
+const fx = await startFixtures({ checks: tasks.map((t) => ({ taskId: t.id, check: t.check })), variant: FIXTURE_VARIANT });
 try {
   let next = 0;
   let consecutiveHarnessFailures = 0;

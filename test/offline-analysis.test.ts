@@ -71,4 +71,25 @@ describe('offline saved-run analysis', () => {
       expect(missingReply.runs[0]!.finalOutcome).toBe('unknown_rerun_needed');
     } finally { rmSync(root, { recursive: true, force: true }); }
   });
+
+  it('replays seeded answers with the frozen oracle and flags variant-source drift', () => {
+    const root = mkdtempSync(path.join(os.tmpdir(), 'mantis-seeded-regrade-'));
+    try {
+      const logs = path.join(root, 'logs'); mkdirSync(logs);
+      writeFileSync(path.join(logs, 'faq-refund--mantis--1--attempt-1-a.jsonl'), trace('ANSWER: You can ask within 45 days.'));
+      const saved = {
+        metadata: { settings: { fixtureSeed: 20261018 }, sourceHashes: { 'bench/fixture-variants.ts': 'old-variant' } },
+        results: [{ ...run({ task: 'faq-refund', answer: '45 days' }), attempts: [{ attempt: 1, status: 'success', fixtureCheck: { ok: true } }] }],
+      } as SavedResults;
+      const report = buildRegrade(saved, {
+        inputName: 'saved.json', inputText: JSON.stringify(saved), traceDirectory: logs,
+        taskFileText: readFileSync(path.resolve(import.meta.dirname, '../bench/agent/tasks.ts'), 'utf8'),
+        gradingFileText: readFileSync(path.resolve(import.meta.dirname, '../bench/agent/grading.ts'), 'utf8'),
+        variantFileText: readFileSync(path.resolve(import.meta.dirname, '../bench/fixture-variants.ts'), 'utf8'),
+      });
+      expect(report.runs[0]!.answer.pass).toBe(true);
+      expect(report.runs[0]!.needs).toContain('saved seeded-fixture source differs from the current frozen variant mapping');
+      expect(report.provenance.savedVariantHash).toBe('old-variant');
+    } finally { rmSync(root, { recursive: true, force: true }); }
+  });
 });
