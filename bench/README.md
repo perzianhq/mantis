@@ -84,6 +84,8 @@ probe first; beta access is granted per API key, so a listed model need not acce
 
 `SARVAM_RPM` (default 30 requests/minute) and 429 cooldowns are shared across agent, judge, probe and calibration processes through a small file in the OS temp directory (times only, no keys). `SARVAM_CONCURRENCY` (default 2 active requests) applies per process, so run one Sarvam job at a time. Every worker waits out a published cooldown; request timeout starts only after a slot is granted. Transient requests retry up to six total attempts with jittered exponential backoff (honoring a longer `Retry-After`). `AGENT_CONCURRENCY` and `JUDGE_CONCURRENCY` default to 2 for Sarvam. Raise limits only when the key's actual quota permits it.
 
+**Measured Mantis/Sarvam probe (2026-10-18; not a provider limit).** Recommended benchmark controls are `AGENT_CONCURRENCY=10` (tasks scheduled), `SARVAM_CONCURRENCY=16` (active model API calls), and `SARVAM_RPM=30`. At that RPM, direct API concurrency 10 completed 12/12 representative tasks without HTTP 429s; direct API concurrency 16 completed 16/16 tasks (110 API calls) without HTTP 429s. A 20-call burst throttled. These are empirical results for this API key, model mix, harness, and time—not contractual concurrency or token-throughput guarantees. Sarvam's published LLM limits are RPM-only; the account Rate Limits dashboard is the authority for the active key. Keep one benchmark job active and use retries/backoff when raising the harness setting.
+
 ```powershell
 npm --prefix bench/agent run bench:sarvam-probe
 $env:JUDGE_PROVIDER = 'sarvam'
