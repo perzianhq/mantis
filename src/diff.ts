@@ -9,6 +9,43 @@ export const NO_CHANGE = '(no visible change)';
 const quote = (s: string): string => s.replace(/"/g, "'");
 const norm = (s: string): string => s.toLowerCase().replace(/[\s:*]+$/g, '').trim();
 const clip = (s: string, n: number): string => (s.length > n ? s.slice(0, n - 1).trimEnd() + '…' : s);
+/** Capture normally collapses whitespace, but snapshots can also come from frames or synthetic callers. */
+const textNorm = (s: string): string => s.replace(/\s+/g, ' ').trim();
+const isTextual = (n: RawNode): boolean => n.kind === 'text' || n.kind === 'heading' || n.kind === 'prose';
+
+/** Prose can be much longer than ordinary text; keep a useful excerpt in a bounded action diff. */
+function textDiffLine(n: RawNode): string {
+  return textLine(n.kind === 'prose' ? { ...n, name: clip(n.name, 160) } : n);
+}
+
+/**
+ * A changed paragraph needs enough shared context to identify it, but must also show the part
+ * that changed.  A prefix-only clip turns e.g. "… denied" and "… approved" into the same line.
+ */
+function changedTextExcerpt(a: string, b: string): [string, string] {
+  const commonPrefix = (() => {
+    let i = 0;
+    while (i < a.length && i < b.length && a[i] === b[i]) i++;
+    return i;
+  })();
+  let commonSuffix = 0;
+  while (
+    commonSuffix < a.length - commonPrefix && commonSuffix < b.length - commonPrefix &&
+    a[a.length - commonSuffix - 1] === b[b.length - commonSuffix - 1]
+  ) commonSuffix++;
+
+  const excerpt = (s: string): string => {
+    if (s.length <= 50) return s;
+    const differingEnd = s.length - commonSuffix;
+    const before = Math.max(0, commonPrefix - 18);
+    const changedEnd = Math.min(differingEnd, commonPrefix + 32);
+    const changed = s.slice(before, changedEnd);
+    const suffixStart = commonSuffix ? Math.max(differingEnd, s.length - 18) : s.length;
+    const suffix = s.slice(suffixStart);
+    return `${before ? '…' : ''}${changed}${differingEnd > changedEnd ? '…' : ''}${suffix && suffixStart > changedEnd ? '…' : ''}${suffix}`;
+  };
+  return [excerpt(a), excerpt(b)];
+}
 
 /** "/login → /dashboard" within one origin, full URLs otherwise. */
 export function urlChange(from: string, to: string): string {
@@ -82,7 +119,7 @@ interface Indexed {
   container: string[];
   /** Text nodes that merely repeat the name of the adjacent control: never reported. */
   dup: boolean[];
-  /** Multiset key of a heading/text node. */
+  /** Multiset key of a heading/text/prose node. */
   textKey: (string | undefined)[];
   byId: Map<number, RawNode>;
   regionKeys: Set<string>;
@@ -111,9 +148,23 @@ function index(snap: Snapshot): Indexed {
     return m && m.kind === 'interactive' && m.parent === nodes[i].parent ? m : undefined;
   };
   const dup = nodes.map((n, i) => {
-    if (n.kind !== 'text') return false;
-    const same = (m?: RawNode): boolean => !!m && norm(m.name) === norm(n.name);
-    return same(adjacentControl(i, 1)) || same(adjacentControl(i, -1));
+    if (!isTextual(n)) return false;
+    const same = (m?: RawNode): boolean => !!m && norm(textNorm(m.name)) === norm(textNorm(n.name));
+    // A control/heading/live message already gives the agent this exact text.  Do not emit a
+    // second prose line merely because the walker reached the same visible content another way.
+    const adjacent = (d: number): RawNode | undefined => {
+      const m = nodes[i + d];
+      return m && m.parent === n.parent ? m : undefined;
+    };
+    const matchingAdjacent = (predicate: (m: RawNode) => boolean): boolean =>
+      [-1, 1].some((d) => {
+        const m = adjacent(d);
+        return !!m && predicate(m) && same(m);
+      });
+    // Live messages win over a duplicate heading/control: their alert/status marker matters.
+    return !n.live && n.kind !== 'heading' &&
+      (same(adjacentControl(i, 1)) || same(adjacentControl(i, -1)) || matchingAdjacent((m) => m.kind === 'heading')) ||
+      (!n.live && matchingAdjacent((m) => !!m.live));
   });
 
   const textKey: (string | undefined)[] = [];
@@ -121,8 +172,8 @@ function index(snap: Snapshot): Indexed {
   const byId = new Map<number, RawNode>();
   nodes.forEach((n, i) => {
     if (n.kind === 'interactive' && n.id !== undefined) byId.set(n.id, n);
-    if ((n.kind === 'text' || n.kind === 'heading') && !dup[i]) {
-      const key = `${container[i]}|${n.kind}|${n.name}`;
+    if (isTextual(n) && !dup[i]) {
+      const key = `${container[i]}|${n.kind}|${textNorm(n.name)}`;
       textKey[i] = key;
       textCount.set(key, (textCount.get(key) ?? 0) + 1);
     }
@@ -225,7 +276,8 @@ function collect(before: Snapshot, after: Snapshot): Parts {
         const nb = B.nodes[bi];
         const na = A.nodes[gi[n]];
         const tag = nb.kind === 'heading' ? `${hashes(nb)} ` : '';
-        pairLines.push(`~ ${tag}"${quote(clip(na.name, 50))}" → "${quote(clip(nb.name, 50))}"`);
+        const [from, to] = changedTextExcerpt(na.name, nb.name);
+        pairLines.push(`~ ${tag}"${quote(from)}" → "${quote(to)}"`);
         pairAt.set(pairLines.length - 1, bi);
         paired.add(bi);
         pairedGone.add(gi[n]);
@@ -293,13 +345,13 @@ function collect(before: Snapshot, after: Snapshot): Parts {
         g.items.push(`${hashes(n)} ${quote(n.name)}`);
       }
     } else if (nextIsAddedControl && !n.live) {
-      g.items.push(`${textLine(n)} ${interactiveLine(next)}`);
+      g.items.push(`${textDiffLine(n)} ${interactiveLine(next)}`);
       g.interactive++;
       consumed.add(i + 1);
     } else {
       const label = n.kind === 'text' && !n.live && isValueLike(n.name) ? labelOf(i) : undefined;
       if (!label) {
-        g.items.push(textLine(n));
+        g.items.push(textDiffLine(n));
       } else if (run && run.g === g && run.label === label.idx && g.items.length - 1 === run.item) {
         g.items[run.item] += ` · ${textLine(n)}`;
       } else {

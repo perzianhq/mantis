@@ -135,6 +135,7 @@ $('pf').addEventListener('submit', (e) => {
   const items = Object.keys(st.cart).filter((id) => st.cart[id] > 0).sort().map((id) => id + ':' + st.cart[id]).join(',');
   const ship = ['fn', 'st', 'ci', 'zip'].map((id) => norm($(id).value));
   const order = 'S-' + code(items + '|' + st.coupon + '|' + ship.join('|') + '|' + dl);
+  window.__fixtureState = { kind: 'shop', completed: true, items, coupon: st.coupon, ship, delivery: dl };
   $('v-done').innerHTML = '<h2>Order #' + order + ' confirmed.</h2><p>Total charged: ' + money(sub() - disc() + shipping()) + '. Shipping to ' + $('fn').value.trim() + ', ' + $('st').value.trim() + ', ' + $('ci').value.trim() + ' ' + $('zip').value.trim() + ' (' + (dl === 'exp' ? 'Express' : 'Standard') + ').</p>';
   show('done');
 });
@@ -164,6 +165,7 @@ const ADMIN_CHANGES: Record<string, Partial<User>> = {
 };
 const adminSet = USERS.filter((u) => ADMIN_CHANGES[u.name]).map((u) => ({ ...u, ...ADMIN_CHANGES[u.name] }))
   .map((u) => `${u.id}:${u.role}:${u.active ? 1 : 0}`).join(',');
+const adminTerminalState = USERS.map((u) => ({ ...u, ...ADMIN_CHANGES[u.name] })).map((u) => [u.id, u.role, u.active ? 1 : 0]);
 
 const admin = site('Corp Console', 'Users — Corp Console', `<h1>Users</h1>
 <p id="saved" role="status"></p>
@@ -175,6 +177,7 @@ let base = U0.map((u) => ({ ...u }));
 const cur = U0.map((u) => ({ ...u }));
 const st = { page: 0 };
 const changed = () => cur.filter((u, i) => u.role !== base[i].role || u.active !== base[i].active);
+const snapshot = () => ({ kind: 'admin', saved: true, users: base.map((u) => [u.id, u.role, u.active ? 1 : 0]), pending: cur.map((u) => [u.id, u.role, u.active ? 1 : 0]) });
 const pend = () => { const n = changed().length; $('pending').textContent = n ? n + ' unsaved change' + (n === 1 ? '' : 's') : 'No unsaved changes'; };
 function rows() {
   const q = norm($('uq').value), list = cur.filter((u) => !q || u.name.toLowerCase().includes(q));
@@ -188,7 +191,7 @@ const user = (id) => cur.find((u) => u.id === id);
 $('rows').addEventListener('change', (e) => {
   if (e.target.dataset.role) user(e.target.dataset.role).role = e.target.value;
   if (e.target.dataset.active) user(e.target.dataset.active).active = e.target.checked;
-  pend();
+  pend(); window.__fixtureState = snapshot();
 });
 $('rows').addEventListener('click', (e) => { const id = e.target.dataset.reset; if (id) $('saved').textContent = 'Password reset email sent to ' + user(id).email + '.'; });
 $('uq').addEventListener('input', () => { st.page = 0; rows(); });
@@ -199,6 +202,7 @@ $('save').onclick = () => {
   if (!c.length) { $('saved').textContent = 'No changes to save.'; return; }
   $('saved').textContent = 'Saved ' + c.length + ' change' + (c.length === 1 ? '' : 's') + '. Change set C-' + code(c.map((u) => u.id + ':' + u.role + ':' + (u.active ? 1 : 0)).join(',')) + '.';
   base = cur.map((u) => ({ ...u })); pend();
+  window.__fixtureState = snapshot();
 };
 rows();`);
 
@@ -284,6 +288,7 @@ $('create').onclick = () => {
   if (!$('terms').checked) return fail('e5', 'Accept the Terms of Service to continue.');
   const fields = ['co', 'size', 'country'].map((id) => norm(val(id))).concat([val('country') === 'DE' ? norm(val('vat')) : '']).concat(['fn', 'ln', 'em', 'ph'].map((id) => norm(val(id))));
   const s = fields.join('|') + '|' + radio('plan') + '|' + radio('cycle') + '|' + ($('sameinv').checked ? 'admin' : norm(val('bin'))) + '|' + inv.map((x) => norm(x[0]) + ':' + x[1]).sort().join(',');
+  window.__fixtureState = { kind: 'onboard', created: true, company: fields.slice(0, 4), admin: fields.slice(4), plan: radio('plan'), cycle: radio('cycle'), billing: $('sameinv').checked ? 'admin' : norm(val('bin')), invites: inv.map((x) => [norm(x[0]), x[1]]).sort() };
   document.querySelector('main').innerHTML = '<h1>Workspace W-' + code(s) + ' created</h1><p>Workspace W-' + code(s) + ' created for ' + val('co') + ' (' + planName() + ', ' + radio('cycle') + ', ' + inv.length + ' invites).</p>';
 };`);
 
@@ -338,8 +343,8 @@ export const LONG_PAGES: Record<string, string> = {
 
 /** Expected results, derived from the same data and hash the pages use. */
 export const LONG_EXPECT = {
-  shop: { order: 'S-' + code(`${shopItems}|SPRING10|${SHOP_SHIP.map(norm).join('|')}|std`), total: ((shopCents - Math.round(shopCents / 10) + 499) / 100).toFixed(2) },
-  admin: { changes: Object.keys(ADMIN_CHANGES).length, set: 'C-' + code(adminSet) },
-  onboard: { workspace },
+  shop: { order: 'S-' + code(`${shopItems}|SPRING10|${SHOP_SHIP.map(norm).join('|')}|std`), total: ((shopCents - Math.round(shopCents / 10) + 499) / 100).toFixed(2), state: { kind: 'shop', completed: true, items: shopItems, coupon: 'SPRING10', ship: SHOP_SHIP.map(norm), delivery: 'std' } },
+  admin: { changes: Object.keys(ADMIN_CHANGES).length, set: 'C-' + code(adminSet), state: { kind: 'admin', saved: true, users: adminTerminalState, pending: adminTerminalState } },
+  onboard: { workspace, state: { kind: 'onboard', created: true, company: WIZARD.company.map(norm), admin: WIZARD.admin.map(norm), plan: WIZARD.plan, cycle: WIZARD.cycle, billing: norm(WIZARD.billing), invites: WIZARD.invites.map(([email, role]) => [norm(email), role]).sort() } },
   laptops: { name: best.name, weight: best.weight.split(' ')[0]!, paths: cheap.map((l) => `/laptops/${l.slug}`) },
 };

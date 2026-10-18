@@ -13,14 +13,16 @@
  */
 import { spawn, spawnSync } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import net from 'node:net';
 import { createWriteStream, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { chromiumForMcp } from '../adapters.js';
 import { startFixtures } from '../fixtures.js';
+import type { FixtureVerification } from '../fixtures.js';
 import { benchUserAgent } from '../../src/userAgent.js';
-import { normalizeGradedAnswer, PILOT, TASKS } from './tasks.js';
+import { gradeTaskAnswer, normalizeGradedAnswer, PILOT, TASKS } from './tasks.js';
 import type { AgentTask } from './tasks.js';
 import { aggregateUsage, assertCompatibleResume, classifyAttempt, extractGradedAnswer, hashSources, isHarnessFailure, makeMetadata, nextHarnessFailureStreak, parseClaudeStream, validateFlag, validatePositiveInt, wrongAnswerDetail } from './integrity.js';
 import type { AttemptStatus, RunMetadata, StreamUsage } from './integrity.js';
@@ -278,6 +280,7 @@ function claudeBin(): string {
 
 interface AttemptResult {
   attempt: number;
+  attemptId: string;
   finalScreenshotPath: string | null;
   /** Evidence sidecar (bench/agent/evidence.ts) and the PNGs of its kept frames, chronological, final last. */
   evidencePath: string | null;
@@ -307,6 +310,10 @@ interface AttemptResult {
   signal: string | null;
   timedOut: boolean;
   fixtureCheck: { ok: boolean | null; details?: string } | null;
+  /** Present only for future local-fixture attempts; historical runs may lack raw observations. */
+  fixtureEvidence: FixtureVerification['provenance'] | null;
+  /** Declarative answer facts used for this attempt, retained for future regrading. */
+  grading: { version: 1; hash: string; requirements: import('./grading.js').AnswerRequirement[] } | null;
   diagnostics: string[];
   harnessFailure: boolean;
 }
@@ -344,6 +351,7 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
   };
   let startupError: string | null = null;
   let fixtureCheck: AttemptResult['fixtureCheck'] = null;
+  let fixtureEvidence: AttemptResult['fixtureEvidence'] = null;
   let verificationMs = 0;
   let cleanupMs = 0;
   let parsed: ReturnType<typeof parseClaudeStream> | ReturnType<typeof parseCodexStream> | SarvamAgentResult = parseClaudeStream('');
@@ -511,7 +519,9 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
     }
     if (task.site === 'local' && task.check) {
       const verifyStart = Date.now();
-      fixtureCheck = await fixtures.verify(task.id, attemptId);
+      const verification = await fixtures.verify(task.id, attemptId);
+      fixtureCheck = verification;
+      fixtureEvidence = verification?.provenance ?? null;
       verificationMs = Date.now() - verifyStart;
     }
   } catch (error) {
@@ -525,16 +535,17 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
     cleanupMs = Date.now() - cleanupStart;
   }
   const rawResultText = parsed.resultText ?? '';
-  const rawAnswer = extractGradedAnswer(rawResultText, task.judged);
+  const rawAnswer = extractGradedAnswer(rawResultText, task.judged ?? false);
   const gradedAnswer = normalizeGradedAnswer(rawAnswer);
+  const answerGrade = task.judged ? null : gradeTaskAnswer(task, rawAnswer);
   const answer = gradedAnswer.slice(0, 160);
   const connected = parsed.connected;
   const connectionState = connected ? 'connected' : parsed.sawInit ? 'failed' : 'unknown';
   let status = classifyAttempt({
     sawInit: parsed.sawInit, connected, sawResult: parsed.sawResult, resultError: parsed.resultError,
     timedOut: processResult.timedOut, launchError: processResult.launchError ?? startupError,
-    exitCode: processResult.exitCode, answerMatches: task.judged ? task.expect.test(parsed.resultText ?? '') : task.expect.test(gradedAnswer),
-    hasFixtureCheck: !!task.check, fixtureOk: fixtureCheck?.ok ?? null,
+    exitCode: processResult.exitCode, answerMatches: task.judged ? task.expect.test(parsed.resultText ?? '') : answerGrade!.pass,
+    hasFixtureCheck: !!task.check, fixtureOk: fixtureCheck?.ok ?? false,
   });
   const codexConfigFailure = PROVIDER === 'codex' && (parsed as ParsedCodexStream).diagnostics.some((message: string) =>
     /Code Mode is unavailable|codex-code-mode-host/i.test(message));
@@ -554,7 +565,7 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
   const cliWallMs = cliStart === null || cliExitAt === null ? null : cliExitAt - cliStart;
   const diagnostics = [...(('diagnostics' in parsed ? parsed.diagnostics as string[] : [])), ...(captureFailures ? [`${captureFailures} step capture(s) failed or timed out`] : [])];
   return {
-    attempt, finalScreenshotPath, evidencePath, evidenceFrames, status, connected, connectionState, error, answer, initModel: parsed.initModel, resolvedModels: parsed.resolvedModels,
+    attempt, attemptId, finalScreenshotPath, evidencePath, evidenceFrames, status, connected, connectionState, error, answer, initModel: parsed.initModel, resolvedModels: parsed.resolvedModels,
     turns: parsed.turns, toolCalls: parsed.toolCalls, toolErrors: parsed.toolErrors,
     observationChars: parsed.observationChars, observationImages: parsed.observationImages,
     totalInputTokens: PROVIDER === 'codex' ? (parsed as ReturnType<typeof parseCodexStream>).totalInputTokens :
@@ -568,7 +579,8 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
       cliExecutionMs: processResult.initAt === null || cliExitAt === null ? null : cliExitAt - processResult.initAt,
       cliWallMs, verificationMs, cleanupMs, captureMs,
     },
-    exitCode: processResult.exitCode, signal: processResult.signal, timedOut: processResult.timedOut, fixtureCheck,
+    exitCode: processResult.exitCode, signal: processResult.signal, timedOut: processResult.timedOut, fixtureCheck, fixtureEvidence,
+    grading: task.judged ? null : { version: 1, hash: createHash('sha256').update(JSON.stringify(answerGrade!.requirements)).digest('hex'), requirements: answerGrade!.requirements },
     diagnostics, harnessFailure: isHarnessFailure({ status, error, diagnostics }),
   };
 }
@@ -717,9 +729,9 @@ const settings = {
 preflightApproaches(approaches);
 const sourceFiles = [
   'bench/agent/run.ts', 'bench/agent/integrity.ts', 'bench/agent/tasks.ts', 'bench/agent/bridge.mjs',
-  'bench/agent/codex.ts', 'bench/agent/codex-config.ts', 'bench/agent/sarvam.ts', 'bench/agent/sarvam-agent.ts', 'bench/agent/realsite.ts', 'bench/agent/evidence.ts', 'bench/agent/png.ts', 'bench/agent/mcp-proxy.ts',
+  'bench/agent/codex.ts', 'bench/agent/codex-config.ts', 'bench/agent/sarvam.ts', 'bench/agent/sarvam-agent.ts', 'bench/agent/realsite.ts', 'bench/agent/grading.ts', 'bench/agent/evidence.ts', 'bench/agent/png.ts', 'bench/agent/mcp-proxy.ts',
   ...(existsSync(path.join(REPO, 'bench', 'agent', 'realsite-tasks.json')) ? ['bench/agent/realsite-tasks.json'] : []),
-  'bench/agent/screenshot-mcp.ts', 'bench/fixtures.ts', 'bench/fixtures-more.ts', 'bench/adapters.ts',
+  'bench/agent/screenshot-mcp.ts', 'bench/fixtures.ts', 'bench/fixtures-more.ts', 'bench/fixtures-long.ts', 'bench/adapters.ts',
   ...sourceFilesUnder('src'), ...sourceFilesUnder('dist'), 'package-lock.json',
 ];
 const sourceHashes = hashSources(REPO, sourceFiles);

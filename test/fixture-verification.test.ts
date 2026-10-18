@@ -4,7 +4,8 @@ import type { Browser, Page } from 'playwright';
 import { chromiumExecutable } from '../src/userAgent.js';
 import { MantisBrowser } from '../src/index.js';
 import { startFixtures } from '../bench/fixtures.js';
-import { normalizeGradedAnswer, TASKS } from '../bench/agent/tasks.js';
+import { gradeTaskAnswer, normalizeGradedAnswer, TASKS } from '../bench/agent/tasks.js';
+import { gradeRequirements } from '../bench/agent/grading.js';
 import { extractGradedAnswer } from '../bench/agent/integrity.js';
 import { LONG_EXPECT } from '../bench/fixtures-long.js';
 import { spawn } from 'node:child_process';
@@ -37,6 +38,27 @@ it('matches a quoted fixture answer but still rejects a quoted near miss', () =>
   // Near miss: wrapping quotes do not hide an incorrect item count.
   expect(cart.expect.test(normalizeGradedAnswer('"Added to cart (2 items)."'))).toBe(false);
   expect(cart.expect.test(normalizeGradedAnswer('ANSWER: "Added to cart (2 items)."'))).toBe(false);
+});
+
+it('grades typed claims, associations, negation, and conflicting guesses without discarding ANSWER prose', () => {
+  const task = (id: string) => TASKS.find((entry) => entry.id === id)!;
+  expect(gradeTaskAnswer(task('pricing-team'), 'Not Basic; the price is $29 per month.').pass).toBe(true);
+  expect(gradeTaskAnswer(task('pricing-team'), 'The Team price is not $29.').pass).toBe(false);
+  expect(gradeTaskAnswer(task('dashboard-refresh'), 'Last updated: just now. Initech 3: $4,218.').pass).toBe(true);
+  // Near miss: the correct amount belongs to a different customer.
+  expect(gradeTaskAnswer(task('dashboard-refresh'), 'Last updated: just now. Initech 3: $3,000; Umbrella 1: $4,218.').pass).toBe(false);
+  expect(gradeTaskAnswer(task('checkout-steps'), 'The order is A1042 and total is $27.50.\nANSWER: confirmed').pass).toBe(true);
+  // Near miss: an unresolved alternate order is not a valid answer.
+  expect(gradeTaskAnswer(task('checkout-steps'), 'A1042 or A1043; total $27.50.').pass).toBe(false);
+  const number = [{ id: 'count', type: 'number' as const, value: 18 }];
+  expect(gradeRequirements('There are 18 items.', number).pass).toBe(true);
+  expect(gradeRequirements('There are 18.0 items.', number).pass).toBe(true);
+  expect(gradeRequirements('There are 18.5 items.', number).pass).toBe(false);
+  expect(gradeRequirements('There are 18,500 items.', number).pass).toBe(false);
+  expect(gradeRequirements('There are -18 items.', number).pass).toBe(false);
+  expect(gradeTaskAnswer(task('login'), 'The heading is not Signed in.').pass).toBe(false);
+  expect(gradeTaskAnswer(task('plans-pick'), 'Confirmation PRO-77x.').pass).toBe(false);
+  expect(gradeTaskAnswer(task('iframe-pay'), 'Receipt R-55310.').pass).toBe(false);
 });
 
 it('accepts trailing decimal zeros without matching numeric suffixes', () => {
@@ -727,8 +749,11 @@ it('long tasks: accepts the full requested flows and rejects a single wrong step
   await page.locator(`a[href="${LONG_EXPECT.laptops.paths.at(-1)}"]`).first().click();
   expect(await page.locator('main').innerText()).toContain('Battery life (video playback)');
   await verify('long-laptops', 'laptops-ok', true);
-  await openAttempt('long-laptops', 'laptops-partial', '/laptops');
-  await page.locator(`a[href="${LONG_EXPECT.laptops.paths[0]}"]`).first().click();
+  // The comparison table is sufficient evidence; detail traversal is optional.
+  await openAttempt('long-laptops', 'laptops-table', '/laptops');
+  await verify('long-laptops', 'laptops-table', true);
+  // Near miss: a detail page alone does not establish the requested comparison.
+  await openAttempt('long-laptops', 'laptops-partial', LONG_EXPECT.laptops.paths[0]!);
   await verify('long-laptops', 'laptops-partial', false);
 });
 

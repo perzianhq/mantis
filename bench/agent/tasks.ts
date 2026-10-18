@@ -5,6 +5,8 @@
  */
 import type { FixtureCheck, FixtureObservation } from '../fixtures.js';
 import { LONG_EXPECT } from '../fixtures-long.js';
+import { gradeRequirements, matchesAffirmedPattern, normalizeGradedAnswer } from './grading.js';
+import type { AnswerGrade, AnswerRequirement } from './grading.js';
 import { loadRealsiteTasks } from './realsite.js';
 
 export type Category = 'forms' | 'reading' | 'lists' | 'overlays' | 'navigation' | 'dynamic' | 'visual' | 'long' | 'realsite';
@@ -18,6 +20,8 @@ export interface AgentTask {
   prompt: (base: string) => string;
   /** The final reply must match this to count as correct. */
   expect: RegExp;
+  /** Typed facts required in the final reply; associations prevent token pooling. */
+  answerRequirements?: AnswerRequirement[];
   /** Local action tasks also need server-observed evidence that the browser reached the requested state. */
   check?: FixtureCheck;
   /** Real-site task with no regex answer: `expect` only checks the agent finished; bench/agent/judge.ts grades it afterwards. */
@@ -35,8 +39,16 @@ const leadsTo = (
   path: string,
   action: (event: FixtureObservation) => boolean,
   result: (event: FixtureObservation) => boolean,
-): boolean => events.some((before) => before.kind === kind && before.path === path && action(before) &&
-  events.some((after) => after.kind === 'settled' && after.path === path && after.documentId === before.documentId && after.actionId === before.actionId && result(after)));
+): boolean => events.some((before, beforeIndex) => before.kind === kind && before.path === path && action(before) &&
+  events.some((after, afterIndex) => afterIndex > beforeIndex && after.kind === 'settled' && after.path === path && after.documentId === before.documentId && after.actionId === before.actionId && result(after)));
+/** State proof is terminal: an earlier successful milestone cannot survive a later rollback. */
+const terminalState = (events: FixtureObservation[], path: string, predicate: (event: FixtureObservation) => boolean): boolean => {
+  // Server receipt order is authoritative across action-id resets and navigation:
+  // do not let a matching historical page state survive a later rollback/page.
+  const last = events.filter((event) => event.kind === 'load' || event.kind === 'settled').at(-1);
+  return !!last && last.kind === 'settled' && last.path === path && predicate(last);
+};
+const fixtureStateIs = (event: FixtureObservation, expected: unknown): boolean => JSON.stringify(event.fixtureState) === JSON.stringify(expected);
 const control = (event: FixtureObservation, id: string, value: string, checked?: boolean): boolean => {
   const c = event.controls[id];
   return !!c && c.value === value && (checked === undefined || c.checked === checked);
@@ -49,16 +61,18 @@ const decimalWithTrailingZeros = (value: string): string => {
   return `(?<![\\w,])${esc(withoutTrailingZeros)}0*(?!\\w|\\.\\d)`;
 };
 
-/** Normalize the answer field before every local-task regex is evaluated. */
-export function normalizeGradedAnswer(answer: string): string {
-  const trimmed = answer.trim();
-  const pairs: Record<string, string> = { '"': '"', '\u201c': '\u201d', '\u2018': '\u2019' };
-  const unquote = (value: string): string => {
-    const closing = pairs[value[0] ?? ''];
-    return closing && value.endsWith(closing) ? value.slice(1, -1).trim() : value;
+export { normalizeGradedAnswer } from './grading.js';
+
+/** Grade the complete reply: regex compatibility plus typed facts and associations. */
+export function gradeTaskAnswer(task: AgentTask, rawReply: string): AnswerGrade {
+  const answer = normalizeGradedAnswer(rawReply);
+  const requirements = task.answerRequirements ?? [];
+  const facts = gradeRequirements(answer, requirements);
+  return {
+    requirements,
+    pass: matchesAffirmedPattern(answer, task.expect) && facts.pass,
+    failed: [...(!matchesAffirmedPattern(answer, task.expect) ? ['answer does not match the task response form'] : []), ...facts.failed],
   };
-  const answerPrefix = /^(ANSWER:\s*)([\s\S]*)$/i.exec(trimmed);
-  return answerPrefix ? `${answerPrefix[1]}${unquote(answerPrefix[2].trim())}` : unquote(trimmed);
 }
 
 const LOCAL_AND_LIVE_TASKS: AgentTask[] = [
@@ -68,7 +82,7 @@ const LOCAL_AND_LIVE_TASKS: AgentTask[] = [
     site: 'local',
     prompt: (b) => `Open ${b}/form. Subscribe from Canada and opt in to the weekly newsletter. What confirmation message does the page show?`,
     expect: /Subscribed from Canada \(weekly: yes\)/i,
-    check: check((e) => leadsTo(e, 'submit', '/form', (x) => control(x, 'c', 'ca') && control(x, 'n', 'on', true), (x) => x.target.tag === 'form' && /Subscribed from Canada \(weekly: yes\)/.test(x.text))),
+    check: check((e) => leadsTo(e, 'submit', '/form', (x) => control(x, 'c', 'ca') && control(x, 'n', 'on', true), (x) => x.target.tag === 'form' && /Subscribed from Canada \(weekly: yes\)/.test(x.text)) && terminalState(e, '/form', (x) => /Subscribed from Canada \(weekly: yes\)/.test(x.text))),
   },
   {
     id: 'wikipedia-birthdate',
@@ -83,7 +97,8 @@ const LOCAL_AND_LIVE_TASKS: AgentTask[] = [
     site: 'local',
     prompt: (b) => `Open ${b}/login and sign in with email agent@example.com and password correct-horse-battery. What is the page heading after signing in?`,
     expect: /(?<!not )\bSigned in\b/i,
-    check: check((e) => leadsTo(e, 'submit', '/login', (x) => control(x, 'email', 'agent@example.com') && control(x, 'pw', 'correct-horse-battery'), (x) => /Signed in/.test(x.text))),
+    answerRequirements: [{ id: 'heading', type: 'text', value: 'Signed in' }],
+    check: check((e) => leadsTo(e, 'submit', '/login', (x) => control(x, 'email', 'agent@example.com') && control(x, 'pw', 'correct-horse-battery'), (x) => /Signed in/.test(x.text)) && terminalState(e, '/login', (x) => /Signed in/.test(x.text))),
   },
   {
     id: 'cookie-cart',
@@ -93,7 +108,8 @@ const LOCAL_AND_LIVE_TASKS: AgentTask[] = [
     // The fixture check establishes the exact cart state; the reply need only
     // identify the confirmation message rather than repeat its item count.
     expect: /\bAdded to cart(?:\s*\(1 item\))?\.?\s*$/i,
-    check: check((e) => leadsTo(e, 'click', '/cookie', (x) => target(x, 'add'), (x) => target(x, 'add') && /Added to cart \(1 item\)/.test(x.text))),
+    answerRequirements: [{ id: 'confirmation', type: 'text', value: 'Added to cart' }],
+    check: check((e) => leadsTo(e, 'click', '/cookie', (x) => target(x, 'add'), (x) => target(x, 'add') && /Added to cart \(1 item\)/.test(x.text)) && terminalState(e, '/cookie', (x) => /Added to cart \(1 item\)/.test(x.text))),
   },
   {
     id: 'longlist-item',
@@ -109,6 +125,7 @@ const LOCAL_AND_LIVE_TASKS: AgentTask[] = [
     site: 'local',
     prompt: (b) => `Open ${b}/site/home, go to the pricing page and find the price of the Team plan.`,
     expect: /\$29\b/,
+    answerRequirements: [{ id: 'team-price', type: 'number', value: 29 }],
     check: check((e) => has(e, (x) => x.path === '/site/pricing' && x.kind === 'load' && /Team: \$29 per month/.test(x.text))),
   },
   {
@@ -117,6 +134,10 @@ const LOCAL_AND_LIVE_TASKS: AgentTask[] = [
     site: 'local',
     prompt: (b) => `Open ${b}/dashboard, refresh the data, and tell me what the "Last updated" line says now. Also: what is the amount for Initech 3?`,
     expect: /\bjust now\b[\s\S]*\$4,218\b|\$4,218\b[\s\S]*\bjust now\b/i,
+    answerRequirements: [
+      { id: 'updated', type: 'text', value: 'just now' },
+      { id: 'initech-amount', type: 'entity', value: 'Initech 3', with: { type: 'number', value: 4218 } },
+    ],
     check: check((e) => leadsTo(e, 'click', '/dashboard', (x) => target(x, 'ref'), (x) => target(x, 'ref') && /Last updated: just now/.test(x.text))),
   },
   // ---- forms ----
@@ -130,7 +151,8 @@ const LOCAL_AND_LIVE_TASKS: AgentTask[] = [
       const settled = eventsOf(e, 'settled', '/signup');
       const submits = eventsOf(e, 'submit', '/signup');
       return submits.some((x) => control(x, 'em', 'new@example.com') && control(x, 'pw', 'abc123') && settled.some((s) => s.documentId === x.documentId && s.actionId === x.actionId && /Password must be at least 8 characters/.test(s.text))) &&
-        submits.some((x) => control(x, 'em', 'new@example.com') && control(x, 'pw', 'longenough123') && control(x, 'pw2', 'longenough123') && settled.some((s) => s.documentId === x.documentId && s.actionId === x.actionId && /Welcome, new@example\.com/.test(s.text)));
+        submits.some((x) => control(x, 'em', 'new@example.com') && control(x, 'pw', 'longenough123') && control(x, 'pw2', 'longenough123') && settled.some((s) => s.documentId === x.documentId && s.actionId === x.actionId && /Welcome, new@example\.com/.test(s.text))) &&
+        terminalState(e, '/signup', (x) => /Welcome, new@example\.com/.test(x.text));
     }),
   },
   {
@@ -139,11 +161,15 @@ const LOCAL_AND_LIVE_TASKS: AgentTask[] = [
     site: 'local',
     prompt: (b) => `Open ${b}/checkout and complete the order for Ada Lovelace, shipping to Berlin, with Express delivery. What is the order number and the total charged?`,
     expect: new RegExp(`\\bA1042\\b[^]*${decimalWithTrailingZeros('27.50')}|${decimalWithTrailingZeros('27.50')}[^]*\\bA1042\\b`),
+    answerRequirements: [
+      { id: 'order', type: 'entity', value: 'A1042' },
+      { id: 'total', type: 'number', value: '27.50' },
+    ],
     check: check((e) => {
       const nextShipping = leadsTo(e, 'click', '/checkout', (x) => target(x, 'n1') && control(x, 'nm', 'Ada Lovelace') && control(x, 'city', 'Berlin'), (x) => target(x, 'n1') && /Step 2 of 3: Delivery/.test(x.text));
       const nextDelivery = leadsTo(e, 'click', '/checkout', (x) => target(x, 'n2') && control(x, 'd', 'exp', true), (x) => target(x, 'n2') && /Ship to Ada Lovelace, Berlin\s*·\s*Express/.test(x.text));
       const placed = leadsTo(e, 'click', '/checkout', (x) => target(x, 'place'), (x) => target(x, 'place') && /Order #A1042 confirmed\. Total charged: \$27\.50/.test(x.text));
-      return nextShipping && nextDelivery && placed;
+      return nextShipping && nextDelivery && placed && terminalState(e, '/checkout', (x) => /Order #A1042 confirmed\. Total charged: \$27\.50/.test(x.text));
     }),
   },
   {
@@ -152,7 +178,7 @@ const LOCAL_AND_LIVE_TASKS: AgentTask[] = [
     site: 'local',
     prompt: (b) => `Open ${b}/booking and book a table for 3 guests on 2026-12-24 at 19:00. What does the confirmation say?`,
     expect: /Booked for 2026-12-24 at 19:00, 3 guests\b/,
-    check: check((e) => leadsTo(e, 'submit', '/booking', (x) => control(x, 'dt', '2026-12-24') && control(x, 'tm', '19:00') && control(x, 'ppl', '3'), (x) => /Booked for 2026-12-24 at 19:00, 3 guests/.test(x.text))),
+    check: check((e) => leadsTo(e, 'submit', '/booking', (x) => control(x, 'dt', '2026-12-24') && control(x, 'tm', '19:00') && control(x, 'ppl', '3'), (x) => /Booked for 2026-12-24 at 19:00, 3 guests/.test(x.text)) && terminalState(e, '/booking', (x) => /Booked for 2026-12-24 at 19:00, 3 guests/.test(x.text))),
   },
   // ---- reading ----
   {
@@ -161,6 +187,7 @@ const LOCAL_AND_LIVE_TASKS: AgentTask[] = [
     site: 'local',
     prompt: (b) => `Open ${b}/article. In what year was the harbour light first lit?`,
     expect: /\b1874\b/,
+    answerRequirements: [{ id: 'year', type: 'number', value: 1874 }],
     check: check((e) => has(e, (x) => x.path === '/article' && x.kind === 'load')),
   },
   {
@@ -169,6 +196,10 @@ const LOCAL_AND_LIVE_TASKS: AgentTask[] = [
     site: 'local',
     prompt: (b) => `Open ${b}/inventory. What is the SKU of Widget 30, and how many are in stock?`,
     expect: /\bW-1203\b[\s\S]*\b113\b|\b113\b[\s\S]*\bW-1203\b/,
+    answerRequirements: [
+      { id: 'sku', type: 'entity', value: 'W-1203' },
+      { id: 'stock', type: 'number', value: 113 },
+    ],
     check: check((e) => has(e, (x) => x.path === '/inventory' && x.kind === 'load')),
   },
   // ---- lists ----
@@ -178,6 +209,7 @@ const LOCAL_AND_LIVE_TASKS: AgentTask[] = [
     site: 'local',
     prompt: (b) => `Open ${b}/dashboard. Among customers with status Churned, which one has the highest amount, and what is the amount?`,
     expect: /\bAcme 6\b[\s\S]*\b9,?950\b|\b9,?950\b[\s\S]*\bAcme 6\b/,
+    answerRequirements: [{ id: 'churned-maximum', type: 'entity', value: 'Acme 6', with: { type: 'number', value: 9950 } }],
     check: check((e) => has(e, (x) => x.path === '/dashboard' && x.kind === 'load')),
   },
   {
@@ -218,7 +250,8 @@ const LOCAL_AND_LIVE_TASKS: AgentTask[] = [
       return leadsTo(e, 'click', '/account', (x) => target(x, 'acct'), (x) => /Settings/.test(x.text)) &&
         leadsTo(e, 'click', '/account', (x) => target(x, 'mi-settings'), (x) => /Theme/.test(x.text)) &&
         leadsTo(e, 'change', '/account', (x) => control(x, 't', 'Dark', true), (x) => control(x, 't', 'Dark', true)) &&
-        leadsTo(e, 'click', '/account', (x) => target(x, 'save') && control(x, 't', 'Dark', true), (x) => /Theme saved: Dark/.test(x.text));
+        leadsTo(e, 'click', '/account', (x) => target(x, 'save') && control(x, 't', 'Dark', true), (x) => /Theme saved: Dark/.test(x.text)) &&
+        terminalState(e, '/account', (x) => /Theme saved: Dark/.test(x.text));
     }),
   },
   // ---- navigation ----
@@ -240,7 +273,8 @@ const LOCAL_AND_LIVE_TASKS: AgentTask[] = [
     site: 'local',
     prompt: (b) => `Open ${b}/plans and choose the Pro plan. What confirmation code do you get?`,
     expect: /PRO-77/,
-    check: check((e) => leadsTo(e, 'click', '/plans', (x) => x.target.text.includes('Pro'), (x) => x.target.text.includes('Pro') && /Confirmation code PRO-77/.test(x.text))),
+    answerRequirements: [{ id: 'confirmation-code', type: 'entity', value: 'PRO-77' }],
+    check: check((e) => leadsTo(e, 'click', '/plans', (x) => x.target.text.includes('Pro'), (x) => x.target.text.includes('Pro') && /Confirmation code PRO-77/.test(x.text)) && terminalState(e, '/plans', (x) => /Confirmation code PRO-77/.test(x.text))),
   },
   {
     id: 'faq-refund',
@@ -248,6 +282,7 @@ const LOCAL_AND_LIVE_TASKS: AgentTask[] = [
     site: 'local',
     prompt: (b) => `Open ${b}/help. Within how many days can you ask for a refund?`,
     expect: /\b30\b/,
+    answerRequirements: [{ id: 'refund-days', type: 'number', value: 30 }],
     check: check((e) => leadsTo(e, 'click', '/help', (x) => /refund policy/i.test(x.target.text), (x) => /within 30 days/.test(x.text))),
   },
   {
@@ -256,6 +291,7 @@ const LOCAL_AND_LIVE_TASKS: AgentTask[] = [
     site: 'local',
     prompt: (b) => `Open ${b}/pay and pay with the test card 4242 4242 4242 4242, expiry 12/30, CVC 123. What is the receipt number?`,
     expect: /R-5531/,
+    answerRequirements: [{ id: 'receipt', type: 'entity', value: 'R-5531' }],
     check: check((e) => leadsTo(e, 'submit', '/pay/inner', (x) => x.controls.cn?.value.replace(/\s/g, '') === '4242424242424242' && control(x, 'ex', '12/30') && control(x, 'cvc', '123'), (x) => /Payment approved\. Receipt R-5531/.test(x.text))),
   },
   // ---- visual ----
@@ -265,6 +301,7 @@ const LOCAL_AND_LIVE_TASKS: AgentTask[] = [
     site: 'local',
     prompt: (b) => `Open ${b}/chart. How many units were sold in March according to the chart?`,
     expect: /\b42\b/,
+    answerRequirements: [{ id: 'march-units', type: 'number', value: 42 }],
     check: check((e) => has(e, (x) => x.path === '/chart' && x.kind === 'load')),
   },
   // ---- long: 15-40 actions each ----
@@ -274,7 +311,11 @@ const LOCAL_AND_LIVE_TASKS: AgentTask[] = [
     site: 'local',
     prompt: (b) => `Open ${b}/shop. Add to the cart: 2 Trail Mug, 1 Canvas Tote, 3 Beeswax Wrap and 1 Linen Apron (only those products, nothing else). Apply the coupon SPRING10. Check out shipping to Grace Hopper, 12 Navy Way, Arlington, ZIP 22201, with Standard delivery, and pay with the test card 4242 4242 4242 4242, expiry 12/30, CVC 123. What is the order number and the total charged?`,
     expect: new RegExp(`${esc(LONG_EXPECT.shop.order)}[^]*${decimalWithTrailingZeros(LONG_EXPECT.shop.total)}|${decimalWithTrailingZeros(LONG_EXPECT.shop.total)}[^]*${esc(LONG_EXPECT.shop.order)}`),
-    check: check((e) => has(e, (x) => x.path === '/shop' && x.kind === 'settled' && x.text.includes(`Order #${LONG_EXPECT.shop.order} confirmed. Total charged: $${LONG_EXPECT.shop.total}.`))),
+    answerRequirements: [
+      { id: 'order', type: 'entity', value: LONG_EXPECT.shop.order },
+      { id: 'total', type: 'number', value: LONG_EXPECT.shop.total },
+    ],
+    check: check((e) => terminalState(e, '/shop', (x) => x.text.includes(`Order #${LONG_EXPECT.shop.order} confirmed. Total charged: $${LONG_EXPECT.shop.total}.`) && fixtureStateIs(x, LONG_EXPECT.shop.state))),
   },
   {
     id: 'long-admin',
@@ -282,7 +323,8 @@ const LOCAL_AND_LIVE_TASKS: AgentTask[] = [
     site: 'local',
     prompt: (b) => `Open ${b}/admin. Make Ivy Chen and Lena Novak Editors, make Raj Patel an Admin, change Omar Haddad to Viewer, and deactivate Tom Becker and Sara Lind. Change nobody else. Then save. What does the confirmation say?`,
     expect: new RegExp(esc(LONG_EXPECT.admin.set)),
-    check: check((e) => has(e, (x) => x.path === '/admin' && x.kind === 'settled' && x.text.includes(`Saved ${LONG_EXPECT.admin.changes} changes. Change set ${LONG_EXPECT.admin.set}.`))),
+    answerRequirements: [{ id: 'change-set', type: 'entity', value: LONG_EXPECT.admin.set }],
+    check: check((e) => terminalState(e, '/admin', (x) => fixtureStateIs(x, LONG_EXPECT.admin.state))),
   },
   {
     id: 'long-onboard',
@@ -290,7 +332,8 @@ const LOCAL_AND_LIVE_TASKS: AgentTask[] = [
     site: 'local',
     prompt: (b) => `Open ${b}/onboard and set up a workspace. Company: Northwind Labs, 51-200 employees, based in Germany, VAT ID DE123456789. Admin contact: Ada Byron, ada@northwind.test, phone +49 30 1234567. Choose the Growth plan billed yearly, and send invoices to billing@northwind.test instead of the admin email. Invite lin@northwind.test as an Admin, and sam@northwind.test and kai@northwind.test as Members. Accept the terms and create the workspace. What is the workspace ID?`,
     expect: new RegExp(esc(LONG_EXPECT.onboard.workspace)),
-    check: check((e) => has(e, (x) => x.path === '/onboard' && x.kind === 'settled' && x.text.includes(`Workspace ${LONG_EXPECT.onboard.workspace} created for Northwind Labs (Growth, yearly, 3 invites).`))),
+    answerRequirements: [{ id: 'workspace', type: 'entity', value: LONG_EXPECT.onboard.workspace }],
+    check: check((e) => terminalState(e, '/onboard', (x) => x.text.includes(`Workspace ${LONG_EXPECT.onboard.workspace} created for Northwind Labs (Growth, yearly, 3 invites).`) && fixtureStateIs(x, LONG_EXPECT.onboard.state))),
   },
   {
     id: 'long-laptops',
@@ -298,7 +341,10 @@ const LOCAL_AND_LIVE_TASKS: AgentTask[] = [
     site: 'local',
     prompt: (b) => `Open ${b}/laptops. Among the laptops that cost under $1,000, which one has the longest battery life (video playback)? Tell me its name and its weight in kg.`,
     expect: new RegExp(`${esc(LONG_EXPECT.laptops.name)}[^]*(?<![\\d.])${esc(LONG_EXPECT.laptops.weight)}(?!\\d|\\.\\d)|(?<![\\d.])${esc(LONG_EXPECT.laptops.weight)}(?!\\d|\\.\\d)[^]*${esc(LONG_EXPECT.laptops.name)}`),
-    check: check((e) => LONG_EXPECT.laptops.paths.every((path) => has(e, (x) => x.path === path && x.kind === 'load'))),
+    answerRequirements: [{ id: 'laptop-weight', type: 'entity', value: LONG_EXPECT.laptops.name, with: { type: 'number', value: LONG_EXPECT.laptops.weight } }],
+    // The comparison table is authoritative; detail traversal is one valid route,
+    // not a requirement when the answer is visibly available without it.
+    check: check((e) => has(e, (x) => x.path === '/laptops' && x.kind === 'load')),
   },
 ];
 /** Hand-written tasks plus the sampled real-site tasks (AGENT_TASKS=cat:realsite; none if realsite-tasks.json is absent). */

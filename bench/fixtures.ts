@@ -6,6 +6,10 @@ import { moreRoute } from './fixtures-more.js';
 import { LONG_PAGES } from './fixtures-long.js';
 
 export interface FixtureObservation {
+  /** Server-assigned receipt order; actionId resets on navigations and is not a terminal-state clock. */
+  arrival: number;
+  /** Hidden fixture-owned terminal state, when a workflow opts in to expose it. */
+  fixtureState?: unknown;
   path: string;
   kind: 'load' | 'click' | 'input' | 'change' | 'submit' | 'scroll' | 'settled';
   documentId: string;
@@ -16,6 +20,10 @@ export interface FixtureObservation {
 }
 
 export interface FixtureCheckResult { ok: boolean; details?: string }
+/** Authoritative observations retained with future benchmark attempts for offline regrading. */
+export interface FixtureVerification extends FixtureCheckResult {
+  provenance: { version: 1; taskId: string; attemptId: string; observationCount: number; events: FixtureObservation[] };
+}
 export type FixtureCheck = (events: FixtureObservation[]) => boolean | FixtureCheckResult;
 export interface FixtureCheckEntry { taskId: string; check?: FixtureCheck }
 
@@ -55,7 +63,7 @@ const observer = String.raw`<script>
     return result;
   };
   const send = (kind, target, targetSummary, controlState, actionId) => {
-    const data = { path: location.pathname.replace(/^\/__attempt\/[A-Za-z0-9_-]+/, '') || '/', kind, documentId, actionId, target: targetSummary || summarize(target), controls: controlState || controls(), text: (document.body?.innerText || '').replace(/\s+/g, ' ').slice(0, 5000) };
+    const data = { path: location.pathname.replace(/^\/__attempt\/[A-Za-z0-9_-]+/, '') || '/', kind, documentId, actionId, target: targetSummary || summarize(target), controls: controlState || controls(), text: (document.body?.innerText || '').replace(/\s+/g, ' ').slice(0, 5000), fixtureState: window.__fixtureState || undefined };
     pending++;
     fetch('/__verify/' + encodeURIComponent(token), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(data), keepalive: true }).catch(() => {}).finally(() => { pending--; });
   };
@@ -69,7 +77,9 @@ const observer = String.raw`<script>
       const summary = summarize(event.target);
       const state = controls();
       send(kind, event.target, summary, state, actionId);
-      setTimeout(() => send('settled', event.target, summary, state, actionId), 0);
+      // A settled snapshot must describe the terminal DOM, not controls captured
+      // before the event handler mutated them (or navigated away).
+      setTimeout(() => send('settled', event.target, summary, undefined, actionId), 0);
     }, true);
   }
 })();
@@ -80,9 +90,9 @@ function instrument(html: string): string {
   return bootstrapped.includes('</body>') ? bootstrapped.replace('</body>', `${observer}</body>`) : `${bootstrapped}${observer}`;
 }
 
-interface AttemptState { taskId: string; events: FixtureObservation[]; pending: number; lastAt: number }
+interface AttemptState { taskId: string; events: FixtureObservation[]; pending: number; lastAt: number; nextArrival: number }
 
-const newAttempt = (taskId: string): AttemptState => ({ taskId, events: [], pending: 0, lastAt: 0 });
+const newAttempt = (taskId: string): AttemptState => ({ taskId, events: [], pending: 0, lastAt: 0, nextArrival: 0 });
 
 /** Observations are posted asynchronously, so wait until none is in flight and none has arrived for a while. */
 const QUIET_MS = 250;
@@ -232,7 +242,7 @@ function route(path: string): string | null {
 export async function startFixtures(options: { checks?: FixtureCheckEntry[] } = {}): Promise<{
   base: string;
   baseFor: (taskId: string, attemptId: string) => string;
-  verify: (taskId: string, attemptId?: string) => Promise<FixtureCheckResult | null>;
+  verify: (taskId: string, attemptId?: string) => Promise<FixtureVerification | null>;
   close: () => Promise<void>;
 }> {
   const checks = new Map((options.checks ?? []).map((entry) => [entry.taskId, entry.check]));
@@ -250,7 +260,7 @@ export async function startFixtures(options: { checks?: FixtureCheckEntry[] } = 
         try {
           const event = JSON.parse(body) as FixtureObservation;
           const state = attempts.get(token);
-          if (state && event && typeof event.path === 'string' && Array.isArray(state.events)) state.events.push(event);
+          if (state && event && typeof event.path === 'string' && Array.isArray(state.events)) state.events.push({ ...event, arrival: state.nextArrival++ });
         } catch { /* malformed observation is ignored */ }
         if (pending) { pending.pending--; pending.lastAt = Date.now(); }
         res.writeHead(204).end();
@@ -294,11 +304,12 @@ export async function startFixtures(options: { checks?: FixtureCheckEntry[] } = 
       // Let the final keepalive observations land, including after the agent closes its browser.
       const state = attempts.get(attemptId);
       await quiet(state);
-      if (state && state.taskId !== taskId) return { ok: false, details: 'attempt belongs to a different task' };
+      if (state && state.taskId !== taskId) return { ok: false, details: 'attempt belongs to a different task', provenance: { version: 1, taskId, attemptId, observationCount: 0, events: [] } };
       const events = state?.events ?? [];
       const result = check(events);
       attempts.delete(attemptId);
-      return typeof result === 'boolean' ? { ok: result, details: result ? undefined : `fixture check failed (${events.length} observations)` } : result;
+      const checked = typeof result === 'boolean' ? { ok: result, details: result ? undefined : `fixture check failed (${events.length} observations)` } : result;
+      return { ...checked, provenance: { version: 1, taskId, attemptId, observationCount: events.length, events: [...events] } };
     },
     close: () => new Promise((ok) => server.close(() => ok())),
   };

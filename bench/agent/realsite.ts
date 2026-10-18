@@ -10,11 +10,13 @@
  */
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { matchesAnswerRequirement } from './grading.js';
+import type { AnswerFactType } from './grading.js';
 import type { AgentTask } from './tasks.js';
 
 /** Optional legacy answer key: substrings the final reply / some evidence frame must contain. */
 export interface RealsiteChecks { answerIncludes?: string[]; evidenceIncludes?: string[] }
-export interface MatchPredicate { type: 'text' | 'number' | 'entity'; value: string | number }
+export interface MatchPredicate { type: AnswerFactType; value: string | number; with?: { type: AnswerFactType; value: string | number } }
 export interface UrlPredicate { origin: string; path: string; query?: Record<string, string> }
 
 /**
@@ -164,9 +166,13 @@ export function validateDeterministicGrader(value: unknown): string | null {
   if (!o.final || typeof o.final !== 'object' || Array.isArray(o.final)) return 'deterministic.final must be an object';
   const final = o.final as Record<string, unknown>;
   if (Object.keys(final).some((key) => !['url', 'textIncludes', 'formValues'].includes(key))) return 'deterministic.final contains an unknown field';
-  const predicate = (v: unknown): boolean => !!v && typeof v === 'object' && !Array.isArray(v) &&
-    ['text', 'number', 'entity'].includes((v as Record<string, unknown>).type as string) &&
-    ((typeof (v as Record<string, unknown>).value === 'string' && Boolean((v as Record<string, unknown>).value.trim())) || (typeof (v as Record<string, unknown>).value === 'number' && Number.isFinite((v as Record<string, unknown>).value)));
+  const predicate = (v: unknown): boolean => {
+    if (!v || typeof v !== 'object' || Array.isArray(v)) return false;
+    const item = v as Record<string, unknown>;
+    const scalar = ['text', 'number', 'entity'].includes(item.type as string) &&
+      ((typeof item.value === 'string' && Boolean(item.value.trim())) || (typeof item.value === 'number' && Number.isFinite(item.value)));
+    return scalar && (item.with === undefined || predicate(item.with));
+  };
   if (!Array.isArray(o.answerIncludes) || !o.answerIncludes.length || !o.answerIncludes.every(predicate)) return 'deterministic.answerIncludes must be non-empty typed predicates';
   if (!final.url || typeof final.url !== 'object' || Array.isArray(final.url)) return 'deterministic.final.url must be an origin/path predicate';
   const url = final.url as Record<string, unknown>;
@@ -198,7 +204,7 @@ function parseChecks(value: unknown): RealsiteChecks | undefined {
 function parseDeterministicGrader(value: unknown): DeterministicGrader | undefined {
   if (value === undefined || validateDeterministicGrader(value) !== null) return undefined;
   const o = value as DeterministicGrader;
-  const predicates = (items: MatchPredicate[]): MatchPredicate[] => items.map((item) => ({ type: item.type, value: typeof item.value === 'string' ? item.value.trim() : item.value }));
+  const predicates = (items: MatchPredicate[]): MatchPredicate[] => items.map((item) => ({ type: item.type, value: typeof item.value === 'string' ? item.value.trim() : item.value, ...(item.with ? { with: { type: item.with.type, value: typeof item.with.value === 'string' ? item.with.value.trim() : item.with.value } } : {}) }));
   return {
     kind: o.kind,
     answerIncludes: predicates(o.answerIncludes),
@@ -212,12 +218,8 @@ function parseDeterministicGrader(value: unknown): DeterministicGrader | undefin
 
 const norm = (s: string): string => s.replace(/\s+/g, ' ').trim().toLowerCase();
 const predicateLabel = (predicate: MatchPredicate): string => String(predicate.value);
-const matchesPredicate = (source: string, predicate: MatchPredicate): boolean => {
-  const value = norm(String(predicate.value));
-  if (predicate.type === 'text') return norm(source).includes(value);
-  if (predicate.type === 'number') return new RegExp(`(?<![\\p{L}\\p{N}])${value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\p{L}\\p{N}])`, 'u').test(norm(source));
-  return new RegExp(`(?<![\\p{L}\\p{N}])${value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\p{L}\\p{N}])`, 'u').test(norm(source));
-};
+const matchesPredicate = (source: string, predicate: MatchPredicate): boolean =>
+  matchesAnswerRequirement(source, { id: 'realsite', ...predicate });
 
 /**
  * Run a row's answer-key checks (case-insensitive, whitespace collapsed): every `answerIncludes` string must be in

@@ -185,6 +185,15 @@ npm --prefix bench/agent run bench:tool-diagnostics -- <result-name>
 
 Sarvam semantic review of flagged steps is planned: cite source steps, separate agent mistakes from tool defects, and have sol validate a sample before accepting labels. Keep tool diagnostics separate from blinded outcome judging.
 
+### Offline metrics and regrading
+
+```bash
+npm --prefix bench/agent run bench:offline-metrics -- <result-name>
+npm --prefix bench/agent run bench:regrade -- <result-name>
+```
+
+Both commands use only saved result JSON and provider traces: they never start a browser, call a model, or import `run.ts`. Metrics retain every retry attempt in cost/time/token coverage and report approach×task/category slices; missing values stay unknown. Regrading reads the complete saved provider reply rather than the result table's shortened answer. It reports current answer grades separately from legacy fixture booleans. Historical runs without persisted authoritative fixture observations are **unknown/rerun-needed** for hardened state checks; their old boolean cannot prove the strengthened state grader passed. Timeouts are never promoted by a regrade.
+
 ### Running in the cloud
 
 Use Sonnet for cloud sessions ([model policy](../AGENTS.md#models)). A fresh clone needs:
