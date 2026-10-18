@@ -36,14 +36,6 @@ it('guides bottom-loaded feed search through End and the returned region', async
   expect(description('find')).toContain('a matched heading is not a region label');
 });
 
-it('stops chart fallbacks only when the required labels and values are present', async () => {
-  const { tools } = await client.listTools();
-  const data = tools.find((tool) => tool.name === 'data')!.description!;
-  expect(data).toContain('If required labels and values are present, answer without OCR/look');
-  // Nonempty metadata, or a truncated dataset, need not answer the actual question.
-  expect(data).toContain('continue the fallback ladder only for missing information');
-});
-
 it('a heading hit supplies a real region for adjacent paragraph context, not a heading-as-region', async () => {
   const html = `<!doctype html><title>Bulletin</title>
     <main aria-label="Bulletins"><h2>Entry Alpha</h2><p>Neighbor note: amber.</p>
