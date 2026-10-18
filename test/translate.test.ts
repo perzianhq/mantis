@@ -84,6 +84,60 @@ describe('translate', () => {
     expect(translate(snap(nodes), undefined, { region: '"Preferences"' })).toContain('#1 link "Apply"');
   });
 
+  it('prefers the exact main label over a navigation region named Main', () => {
+    const nodes = [
+      region('nav', 'Main'), { ...link(1, 'Navigation destination'), parent: 0, depth: 1 },
+      region('main', ''), { ...link(2, 'Content destination'), parent: 2, depth: 1 },
+    ];
+    const out = translate(snap(nodes), undefined, { region: ' MaIn ' });
+    expect(out).toContain('#2 link "Content destination"');
+    expect(out).not.toContain('Navigation destination');
+    expect(translate(snap(nodes), undefined, { region: 'nav "Main"' })).toContain('#1 link "Navigation destination"');
+  });
+
+  it('keeps all duplicate exact labels after normalizing quotes, excluding longer labels', () => {
+    const nodes = [
+      region('dialog', 'Preferences'), { ...link(1, 'First apply'), parent: 0, depth: 1 },
+      region('dialog', 'Preferences'), { ...link(2, 'Second apply'), parent: 2, depth: 1 },
+      region('dialog', 'Preferences archive'), { ...link(3, 'Archived apply'), parent: 4, depth: 1 },
+    ];
+    for (const target of ['dialog Preferences', 'dialog "Preferences"', "dialog 'Preferences'", 'dialog “Preferences”', 'dialog ‘Preferences’']) {
+      const out = translate(snap(nodes), undefined, { region: target });
+      expect(out).toContain('#1 link "First apply"');
+      expect(out).toContain('#2 link "Second apply"');
+      expect(out).not.toContain('Archived apply');
+    }
+  });
+
+  it('retains substring matching across regions when no full label matches', () => {
+    const nodes = [
+      region('nav', 'Main'), { ...link(1, 'Primary destination'), parent: 0, depth: 1 },
+      region('nav', 'Main archive'), { ...link(2, 'Archived destination'), parent: 2, depth: 1 },
+      region('aside', 'Help'), { ...link(3, 'Help destination'), parent: 4, depth: 1 },
+    ];
+    for (const target of ['main', '"Main"', 'nav ma']) {
+      const out = translate(snap(nodes), undefined, { region: target });
+      expect(out).toContain('#1 link "Primary destination"');
+      expect(out).toContain('#2 link "Archived destination"');
+      expect(out).not.toContain('Help destination');
+    }
+    expect(translate(snap(nodes), undefined, { region: 'missing' })).toMatch(/^error: no region matching "missing"/);
+  });
+
+  it('selects a nested exact region without leaking its substring-matching ancestor', () => {
+    const nodes = [
+      region('main', 'Archive'), { ...link(1, 'Outer destination'), parent: 0, depth: 1 },
+      { ...region('main', ''), parent: 0, depth: 1 },
+      { ...link(2, 'Nested destination'), parent: 2, depth: 2 },
+      { ...region('main', ''), parent: 2, depth: 2 },
+      { ...link(3, 'Deep destination'), parent: 4, depth: 3 },
+    ];
+    const out = translate(snap(nodes), undefined, { region: 'main' });
+    expect(out).not.toContain('Outer destination');
+    expect(out.match(/#2 link "Nested destination"/g)).toHaveLength(1);
+    expect(out.match(/#3 link "Deep destination"/g)).toHaveLength(1);
+  });
+
   it('leaves inner and mismatched quotes in region labels alone', () => {
     const nodes = [
       region('dialog', "Don't save"),
@@ -96,5 +150,36 @@ describe('translate', () => {
     expect(translate(snap(nodes), undefined, { region: "dialog Don't save" })).toContain('#1 link "Keep changes"');
     expect(translate(snap(nodes), undefined, { region: 'dialog 5" screen' })).toContain('#2 link "Use display"');
     expect(translate(snap(nodes), undefined, { region: 'dialog "Preferences\'' })).toContain('#3 link "Keep literal quotes"');
+  });
+
+  it('shares identical dropdown option descriptions only across repeated table rows', () => {
+    const select = (id: number, row: number): RawNode => ({
+      ...link(id, 'Status'), role: 'combobox', row, rowGroup: 7, tableRow: true,
+      options: ['Draft', 'Published'],
+    });
+    const out = translate(snap([select(1, 1), select(2, 2), select(3, 3)]));
+    expect(out).toContain('#1 combobox "Status" (options: Draft | Published)');
+    expect(out).toContain('#2 combobox "Status" (options: same as #1)');
+    expect(out).toContain('#3 combobox "Status" (options: same as #1)');
+
+    const listRows = translate(snap([
+      { ...select(4, 4), tableRow: false },
+      { ...select(5, 5), tableRow: false },
+    ]));
+    expect(listRows).not.toContain('options: same as');
+  });
+
+  it('keeps table dropdown options explicit when ordering or disabled state differs', () => {
+    const base = (id: number, row: number, options: string[], states: string[] = []): RawNode => ({
+      ...link(id, 'Status'), role: 'combobox', row, rowGroup: 8, tableRow: true, options, states,
+    });
+    const out = translate(snap([
+      base(1, 1, ['Draft', 'Published']),
+      base(2, 2, ['Published', 'Draft']),
+      base(3, 3, ['Draft', 'Published'], ['disabled']),
+    ]));
+    expect(out).toContain('#2 combobox "Status" (options: Published | Draft)');
+    expect(out).toContain('#3 combobox "Status" (disabled, options: Draft | Published)');
+    expect(out).not.toContain('options: same as');
   });
 });

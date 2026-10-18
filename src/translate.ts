@@ -77,6 +77,8 @@ const ROW_FILLER = new Set(['by', 'at', 'of', 'on', 'in', 'to', 'from', 'via', '
 interface LineOpts {
   omitRole?: boolean;
   showHref?: boolean;
+  /** This table-row dropdown has the exact same option description as an earlier control. */
+  sharedOptionsWith?: number;
   /** Clip the name to this many chars (0/undefined: no clipping). */
   maxName?: number;
 }
@@ -86,7 +88,7 @@ export function interactiveLine(n: RawNode, o: LineOpts = {}): string {
   const parts = n.states.map((s) => (s === 'error' && n.errorText ? `error: "${quote(clip(n.errorText, 60))}"` : s));
   if (n.requiresOpen) parts.push(`open #${n.requiresOpen.id} "${quote(n.requiresOpen.name)}" first`);
   if (n.value) parts.push(`value "${quote(n.value)}"`);
-  if (n.options?.length) parts.push(`options: ${n.options.map(quote).join(' | ')}`);
+  if (n.options?.length) parts.push(o.sharedOptionsWith === undefined ? `options: ${n.options.map(quote).join(' | ')}` : `options: same as #${o.sharedOptionsWith}`);
   if (n.href && o.showHref) parts.push(`href ${n.href}`);
   if (n.covered) parts.push('covered');
   const shown = o.maxName ? clip(n.name, o.maxName) : n.name;
@@ -213,7 +215,11 @@ function onlyRegion(nodes: RawNode[], query: string): RawNode[] | string {
     (_match, role, double, single, curlyDouble, curlySingle) => `${role ?? ''}${double ?? single ?? curlyDouble ?? curlySingle}`,
   );
   const label = (n: RawNode): string => `${n.role}${n.name ? ' ' + n.name : ''}`.toLowerCase();
-  const matches = (i: number): boolean => nodes[i].kind === 'region' && label(nodes[i]).includes(q);
+  // A returned label should select that region, not another region whose name
+  // happens to contain it (for example, main versus nav "Main").
+  const hasExact = nodes.some((n) => n.kind === 'region' && label(n) === q);
+  const matches = (i: number): boolean => nodes[i].kind === 'region' &&
+    (hasExact ? label(nodes[i]) === q : label(nodes[i]).includes(q));
   const inMatch = (i: number): boolean => {
     for (let p = nodes[i].parent; p >= 0; p = nodes[p].parent) if (matches(p)) return true;
     return false;
@@ -280,7 +286,22 @@ function renderBody(nodes: RawNode[], lvl: Level, ctx: Ctx): { lines: string[]; 
     const copies = ctx.dupNames.get(norm(n.name)) ?? 0;
     return GENERIC_LINK.test(n.name) || (copies >= 2 && copies <= 3);
   };
-  const line = (n: RawNode, o: LineOpts = {}): string => interactiveLine(n, { ...o, showHref: showHref(n) });
+  // Native select options are repeated verbatim in dense tables. Share only an exact
+  // ordered list, and only with another select from this table's repeated-row group.
+  // The control's disabled state is part of the description and must not be borrowed.
+  const sharedOptions = new Map<RawNode, number>();
+  if (!ctx.full) {
+    const first = new Map<string, number>();
+    for (const n of nodes) {
+      if (n.kind !== 'interactive' || !n.tableRow || n.rowGroup === undefined || n.id === undefined || !n.options?.length) continue;
+      const key = `${n.rowGroup}\u0000${n.states.includes('disabled') ? 'disabled' : 'enabled'}\u0000${JSON.stringify(n.options)}`;
+      const prior = first.get(key);
+      if (prior === undefined) first.set(key, n.id);
+      else sharedOptions.set(n, prior);
+    }
+  }
+  const line = (n: RawNode, o: LineOpts = {}): string =>
+    interactiveLine(n, { ...o, showHref: showHref(n), sharedOptionsWith: sharedOptions.get(n) });
 
   const survives = (n: RawNode): boolean => {
     if (n.kind === 'region' || n.inViewport) return true;
