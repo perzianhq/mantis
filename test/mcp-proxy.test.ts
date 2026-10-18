@@ -1,3 +1,4 @@
+import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
 import { describe, expect, it, vi } from 'vitest';
 import { createMcpProxy } from '../bench/agent/mcp-proxy.js';
@@ -42,5 +43,120 @@ describe('MCP proxy cancellation', () => {
     expect(abortAdd).toHaveBeenCalledTimes(1);
     expect(abortRemove).toHaveBeenCalledTimes(1);
     proxy.close('test complete');
+  });
+});
+
+describe('MCP proxy readiness', () => {
+  it('warms one child session and replays that handshake to the later agent', async () => {
+    const stdin = new PassThrough();
+    const stdout = new PassThrough();
+    let buffered = '';
+    let initializes = 0;
+    stdin.setEncoding('utf8');
+    stdin.on('data', (chunk: string) => {
+      buffered += chunk;
+      for (let newline = buffered.indexOf('\n'); newline >= 0; newline = buffered.indexOf('\n')) {
+        const line = buffered.slice(0, newline);
+        buffered = buffered.slice(newline + 1);
+        const request = JSON.parse(line) as { id?: string; method: string };
+        if (request.method === 'initialize') {
+          initializes++;
+          stdout.write(JSON.stringify({ jsonrpc: '2.0', id: request.id, result: { protocolVersion: '2025-03-26', serverInfo: { name: 'fake' } } }) + '\n');
+        }
+      }
+    });
+    const proxy = createMcpProxy({ stdin, stdout });
+    await proxy.ready(1_000);
+
+    const replies: string[] = [];
+    let socket: EventEmitter & { setEncoding: () => unknown; write: (line: string) => boolean };
+    socket = Object.assign(new EventEmitter(), {
+      setEncoding: () => socket,
+      write: (line: string) => { replies.push(line); return true; },
+    });
+    proxy.attach(socket as never);
+    socket.emit('data', JSON.stringify({ jsonrpc: '2.0', id: 'agent-init', method: 'initialize', params: {} }) + '\n');
+    socket.emit('data', JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }) + '\n');
+    await Promise.resolve();
+
+    expect(initializes).toBe(1);
+    expect(replies.map((line) => JSON.parse(line))).toEqual([
+      { jsonrpc: '2.0', id: 'agent-init', result: { protocolVersion: '2025-03-26', serverInfo: { name: 'fake' } } },
+    ]);
+    proxy.close('test complete');
+  });
+
+  it('allows a delayed initialize response within the normal MCP request deadline', async () => {
+    const stdin = new PassThrough();
+    const stdout = new PassThrough();
+    stdin.setEncoding('utf8');
+    stdin.on('data', (chunk: string) => {
+      const request = JSON.parse(chunk.trim()) as { id: string; method: string };
+      if (request.method === 'initialize') setTimeout(() => {
+        stdout.write(JSON.stringify({ jsonrpc: '2.0', id: request.id, result: { protocolVersion: '2025-03-26' } }) + '\n');
+      }, 25);
+    });
+    const proxy = createMcpProxy({ stdin, stdout });
+    await expect(proxy.ready(100)).resolves.toBeUndefined();
+    proxy.close('test complete');
+  });
+
+  it('times out a never-ready child and releases a later retry', async () => {
+    const stdin = new PassThrough();
+    const stdout = new PassThrough();
+    let attempts = 0;
+    stdin.setEncoding('utf8');
+    stdin.on('data', (chunk: string) => {
+      const request = JSON.parse(chunk.trim()) as { id: string; method: string };
+      if (request.method !== 'initialize') return;
+      attempts++;
+      if (attempts === 2) stdout.write(JSON.stringify({ jsonrpc: '2.0', id: request.id, result: {} }) + '\n');
+    });
+    const proxy = createMcpProxy({ stdin, stdout });
+    await expect(proxy.ready(10)).rejects.toThrow('initialize timed out after 10 ms');
+    await expect(proxy.ready(100)).resolves.toBeUndefined();
+    expect(attempts).toBe(2);
+    proxy.close('test complete');
+  });
+
+  it('forwards a Codex or Claude handshake unchanged when readiness was not requested', async () => {
+    const stdin = new PassThrough();
+    const stdout = new PassThrough();
+    const forwarded: unknown[] = [];
+    stdin.setEncoding('utf8');
+    stdin.on('data', (chunk: string) => { forwarded.push(...chunk.trim().split('\n').filter(Boolean).map(JSON.parse)); });
+    const proxy = createMcpProxy({ stdin, stdout });
+    const socket = Object.assign(new EventEmitter(), {
+      setEncoding: () => socket,
+      write: () => true,
+    });
+    proxy.attach(socket as never);
+    socket.emit('data', JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { clientInfo: { name: 'codex' } } }) + '\n');
+    socket.emit('data', JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized', params: {} }) + '\n');
+    expect(forwarded).toEqual([
+      { jsonrpc: '2.0', id: 1, method: 'initialize', params: { clientInfo: { name: 'codex' } } },
+      { jsonrpc: '2.0', method: 'notifications/initialized', params: {} },
+    ]);
+    proxy.close('test complete');
+  });
+
+  it('rejects readiness immediately when cleanup closes the proxy', async () => {
+    const stdin = new PassThrough();
+    const stdout = new PassThrough();
+    const proxy = createMcpProxy({ stdin, stdout });
+    const waiting = proxy.ready(1_000);
+    proxy.close('server exited during startup');
+    await expect(waiting).rejects.toThrow('server exited during startup');
+  });
+
+  it('cleans up a pending readiness request when the child stdout ends', async () => {
+    const stdin = new PassThrough();
+    const stdout = new PassThrough();
+    const proxy = createMcpProxy({ stdin, stdout });
+
+    const waiting = proxy.ready(1_000);
+    stdout.end(); // Simulates the MCP child early-exiting; no test-side proxy.close().
+
+    await expect(waiting).rejects.toThrow('MCP server stdout ended during startup');
   });
 });

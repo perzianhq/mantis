@@ -109,12 +109,12 @@ function sourceFilesUnder(folder: string): string[] {
 }
 
 /**
- * Start the approach's MCP server ourselves, let it warm up, and expose it on a local port. Claude
+ * Start the approach's MCP server ourselves, warm it, and expose it on a local port. Claude
  * Code then launches bench/agent/bridge.mjs, which connects instantly. Without this, a slow-starting
  * server (browser-use: ~6 s of Python imports) is still "pending" when the agent starts, the model gets
  * no tools and imitates tool calls as text. Startup time stays out of every approach's measured time.
  */
-async function startServer(spec: ServerSpec, warmMs: number, log: string): Promise<{ port: number; stop: () => void; failure: () => string | null } & Pick<McpProxy, 'call' | 'onToolResult'>> {
+async function startServer(spec: ServerSpec, warmMs: number, log: string, waitForSarvamReadiness: boolean): Promise<{ port: number; stop: () => void; failure: () => string | null } & Pick<McpProxy, 'call' | 'onToolResult'>> {
   const child: ChildProcess = spawn(spec.command, spec.args, { stdio: ['pipe', 'pipe', 'pipe'], env: { ...process.env, ...(spec.env ?? {}) } });
   let stderr = '';
   let stopping = false;
@@ -145,10 +145,23 @@ async function startServer(spec: ServerSpec, warmMs: number, log: string): Promi
       srv.once('error', fail);
       srv.listen(0, '127.0.0.1', ok);
     });
-    await Promise.race([new Promise((ok) => setTimeout(ok, warmMs)), failed]);
+    if (waitForSarvamReadiness) {
+      // Sarvam talks to the proxy directly, so it is safe to initialize this
+      // one harness-owned MCP session before tool discovery. Give it the same
+      // bounded 15 s budget as a normal harness MCP request, rather than making
+      // the former 2 s cosmetic warm-up a startup failure.
+      await Promise.race([proxy.ready(15_000), failed]);
+    } else {
+      // Codex/Claude own the MCP session and must forward their original
+      // initialize + initialized messages unchanged.
+      await Promise.race([new Promise((ok) => setTimeout(ok, warmMs)), failed]);
+    }
     if (childFailure) throw new Error(childFailure);
   } catch (error) {
     stopping = true;
+    // `Promise.race` can reject from the child exit before `ready()` itself
+    // observes it. Cancel the in-flight readiness request and its timeout now.
+    proxy.close(childFailure ?? 'server stopped during startup');
     srv.close();
     if (process.platform === 'win32' && child.pid) spawnSync('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true });
     else child.kill('SIGKILL');
@@ -366,7 +379,7 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
   try {
     const cfg = path.join(dir, 'mcp.json');
     const [name, spec] = Object.entries(APPROACHES[approach].server(dir))[0]!;
-    server = await startServer(spec, APPROACHES[approach].warmMs ?? 2_000, serverLog);
+    server = await startServer(spec, APPROACHES[approach].warmMs ?? 2_000, serverLog, PROVIDER === 'sarvam');
     mcpStartupMs = Date.now() - startupStarted;
     if (server.failure()) throw new Error(server.failure()!);
     // Judged real-site runs: after each agent tool result, grab a viewport frame and page state in the background.

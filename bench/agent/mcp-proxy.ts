@@ -3,8 +3,8 @@
  * speaking newline-delimited JSON-RPC on stdio. Besides forwarding, it gives the eval harness its own channel to
  * the same server: `call()` writes requests with `__bench_<n>` ids and consumes their responses, so the agent never
  * sees them, and `onToolResult()` reports each agent tool call once its response has been forwarded. Whole lines
- * only, so a harness line never lands in the middle of an agent line. The agent's `initialize` is never repeated;
- * the harness initializes the server itself only if the agent never did.
+ * only, so a harness line never lands in the middle of an agent line. Sarvam's direct harness path may initialize
+ * the child while warming it; Codex and Claude continue to forward their MCP handshakes unchanged.
  */
 import type { Readable, Writable } from 'node:stream';
 import type net from 'node:net';
@@ -16,6 +16,11 @@ export interface McpProxy {
   attach(socket: net.Socket): void;
   /** Harness-only JSON-RPC request; resolves with `result`, rejects on an error response or timeout. */
   call(method: string, params: object, timeoutMs?: number, signal?: AbortSignal): Promise<any>;
+  /**
+   * Initialize the server through the direct harness path and wait until it can
+   * answer MCP requests. Only the Sarvam runner uses this before discovery.
+   */
+  ready(timeoutMs?: number, signal?: AbortSignal): Promise<void>;
   /** Called after an agent tools/call response has been forwarded, with the number of agent tool calls completed. */
   onToolResult(callback: (count: number) => void): void;
   /** Reject the harness requests still waiting (the server is going away). */
@@ -46,9 +51,18 @@ export function createMcpProxy(child: { stdin: Writable; stdout: Readable }): Mc
   const pending = new Map<string, { resolve: (value: any) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout> }>();
   const listeners: ((count: number) => void)[] = [];
   let agentInitialized = false;
-  let harnessReady: Promise<void> | null = null;
+  let serverReady: Promise<any> | null = null;
+  let initializeResult: any;
   let completed = 0;
   let nextId = 0;
+
+  const closePending = (reason: string): void => {
+    for (const [id, waiting] of pending) {
+      clearTimeout(waiting.timer);
+      waiting.reject(new Error(reason));
+      pending.delete(id);
+    }
+  };
 
   const send = (message: object): void => { child.stdin.write(JSON.stringify(message) + '\n'); };
   const request = (method: string, params: object, timeoutMs: number, signal?: AbortSignal): Promise<any> => new Promise((resolve, reject) => {
@@ -66,7 +80,24 @@ export function createMcpProxy(child: { stdin: Writable; stdout: Readable }): Mc
     try { send({ jsonrpc: '2.0', id, method, params }); } catch (error) { abort(); }
   });
 
+  const initialize = (timeoutMs: number, signal?: AbortSignal): Promise<any> => {
+    serverReady ??= request('initialize', {
+      protocolVersion: '2025-03-26', capabilities: {}, clientInfo: { name: 'bench-capture', version: '1.0' },
+    }, timeoutMs, signal).then((result) => {
+      initializeResult = result;
+      send({ jsonrpc: '2.0', method: 'notifications/initialized' });
+      return result;
+    }).catch((error) => {
+      serverReady = null;
+      throw error;
+    });
+    return serverReady;
+  };
+
   child.stdout.setEncoding('utf8');
+  // A child that exits while a readiness request is pending closes stdout. Do
+  // not leave its 15 s request timer alive until the harness notices the exit.
+  child.stdout.once('end', () => closePending('MCP server stdout ended during startup'));
   child.stdout.on('data', lineSplitter((line) => {
     const message = parseLine(line);
     if (message && typeof message.id === 'string' && message.id.startsWith(HARNESS_PREFIX) && message.method === undefined) {
@@ -99,23 +130,37 @@ export function createMcpProxy(child: { stdin: Writable; stdout: Readable }): Mc
       socket.on('close', () => { sockets.delete(socket); agentCalls.delete(socket); });
       socket.on('data', lineSplitter((line) => {
         const message = parseLine(line);
-        if (message?.method === 'initialize') agentInitialized = true;
+        if (message?.method === 'initialize') {
+          agentInitialized = true;
+          // The harness has already initialized the one stdio MCP session during
+          // warm-up. Replay its handshake to the agent instead of sending a
+          // second initialize request to the child.
+          if (serverReady) {
+            void serverReady.then((result) => {
+              socket.write(JSON.stringify({ jsonrpc: '2.0', id: message.id, result: initializeResult ?? result }) + '\n');
+            }, (error: Error) => {
+              socket.write(JSON.stringify({ jsonrpc: '2.0', id: message.id, error: { code: -32000, message: error.message } }) + '\n');
+            });
+            return;
+          }
+        }
+        // `ready()` already notified the server. The agent's corresponding
+        // notification is local protocol bookkeeping and must not be replayed.
+        if (message?.method === 'notifications/initialized' && serverReady) return;
         if (message?.method === 'tools/call' && message.id !== undefined) agentCalls.get(socket)?.add(JSON.stringify(message.id));
         child.stdin.write(line + '\n');
       }));
     },
     async call(method, params, timeoutMs = 15_000, signal) {
       if (!agentInitialized) {
-        harnessReady ??= request('initialize', { protocolVersion: '2025-03-26', capabilities: {}, clientInfo: { name: 'bench-capture', version: '1.0' } }, timeoutMs, signal)
-          .then(() => send({ jsonrpc: '2.0', method: 'notifications/initialized' }))
-          .catch((error) => { harnessReady = null; throw error; });
-        await harnessReady;
+        await initialize(timeoutMs, signal);
       }
       return request(method, params, timeoutMs, signal);
     },
-    onToolResult(callback) { listeners.push(callback); },
-    close(reason) {
-      for (const [id, waiting] of pending) { clearTimeout(waiting.timer); waiting.reject(new Error(reason)); pending.delete(id); }
+    async ready(timeoutMs = 15_000, signal) {
+      await initialize(timeoutMs, signal);
     },
+    onToolResult(callback) { listeners.push(callback); },
+    close(reason) { closePending(reason); },
   };
 }

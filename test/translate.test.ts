@@ -182,4 +182,199 @@ describe('translate', () => {
     expect(out).toContain('#3 combobox "Status" (disabled, options: Draft | Published)');
     expect(out).not.toContain('options: same as');
   });
+
+  it('never points table dropdown options at an omitted or later definition', () => {
+    const select = (id: number, row: number, extra: Partial<RawNode> = {}): RawNode => ({
+      ...link(id, 'Status', extra.inViewport ?? true), role: 'combobox', row, rowGroup: 9, tableRow: true,
+      options: ['Draft', 'Published'], ...extra,
+    });
+    // At the final compaction level, the offscreen first row is dropped. The
+    // first visible row must become the definition rather than pointing to it.
+    const trimmed = translate(snap([
+      select(1, 1, { inViewport: false }), select(2, 2), select(3, 3),
+      ...Array.from({ length: 80 }, (_, i) => text(`Visible filler ${i}`)),
+    ]), 500);
+    expect(trimmed).not.toContain('#1');
+    expect(trimmed).toContain('#2 combobox "Status" (options: Draft | Published)');
+    expect(trimmed).toContain('#3 combobox "Status" (options: same as #2)');
+
+    // Blocking regions render before earlier source siblings. The dialog row
+    // must be explicit because the main-region definition has not appeared yet.
+    const blocking = region('dialog', 'Confirm');
+    blocking.covers = true;
+    const reordered = translate(snap([
+      region('main', ''), { ...select(4, 4), parent: 0, depth: 1 },
+      blocking, { ...select(5, 5), parent: 2, depth: 1 },
+    ]));
+    expect(reordered.indexOf('#5 combobox')).toBeLessThan(reordered.indexOf('#4 combobox'));
+    expect(reordered).toContain('#5 combobox "Status" (options: Draft | Published)');
+    expect(reordered).not.toContain('#5 combobox "Status" (options: same as #4)');
+  });
+
+  it('makes an earlier non-compact table row the options anchor before later compact rows', () => {
+    const select = (id: number, row: number): RawNode => ({
+      ...link(id, 'Status'), role: 'combobox', row, rowGroup: 11, tableRow: true,
+      options: ['Draft', 'Published'],
+    });
+    const button = (id: number, row: number): RawNode => ({
+      ...link(id, 'Edit'), role: 'button', row, rowGroup: 11, tableRow: true,
+    });
+    // Row 1 has one control and does not qualify for row compaction. Rows 2-4
+    // do. Their preformatted text must not claim #2 as an anchor before #1 is
+    // actually appended to the response.
+    const out = translate(snap([
+      select(1, 1),
+      select(2, 2), button(20, 2),
+      select(3, 3), button(30, 3),
+      select(4, 4), button(40, 4),
+    ]));
+    expect(out).toContain('#1 combobox "Status" (options: Draft | Published)');
+    expect(out).toContain('#2 combobox "Status" (options: same as #1)');
+    expect(out).not.toContain('#1 combobox "Status" (options: same as #2)');
+  });
+
+  it('keeps option anchors inside the response selected by full, region, and memory reads', () => {
+    const select = (id: number, row: number, parent: number): RawNode => ({
+      ...link(id, 'Status'), role: 'combobox', row, rowGroup: 10, tableRow: true,
+      options: ['Draft', 'Published'], parent, depth: 1,
+    });
+    const nodes = [
+      region('aside', 'Saved'), select(1, 1, 0),
+      region('main', 'Current'), select(2, 2, 2), select(3, 3, 2),
+    ];
+    const full = translate(snap(nodes), undefined, { full: true });
+    expect(full).not.toContain('options: same as');
+
+    const picked = translate(snap(nodes), undefined, { region: 'Current' });
+    expect(picked).toContain('#2 combobox "Status" (options: Draft | Published)');
+    expect(picked).toContain('#3 combobox "Status" (options: same as #2)');
+    expect(picked).not.toContain('#1 combobox');
+
+    const collapsed = translate(snap(nodes), undefined, {}, {
+      collapse: () => [['[aside summary]'], null],
+      shown: () => {},
+    });
+    expect(collapsed).toContain('#2 combobox "Status" (options: Draft | Published)');
+    expect(collapsed).toContain('#3 combobox "Status" (options: same as #2)');
+    expect(collapsed).not.toContain('options: same as #1');
+  });
+
+  it('does not share options from a dropdown rejected by the 600-character run budget', () => {
+    const select = (id: number, options: string[]): RawNode => ({
+      ...link(id, `Status ${id}`), role: 'combobox', row: id, rowGroup: 12, tableRow: true, options,
+    });
+    const short = ['Draft', 'Published'];
+    // The first five controls are kept verbatim. #6 introduces a new, very
+    // large option list; the run's 600-character named-rest budget rejects its
+    // line. A later matching dropdown must therefore render that list itself.
+    const large = Array.from({ length: 30 }, (_, i) => `Long option ${i} ${'x'.repeat(24)}`);
+    const nodes = [
+      ...Array.from({ length: 5 }, (_, i) => select(i + 1, short)),
+      ...Array.from({ length: 7 }, (_, i) => select(i + 6, large)),
+      text('After collapsed controls'),
+      select(13, large),
+    ];
+    const out = translate(snap(nodes));
+    expect(out).not.toContain('#6 combobox "Status 6"');
+    expect(out).toContain('#13 combobox "Status 13" (options: Long option 0');
+    expect(out).not.toContain('#13 combobox "Status 13" (options: same as #6)');
+  });
+
+  it('uses the first emitted fallback as the anchor in a compact multi-control row', () => {
+    const select = (id: number, row: number, name: string, options: string[]): RawNode => ({
+      ...link(id, name), role: 'combobox', row, rowGroup: 13, tableRow: true, options,
+    });
+    const status = Array.from({ length: 30 }, (_, i) => `Status option ${i} ${'x'.repeat(24)}`);
+    const priority = ['Low', 'High'];
+    // #6 is rejected by the named-rest budget after registering as an anchor.
+    // The remaining compact rows each have two dropdowns. #13 is the first
+    // emitted Status definition, so later Status controls can safely share it
+    // without affecting Priority.
+    const nodes = [
+      ...Array.from({ length: 5 }, (_, i) => select(i + 1, i + 1, 'Short', ['Yes', 'No'])),
+      select(6, 6, 'Status', status),
+      ...Array.from({ length: 6 }, (_, i) => select(i + 7, i + 7, 'Other', ['Yes', 'No'])),
+      text('After collapsed controls'),
+      select(13, 13, 'Status', status), select(14, 13, 'Priority', priority),
+      select(15, 14, 'Status', status), select(16, 14, 'Priority', priority),
+      select(17, 15, 'Status', status), select(18, 15, 'Priority', priority),
+    ];
+    const out = translate(snap(nodes));
+    expect(out).not.toContain('#6 combobox "Status"');
+    expect(out).toContain('#13 combobox "Status" (options: Status option 0');
+    expect(out).toContain('#14 combobox "Priority" (options: Low | High)');
+    expect(out).toContain('#15 combobox "Status" (options: same as #13)');
+    expect(out).toContain('#16 "Priority" (options: same as #14)');
+  });
+
+  it('keeps reversed compact-row dropdown definitions separate from dangling references', () => {
+    const select = (id: number, row: number, name: string, options: string[]): RawNode => ({
+      ...link(id, name), role: 'combobox', row, rowGroup: 15, tableRow: true, options,
+    });
+    const status = Array.from({ length: 30 }, (_, i) => `Status option ${i} ${'x'.repeat(24)}`);
+    const priority = ['Low', 'High'];
+    const nodes = [
+      ...Array.from({ length: 5 }, (_, i) => select(i + 1, i + 1, 'Short', ['Yes', 'No'])),
+      select(6, 6, 'Status', status),
+      ...Array.from({ length: 6 }, (_, i) => select(i + 7, i + 7, 'Other', ['Yes', 'No'])),
+      text('After collapsed controls'),
+      // Priority is an explicit definition first; Status still points at the
+      // omitted #6 and must be materialized with Status (not Priority) options.
+      select(13, 13, 'Priority', priority), select(14, 13, 'Status', status),
+      select(15, 14, 'Priority', priority), select(16, 14, 'Status', status),
+      select(17, 15, 'Priority', priority), select(18, 15, 'Status', status),
+    ];
+    const out = translate(snap(nodes));
+    expect(out).toContain('#13 combobox "Priority" (options: Low | High)');
+    expect(out).toContain('#14 combobox "Status" (options: Status option 0');
+    expect(out).not.toContain('#14 combobox "Status" (options: same as #6)');
+    expect(out).toContain('#15 combobox "Priority" (options: same as #13)');
+    expect(out).toContain('#16 "Status" (options: same as #14)');
+    expect(out).not.toContain('options: same as #6');
+  });
+
+  it('preserves dollar signs when materializing dropdown options', () => {
+    const select = (id: number, row: number): RawNode => ({
+      ...link(id, 'Plan'), role: 'combobox', row, rowGroup: 14, tableRow: true,
+      options: [`$1 ${'starter '.repeat(100)}`, '$& enterprise'],
+    });
+    const out = translate(snap([
+      ...Array.from({ length: 5 }, (_, i) => ({ ...link(i + 1, 'Short'), role: 'combobox', row: i + 1, rowGroup: 14, tableRow: true, options: ['Yes', 'No'] })),
+      select(6, 6),
+      ...Array.from({ length: 6 }, (_, i) => ({ ...link(i + 7, 'Other'), role: 'combobox', row: i + 7, rowGroup: 14, tableRow: true, options: ['Yes', 'No'] })),
+      text('After collapsed controls'), select(13, 13),
+    ]));
+    expect(out).not.toContain('#6 combobox "Plan"');
+    expect(out).toContain('#13 combobox "Plan" (options: $1 starter ');
+    expect(out).toContain('$& enterprise)');
+  });
+
+  it('treats a literal option named "same as #6" as content, not a reference', () => {
+    const select = (id: number, row: number): RawNode => ({
+      ...link(id, 'Mode'), role: 'combobox', row, rowGroup: 16, tableRow: true,
+      options: ['same as #6', 'Explicit'],
+    });
+    const out = translate(snap([select(1, 1), select(2, 2), select(3, 3)]));
+    expect(out).toContain('#1 combobox "Mode" (options: same as #6 | Explicit)');
+    expect(out).toContain('#2 combobox "Mode" (options: same as #1)');
+  });
+
+  it('keeps the requested budget when a missing dropdown anchor falls back to explicit options', () => {
+    const select = (id: number, row: number, options: string[]): RawNode => ({
+      ...link(id, `Status ${id}`), role: 'combobox', row, rowGroup: 17, tableRow: true, options,
+    });
+    const short = ['Yes', 'No'];
+    const large = Array.from({ length: 20 }, (_, i) => `Long option ${i} ${'x'.repeat(24)}`);
+    const out = translate(snap([
+      ...Array.from({ length: 5 }, (_, i) => select(i + 1, i + 1, short)),
+      select(6, 6, large),
+      ...Array.from({ length: 6 }, (_, i) => select(i + 7, i + 7, short)),
+      text('After collapsed controls'),
+      select(13, 13, large),
+    ]), 900);
+    expect(out.length).toBeLessThanOrEqual(900);
+    // If the fallback is retained, it is a real definition, never a dangling
+    // reference to the omitted #6 control.
+    expect(out).not.toContain('options: same as #6');
+  });
 });

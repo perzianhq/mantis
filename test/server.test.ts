@@ -36,6 +36,42 @@ it('guides bottom-loaded feed search through End and the returned region', async
   expect(description('find')).toContain('a matched heading is not a region label');
 });
 
+it('retains read verification, memory expansion and recovery contracts in compact descriptions', async () => {
+  const { tools } = await client.listTools();
+  const description = (name: string) => tools.find((tool) => tool.name === name)!.description!;
+  const read = description('read');
+  expect(read).toContain('act by #number');
+  expect(read).toContain('Re-read after changes');
+  expect(read).toContain('~"x" names are guesses');
+  expect(read).toContain('"Same as before" retains #numbers; region/full/fresh expands it');
+  expect(read).toContain('Before finishing, re-read and visibly verify every task constraint (filters, sort, size, quantity, date range)');
+  expect(read).toContain('If #number is stale, read() and retry; if on the wrong page, back() and keep searching');
+  expect(description('find')).toContain('Case-insensitive whole-page text search, including trimmed content');
+  expect(description('find')).toContain('returns #numbers and region');
+  expect(description('forget')).toContain('Clear region memory; next read shows everything');
+  expect(description('scroll')).toContain('Scroll up/down (default down)');
+  expect(description('scroll')).toContain('id alone brings #id into view; id + direction scrolls its containing list/panel');
+});
+
+it('retains neutral fallback order, visual targeting and human safety in compact descriptions', async () => {
+  const { tools } = await client.listTools();
+  const description = (name: string) => tools.find((tool) => tool.name === name)!.description!;
+  expect(description('media')).toContain('Only if read is insufficient');
+  expect(description('media')).toContain('media → data (prefer) → ocr → look (last resort) → ask_human');
+  expect(description('media')).toContain('Numbered images/canvases/charts');
+  expect(description('data')).toContain('Prefer; text only');
+  expect(description('data')).toContain('image/SVG/chart alt, caption, text or Chart.js/ECharts/Highcharts values');
+  expect(description('data')).toContain('id from read()/media(), or CSS selector');
+  // Nonempty metadata is not necessarily sufficient: do not reintroduce the rejected stop cue.
+  expect(description('data')).not.toMatch(/answer without|stop after|skip (?:OCR|look)/i);
+  expect(description('ocr')).toContain('Text-only OCR for image/canvas. Use if data found nothing');
+  expect(description('look')).toContain('LAST RESORT; only image-returning tool (PNG, max 800px)');
+  expect(description('look')).toContain('Only after read/data/ocr failed');
+  for (const name of ['ocr', 'look']) expect(description(name)).toContain('id or CSS selector');
+  expect(description('ask_human')).toContain('CAPTCHA, 2FA, payment or login; never solves CAPTCHAs');
+  expect(description('ask_human')).toContain('Waits for a page change, then returns the page');
+});
+
 it('a heading hit supplies a real region for adjacent paragraph context, not a heading-as-region', async () => {
   const html = `<!doctype html><title>Bulletin</title>
     <main aria-label="Bulletins"><h2>Entry Alpha</h2><p>Neighbor note: amber.</p>
