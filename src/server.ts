@@ -41,7 +41,8 @@ export function createServer(browser: MantisBrowser = new MantisBrowser()): McpS
     'find',
     {
       description:
-        'Search the whole page, including parts read trims, for text (case-insensitive). Returns #numbers and region.',
+        'Search the whole page, including parts read trims, for text (case-insensitive). Returns #numbers and region. ' +
+        'For adjacent paragraph context, read the returned region; a matched heading is not a region label.',
       inputSchema: { text: z.string() },
     },
     async ({ text }) => reply(await browser.find(text)),
@@ -82,7 +83,10 @@ export function createServer(browser: MantisBrowser = new MantisBrowser()): McpS
   );
   server.registerTool(
     'press',
-    { description: 'Press a key, e.g. Enter.', inputSchema: { key: z.string() } },
+    {
+      description: 'Press a key, e.g. Enter. For bottom-loaded feeds, try End (Control+End if no movement) to load more; repeat only while new items appear.',
+      inputSchema: { key: z.string() },
+    },
     async ({ key }) => reply(await browser.press(key)),
   );
   server.registerTool(
@@ -117,7 +121,8 @@ export function createServer(browser: MantisBrowser = new MantisBrowser()): McpS
     'data',
     {
       description:
-        'Prefer; text only. Hidden text behind an image/SVG/chart: alt, caption, SVG text, Chart.js/ECharts/Highcharts values. Use data({id: N}) with a number from read()/media(), or data({selector: "..."}).',
+        'Prefer; text only. Hidden text behind an image/SVG/chart: alt, caption, SVG text, Chart.js/ECharts/Highcharts values. Use data({id: N}) with a number from read()/media(), or data({selector: "..."}). ' +
+        'If required labels and values are present, answer without OCR/look; continue the fallback ladder only for missing information.',
       inputSchema: visual,
     },
     async ({ id, selector }) => reply(await browser.data({ id, selector })),

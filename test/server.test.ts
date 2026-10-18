@@ -27,6 +27,42 @@ it('exposes the core tools and the fallback ladder', async () => {
   expect(tools.map((t) => t.name).sort()).toEqual(['ask_human', 'back', 'click', 'data', 'fill', 'find', 'forget', 'look', 'media', 'ocr', 'open', 'press', 'read', 'scroll', 'select', 'type']);
 });
 
+it('guides bottom-loaded feed search through End and the returned region', async () => {
+  const { tools } = await client.listTools();
+  const description = (name: string) => tools.find((tool) => tool.name === name)!.description!;
+  expect(description('press')).toContain('For bottom-loaded feeds, try End (Control+End if no movement) to load more');
+  expect(description('press')).toContain('repeat only while new items appear');
+  expect(description('find')).toContain('For adjacent paragraph context, read the returned region');
+  expect(description('find')).toContain('a matched heading is not a region label');
+});
+
+it('stops chart fallbacks only when the required labels and values are present', async () => {
+  const { tools } = await client.listTools();
+  const data = tools.find((tool) => tool.name === 'data')!.description!;
+  expect(data).toContain('If required labels and values are present, answer without OCR/look');
+  // Nonempty metadata, or a truncated dataset, need not answer the actual question.
+  expect(data).toContain('continue the fallback ladder only for missing information');
+});
+
+it('a heading hit supplies a real region for adjacent paragraph context, not a heading-as-region', async () => {
+  const html = `<!doctype html><title>Bulletin</title>
+    <main aria-label="Bulletins"><h2>Entry Alpha</h2><p>Neighbor note: amber.</p>
+    <h2>Entry Beta</h2><p>Target note: indigo.</p></main>
+    <aside aria-label="Archive"><h2>Entry Gamma</h2><p>Unrelated note: teal.</p></aside>`;
+  await call('open', { url: 'data:text/html,' + encodeURIComponent(html) });
+  const found = await call('find', { text: 'Entry Beta' });
+  expect(found.text).toContain('## Entry Beta');
+  expect(found.text).not.toContain('Target note: indigo.');
+  const region = found.text.match(/in \[([^\]]+)\]/)![1];
+  const context = await call('read', { region });
+  expect(context.isError).toBe(false);
+  expect(context.text).toMatch(/Entry Beta[\s\S]*Target note: indigo\./);
+  expect(context.text).not.toContain('Unrelated note: teal.');
+  // A heading match is not itself a valid region, even though its paragraph exists.
+  const wrongRegion = await call('read', { region: 'Entry Beta' });
+  expect(wrongRegion.isError).toBe(true);
+});
+
 it('open then click by number over MCP', async () => {
   const opened = await call('open', { url: fixture('shadow.html') });
   const n = Number(opened.text.match(/#(\d+) button "Shadow button"/)![1]);

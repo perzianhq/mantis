@@ -66,6 +66,29 @@ the merged table uses the re-run result for those cells, and the other failures 
 - Accuracy is at the ceiling for the tree, so this separates the approaches on cost and speed, not success.
 - Files: [merged](results/broad-deepseek-v4.1-flash-merged.json) · [original 225](results/broad-deepseek-v4.1-flash.md) · [re-runs](results/rerun5-mantis.md), [screenshots](results/rerun5-screenshot.md).
 
+## Local tasks, Sarvam seeded fixture profile
+
+The same 25 local tasks x 3 approaches x 3 runs, using frozen profile `AGENT_FIXTURE_SEED=20261018`.
+This is a different data profile, not a claim that the model improved between runs. The original raw
+table had nine FAQ verifier false-fails (recovered separately after the attempt-URL fix) and one
+quoted-answer grader false-fail for Mantis. Two screenshot cells ended in provider CLI errors and
+remain unresolved; they are not counted as model failures.
+
+| | Mantis | Accessibility tree | Screenshots |
+|---|---:|---:|---:|
+| Correct after verified recovery | **75/75** | **75/75** | 73/75 + 2 CLI errors |
+| Median tool calls | **4** | 6 | 10 |
+| Median input tokens | **11.5k** | 23.0k | 27.6k |
+| Median time | **16.9s** | 29.2s | 38.2s |
+| Total cost (INR) | **11.3** | 20.4 | 100.3 |
+| Total input tokens | **1.83M** | 4.84M | 13.71M |
+
+- Compared with the earlier fixed-profile table, Mantis used 8% fewer total input tokens and 3%
+  less cost, with a 0.4s slower median. The profile changed, so treat that as robustness evidence,
+  not a performance delta.
+- The frozen seed and exact recovery accounting are retained in local run artifacts; only this compact,
+  reviewable scorecard is committed to avoid versioning 50MB of raw provider traces.
+
 ## Token replay
 
 14 scripted tasks, no LLM ([results](results/latest.md)). Per step, Mantis returns a median of 28 tokens,
