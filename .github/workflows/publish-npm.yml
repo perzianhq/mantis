@@ -1,0 +1,25 @@
+name: Publish npm package
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22.14.0
+          registry-url: https://registry.npmjs.org
+      - name: Use npm CLI with trusted publishing support
+        run: npm install -g npm@^11.5.1
+      - run: npm ci
+      - run: npm run build
+      - name: Verify tag matches package version
+        run: test "v$(node -p \"require('./package.json').version\")" = "$GITHUB_REF_NAME"
+      - run: npm publish --provenance

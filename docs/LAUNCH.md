@@ -11,6 +11,7 @@ cheap orientation, not reading a whole article.
 - [ ] Freeze the evaluated source version and run the [real-site eval](PLAN.md#next-steps).
 - [ ] Make a 30-second side-by-side video of the same task, with a live token counter; export a README GIF.
 - [ ] Open the README with the GIF, measured claim, [install](SETUP.md#install) and a 3-line example.
+- [ ] Configure npm Trusted Publishing for `perzianhq/mantis` and `.github/workflows/publish-npm.yml`.
 - [ ] Publish a matching GitHub release.
 
 ## 3. Launch week
