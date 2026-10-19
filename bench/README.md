@@ -13,6 +13,21 @@ Local tasks run against fixture pages served by `bench/fixtures.ts` (determinist
 answers). Live tasks (Wikipedia, Hacker News, GitHub, MDN) change over time; their numbers
 are a snapshot.
 
+## Frozen local baseline
+
+[`manifests/local-v1.json`](manifests/local-v1.json) fixes the final 225-row local baseline:
+25 task IDs, seed, approaches, runs, model, limits, source commit, and canonical result SHA-256. Treat it
+as immutable: do not edit tasks, fixture behavior, or graders to improve `local-v1`. Put any
+change in a new `local-v2` manifest and report it separately. The result checksum is canonical
+UTF-8 text with LF line endings, so it is stable across Git's line-ending settings. To verify it:
+
+```powershell
+$path = 'bench/results/final-deepseek-225-rpm50-cases10-active600-20261019.json'
+$text = (Get-Content -Raw $path) -replace "`r`n", "`n" -replace "`r", "`n"
+$bytes = [Text.UTF8Encoding]::new($false).GetBytes($text)
+([BitConverter]::ToString([Security.Cryptography.SHA256]::HashData($bytes))).Replace('-', '').ToLowerInvariant()
+```
+
 ## Token replay
 
 ```bash
