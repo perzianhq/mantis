@@ -18,6 +18,8 @@ export interface ChartData {
   title: string;
   labels: string[];
   series: ChartSeries[];
+  /** Extraction stopped at its caller-provided structural budget. */
+  truncated?: boolean;
 }
 
 export interface DataItem {
@@ -44,7 +46,7 @@ export interface Probe {
   describe(el: Element): DataItem[];
 }
 
-export function makeProbe(): Probe {
+export function makeProbe(chartPointLimit = Number.MAX_SAFE_INTEGER): Probe {
   interface Registry {
     ids: WeakMap<Element, number>;
     next: number;
@@ -53,6 +55,7 @@ export function makeProbe(): Probe {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   type Any = any;
   const win = window as unknown as { __mantis?: Registry } & Any;
+  const chartCap = Number.isFinite(chartPointLimit) ? Math.max(1, Math.floor(chartPointLimit)) : Number.MAX_SAFE_INTEGER;
   const reg: Registry = (win.__mantis ??= { ids: new WeakMap(), next: (win.__mantisBase ?? 0) + 1, byId: new Map() });
 
   const MAX_LIST = 40;
@@ -112,17 +115,31 @@ export function makeProbe(): Probe {
     if (!ch && C.instances) ch = Object.values(C.instances).find((i: Any) => i && i.canvas === c) ?? null;
     if (!ch || !ch.data) return null;
     const xs: string[] = [];
-    const series = (ch.data.datasets ?? []).map((d: Any): ChartSeries => {
-      const values = (d.data ?? []).map((v: Any, i: number) => {
+    let used = 0;
+    let seriesSeen = 0;
+    let truncated = false;
+    const series: ChartSeries[] = [];
+    for (const d of ch.data.datasets ?? []) {
+      if (seriesSeen++ >= chartCap) { truncated = true; break; }
+      const values: Array<number | string> = [];
+      for (let i = 0; i < (d.data ?? []).length; i++) {
+        if (used++ >= chartCap) { truncated = true; break; }
+        const v = d.data[i];
         const p = point(v);
         if (p.x !== undefined && !xs[i]) xs[i] = p.x;
-        return p.y;
-      });
-      return { name: String(d.label ?? ''), values };
-    });
+        values.push(p.y);
+      }
+      series.push({ name: String(d.label ?? ''), values });
+      if (truncated) break;
+    }
+    const labels: string[] = [];
+    for (let i = 0; i < (ch.data.labels ?? []).length; i++) {
+      if (i >= chartCap) { truncated = true; break; }
+      labels.push(String(ch.data.labels[i]));
+    }
     const title = ch.options?.plugins?.title?.text ?? '';
     return finish(
-      { lib: 'Chart.js', type: String(ch.config?.type ?? ch.config?._config?.type ?? ''), title: Array.isArray(title) ? title.join(' ') : String(title || ''), labels: (ch.data.labels ?? []).map(String), series },
+      { lib: 'Chart.js', type: String(ch.config?.type ?? ch.config?._config?.type ?? ''), title: Array.isArray(title) ? title.join(' ') : String(title || ''), labels, series, truncated },
       xs,
     );
   }
@@ -136,18 +153,34 @@ export function makeProbe(): Probe {
     const opt: Any = inst.getOption();
     const xs: string[] = [];
     let labels: string[] = [];
+    let used = 0;
+    let seriesSeen = 0;
+    let truncated = false;
     const axis: Any = Array.isArray(opt.xAxis) ? opt.xAxis[0] : opt.xAxis;
-    if (axis && Array.isArray(axis.data)) labels = axis.data.map((d: Any) => String(d && typeof d === 'object' ? d.value ?? d.name : d));
-    const series = (opt.series ?? []).map((s: Any): ChartSeries => {
-      const values = (s.data ?? []).map((v: Any, i: number) => {
+    if (axis && Array.isArray(axis.data)) {
+      labels = [];
+      for (let i = 0; i < axis.data.length; i++) {
+        if (i >= chartCap) { truncated = true; break; }
+        const d = axis.data[i];
+        labels.push(String(d && typeof d === 'object' ? d.value ?? d.name : d));
+      }
+    }
+    const series: ChartSeries[] = [];
+    for (const s of opt.series ?? []) {
+      if (seriesSeen++ >= chartCap) { truncated = true; break; }
+      const values: Array<number | string> = [];
+      for (let i = 0; i < (s.data ?? []).length; i++) {
+        if (used++ >= chartCap) { truncated = true; break; }
+        const v = s.data[i];
         const p = point(v);
         if (p.x !== undefined && !xs[i]) xs[i] = p.x;
-        return p.y;
-      });
-      return { name: String(s.name ?? ''), values };
-    });
+        values.push(p.y);
+      }
+      series.push({ name: String(s.name ?? ''), values });
+      if (truncated) break;
+    }
     const t: Any = Array.isArray(opt.title) ? opt.title[0] : opt.title;
-    return finish({ lib: 'ECharts', type: String(opt.series?.[0]?.type ?? ''), title: String(t?.text ?? ''), labels, series }, xs);
+    return finish({ lib: 'ECharts', type: String(opt.series?.[0]?.type ?? ''), title: String(t?.text ?? ''), labels, series, truncated }, xs);
   }
 
   function highcharts(el: Element): ChartData[] {
@@ -159,21 +192,36 @@ export function makeProbe(): Probe {
       const inside = (n: Element | undefined | null): boolean => !!n && (n.contains(el) || el.contains(n));
       if (!inside(c.renderTo) && !inside(c.container)) continue;
       const xs: string[] = [];
-      const series = (c.series ?? []).map((s: Any): ChartSeries => {
-        const pts: Any[] = s.points && s.points.length ? s.points : (s.yData ?? []).map((y: Any, i: number) => ({ y, x: s.xData?.[i] }));
-        const values = pts.map((p: Any, i: number) => {
+      let used = 0;
+      let seriesSeen = 0;
+      let truncated = false;
+      const series: ChartSeries[] = [];
+      for (const s of c.series ?? []) {
+        if (seriesSeen++ >= chartCap) { truncated = true; break; }
+        const pts: Any[] | null = s.points && s.points.length ? s.points : null;
+        const pointCount = pts ? pts.length : (s.yData?.length ?? 0);
+        const values: Array<number | string> = [];
+        for (let i = 0; i < pointCount; i++) {
+          if (used++ >= chartCap) { truncated = true; break; }
+          const p = pts ? pts[i] : { y: s.yData[i], x: s.xData?.[i] };
           const y = typeof p.y === 'number' ? round(p.y) : p.y ?? '';
           const x = p.category ?? p.name ?? p.x;
           if (x !== undefined && x !== null && !xs[i]) xs[i] = String(x);
-          return y;
-        });
-        return { name: String(s.name ?? ''), values };
-      });
+          values.push(y);
+        }
+        series.push({ name: String(s.name ?? ''), values });
+        if (truncated) break;
+      }
       const cats: Any = Array.isArray(c.xAxis) ? c.xAxis[0]?.categories : c.xAxis?.categories;
+      const labels: string[] = [];
+      if (Array.isArray(cats)) for (let i = 0; i < cats.length; i++) {
+        if (i >= chartCap) { truncated = true; break; }
+        labels.push(String(cats[i]));
+      }
       out.push(finish({
         lib: 'Highcharts', type: String(c.options?.chart?.type ?? c.series?.[0]?.type ?? ''),
         title: String(c.title?.textStr ?? c.options?.title?.text ?? ''),
-        labels: Array.isArray(cats) ? cats.map(String) : [], series,
+        labels, series, truncated,
       }, xs));
     }
     return out;

@@ -13,6 +13,7 @@ export const DATA_CHARS = 1500;
 
 // Built with the Function constructor so Playwright passes the element in (string form would not).
 const DESCRIBE = new Function('el', `return (${makeProbe.toString()})().describe(el)`) as (el: Element) => DataItem[];
+const DESCRIBE_BOUNDED = new Function('el', 'chartPointLimit', `return (${makeProbe.toString()})(chartPointLimit).describe(el)`) as (el: Element, chartPointLimit: number) => DataItem[];
 const INSTALL = `(${makeProbe.toString()})()`;
 
 /** Visible images / canvases / chart-like SVGs, each with a number from the shared registry. */
@@ -26,8 +27,10 @@ export async function listMedia(page: Page): Promise<string> {
 }
 
 /** Run the in-page `describe` on one element. */
-export async function describeElement(el: ElementHandle<Element>): Promise<DataItem[]> {
-  return (await el.evaluate(DESCRIBE)) as DataItem[];
+export async function describeElement(el: ElementHandle<Element>, chartPointLimit?: number): Promise<DataItem[]> {
+  return (await (chartPointLimit === undefined
+    ? el.evaluate(DESCRIBE)
+    : el.evaluate(DESCRIBE_BOUNDED, chartPointLimit))) as DataItem[];
 }
 
 function table(c: ChartData, budget: number): string[] {

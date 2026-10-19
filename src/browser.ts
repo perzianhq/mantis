@@ -11,6 +11,8 @@ import type { Target } from './fallback/media.js';
 import { detectCaptcha } from './fallback/captcha.js';
 import { recognize, closeOcr } from './fallback/ocr.js';
 import { downscale, pngSize } from './fallback/look.js';
+import { formatProjection, projectElement } from './project.js';
+import type { ProjectRequest } from './project.js';
 import { chromiumExecutable, userAgentFor } from './userAgent.js';
 import { parseUntil, describeUntil, waitForHuman, DEFAULT_TIMEOUT_SECONDS } from './fallback/askHuman.js';
 
@@ -621,6 +623,29 @@ export class MantisBrowser {
       const { el, label } = resolved;
       try {
         return formatData(label, await describeElement(el));
+      } finally {
+        await el.dispose();
+      }
+    });
+  }
+
+  /**
+   * A bounded, read-only projection of one already-grounded table, list/feed, or chart.
+   * This deliberately does not traverse UI pagination, scroll, expand virtual rows, or act.
+   */
+  async project(target: Target, request: ProjectRequest = {}): Promise<string> {
+    return this.guard(async () => {
+      const offset = request.offset ?? 0;
+      const limit = request.limit ?? 25;
+      if (!Number.isInteger(offset) || offset < 0) throw new ActionError('offset must be a non-negative integer');
+      if (!Number.isInteger(limit) || limit < 1 || limit > 100) throw new ActionError('limit must be an integer from 1 to 100');
+      const page = await this.activePage();
+      const { el, label } = await this.projectTarget(page, target);
+      try {
+        return formatProjection(label, await projectElement(el, {
+          kind: request.kind ?? 'auto', fields: request.fields, offset, limit, cursor: request.cursor,
+          offsetProvided: request.offset !== undefined,
+        }));
       } finally {
         await el.dispose();
       }
@@ -1322,6 +1347,26 @@ export class MantisBrowser {
       return { el, label: `"${t.selector}"` };
     }
     throw new ActionError('give an element number (id) from read()/media(), or a CSS selector');
+  }
+
+  /** Resolve a project source.  Selectors are intentional source locators, not page-wide discovery. */
+  private async projectTarget(page: Page, t: Target): Promise<{ el: ElementHandle<Element>; label: string }> {
+    if (t.id !== undefined) return this.target(page, t.id);
+    if (t.selector) {
+      let els: ElementHandle<Element>[];
+      try {
+        els = await page.$$(t.selector);
+      } catch {
+        throw new ActionError(`invalid CSS selector "${t.selector}"`);
+      }
+      if (!els.length) throw new ActionError(`nothing matches selector "${t.selector}"; give a source from read(), or a narrower CSS selector`);
+      if (els.length > 1) {
+        await Promise.all(els.map((candidate) => candidate.dispose()));
+        throw new ActionError(`selector "${t.selector}" matches ${els.length} sources; use one grounded id or a selector for exactly one source`);
+      }
+      return { el: els[0]!, label: `"${t.selector}"` };
+    }
+    throw new ActionError('give an element number (id) from read(), or a CSS selector for the projection source');
   }
 
   /** PNG of one element, scrolled into view; never the whole page. */

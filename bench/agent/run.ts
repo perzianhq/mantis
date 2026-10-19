@@ -67,6 +67,8 @@ const SARVAM_MAX_TOKENS = PROVIDER === 'sarvam' ? sarvamMaxTokens() : null;
 const CONCURRENCY = validatePositiveInt('AGENT_CONCURRENCY', process.env.AGENT_CONCURRENCY, PROVIDER === 'sarvam' ? 10 : 3, 64);
 const RESUME = validateFlag('AGENT_RESUME', process.env.AGENT_RESUME);
 const OVERWRITE = validateFlag('AGENT_OVERWRITE', process.env.AGENT_OVERWRITE);
+/** Explicit A/B arm: default keeps the ordinary Mantis tool surface. */
+const MANTIS_PROJECT = validateFlag('AGENT_MANTIS_PROJECT', process.env.AGENT_MANTIS_PROJECT);
 const FIXTURE_VARIANT = fixtureVariantFromEnv();
 if (RESUME && OVERWRITE) throw new Error('AGENT_RESUME=1 and AGENT_OVERWRITE=1 cannot be used together.');
 if (!MODEL.trim() || /[\r\n\0]/.test(MODEL)) throw new Error(`AGENT_MODEL must be a non-empty single-line model name; received ${JSON.stringify(MODEL)}.`);
@@ -200,7 +202,7 @@ async function startServer(spec: ServerSpec, warmMs: number, log: string, waitFo
 const APPROACHES: Record<Approach, { label: string; server: (dir: string) => Record<string, ServerSpec>; warmMs?: number; allow: string[]; deny?: string[] }> = {
   mantis: {
     label: 'Mantis',
-    server: (dir) => ({ mantis: { command: node, args: [path.join(REPO, 'bench', 'agent', 'bridge.mjs'), '--mantis-server'], env: { MANTIS_MEMORY_DIR: path.join(dir, 'mem'), MANTIS_USER_AGENT: BENCH_UA } } }),
+    server: (dir) => ({ mantis: { command: node, args: [path.join(REPO, 'bench', 'agent', 'bridge.mjs'), '--mantis-server'], env: { MANTIS_MEMORY_DIR: path.join(dir, 'mem'), MANTIS_USER_AGENT: BENCH_UA, MANTIS_ENABLE_PROJECT: MANTIS_PROJECT ? '1' : '0' } } }),
     allow: ['mcp__mantis'],
     deny: ['mcp__mantis__bench_capture'],
   },
@@ -786,11 +788,13 @@ const settings = {
       ? ['shell', 'apps', 'plugins', 'multi_agent', 'goals', 'sleep_tool', 'skill_search', 'view_image', 'browser_use', 'computer_use', 'in_app_browser', 'web_search']
       : ['Claude built-ins disabled by --tools ""'],
     approaches: Object.fromEntries(approaches.map((a) => [a, { allow: APPROACHES[a].allow, deny: APPROACHES[a].deny ?? [] }])),
+    mantisProject: MANTIS_PROJECT,
   },
   runtime: { nodeVersion: process.version, platform: process.platform, arch: process.arch },
   environment: {
     MANTIS_MEMORY: process.env.MANTIS_MEMORY ?? null,
     MANTIS_HEADLESS: process.env.MANTIS_HEADLESS ?? null,
+    AGENT_MANTIS_PROJECT: MANTIS_PROJECT ? '1' : '0',
     BENCH_CHROMIUM: process.env.BENCH_CHROMIUM ?? null,
     MANTIS_CHROMIUM: process.env.MANTIS_CHROMIUM ?? null,
     PLAYWRIGHT_BROWSERS_PATH: process.env.PLAYWRIGHT_BROWSERS_PATH ?? null,

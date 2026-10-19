@@ -90,6 +90,13 @@ describe('real-agent benchmark integrity helpers', () => {
     expect(() => assertCompatibleResume({ metadata: { ...expected, configFingerprint: 'changed' }, results: [] }, expected)).toThrow(/fingerprint/);
   });
 
+  it('keeps Mantis project enabled and disabled benchmark arms resume-incompatible', () => {
+    const base = { provider:'codex' as const, fixtureSeed:null, tasks:['x'], approaches:['mantis'], runs:1, model:'x', reasoning:'low', timeoutMs:1, concurrency:1, sarvamMaxTokens:null, runtime:{nodeVersion:'x',platform:'x',arch:'x'}, environment:{}, browserPaths:{} };
+    const off = makeMetadata({ ...base, toolRestrictions:{ mantisProject:false } }, {}, 'x');
+    const on = makeMetadata({ ...base, toolRestrictions:{ mantisProject:true }, environment:{ AGENT_MANTIS_PROJECT:'1' } }, {}, 'x');
+    expect(() => assertCompatibleResume({ metadata:off, results:[] }, on)).toThrow(/fingerprint/);
+  });
+
   it('rejects malformed environment settings rather than coercing them', () => {
     expect(validatePositiveInt('AGENT_RUNS', '2', 1)).toBe(2);
     expect(() => validatePositiveInt('AGENT_RUNS', '2.5', 1)).toThrow(/positive integer/);
