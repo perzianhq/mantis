@@ -46,48 +46,28 @@ Long tasks: 4 tasks of 15–27 actions each (shop checkout, admin edits, a 5-ste
 On short tasks Mantis and the tree are about even. On long tasks the tree uses 1.6–1.9x Mantis's tokens,
 because every step re-reads more of the page. Time and cost are in the results files.
 
-## Local tasks, Sarvam pilot (one model)
+## Local tasks, Sarvam final seeded baseline
 
-Agent `deepseek-v4.1-flash` (Sarvam V2 API) only. Results for this model alone; they are not Luna/Haiku numbers and not a general claim.
-25 local tasks x 3 approaches x 3 runs = 225 runs, graded by code (page state plus exact match on the final answer; no judge).
-Five failed cells were re-run once after a grader fix and harness repairs (cookie-cart/mantis, churned-max, booking-date, long-shop, long-admin on screenshots);
-the merged table uses the re-run result for those cells, and the other failures are kept as model mistakes.
+Agent `deepseek-v4.1-flash` through Sarvam V2 only; these are not Luna/Haiku or general-model claims.
+25 code-graded local fixture tasks x 3 approaches x 3 runs = 225 logical runs, with frozen fixture seed
+`20261018`. The run used a 100-step budget, 10 scheduled cases, 16 active model calls, 50 RPM, a 600s
+active-work timeout, and an 1,800s wall cap. There were no HTTP 429s or wall-cap timeouts.
 
-| | Mantis | Accessibility tree | Screenshots |
+| Per-run median / total | Mantis | Accessibility tree | Screenshots |
 |---|---:|---:|---:|
-| Correct | 74/75 | **75/75** | 71/75 |
-| Median tool calls | **4** | 6 | 10 |
-| Median input tokens | **10.9k** | 22.8k | 18.3k |
-| Median time | **16.5s** | 31.9s | 39.6s |
-| Total cost (INR) | **11.7** | 23.7 | 73.4 |
-| Total input tokens | **1.99M** | 6.35M | 10.62M |
+| Correct | **75/75** | **75/75** | 70/75 |
+| Execution excl. quota/retry wait (p50) | **8.14s** | 11.59s | 16.45s |
+| End-to-end CLI wall time (p50) | **58.56s** | 66.83s | 121.07s |
+| Input tokens incl. cache (p50) | **11.1k** | 22.9k | 27.7k |
+| Output tokens (p50) | **279** | 454 | 573 |
+| Cost estimate, INR (p50) | **0.08** | 0.16 | 0.22 |
+| Total input tokens incl. cache | **1.67M** | 4.91M | 13.11M |
+| Total output tokens | **37.2k** | 54.8k | 154.9k |
+| Total cost estimate, INR | **10.35** | 20.60 | 91.36 |
 
-- Failures: Mantis `longlist-item` run 3 (answered the page title, not the heading it was shown); screenshots `long-shop` runs 1 (timeout, 600s) and 3, `long-admin` run 3, `long-onboard` run 2.
-- Accuracy is at the ceiling for the tree, so this separates the approaches on cost and speed, not success.
-- Files: [merged](results/broad-deepseek-v4.1-flash-merged.json) · [original 225](results/broad-deepseek-v4.1-flash.md) · [re-runs](results/rerun5-mantis.md), [screenshots](results/rerun5-screenshot.md).
-
-## Local tasks, Sarvam seeded fixture profile
-
-The same 25 local tasks x 3 approaches x 3 runs, using frozen profile `AGENT_FIXTURE_SEED=20261018`.
-This is a different data profile, not a claim that the model improved between runs. The original raw
-table had nine FAQ verifier false-fails (recovered separately after the attempt-URL fix) and one
-quoted-answer grader false-fail for Mantis. Two screenshot cells ended in provider CLI errors and
-remain unresolved; they are not counted as model failures.
-
-| | Mantis | Accessibility tree | Screenshots |
-|---|---:|---:|---:|
-| Correct after verified recovery | **75/75** | **75/75** | 73/75 + 2 CLI errors |
-| Median tool calls | **4** | 6 | 10 |
-| Median input tokens | **11.5k** | 23.0k | 27.6k |
-| Median time | **16.9s** | 29.2s | 38.2s |
-| Total cost (INR) | **11.3** | 20.4 | 100.3 |
-| Total input tokens | **1.83M** | 4.84M | 13.71M |
-
-- Compared with the earlier fixed-profile table, Mantis used 8% fewer total input tokens and 3%
-  less cost, with a 0.4s slower median. The profile changed, so treat that as robustness evidence,
-  not a performance delta.
-- The frozen seed and exact recovery accounting are retained in local run artifacts; only this compact,
-  reviewable scorecard is committed to avoid versioning 50MB of raw provider traces.
+- Mantis and tree reached the correctness ceiling. Screenshot had one visual-read miss (`chart-march`: 56 vs 57) and four genuine 100-step budget exhaustions (`long-shop` runs 1–2, `long-admin` run 2, `long-onboard` run 2). These were not throttles, timeout failures, tool errors, or grader failures.
+- “Execution” removes locally measured quota, cooldown, and retry wait; CLI wall time retains that wait. Medians and totals include every logical run, including screenshot failures. Costs are published-rate INR estimates.
+- The raw result artifact and traces remain local rather than versioned; the frozen configuration above is sufficient to reproduce the scorecard.
 
 ## Token replay
 
