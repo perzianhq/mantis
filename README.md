@@ -16,16 +16,17 @@ It works with Claude Code, Codex, Cursor or your own agent as an MCP server. [In
 
 ## Results
 
-Early numbers, and they come from Mantis's own test pages: 25 local tasks graded by code, one model (`deepseek-v4.1-flash`), 3 runs each.
+Final seeded local baseline: 25 code-graded fixture tasks, `deepseek-v4.1-flash` through Sarvam V2, three runs per approach (225 logical runs). This is a local-fixture result, not a general-model or live-site claim.
 
 | | Mantis | Accessibility tree | Screenshots |
 |---|---:|---:|---:|
-| Correct | 74/75 | 75/75 | 71/75 |
-| Median tool calls | 4 | 6 | 10 |
-| Median input tokens | 10.9k | 22.8k | 18.3k |
-| Median time | 16.5s | 31.9s | 39.6s |
+| Correct | **75/75** | **75/75** | 70/75 |
+| Median input tokens | **11.1k** | 22.9k | 27.7k |
+| Median clean execution | **8.14s** | 11.59s | 16.45s |
+| Median end-to-end wall time | **58.56s** | 66.83s | 121.07s |
+| Median cost estimate | **₹0.08** | ₹0.16 | ₹0.22 |
 
-All three mostly succeed, so the difference is cost and speed: Mantis used about half the median input tokens of the tree and about a sixth of the screenshots' total cost. Real-site accuracy is not yet measured on a reviewed set. Method and caveats: [bench/RESULTS.md](bench/RESULTS.md).
+Mantis reached the same local correctness as the tree with 52.9% fewer median input tokens and 31.6% lower median clean execution time. Screenshot had one visual-read miss and four 100-step budget exhaustions. “Clean execution” excludes locally measured quota/retry wait; wall time includes it. Method, caveats and older pilot results: [bench/RESULTS.md](bench/RESULTS.md).
 
 ## Learn more
 
