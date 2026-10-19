@@ -26,7 +26,7 @@ screenshot of the final page, but not which approach produced it.
 Files: [first sample](results/codex-luna-realsite-judged.md) · [replacements](results/codex-luna-realsite-swap-judged.md)
 (raw runs: `results/codex-luna-realsite*.json`).
 
-## Local tasks
+## Local tasks (earlier pilots)
 
 26 tasks on pages written by the Mantis authors (known answers, graded by code). Short tasks are 1 run each.
 
@@ -48,7 +48,7 @@ because every step re-reads more of the page. Time and cost are in the results f
 
 ## Local tasks, Sarvam final seeded baseline
 
-Agent `deepseek-v4.1-flash` through Sarvam V2 only; these are not Luna/Haiku or general-model claims.
+Frozen `local-v1` ([manifest](manifests/local-v1.json)). Agent `deepseek-v4.1-flash` through Sarvam V2 only; these are not Luna/Haiku or general-model claims.
 25 code-graded local fixture tasks x 3 approaches x 3 runs = 225 logical runs, with frozen fixture seed
 `20261018`. The run used a 100-step budget, 10 scheduled cases, 16 active model calls, 50 RPM, a 600s
 active-work timeout, and an 1,800s wall cap. There were no HTTP 429s or wall-cap timeouts.
@@ -69,6 +69,8 @@ active-work timeout, and an 1,800s wall cap. There were no HTTP 429s or wall-cap
 - “Execution” removes locally measured quota, cooldown, and retry wait; CLI wall time retains that wait. Medians and totals include every logical run, including screenshot failures. Costs are published-rate INR estimates.
 - The raw result artifact and traces remain local rather than versioned; the frozen configuration above is sufficient to reproduce the scorecard.
 
+The planned [48-case local-v2 suite](manifests/local-v2-plan.md) and later frozen live-site set will be reported separately. Neither has a final scorecard yet.
+
 ## Token replay
 
 14 scripted tasks, no LLM ([results](results/latest.md)). Per step, Mantis returns a median of 28 tokens,
@@ -77,6 +79,6 @@ and on those Mantis shows a trimmed view, so this measures cheap orientation, no
 
 ## Caveats
 
-- 25 of the 26 local tasks are pages written by the Mantis authors.
+- The final local-v1 baseline uses 25 author-written fixture tasks. The earlier 26-task local pilots include one live task.
 - The screenshot baseline is our own minimal tool, not a product's.
 - Live sites change; real-site numbers are a snapshot.

@@ -1,7 +1,7 @@
 # Mantis: plan and progress
 
 What Mantis is: [README.md](../README.md). Design: [APPROACH.md](APPROACH.md).
-Benchmark commands, grading and the frozen real-site task plan: [bench/README.md](../bench/README.md).
+Benchmark commands and grading: [bench/README.md](../bench/README.md).
 
 ## Code layout
 
@@ -22,28 +22,24 @@ Stack: TypeScript (ESM, Node ≥20), Playwright, `@modelcontextprotocol/sdk`, zo
 ## Evaluation plan
 
 ```text
-fixed fixtures → seeded variants → coverage matrix → frozen live-site set → publish
+frozen local-v1 (complete) → separate local-v2 coverage suite (planned) → separate frozen live-site set → publish
 ```
 
 | Phase | Run | Gate |
 | --- | --- | --- |
-| Fixed fixtures | Local forms, reading, tables, dialogs, SPA navigation, charts, iframes, and long flows. | Executable DOM/state oracle and near-miss tests. |
-| Seeded variants | The same local workflows with generated content, ordering, and answers. | Record seed; oracle is derived from it. |
-| Coverage matrix | Seeded cases for regions/long reading, virtual lists, forms, dense tables, charts/canvas, overlays/shadow DOM, SPA retries, and long workflows. | Coverage tag, oracle, near miss, and matched Mantis/tree/screenshot run. |
-| Frozen live sites | Small reviewed, read-only public-site set for navigation, retrieval, comparison, and multi-page work. | Capture date, browser version and evidence; answer key where possible, judge only the rest. |
+| Local-v1 — complete | Frozen 25-task seeded local baseline, 3 approaches × 3 repeats = 225 logical runs. | Preserve the [manifest](../bench/manifests/local-v1.json) and [final scorecard](../bench/RESULTS.md#local-tasks-sarvam-final-seeded-baseline). |
+| Local-v2 — planned | Separate 48-case suite: eight domains × six cases, using three behavior families × two materially different structural cases per domain. | Seeded structural variants, executable state oracles, passing/near-miss tests, held-out discipline, and matched Mantis/tree/screenshot runs; [coverage contract](../bench/manifests/local-v2-plan.md). |
+| Frozen live sites — later | Separate reviewed, read-only public-site set for navigation, retrieval, comparison, and multi-page work. | Freeze explicit rows and capture date/browser/evidence; reviewed deterministic validators where complete, blind judge for the rest. |
 | Publish | Matched runs for Mantis, tree, and screenshot. | Per-task score, seed/trace, calls, latency, tokens, cost, and failures. |
 
-Keep model, browser, retry policy, timeout, and token budget matched across approaches. Use fixed/seeded cases for code changes; run the live-site set only at milestones or after browser/tooling changes.
+Keep model, browser, retry policy, timeout, and token budget matched across approaches. Publish each suite separately; never combine local-v1, local-v2, and live-site scores. Run the live-site set only at milestones or after browser/tooling changes. No self-hosted-app stage is planned.
 
 ## Current sequence
 
-1. Run build and focused free tests: diff, prose/action diff, fixture verification, offline analysis, real-site, and coverage.
-2. Freeze the seeded local manifest and executable oracles.
-3. **Timeout protocol:** a 600s active-work budget excludes locally measured Sarvam queue, cooldown, and retry wait; retain a generous wall-clock safety cap and report reliability telemetry.
-4. Run the 18 quota-induced timeout rows at frozen **50 RPM** as a diagnostic. Do not merge them into the completed 30-RPM result.
-5. If they recover, run a clean DeepSeek/Sarvam local baseline at the frozen configuration: **25 tasks × 3 approaches × 3 runs = 225**. Compare score, calls, p50/p90 latency, tokens, and cost; disclose harness/browser differences.
-6. Freeze the local baseline. Do not tune fixtures further.
-7. Add coverage-matrix fixtures, then establish the frozen read-only live-site set. No self-hosted-app stage is planned.
+1. Preserve local-v1 fixtures, tasks, graders, seed, and results; the final 225-run baseline is complete.
+2. Implement local-v2 from the coverage contract without modifying v1. No v2 fixtures, runner selection, or result manifest exists yet.
+3. Verify v2 oracles and near misses, freeze its case/seed manifest, then run 48 cases × 3 approaches × 3 repeats = 432 scored runs per model. Keep held-out cases out of tuning.
+4. Establish the separate frozen live-site set using the [real-site plan](../bench/README.md#real-site-tasks-blind-judge).
 
 ## Deferred work
 

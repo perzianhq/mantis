@@ -28,6 +28,8 @@ $bytes = [Text.UTF8Encoding]::new($false).GetBytes($text)
 ([BitConverter]::ToString([Security.Cryptography.SHA256]::HashData($bytes))).Replace('-', '').ToLowerInvariant()
 ```
 
+Next is a separate planned [local-v2 coverage suite](manifests/local-v2-plan.md): 48 scored cases across eight domains, using three behavior families × two materially different structural cases per domain, with held-out discipline. Three approaches and three repeats give 432 runs per model. This is a planning contract; fixtures, runner selection, and a frozen result manifest are not implemented yet. A separate frozen live-site set follows it. Report all three suites separately; no self-hosted-app stage is planned.
+
 ## Token replay
 
 ```bash
@@ -93,7 +95,7 @@ The agent ends with a `FINAL_URL:` line, so the usual grading only checks that i
 
 The "298 rows missing answer-key checks" warning is an annotation gap: the local catalog has 300 rows, only two with checks. The loader warns across the whole catalog before sampling and still loads the rows; `checks` is a repo extension, not supplied by the imported dataset.
 
-Plan: freeze about 30 explicit tasks (target 8 easy / 14 medium / 8 hard), aiming for about 20 fully verifiable and 10 live/ambiguous tasks. Add reviewed keys for stable facts, fixed references and verified outputs; retain sol judging against saved evidence for changing or ambiguous answers. Stateful tasks need final URL/form/result predicates together, not scattered matching labels. Complete deterministic validators are implemented as an opt-in: a captured final state can pass or fail them before paid judging; missing final evidence falls back to the judge, and explicit access blocks remain blocked adjudications. Require successful runs, captured evidence and passing/near-miss grader tests in `test/fixture-verification.test.ts`. Keep identical rows/repetitions for Mantis/tree/screenshot, separately for Luna and Haiku.
+Plan after local-v2: freeze a separate set of about 30 explicit tasks (target 8 easy / 14 medium / 8 hard), aiming for about 20 fully verifiable and 10 live/ambiguous tasks. Add reviewed keys for stable facts, fixed references and verified outputs; retain sol judging against saved evidence for changing or ambiguous answers. Stateful tasks need final URL/form/result predicates together, not scattered matching labels. Complete deterministic validators are implemented as an opt-in: a captured final state can pass or fail them before paid judging; missing final evidence falls back to the judge, and explicit access blocks remain blocked adjudications. Require successful runs, captured evidence and passing/near-miss grader tests in `test/fixture-verification.test.ts`. Keep identical rows/repetitions for Mantis/tree/screenshot, separately for Luna and Haiku.
 
 ### Sarvam judge and capability probe
 

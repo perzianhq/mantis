@@ -12,8 +12,8 @@ so agents act by reference. Mantis adds visual cues and compacts repeated conten
 ## 2. The Mantis approach
 
 **Rule: Mantis = the accessibility tree + what a person would notice by looking − the noise.**
-The accessibility tree is the floor, not the competition: Mantis must never lose
-information the tree has, and must add what it lacks.
+The design goal is to preserve useful visible information from the tree and add visual context,
+while keeping trimmed content reachable through search and fallbacks.
 
 ```mermaid
 flowchart TB
@@ -127,8 +127,9 @@ Measured results and their limits: [bench/RESULTS.md](../bench/RESULTS.md).
 - **Text format and budget.** `#N role "name" (states)`; regions in `[brackets]`, headings without ids.
   Target a typical `read()` at ≤~1,500 tokens and an action result at ≤~300; compact long lists without hiding access.
 - **No information loss.** Short standalone text (list items, status messages, footers) is kept;
-  collapsed lists name their items; `find("text")` reaches anything trimmed. The [coverage test](../test/coverage.test.ts) runs
-  on every test and benchmark page, and a change that breaks it does not ship, however many tokens it saves.
+  collapsed lists name their items; `find("text")` reaches trimmed content. The [coverage test](../test/coverage.test.ts) checks
+  selected synthetic and local benchmark pages against Chrome's accessibility tree, with explicit exclusions.
+  It is a regression check, not proof of coverage on every page.
 - **Speed.** The page scan returns one JSON string instead of Playwright's structured serializer
   (3x faster on big pages). When an in-page counter says nothing changed (DOM, scroll, input, focus,
   hover), the last scan is reused as the diff's "before". After an action Mantis waits 150 ms of DOM
@@ -138,4 +139,6 @@ Measured results and their limits: [bench/RESULTS.md](../bench/RESULTS.md).
   cursor starts) show as `clickable`, containers excluded. Visible iframes, cross-origin included,
   are read inline under `[iframe "title"]` with their own number range (`#10001…`).
 
-The test for every change: lose nothing the tree has, use fewer tokens, add meaning, don't get slower.
+The goal for each change: preserve useful information, use fewer tokens, add meaning, and avoid slowing actions.
+The completed local-v1 result is frozen; the separate planned 48-case local-v2 suite will test broader coverage
+before a separate frozen live-site set. See the [evaluation plan](PLAN.md#evaluation-plan).

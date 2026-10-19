@@ -2,13 +2,14 @@
 
 ## 1. The claim
 
-Use the real-site numbers and caveats in [bench/RESULTS.md](../bench/RESULTS.md).
+Use the frozen local-v1 scorecard and caveats in [bench/RESULTS.md](../bench/RESULTS.md).
+Label the earlier real-site results as a pilot; broader local-v2 and frozen live-site evaluations are planned separately.
 Publish failures and method beside the claim. Lead with agent task results; replay measures
 cheap orientation, not reading a whole article.
 
 ## 2. Gate: don't launch until all of these are done
 
-- [ ] Freeze the evaluated source version and run the [real-site eval](PLAN.md#next-steps).
+- [ ] Freeze the evaluated source version and complete the [planned evaluations](PLAN.md#current-sequence).
 - [ ] Make a 30-second side-by-side video of the same task, with a live token counter; export a README GIF.
 - [ ] Open the README with the GIF, measured claim, [install](SETUP.md#install) and a 3-line example.
 - [ ] Configure npm Trusted Publishing for `perzianhq/mantis` and `.github/workflows/publish-npm.yml`.
@@ -31,7 +32,7 @@ Fill in measured numbers before posting.
 
 **Show HN title:** `Show HN: Mantis – AI agents browse the web as numbered text, not screenshots`
 
-First comment: problem, a numbered-text example, real-site results, method/failures, known gaps,
+First comment: problem, a numbered-text example, scoped task results, method/failures, known gaps,
 and the install link. X thread: video and claim → problem → example → results/method → install/repo.
 LinkedIn: why you built it, measured results and three things learned.
 
