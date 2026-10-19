@@ -55,6 +55,8 @@ export interface SarvamClientOptions {
   /** Additional attempts after a transient failure. */
   retries?: number;
   sleep?: (ms: number) => Promise<void>;
+  /** Lifecycle notifications for waits imposed by the local limiter/retry policy. */
+  onWait?: (kind: SarvamWaitKind, phase: 'start' | 'end') => void;
 }
 
 export interface SarvamTiming {
@@ -67,6 +69,7 @@ export interface SarvamTiming {
   /** Time with a request active at the provider boundary. */
   activeRequestMs: number;
 }
+export type SarvamWaitKind = 'limiter_queue' | 'cooldown' | 'retry_backoff';
 export interface SarvamTransportStats { attempts: number; rateLimits: number; timing: SarvamTiming }
 const emptyTiming = (): SarvamTiming => ({ limiterQueueMs: 0, cooldownMs: 0, retryBackoffMs: 0, activeRequestMs: 0 });
 const addTiming = (total: SarvamTiming, next: SarvamTiming): void => {
@@ -179,10 +182,13 @@ class SarvamLimiter {
     return () => { this.active--; this.waiters.shift()?.(); };
   }
 
-  async acquire(signal?: AbortSignal): Promise<{ release: () => void; timing: Pick<SarvamTiming, 'limiterQueueMs' | 'cooldownMs'> }> {
+  async acquire(signal?: AbortSignal, onWait?: (kind: SarvamWaitKind, phase: 'start' | 'end') => void): Promise<{ release: () => void; timing: Pick<SarvamTiming, 'limiterQueueMs' | 'cooldownMs'> }> {
     const timing = { limiterQueueMs: 0, cooldownMs: 0 };
     const slotStarted = performance.now();
-    const release = await this.processSlot(signal);
+    onWait?.('limiter_queue', 'start');
+    let release: () => void;
+    try { release = await this.processSlot(signal); }
+    finally { onWait?.('limiter_queue', 'end'); }
     timing.limiterQueueMs += performance.now() - slotStarted;
     try {
       for (;;) {
@@ -205,7 +211,10 @@ class SarvamLimiter {
           writeFileSync(LIMIT_FILE, JSON.stringify(state), 'utf8');
         } finally { unlock(); }
         const waitStarted = performance.now();
-        await abortableSleep(this.sleep, wait, signal);
+        const kind: SarvamWaitKind = waitingForCooldown ? 'cooldown' : 'limiter_queue';
+        onWait?.(kind, 'start');
+        try { await abortableSleep(this.sleep, wait, signal); }
+        finally { onWait?.(kind, 'end'); }
         if (wait > 0) {
           // Classify according to the state that caused this wait. A later worker
           // may extend the deadline; the next loop accounts for that separately.
@@ -290,6 +299,7 @@ export class SarvamClient {
   private readonly retries: number;
   private readonly sleep: Sleep;
   private readonly limiter: SarvamLimiter;
+  private readonly onWait?: SarvamClientOptions['onWait'];
   private stats: SarvamTransportStats = { attempts: 0, rateLimits: 0, timing: emptyTiming() };
 
   constructor(options: SarvamClientOptions = {}) {
@@ -309,6 +319,7 @@ export class SarvamClient {
     }
     this.sleep = options.sleep ?? sleepFor;
     this.limiter = limiter(this.sleep);
+    this.onWait = options.onWait;
   }
 
   transportStats(): SarvamTransportStats { return { ...this.stats, timing: { ...this.stats.timing } }; }
@@ -320,7 +331,7 @@ export class SarvamClient {
       // Queue behind the shared limiter first: waiting for a slot or cooldown must not eat the request timeout.
       throwIfAborted(signal);
       let acquired: Awaited<ReturnType<SarvamLimiter['acquire']>>;
-      try { acquired = await this.limiter.acquire(signal); }
+      try { acquired = await this.limiter.acquire(signal, this.onWait); }
       catch (error) { throw error; }
       addTiming(requestStats.timing, { ...acquired.timing, retryBackoffMs: 0, activeRequestMs: 0 });
       addTiming(this.stats.timing, { ...acquired.timing, retryBackoffMs: 0, activeRequestMs: 0 });
@@ -351,7 +362,9 @@ export class SarvamClient {
           recordActive();
           if (attempt >= this.retries) fail(controller.signal.aborted ? 'Sarvam request timed out' : 'Sarvam network request failed');
           const delay = this.backoff(attempt), backoffStarted = performance.now();
-          await abortableSleep(this.sleep, delay, signal);
+          this.onWait?.('retry_backoff', 'start');
+          try { await abortableSleep(this.sleep, delay, signal); }
+          finally { this.onWait?.('retry_backoff', 'end'); }
           const backoffMs = performance.now() - backoffStarted;
           requestStats.timing.retryBackoffMs += backoffMs; this.stats.timing.retryBackoffMs += backoffMs;
           continue;
@@ -384,7 +397,9 @@ export class SarvamClient {
           // wait once for this worker and every other worker observes it too.
           if (response.status !== 429) {
             const backoffStarted = performance.now();
-            await abortableSleep(this.sleep, delay, signal);
+            this.onWait?.('retry_backoff', 'start');
+            try { await abortableSleep(this.sleep, delay, signal); }
+            finally { this.onWait?.('retry_backoff', 'end'); }
             const backoffMs = performance.now() - backoffStarted;
             requestStats.timing.retryBackoffMs += backoffMs; this.stats.timing.retryBackoffMs += backoffMs;
           }

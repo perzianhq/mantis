@@ -33,12 +33,14 @@ npm run bench:agent                                                             
 AGENT_OUT=my-all AGENT_TASKS=all AGENT_RUNS=3 npm run bench:agent                     # every task, 3 runs each
 AGENT_OUT=my-long AGENT_TASKS=cat:long npm run bench:agent                            # one category (or task ids)
 AGENT_OUT=my-subset AGENT_APPROACHES=mantis,tree npm run bench:agent                  # some approaches only
+AGENT_ROWS='long-shop|tree|1,long-shop|screenshot|1' AGENT_TASKS=local AGENT_RUNS=3 npm run bench:agent # exact recovery rows
 ```
 
 | Variable | Default | Meaning |
 |---|---|---|
 | `AGENT_PROVIDER` | `codex` | `codex`, `claude`, or `sarvam` |
 | `AGENT_TASKS` | pilot | `all`, task ids, or `cat:<category>`, comma-separated |
+| `AGENT_ROWS` | unset | exact recovery rows: comma-separated `task|approach|run` triples; each must exist in the selected task/approach/run plan |
 | `AGENT_FIXTURE_SEED` | unset | frozen local-fixture variant seed; requires `AGENT_TASKS=local` or explicit local task IDs. Current seed: `20261018` is one frozen profile spanning all 25 local tasks; it is not 25 independently generated profiles. |
 | `AGENT_APPROACHES` | `mantis,tree,screenshot` | also `devtools`, `browseruse` |
 | `AGENT_RUNS` | 1 | runs per task and approach |
@@ -48,7 +50,8 @@ AGENT_OUT=my-subset AGENT_APPROACHES=mantis,tree npm run bench:agent            
 | `SARVAM_MAX_TOKENS` | `8192` | Sarvam completion-token cap per turn (positive integer) |
 | `CODEX_BIN`, `CLAUDE_BIN` | installed CLI | path override for the agent CLI |
 | `AGENT_CONCURRENCY` | 3 (10 for Sarvam) | benchmark cases scheduled in parallel; each run is an agent CLI, an MCP server and a browser, so times then include more contention |
-| `AGENT_TIMEOUT_S` | 600 | per-run timeout |
+| `AGENT_TIMEOUT_S` | 600 | per-run timeout (Sarvam: active-work budget) |
+| `AGENT_WALL_TIMEOUT_S` | 1800 | Sarvam-only wall-clock safety cap; active timeout pauses during local quota/retry waits |
 | `AGENT_OUT` | `codex-agent-verified[-pilot]` | result file name; must not already exist unless resuming or overwriting |
 | `AGENT_RESUME` | 0 | resume only when schema, settings and source fingerprint match exactly |
 | `AGENT_OVERWRITE` | 0 | replace an existing result file |
@@ -82,7 +85,7 @@ Plan: freeze about 30 explicit tasks (target 8 easy / 14 medium / 8 hard), aimin
 `JUDGE_PROVIDER=sarvam` is for calibration/shadow trials until the [judge gate](../AGENTS.md#benchmark-focus) passes. Default judge, model independence and key storage follow [AGENTS.md](../AGENTS.md). Existing environment values take precedence over `.env`. The client never logs keys or raw API response bodies. Run the capability
 probe first; beta access is granted per API key, so a listed model need not accept requests.
 
-`SARVAM_RPM` (default 50 requests/minute) and 429 cooldowns are shared across agent, judge, probe and calibration processes through a small file in the OS temp directory (times only, no keys). `SARVAM_CONCURRENCY` (default 16 active model API calls per process) is separate from `AGENT_CONCURRENCY` (default 10 scheduled benchmark cases for Sarvam), so run one Sarvam job at a time. Every worker waits out a published cooldown; request timeout starts only after a slot is granted. Transient requests retry up to six total attempts with jittered exponential backoff (honoring a longer `Retry-After`). Sarvam results retain end-to-end latency plus queue, cooldown, retry-backoff and active-request timing; use `Sarvam execution excl. quota/retry wait` for approach comparisons (it excludes queue, cooldown, and retry backoff) and retain the other fields as reliability telemetry. `JUDGE_CONCURRENCY` remains 2 for Sarvam. Raise limits only when the key's actual quota permits it.
+`SARVAM_RPM` (default 50 requests/minute) and 429 cooldowns are shared across agent, judge, probe and calibration processes through a small file in the OS temp directory (times only, no keys). `SARVAM_CONCURRENCY` (default 16 active model API calls per process) is separate from `AGENT_CONCURRENCY` (default 10 scheduled benchmark cases for Sarvam), so run one Sarvam job at a time. The 600s Sarvam active-work timeout pauses during locally measured limiter queue, 429 cooldown, and retry-backoff waits; `AGENT_WALL_TIMEOUT_S=1800` still bounds wall time. Results publish active work, local quota wait, retry/cooldown timing, and wall-cap timeouts. Transient requests retry up to six total attempts with jittered exponential backoff (honoring a longer `Retry-After`). Use `Sarvam execution excl. quota/retry wait` for approach comparisons. `JUDGE_CONCURRENCY` remains 2 for Sarvam. Raise limits only when the key's actual quota permits it.
 
 **Measured Mantis/Sarvam probe (2026-10-18; not a provider limit).** Defaults are `AGENT_CONCURRENCY=10` (scheduled cases), `SARVAM_CONCURRENCY=16` (active model API calls), and `SARVAM_RPM=50`. Direct API concurrency 10 completed 12/12 representative tasks without HTTP 429s; direct API concurrency 16 completed 16/16 tasks (110 API calls) without HTTP 429s. A 20-call burst throttled. A 50-RPM probe was clean; 60 RPM produced 2 HTTP 429s in 60 requests. These are empirical results for this API key, model mix, harness, and time—not contractual concurrency or token-throughput guarantees. Sarvam's published LLM limits are RPM-only; the account Rate Limits dashboard is the authority for the active key. Keep one benchmark job active and use retries/backoff when raising the harness setting.
 

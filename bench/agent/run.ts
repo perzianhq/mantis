@@ -38,6 +38,9 @@ import { SarvamClient, loadSarvamEnv, sarvamModelSupportsImages } from './sarvam
 import { runSarvamAgent, sarvamMaxTokens } from './sarvam-agent.js';
 import type { SarvamAgentResult } from './sarvam-agent.js';
 import { sarvamExecutionExcludingWaits } from './timing.js';
+import { ActiveWorkTimeout } from './active-timeout.js';
+import type { ActiveTimeoutTelemetry, SarvamWaitKind, TimeoutKind } from './active-timeout.js';
+import { rowKey, selectExactRows } from './row-selector.js';
 
 const REPO = path.resolve(import.meta.dirname, '..', '..');
 const OUT = path.join(REPO, 'bench', 'results');
@@ -53,6 +56,9 @@ if (PROVIDER === 'sarvam' && !['gemma-4-31b', 'deepseek-v4.1-flash', 'glm-5.3', 
 const RUNS = validatePositiveInt('AGENT_RUNS', process.env.AGENT_RUNS, 1, 1000);
 const TIMEOUT_S = validatePositiveInt('AGENT_TIMEOUT_S', process.env.AGENT_TIMEOUT_S, 600, 86_400);
 const TIMEOUT_MS = TIMEOUT_S * 1000;
+/** Sarvam's active-work budget excludes local quota/retry waits; this still bounds a wedged worker. */
+const WALL_TIMEOUT_S = PROVIDER === 'sarvam' ? validatePositiveInt('AGENT_WALL_TIMEOUT_S', process.env.AGENT_WALL_TIMEOUT_S, 1800, 86_400) : 1800;
+const WALL_TIMEOUT_MS = WALL_TIMEOUT_S * 1000;
 const SARVAM_MAX_STEPS = validatePositiveInt('AGENT_MAX_STEPS', process.env.AGENT_MAX_STEPS, 100, 1_000);
 const SARVAM_MAX_TOKENS = PROVIDER === 'sarvam' ? sarvamMaxTokens() : null;
 /** Runs in flight at once. Each run is its own provider CLI process, MCP server and browser. */
@@ -321,7 +327,7 @@ interface AttemptResult {
   apiAttempts: number;
   rateLimits: number;
   usage: StreamUsage;
-  timings: { mcpStartupMs: number; cliStartupMs: number | null; cliExecutionMs: number | null; cliWallMs: number | null; verificationMs: number; cleanupMs: number; /** Harness frame capture (steps + final); not part of any CLI timing. */ captureMs: number; /** Sarvam-only quota waits and active request time; omitted by older and non-Sarvam runs. */ sarvamLimiterQueueMs?: number; sarvamCooldownMs?: number; sarvamRetryBackoffMs?: number; sarvamActiveRequestMs?: number; /** CLI execution excluding Sarvam limiter, cooldown, and retry-backoff waits. */ sarvamExecutionMs?: number | null };
+  timings: { mcpStartupMs: number; cliStartupMs: number | null; cliExecutionMs: number | null; cliWallMs: number | null; verificationMs: number; cleanupMs: number; /** Harness frame capture (steps + final); not part of any CLI timing. */ captureMs: number; /** Sarvam-only quota waits and active request time; omitted by older and non-Sarvam runs. */ sarvamLimiterQueueMs?: number; sarvamCooldownMs?: number; sarvamRetryBackoffMs?: number; sarvamActiveRequestMs?: number; /** CLI execution excluding Sarvam limiter, cooldown, and retry-backoff waits. */ sarvamExecutionMs?: number | null; /** Active-timeout telemetry for new Sarvam attempts. */ sarvamActiveWorkMs?: number; sarvamQuotaWaitMs?: number; sarvamWallCapMs?: number; sarvamTimeoutKind?: TimeoutKind | null };
   exitCode: number | null;
   signal: string | null;
   timedOut: boolean;
@@ -347,7 +353,7 @@ interface RunResult {
   /** Legacy total of normal + cache input tokens. */
   totalInputTokens: number | null;
   outputTokens: number | null; costUsd: number | null; costInr: number | null;
-  timings: { mcpStartupMs: number; cliStartupMs: number | null; cliExecutionMs: number | null; cliWallMs: number | null; verificationMs: number; cleanupMs: number; /** Harness frame capture (steps + final); not part of any CLI timing. */ captureMs: number; sarvamLimiterQueueMs?: number; sarvamCooldownMs?: number; sarvamRetryBackoffMs?: number; sarvamActiveRequestMs?: number; sarvamExecutionMs?: number | null };
+  timings: { mcpStartupMs: number; cliStartupMs: number | null; cliExecutionMs: number | null; cliWallMs: number | null; verificationMs: number; cleanupMs: number; /** Harness frame capture (steps + final); not part of any CLI timing. */ captureMs: number; sarvamLimiterQueueMs?: number; sarvamCooldownMs?: number; sarvamRetryBackoffMs?: number; sarvamActiveRequestMs?: number; sarvamExecutionMs?: number | null; sarvamActiveWorkMs?: number; sarvamQuotaWaitMs?: number; sarvamWallCapMs?: number; sarvamTimeoutKind?: TimeoutKind | null };
   resolvedModels: string[];
   attempts: AttemptResult[];
 }
@@ -377,6 +383,7 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
   let evidenceFrames: string[] = [];
   let captureMs = 0;
   let captureFailures = 0;
+  let sarvamTimeoutTelemetry: ActiveTimeoutTelemetry | null = null;
   try {
     const cfg = path.join(dir, 'mcp.json');
     const [name, spec] = Object.entries(APPROACHES[approach].server(dir))[0]!;
@@ -430,10 +437,23 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
       traceLog.on('error', () => { /* diagnostic traces are best-effort */ });
       const controller = new AbortController();
       let timedOut = false;
-      const timer = setTimeout(() => { timedOut = true; controller.abort(new Error('Sarvam agent timed out')); }, TIMEOUT_MS);
+      let timeoutKind: TimeoutKind | null = null;
+      const pauses = new Map<SarvamWaitKind, (() => void)[]>();
+      const budget = new ActiveWorkTimeout(TIMEOUT_MS, WALL_TIMEOUT_MS, (kind) => {
+        timedOut = true; timeoutKind = kind;
+        controller.abort(new Error(kind === 'wall_clock' ? 'Sarvam agent hit the wall-clock safety cap' : 'Sarvam agent exhausted active-work time'));
+      });
+      const onWait = (kind: SarvamWaitKind, phase: 'start' | 'end'): void => {
+        if (phase === 'start') {
+          const entries = pauses.get(kind) ?? [];
+          entries.push(budget.pause(kind)); pauses.set(kind, entries);
+        } else pauses.get(kind)?.pop()?.();
+      };
+      let sarvamClient: SarvamClient | null = null;
       try {
+      sarvamClient = new SarvamClient({ timeoutMs: Math.min(120_000, TIMEOUT_MS), onWait });
       const sarvam = await runSarvamAgent({
-        client: new SarvamClient({ timeoutMs: Math.min(120_000, TIMEOUT_MS) }), mcp: server, model: MODEL, prompt, server: name,
+        client: sarvamClient, mcp: server, model: MODEL, prompt, server: name,
         allow: a.allow, deny: a.deny, maxSteps: SARVAM_MAX_STEPS, toolTimeoutMs: Math.min(60_000, TIMEOUT_MS),
         trace: (event) => traceLog.write(JSON.stringify({ at: new Date().toISOString(), ...event }) + '\n'),
         onToolResult: () => { toolsDone++; queueCapture(); },
@@ -447,13 +467,17 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
         // Cancellation can arrive while tool discovery is still pending, before
         // the agent can construct a partial result. Keep the telemetry accrued by
         // the harness and record an ordinary timeout rather than a startup crash.
-        parsed = { ...parseClaudeStream(''), sawInit: true, connected: true, mcpStatuses: ['connected'], resultError: true, resultText: 'Sarvam agent timed out', turns: null } as SarvamAgentResult;
+        const transport = sarvamClient?.transportStats();
+        parsed = { ...parseClaudeStream(''), sawInit: true, connected: true, mcpStatuses: ['connected'], resultError: true, resultText: 'Sarvam agent timed out', turns: null,
+          apiAttempts: transport?.attempts ?? 0, rateLimits: transport?.rateLimits ?? 0,
+          timing: transport?.timing ?? { limiterQueueMs: 0, cooldownMs: 0, retryBackoffMs: 0, activeRequestMs: 0 }, diagnostics: [] } as SarvamAgentResult;
       } finally {
-        clearTimeout(timer);
+        for (const entries of pauses.values()) while (entries.length) entries.pop()!();
+        sarvamTimeoutTelemetry = budget.stop();
         traceLog.end();
       }
       const now = Date.now();
-      processResult = { out: '', exitCode: timedOut ? null : 0, signal: timedOut ? 'timeout' : null, timedOut, launchError: null, initAt: cliStart, exitAt: now };
+      processResult = { out: '', exitCode: timedOut ? null : 0, signal: timedOut ? (timeoutKind === 'wall_clock' ? 'wall-timeout' : 'active-timeout') : null, timedOut, launchError: null, initAt: cliStart, exitAt: now };
     } else processResult = await new Promise<typeof processResult>((done) => {
       // Wait for MCP servers to connect before the first turn (otherwise the model may start with no tools).
       const env = { ...process.env, MCP_CONNECTION_NONBLOCKING: 'false', MCP_TIMEOUT: '60000' };
@@ -571,7 +595,9 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
   if (PROVIDER === 'codex' && 'policyViolation' in parsed && parsed.policyViolation) status = 'cli_error';
   let error = '';
   if (status === 'connection_failure') error = `MCP connection failed: ${parsed.mcpStatuses.join(', ') || 'no server reported connected'}`;
-  else if (status === 'timeout') error = `timed out after ${TIMEOUT_S}s`;
+  else if (status === 'timeout') error = sarvamTimeoutTelemetry?.timeoutKind === 'wall_clock'
+    ? `wall-clock safety cap reached after ${WALL_TIMEOUT_S}s`
+    : PROVIDER === 'sarvam' ? `active-work timed out after ${TIMEOUT_S}s` : `timed out after ${TIMEOUT_S}s`;
   else if (status === 'crash') error = processResult.launchError || startupError || `${PROVIDER} CLI exited with code ${processResult.exitCode ?? 'unknown'}`;
   else if (status === 'cli_error') error = codexConfigFailure
     ? 'Codex Code Mode host is unavailable; check the installed CLI companion executable and configuration.'
@@ -599,7 +625,10 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
       ...(PROVIDER === 'sarvam' ? (() => {
         const timing = (parsed as SarvamAgentResult).timing ?? { limiterQueueMs: 0, cooldownMs: 0, retryBackoffMs: 0, activeRequestMs: 0 };
         const execution = sarvamExecutionExcludingWaits(cliWallMs, timing);
-        return { sarvamLimiterQueueMs: timing.limiterQueueMs, sarvamCooldownMs: timing.cooldownMs, sarvamRetryBackoffMs: timing.retryBackoffMs, sarvamActiveRequestMs: timing.activeRequestMs, sarvamExecutionMs: execution };
+        return {
+          sarvamLimiterQueueMs: timing.limiterQueueMs, sarvamCooldownMs: timing.cooldownMs, sarvamRetryBackoffMs: timing.retryBackoffMs, sarvamActiveRequestMs: timing.activeRequestMs, sarvamExecutionMs: execution,
+          ...(sarvamTimeoutTelemetry ? { sarvamActiveWorkMs: sarvamTimeoutTelemetry.activeWorkMs, sarvamQuotaWaitMs: sarvamTimeoutTelemetry.quotaWaitMs, sarvamWallCapMs: sarvamTimeoutTelemetry.wallCapMs, sarvamTimeoutKind: sarvamTimeoutTelemetry.timeoutKind } : {}),
+        };
       })() : {}),
     },
     exitCode: processResult.exitCode, signal: processResult.signal, timedOut: processResult.timedOut, fixtureCheck, fixtureEvidence,
@@ -611,7 +640,7 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
 const fmt = (n: number): string => n.toLocaleString('en-US');
 const fmtMaybe = (n: number | null): string => n === null ? 'unknown' : fmt(n);
 
-function report(results: RunResult[], approaches: Approach[], tasks: AgentTask[], metadata: RunMetadata): string {
+function report(results: RunResult[], approaches: Approach[], tasks: AgentTask[], metadata: RunMetadata, plannedRuns: number): string {
   const L: string[] = [];
   const providerLabel = PROVIDER === 'codex' ? 'Codex CLI (`codex exec`)' : PROVIDER === 'claude' ? 'Claude Code (`claude -p`)' : 'Sarvam V2 API tool loop';
   const providerShort = PROVIDER === 'codex' ? 'Codex' : PROVIDER === 'claude' ? 'Claude' : 'Sarvam';
@@ -621,9 +650,11 @@ function report(results: RunResult[], approaches: Approach[], tasks: AgentTask[]
     `Correctness uses the expected answer and, for instrumented local fixtures, a page-state check. Token values come from the ${PROVIDER === 'sarvam' ? 'Sarvam completion responses' : PROVIDER === 'codex' ? 'Codex event stream' : 'Claude stream'}; ${PROVIDER === 'sarvam' ? 'cost is an INR estimate from published prices' : PROVIDER === 'codex' ? 'Codex does not report USD cost, so cost remains unknown' : 'reported cost is retained'}; missing values stay unknown. An LLM is in the loop, so numbers vary run to run.`);
   L.push('');
   L.push(`- Date: ${new Date().toISOString().slice(0, 10)}; runs per task and approach: ${RUNS}; ${CONCURRENCY} runs in parallel.`);
-  L.push(`- Scope: ${tasks.length} tasks × ${approaches.length} approaches × ${RUNS} runs = ${tasks.length * approaches.length * RUNS} logical runs; ${results.length} recorded so far; ${results.reduce((n, r) => n + r.attempts.length, 0)} total attempts including retries.`);
+  const selectedRows = metadata.settings.rows;
+  L.push(`- Scope: ${selectedRows ? `${selectedRows.length} exact recovery row${selectedRows.length === 1 ? '' : 's'}` : `${tasks.length} tasks × ${approaches.length} approaches × ${RUNS} runs`} = ${plannedRuns} logical runs; ${results.length} recorded so far; ${results.reduce((n, r) => n + r.attempts.length, 0)} total attempts including retries.`);
+  if (selectedRows) L.push(`- Exact rows: ${selectedRows.map((row) => `\`${row}\``).join(', ')}.`);
   L.push(`- ${providerShort} runtime: ${metadata.cliVersion ?? 'unknown'}; resolved model(s): ${[...new Set(results.flatMap((r) => r.attempts.flatMap((a) => a.resolvedModels)))].join(', ') || 'unknown'}.`);
-  L.push(`- MCP startup (spawn + warm-up) is separate from ${providerShort} execution time. Execution runs from ${PROVIDER === 'sarvam' ? 'the first API request to the final response' : `process launch to exit; startup is launch to first ${PROVIDER === 'codex' ? '`thread.started`' : 'init'} event`}. Fixture verification and cleanup are timed separately. These include contention from parallel runs.${PROVIDER === 'sarvam' ? ' Sarvam also reports execution excluding limiter, cooldown, and retry-backoff waits separately; use that comparison metric, while retaining end-to-end wall time and retry telemetry.' : ''}`);
+  L.push(`- MCP startup (spawn + warm-up) is separate from ${providerShort} execution time. Execution runs from ${PROVIDER === 'sarvam' ? 'the first API request to the final response' : `process launch to exit; startup is launch to first ${PROVIDER === 'codex' ? '`thread.started`' : 'init'} event`}. Fixture verification and cleanup are timed separately. These include contention from parallel runs.${PROVIDER === 'sarvam' ? ` Sarvam's ${TIMEOUT_S}s active-work timeout pauses for local limiter/cooldown/retry waits; a ${WALL_TIMEOUT_S}s wall-clock cap remains. Reports retain both wait and timeout telemetry.` : ''}`);
   L.push(`- Browser observation size counts text characters and image blocks returned by browser MCP tools. It is a separate diagnostic from ${PROVIDER === 'codex' ? 'Codex-reported' : 'Claude-reported'} input tokens; the benchmark does not subtract it to estimate overhead.`);
   L.push('- Mantis: all its tools. Accessibility tree: Playwright MCP 0.0.83 (headless, isolated) without its JavaScript-running tools. ' +
     'Screenshots: a minimal computer-use-style server (bench/agent/screenshot-mcp.ts): screenshot, click(x,y), type, key, scroll, back.');
@@ -655,13 +686,15 @@ function report(results: RunResult[], approaches: Approach[], tasks: AgentTask[]
   if (PROVIDER === 'sarvam') {
     L.push(`| Sarvam API attempts (including retries) | ${approaches.map((a) => fmt(by(a).reduce((n, r) => n + r.attempts.reduce((total, attempt) => total + attempt.apiAttempts, 0), 0))).join(' | ')} |`);
     L.push(`| Sarvam HTTP 429 responses | ${approaches.map((a) => fmt(by(a).reduce((n, r) => n + r.attempts.reduce((total, attempt) => total + attempt.rateLimits, 0), 0))).join(' | ')} |`);
-    const sarvamTime = (runs: RunResult[], key: 'sarvamExecutionMs' | 'sarvamLimiterQueueMs' | 'sarvamCooldownMs' | 'sarvamRetryBackoffMs' | 'sarvamActiveRequestMs'): number | null => {
+    const sarvamTime = (runs: RunResult[], key: 'sarvamExecutionMs' | 'sarvamLimiterQueueMs' | 'sarvamCooldownMs' | 'sarvamRetryBackoffMs' | 'sarvamActiveRequestMs' | 'sarvamActiveWorkMs' | 'sarvamQuotaWaitMs'): number | null => {
       const values = runs.map((run) => run.timings[key]);
       return values.length === 0 || values.some((value) => value === null || value === undefined) ? null : values.reduce<number>((sum, value) => sum + (value ?? 0), 0);
     };
     L.push(`| Sarvam execution excl. quota/retry wait (total, s) | ${approaches.map((a) => { const value = sarvamTime(by(a), 'sarvamExecutionMs'); return value === null ? 'unknown' : (value / 1000).toFixed(1); }).join(' | ')} |`);
     L.push(`| Sarvam limiter queue / cooldown (total, s) | ${approaches.map((a) => { const queue = sarvamTime(by(a), 'sarvamLimiterQueueMs'); const cooldown = sarvamTime(by(a), 'sarvamCooldownMs'); return queue === null || cooldown === null ? 'unknown' : `${(queue / 1000).toFixed(1)} / ${(cooldown / 1000).toFixed(1)}`; }).join(' | ')} |`);
     L.push(`| Sarvam active request / retry backoff (total, s) | ${approaches.map((a) => { const active = sarvamTime(by(a), 'sarvamActiveRequestMs'); const retry = sarvamTime(by(a), 'sarvamRetryBackoffMs'); return active === null || retry === null ? 'unknown' : `${(active / 1000).toFixed(1)} / ${(retry / 1000).toFixed(1)}`; }).join(' | ')} |`);
+    L.push(`| Sarvam active work / local quota wait (total, s) | ${approaches.map((a) => { const active = sarvamTime(by(a), 'sarvamActiveWorkMs'); const wait = sarvamTime(by(a), 'sarvamQuotaWaitMs'); return active === null || wait === null ? 'unknown' : `${(active / 1000).toFixed(1)} / ${(wait / 1000).toFixed(1)}`; }).join(' | ')} |`);
+    L.push(`| Sarvam wall-cap timeouts | ${approaches.map((a) => by(a).reduce((n, r) => n + r.attempts.filter((attempt) => attempt.timings.sarvamTimeoutKind === 'wall_clock').length, 0)).join(' | ')} |`);
   }
   L.push(`| MCP tool errors (including retries) | ${approaches.map((a) => fmt(sumNumber(by(a), 'toolErrors'))).join(' | ')} |`);
   L.push(`| Browser observation text (observed chars) | ${approaches.map((a) => fmt(sumNumber(by(a), 'observationChars'))).join(' | ')} |`);
@@ -721,8 +754,10 @@ if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$/.test(rawName) || rawName === '.' || raw
 const name = rawName;
 const jobs: { t: AgentTask; a: Approach; run: number }[] = [];
 for (const t of tasks) for (let run = 1; run <= RUNS; run++) for (const a of approaches) jobs.push({ t, a, run });
-const key = (task: string, a: string, run: number): string => `${task}|${a}|${run}`;
-const order = (r: RunResult): number => jobs.findIndex((j) => j.t.id === r.task && j.a === r.approach && j.run === r.run);
+const exactRows = selectExactRows(jobs.map((job) => ({ ...job, task: job.t.id, approach: job.a })), process.env.AGENT_ROWS);
+const plannedJobs = exactRows.jobs.map(({ t, a, run }) => ({ t, a, run }));
+const key = rowKey;
+const order = (r: RunResult): number => plannedJobs.findIndex((j) => j.t.id === r.task && j.a === r.approach && j.run === r.run);
 
 mkdirSync(OUT, { recursive: true });
 const jsonPath = path.join(OUT, `${name}.json`);
@@ -735,7 +770,7 @@ if (outputExists && !RESUME && !OVERWRITE) {
 if (!existsSync(jsonPath) && RESUME) throw new Error(`AGENT_RESUME=1 requested, but ${jsonPath} does not exist.`);
 const settings = {
   provider: PROVIDER, fixtureSeed: FIXTURE_VARIANT?.seed ?? null,
-  tasks: tasks.map((t) => t.id), approaches, runs: RUNS, model: MODEL, reasoning: PROVIDER === 'codex' ? REASONING : PROVIDER === 'sarvam' ? `max-steps:${SARVAM_MAX_STEPS}` : 'not-applicable', timeoutMs: TIMEOUT_MS, concurrency: CONCURRENCY, sarvamMaxTokens: SARVAM_MAX_TOKENS,
+  tasks: tasks.map((t) => t.id), approaches, runs: RUNS, rows: exactRows.rows, model: MODEL, reasoning: PROVIDER === 'codex' ? REASONING : PROVIDER === 'sarvam' ? `max-steps:${SARVAM_MAX_STEPS}` : 'not-applicable', timeoutMs: TIMEOUT_MS, ...(PROVIDER === 'sarvam' ? { wallTimeoutMs: WALL_TIMEOUT_MS } : {}), concurrency: CONCURRENCY, sarvamMaxTokens: SARVAM_MAX_TOKENS,
   toolRestrictions: {
     builtins: PROVIDER === 'codex'
       ? ['shell', 'apps', 'plugins', 'multi_agent', 'goals', 'sleep_tool', 'skill_search', 'view_image', 'browser_use', 'computer_use', 'in_app_browser', 'web_search']
@@ -760,7 +795,7 @@ const settings = {
 };
 preflightApproaches(approaches);
 const sourceFiles = [
-  'bench/agent/run.ts', 'bench/agent/integrity.ts', 'bench/agent/tasks.ts', 'bench/agent/bridge.mjs', 'bench/fixture-variants.ts',
+  'bench/agent/run.ts', 'bench/agent/integrity.ts', 'bench/agent/active-timeout.ts', 'bench/agent/row-selector.ts', 'bench/agent/tasks.ts', 'bench/agent/bridge.mjs', 'bench/fixture-variants.ts',
   'bench/agent/codex.ts', 'bench/agent/codex-config.ts', 'bench/agent/sarvam.ts', 'bench/agent/sarvam-agent.ts', 'bench/agent/realsite.ts', 'bench/agent/grading.ts', 'bench/agent/evidence.ts', 'bench/agent/png.ts', 'bench/agent/mcp-proxy.ts',
   ...(existsSync(path.join(REPO, 'bench', 'agent', 'realsite-tasks.json')) ? ['bench/agent/realsite-tasks.json'] : []),
   'bench/agent/screenshot-mcp.ts', 'bench/fixtures.ts', 'bench/fixtures-more.ts', 'bench/fixtures-long.ts', 'bench/adapters.ts',
@@ -779,13 +814,13 @@ if (existsSync(jsonPath) && RESUME) {
   results.push(...(saved.results as RunResult[]));
 }
 const done = new Set(results.map((r) => key(r.task, r.approach, r.run)));
-const todo = jobs.filter((j) => !done.has(key(j.t.id, j.a, j.run)));
+const todo = plannedJobs.filter((j) => !done.has(key(j.t.id, j.a, j.run)));
 
 /** Results are written after every run, so a stopped eval loses nothing and can resume. */
 function save(): void {
   results.sort((x, y) => order(x) - order(y));
   writeFileSync(jsonPath, JSON.stringify({ metadata, model: MODEL, runs: RUNS, results }, null, 2));
-  writeFileSync(markdownPath, report(results, approaches, tasks, metadata));
+  writeFileSync(markdownPath, report(results, approaches, tasks, metadata, plannedJobs.length));
 }
 
 let abortReason: string | null = null;

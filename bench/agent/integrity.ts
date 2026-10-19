@@ -189,9 +189,13 @@ export interface ConfigForFingerprint {
   tasks: string[];
   approaches: string[];
   runs: number;
+  /** Null for a normal Cartesian plan; exact task|approach|run rows for a recovery-only run. */
+  rows?: string[] | null;
   model: string;
   reasoning: string;
   timeoutMs: number;
+  /** Sarvam-only wall-clock safety cap; absent in historical artifacts. */
+  wallTimeoutMs?: number;
   concurrency: number;
   sarvamMaxTokens: number | null;
   toolRestrictions: Record<string, unknown>;

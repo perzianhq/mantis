@@ -134,6 +134,15 @@ describe('SarvamClient', () => {
     expect(result.timing?.activeRequestMs).toBeLessThan(result.timing.retryBackoffMs ?? 0);
   });
 
+  it('emits local wait lifecycle events for retry backoff', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const waits: string[] = [];
+    const fetcher = vi.fn<typeof fetch>().mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce(completion());
+    await new SarvamClient({ apiKey: key, fetch: fetcher, sleep: async () => {}, onWait: (kind, phase) => waits.push(`${kind}:${phase}`) }).complete(request);
+    expect(waits).toContain('retry_backoff:start');
+    expect(waits).toContain('retry_backoff:end');
+  });
+
   it('rejects malformed JSON without reflecting response bodies', async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response(key));
     await expect(new SarvamClient({ apiKey: key, fetch: fetcher }).complete(request)).rejects.toThrow('Sarvam response was not valid JSON');
