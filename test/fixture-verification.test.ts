@@ -8,6 +8,8 @@ import { gradeTaskAnswer, normalizeGradedAnswer, TASKS } from '../bench/agent/ta
 import { gradeRequirements } from '../bench/agent/grading.js';
 import { extractGradedAnswer } from '../bench/agent/integrity.js';
 import { LONG_EXPECT } from '../bench/fixtures-long.js';
+import { V2_DEVELOPMENT_CASES, V2_DEVELOPMENT_CHECKS, gradeV2DevelopmentCase } from '../bench/fixtures-v2-development.js';
+import { v2DevelopmentRoute } from '../bench/fixtures-v2-development.js';
 import { spawn } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import net from 'node:net';
@@ -357,7 +359,7 @@ let page: Page;
 
 beforeAll(async () => {
   browser = await chromium.launch(chromiumExecutable());
-  fixtures = await startFixtures({ checks: TASKS.map((entry) => ({ taskId: entry.id, check: entry.check })) });
+  fixtures = await startFixtures({ checks: [...TASKS.map((entry) => ({ taskId: entry.id, check: entry.check })), ...V2_DEVELOPMENT_CHECKS], developmentRoute: v2DevelopmentRoute });
   page = await browser.newPage();
 });
 
@@ -383,6 +385,57 @@ function expectAnswer(taskId: string, correct: string, nearMiss: string): void {
   expect(entry.expect.test(correct)).toBe(true);
   expect(entry.expect.test(nearMiss)).toBe(false);
 }
+
+it('accepts every v2 development oracle with its seeded row/series, column/category, and value', () => {
+  for (const entry of V2_DEVELOPMENT_CASES) {
+    const answer = [entry.expected.rowKey, entry.expected.columnKey, entry.expected.value].filter(Boolean).join(' | ');
+    const events = [{ kind: 'settled', fixtureState: entry.expected.state }] as unknown as import('../bench/fixtures.js').FixtureObservation[];
+    expect(gradeV2DevelopmentCase(entry.id, answer, events), entry.id).toEqual({ ok: true });
+  }
+});
+
+it('rejects v2 development case-specific answer and terminal-state near misses', () => {
+  for (const entry of V2_DEVELOPMENT_CASES) {
+    const expected = entry.expected;
+    const goodState = [{ kind: 'settled', fixtureState: expected.state }] as unknown as import('../bench/fixtures.js').FixtureObservation[];
+    const badState = [{ kind: 'settled', fixtureState: entry.nearMiss.state }] as unknown as import('../bench/fixtures.js').FixtureObservation[];
+    expect(gradeV2DevelopmentCase(entry.id, entry.nearMiss.answer, goodState).ok, `${entry.nearMissId}: answer`).toBe(false);
+    const correct = [expected.rowKey, expected.columnKey, expected.value].filter(Boolean).join(' | ');
+    expect(gradeV2DevelopmentCase(entry.id, correct, badState).ok, `${entry.nearMissId}: state`).toBe(false);
+  }
+});
+
+it('rejects a v2 answer that includes a competing structured final line', () => {
+  const entry = V2_DEVELOPMENT_CASES.find((candidate) => candidate.id === 'v2-table-sort-row')!;
+  const events = [{ kind: 'settled', fixtureState: entry.expected.state }] as unknown as import('../bench/fixtures.js').FixtureObservation[];
+  const correct = [entry.expected.rowKey, entry.expected.columnKey, entry.expected.value].filter(Boolean).join(' | ');
+  expect(gradeV2DevelopmentCase(entry.id, `${correct}\nFinal answer: Account 074 | Amount | 8,742`, events).ok).toBe(false);
+});
+
+it('uses the actual virtual and nested scroll owners for the v2 list fixtures', async () => {
+  const virtual = V2_DEVELOPMENT_CASES.find((entry) => entry.id === 'v2-list-virtual-target')!;
+  await openAttempt(virtual.id, 'v2-virtual-pass', virtual.route);
+  expect(await page.getByRole('button', { name: /Dispatch 087/ }).count()).toBe(0);
+  await page.locator('#feed').evaluate((node) => { (node as HTMLElement).scrollTop = 86 * 42; });
+  await page.waitForFunction(() => [...document.querySelectorAll('button')].some((button) => button.textContent?.includes('Dispatch 087')));
+  await page.getByRole('button', { name: /Dispatch 087/ }).click();
+  await verify(virtual.id, 'v2-virtual-pass', true);
+
+  const filtered = V2_DEVELOPMENT_CASES.find((entry) => entry.id === 'v2-list-paginated-filter')!;
+  await openAttempt(filtered.id, 'v2-filter-pass', filtered.route);
+  await page.selectOption('#team', 'North');
+  if (await page.getByRole('button', { name: /Request 032/ }).count() === 0) await page.locator('#next').click();
+  await page.getByRole('button', { name: /Request 032/ }).click();
+  await verify(filtered.id, 'v2-filter-pass', true);
+
+  const nested = V2_DEVELOPMENT_CASES.find((entry) => entry.id === 'v2-list-nested-scroll')!;
+  await openAttempt(nested.id, 'v2-nested-pass', nested.route);
+  expect(await page.getByRole('button', { name: /Inbox note 062/ }).count()).toBe(0);
+  await page.locator('#inbox').evaluate((node) => { (node as HTMLElement).scrollTop = 61 * 42; });
+  await page.waitForFunction(() => [...document.querySelectorAll('button')].some((button) => button.textContent?.includes('Inbox note 062')));
+  await page.getByRole('button', { name: /Inbox note 062/ }).click();
+  await verify(nested.id, 'v2-nested-pass', true);
+});
 
 it('panel-veil covers Mantis click-through, controls, and hidden-control near misses', async () => {
   const panelVeil = pathToFileURL(resolve(import.meta.dirname, 'fixtures/hidden/panel-veil.html')).href;

@@ -27,6 +27,8 @@ export interface FixtureVerification extends FixtureCheckResult {
 }
 export type FixtureCheck = (events: FixtureObservation[]) => boolean | FixtureCheckResult;
 export interface FixtureCheckEntry { taskId: string; check?: FixtureCheck }
+export interface DevelopmentFixtureRoute { body: string; type: string }
+export type DevelopmentFixtureRouter = (path: string) => DevelopmentFixtureRoute | null;
 
 /** Hidden benchmark instrumentation. It records ordinary DOM events and post-action page state. */
 const attemptBootstrap = String.raw`<script>(() => {
@@ -83,12 +85,16 @@ const observer = String.raw`<script>
       setTimeout(() => send('settled', event.target, summary, undefined, actionId), 0);
     }, true);
   }
+  if (window.__fixtureFrameObserver) addEventListener('message', () => setTimeout(() => send('settled', document.body), 0));
 })();
 </script>`;
+/** Only opt-in v2 iframe workflows need a parent message settlement hook. */
+const frameObserver = String.raw`<script>window.__fixtureFrameObserver=true;</script>`;
 
-function instrument(html: string): string {
+function instrument(html: string, includeFrameObserver = false): string {
   const bootstrapped = html.includes('</head>') ? html.replace('</head>', `${attemptBootstrap}</head>`) : `${attemptBootstrap}${html}`;
-  return bootstrapped.includes('</body>') ? bootstrapped.replace('</body>', `${observer}</body>`) : `${bootstrapped}${observer}`;
+  const scripts = `${includeFrameObserver ? frameObserver : ''}${observer}`;
+  return bootstrapped.includes('</body>') ? bootstrapped.replace('</body>', `${scripts}</body>`) : `${bootstrapped}${scripts}`;
 }
 
 interface AttemptState { taskId: string; events: FixtureObservation[]; pending: number; lastAt: number; nextArrival: number }
@@ -240,13 +246,17 @@ function route(path: string): string | null {
 }
 
 /** Start the fixture server on a random localhost port. Each attempt token has isolated evidence. */
-export async function startFixtures(options: { checks?: FixtureCheckEntry[]; variant?: FixtureVariant | null } = {}): Promise<{
+export async function startFixtures(options: { checks?: FixtureCheckEntry[]; variant?: FixtureVariant | null; developmentRoute?: DevelopmentFixtureRouter } = {}): Promise<{
   base: string;
   baseFor: (taskId: string, attemptId: string) => string;
   verify: (taskId: string, attemptId?: string) => Promise<FixtureVerification | null>;
   close: () => Promise<void>;
 }> {
   const checks = new Map((options.checks ?? []).map((entry) => [entry.taskId, entry.check]));
+  // Preserve the frozen v1 response/evidence contract: fixture HTML is always
+  // instrumented, including a plain startFixtures() response. V2 routes and
+  // the frame-message settlement hook remain explicit opt-ins below.
+  const instrumentResponses = true;
   const attempts = new Map<string, AttemptState>();
   const server: Server = createServer((req, res) => {
     const url = new URL(req.url ?? '/', 'http://x');
@@ -276,16 +286,17 @@ export async function startFixtures(options: { checks?: FixtureCheckEntry[]; var
       if (!attempts.has(token)) attempts.set(token, newAttempt(''));
     }
     const long = LONG_PAGES[path];
-    const more = long === undefined ? moreRoute(path) : { body: long, type: 'text/html; charset=utf-8' };
+    const v2 = long === undefined ? (options.developmentRoute?.(path) ?? null) : null;
+    const more = long === undefined ? (v2 ?? moreRoute(path)) : { body: long, type: 'text/html; charset=utf-8' };
     if (more) {
-      res.writeHead(200, { 'content-type': more.type }).end(more.type.startsWith('text/html') ? instrument(options.variant?.html(more.body) ?? more.body) : more.body);
+      res.writeHead(200, { 'content-type': more.type }).end(more.type.startsWith('text/html') ? (instrumentResponses ? instrument(options.variant?.html(more.body) ?? more.body, !!options.developmentRoute) : options.variant?.html(more.body) ?? more.body) : more.body);
       return;
     }
     const html = route(path);
     if (html === null) {
       res.writeHead(404, { 'content-type': 'text/html' }).end(page('Not found', '<h1>Not found</h1>'));
     } else {
-      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }).end(instrument(options.variant?.html(html) ?? html));
+      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }).end(instrumentResponses ? instrument(options.variant?.html(html) ?? html, !!options.developmentRoute) : options.variant?.html(html) ?? html);
     }
   });
   await new Promise<void>((ok) => server.listen(0, '127.0.0.1', ok));
