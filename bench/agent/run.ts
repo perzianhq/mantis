@@ -6,6 +6,7 @@
  *   npx tsx bench/agent/run.ts                          # pilot: 2 tasks x 5 approaches x 1 run
  *   AGENT_TASKS=all AGENT_RUNS=3 npx tsx bench/agent/run.ts
  *   AGENT_TASKS=cat:forms AGENT_APPROACHES=mantis,tree npx tsx bench/agent/run.ts
+ *   AGENT_SUITE=local-v2-development AGENT_TASKS=all npx tsx bench/agent/run.ts  # opt-in, 32 local development cases
  *   AGENT_RESUME=1 ...                                   (continue a stopped run)
  *   AGENT_PROVIDER=codex AGENT_MODEL=gpt-6.1-sol AGENT_REASONING=medium ... (defaults)
  *
@@ -25,6 +26,7 @@ import { fixtureVariantFromEnv } from '../fixture-variants.js';
 import { benchUserAgent } from '../../src/userAgent.js';
 import { gradeTaskAnswer, normalizeGradedAnswer, PILOT, TASKS } from './tasks.js';
 import type { AgentTask } from './tasks.js';
+import { LOCAL_V2_DEVELOPMENT_CHECKS, LOCAL_V2_DEVELOPMENT_MANIFEST, LOCAL_V2_DEVELOPMENT_SUITE, LOCAL_V2_DEVELOPMENT_TASKS, gradeLocalV2DevelopmentCase, localV2DevelopmentRoute } from './local-v2-development.js';
 import { aggregateUsage, assertCompatibleResume, classifyAttempt, extractGradedAnswer, hashSources, isHarnessFailure, makeMetadata, nextHarnessFailureStreak, parseClaudeStream, validateFlag, validatePositiveInt, wrongAnswerDetail } from './integrity.js';
 import type { AttemptStatus, RunMetadata, StreamUsage } from './integrity.js';
 import { codexArgs, rawMcpToolName } from './codex-config.js';
@@ -579,7 +581,9 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
   const gradedAnswer = normalizeGradedAnswer(rawAnswer);
   // Grade agent-visible seeded facts. Fixture event state is canonicalized
   // separately inside startFixtures so action checks remain deterministic.
-  const answerGrade = task.judged ? null : gradeTaskAnswer(task, rawAnswer);
+  const answerGrade = task.judged ? null : SUITE === LOCAL_V2_DEVELOPMENT_SUITE
+    ? gradeLocalV2DevelopmentCase(task.id, rawAnswer, fixtureEvidence?.events ?? [])
+    : gradeTaskAnswer(task, rawAnswer);
   const answer = gradedAnswer.slice(0, 160);
   const connected = parsed.connected;
   const connectionState = connected ? 'connected' : parsed.sawInit ? 'failed' : 'unknown';
@@ -726,20 +730,25 @@ function report(results: RunResult[], approaches: Approach[], tasks: AgentTask[]
   return L.join('\n') + '\n';
 }
 
-const want = process.env.AGENT_TASKS ?? PILOT.join(',');
+const SUITE = process.env.AGENT_SUITE ?? 'local-v1';
+if (SUITE !== 'local-v1' && SUITE !== LOCAL_V2_DEVELOPMENT_SUITE) throw new Error(`unknown AGENT_SUITE ${JSON.stringify(SUITE)}; use local-v1 or ${LOCAL_V2_DEVELOPMENT_SUITE}`);
+const suiteTasks = SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? LOCAL_V2_DEVELOPMENT_TASKS : TASKS;
+const suiteChecks = SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? LOCAL_V2_DEVELOPMENT_CHECKS : undefined;
+const want = process.env.AGENT_TASKS ?? (SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? 'all' : PILOT.join(','));
 // "all", task ids, or categories ("cat:forms"), comma-separated.
 const picks = want.split(',');
-const categories = [...new Set(TASKS.map((t) => t.category))];
+const categories = [...new Set(suiteTasks.map((t) => t.category))];
 for (const pick of picks) {
-  if (pick !== 'all' && pick !== 'local' && !TASKS.some((t) => t.id === pick) && !categories.includes(pick.replace(/^cat:/, '') as AgentTask['category'])) {
-    throw new Error(`unknown AGENT_TASKS entry ${JSON.stringify(pick)}; ids: ${TASKS.map((t) => t.id).join(', ')}`);
+  if (pick !== 'all' && pick !== 'local' && !suiteTasks.some((t) => t.id === pick) && !categories.includes(pick.replace(/^cat:/, '') as AgentTask['category'])) {
+    throw new Error(`unknown AGENT_TASKS entry ${JSON.stringify(pick)}; ids: ${suiteTasks.map((t) => t.id).join(', ')}`);
   }
 }
 // "all" means the deterministic tasks; judged real-site tasks must be asked for (cat:realsite).
-const selectedTasks = want === 'all' ? TASKS.filter((t) => !t.judged) : want === 'local' ? TASKS.filter((t) => t.site === 'local') : TASKS.filter((t) => picks.includes(t.id) || picks.includes(`cat:${t.category}`) || picks.includes(t.category));
+const selectedTasks = want === 'all' ? suiteTasks.filter((t) => !t.judged) : want === 'local' ? suiteTasks.filter((t) => t.site === 'local') : suiteTasks.filter((t) => picks.includes(t.id) || picks.includes(`cat:${t.category}`) || picks.includes(t.category));
 const tasks = FIXTURE_VARIANT ? selectedTasks.map((task) => FIXTURE_VARIANT.task(task)) : selectedTasks;
-if (!tasks.length) throw new Error(`no tasks match AGENT_TASKS=${want}; ids: ${TASKS.map((t) => t.id).join(', ')}`);
+if (!tasks.length) throw new Error(`no tasks match AGENT_TASKS=${want}; ids: ${suiteTasks.map((t) => t.id).join(', ')}`);
 if (FIXTURE_VARIANT && tasks.some((task) => task.site !== 'local')) throw new Error('AGENT_FIXTURE_SEED requires local tasks only; use AGENT_TASKS=local or explicit local task IDs.');
+if (FIXTURE_VARIANT && SUITE === LOCAL_V2_DEVELOPMENT_SUITE) throw new Error('AGENT_FIXTURE_SEED is frozen for local-v1 only and cannot be used with local-v2-development.');
 const approaches = (process.env.AGENT_APPROACHES ?? 'mantis,tree,screenshot').split(',') as Approach[];
 const validApproaches: Approach[] = ['mantis', 'tree', 'devtools', 'browseruse', 'screenshot'];
 if (!approaches.length || approaches.some((a) => !validApproaches.includes(a)) || new Set(approaches).size !== approaches.length) {
@@ -749,7 +758,7 @@ if (PROVIDER === 'sarvam' && approaches.includes('screenshot') && !sarvamModelSu
   throw new Error(`AGENT_MODEL ${JSON.stringify(MODEL)} cannot run the screenshot approach because it does not support image observations.`);
 }
 const providerPrefix = PROVIDER;
-const rawName = process.env.AGENT_OUT ?? `${providerPrefix}-agent-verified${want === PILOT.join(',') ? '-pilot' : ''}`;
+const rawName = process.env.AGENT_OUT ?? `${providerPrefix}-agent-verified${SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? '-local-v2-development' : want === PILOT.join(',') ? '-pilot' : ''}`;
 if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$/.test(rawName) || rawName === '.' || rawName === '..') throw new Error(`invalid AGENT_OUT name: ${JSON.stringify(rawName)}`);
 const name = rawName;
 const jobs: { t: AgentTask; a: Approach; run: number }[] = [];
@@ -769,7 +778,8 @@ if (outputExists && !RESUME && !OVERWRITE) {
 }
 if (!existsSync(jsonPath) && RESUME) throw new Error(`AGENT_RESUME=1 requested, but ${jsonPath} does not exist.`);
 const settings = {
-  provider: PROVIDER, fixtureSeed: FIXTURE_VARIANT?.seed ?? null,
+  provider: PROVIDER, suite: SUITE, fixtureSeed: FIXTURE_VARIANT?.seed ?? null,
+  ...(SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? { suiteVersion: 1, suiteManifest: LOCAL_V2_DEVELOPMENT_MANIFEST } : {}),
   tasks: tasks.map((t) => t.id), approaches, runs: RUNS, rows: exactRows.rows, model: MODEL, reasoning: PROVIDER === 'codex' ? REASONING : PROVIDER === 'sarvam' ? `max-steps:${SARVAM_MAX_STEPS}` : 'not-applicable', timeoutMs: TIMEOUT_MS, ...(PROVIDER === 'sarvam' ? { wallTimeoutMs: WALL_TIMEOUT_MS } : {}), concurrency: CONCURRENCY, sarvamMaxTokens: SARVAM_MAX_TOKENS,
   toolRestrictions: {
     builtins: PROVIDER === 'codex'
@@ -795,10 +805,10 @@ const settings = {
 };
 preflightApproaches(approaches);
 const sourceFiles = [
-  'bench/agent/run.ts', 'bench/agent/integrity.ts', 'bench/agent/active-timeout.ts', 'bench/agent/row-selector.ts', 'bench/agent/tasks.ts', 'bench/agent/bridge.mjs', 'bench/fixture-variants.ts',
+  'bench/agent/run.ts', 'bench/agent/integrity.ts', 'bench/agent/active-timeout.ts', 'bench/agent/row-selector.ts', 'bench/agent/tasks.ts', 'bench/agent/local-v2-development.ts', 'bench/agent/bridge.mjs', 'bench/fixture-variants.ts',
   'bench/agent/codex.ts', 'bench/agent/codex-config.ts', 'bench/agent/sarvam.ts', 'bench/agent/sarvam-agent.ts', 'bench/agent/realsite.ts', 'bench/agent/grading.ts', 'bench/agent/evidence.ts', 'bench/agent/png.ts', 'bench/agent/mcp-proxy.ts',
   ...(existsSync(path.join(REPO, 'bench', 'agent', 'realsite-tasks.json')) ? ['bench/agent/realsite-tasks.json'] : []),
-  'bench/agent/screenshot-mcp.ts', 'bench/fixtures.ts', 'bench/fixtures-more.ts', 'bench/fixtures-long.ts', 'bench/adapters.ts',
+  'bench/agent/screenshot-mcp.ts', 'bench/fixtures.ts', 'bench/fixtures-more.ts', 'bench/fixtures-long.ts', 'bench/fixtures-v2-development.ts', 'bench/fixtures-v2-interaction-development.ts', 'bench/fixtures-v2-reading-workflows-development.ts', 'bench/adapters.ts',
   ...sourceFilesUnder('src'), ...sourceFilesUnder('dist'), 'package-lock.json',
 ];
 const sourceHashes = hashSources(REPO, sourceFiles);
@@ -824,7 +834,7 @@ function save(): void {
 }
 
 let abortReason: string | null = null;
-const fx = await startFixtures({ checks: tasks.map((t) => ({ taskId: t.id, check: t.check })), variant: FIXTURE_VARIANT });
+const fx = await startFixtures({ checks: suiteChecks ?? tasks.map((t) => ({ taskId: t.id, check: t.check })), variant: FIXTURE_VARIANT, ...(SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? { developmentRoute: localV2DevelopmentRoute } : {}) });
 try {
   let next = 0;
   let consecutiveHarnessFailures = 0;
