@@ -391,6 +391,7 @@ it('accepts every v2 development oracle with its seeded row/series, column/categ
     const answer = [entry.expected.rowKey, entry.expected.columnKey, entry.expected.value].filter(Boolean).join(' | ');
     const events = [{ kind: 'settled', fixtureState: entry.expected.state }] as unknown as import('../bench/fixtures.js').FixtureObservation[];
     expect(gradeV2DevelopmentCase(entry.id, answer, events), entry.id).toEqual({ ok: true });
+    expect(gradeV2DevelopmentCase(entry.id, `ANSWER: ${answer}`, events), entry.id).toEqual({ ok: true });
   }
 });
 
