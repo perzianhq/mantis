@@ -54,7 +54,7 @@ const reading = (index: number, family: Extract<V2ReadingWorkflowFamily, 'landma
   const answer = readingAnswers[index]!;
   return {
     id: `v2-reading-${family}`, domain: 'regions-reading', family, structuralVariant: variant, seed: readingSeeds[index]!, split: 'development',
-    route: `/v2/reading/${family}`, prompt: (base) => `Open ${base}/v2/reading/${family}. ${prompt} Submit exactly: ${source}: <target-region code>.`,
+    route: `/v2/reading/${family}`, prompt: (base) => `Open ${base}/v2/reading/${family}. ${prompt} Enter the requested text into 'Final submission', click 'Submit answer', verify the confirmation, then reply ANSWER: <answer>. Submit exactly: ${source}: <target-region code>.`,
     expected: { answer: `${source}: ${answer}`, terminalState }, oracleId: `v2-reading-${family}-oracle`, nearMissId: `v2-reading-${family}-wrong-region-or-context`, check: check(terminalState),
   };
 };

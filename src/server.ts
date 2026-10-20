@@ -92,8 +92,8 @@ export function createServer(browser: MantisBrowser = new MantisBrowser()): McpS
   server.registerTool(
     'scroll',
     {
-      description: 'Scroll up/down (default down). id alone brings #id into view; id + direction scrolls its containing list/panel.',
-      inputSchema: { direction: z.enum(['up', 'down']).optional(), id: id.optional() },
+      description: 'Scroll up/down/left/right (default down). id alone brings #id into view; id + direction scrolls its containing list/panel/table. For wide tables use right; without id, a scrollable container is used when the page cannot scroll.',
+      inputSchema: { direction: z.enum(['up', 'down', 'left', 'right']).optional(), id: id.optional() },
     },
     async ({ direction, id }) =>
       reply(await (id !== undefined && direction ? browser.scroll(direction, id) : browser.scroll(id ?? direction ?? 'down'))),

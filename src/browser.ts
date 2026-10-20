@@ -517,10 +517,10 @@ export class MantisBrowser {
   }
 
   /**
-   * Scroll the page up/down by most of a screen, or bring element `#id` into view.
+   * Scroll the page in one direction by most of a screen, or bring element `#id` into view.
    * With a direction and `inside` (an id), scroll the list/panel that contains `#inside` instead.
    */
-  async scroll(target: 'up' | 'down' | number = 'down', inside?: number): Promise<string> {
+  async scroll(target: 'up' | 'down' | 'left' | 'right' | number = 'down', inside?: number): Promise<string> {
     return this.act(async (page) => {
       if (typeof target === 'number') {
         const { el, label } = await this.target(page, target);
@@ -539,54 +539,72 @@ export class MantisBrowser {
       try {
         r = await el.evaluate((node, dir) => {
           const parent = (n: Element): Element | null => n.parentElement ?? (n.getRootNode() instanceof ShadowRoot ? (n.getRootNode() as ShadowRoot).host : null);
+          const horizontal = dir === 'left' || dir === 'right';
           let box: Element | null = null;
           for (let n: Element | null = node; n && n !== document.body && n !== document.documentElement; n = parent(n)) {
-            if (n.scrollHeight > n.clientHeight + 4 && /auto|scroll|overlay/.test(getComputedStyle(n).overflowY)) { box = n; break; }
+            const style = getComputedStyle(n);
+            const scrolls = horizontal
+              ? n.scrollWidth > n.clientWidth + 4 && /auto|scroll|overlay/.test(style.overflowX)
+              : n.scrollHeight > n.clientHeight + 4 && /auto|scroll|overlay/.test(style.overflowY);
+            if (scrolls) { box = n; break; }
           }
           if (!box) return null;
-          const before = box.scrollTop;
-          box.scrollBy({ top: (dir === 'down' ? 1 : -1) * Math.round(box.clientHeight * 0.8), behavior: 'instant' as ScrollBehavior });
-          const max = box.scrollHeight - box.clientHeight;
+          const before = horizontal ? box.scrollLeft : box.scrollTop;
+          const delta = (dir === 'down' || dir === 'right' ? 1 : -1) * Math.round((horizontal ? box.clientWidth : box.clientHeight) * 0.8);
+          box.scrollBy(horizontal ? { left: delta, behavior: 'instant' as ScrollBehavior } : { top: delta, behavior: 'instant' as ScrollBehavior });
+          const after = horizontal ? box.scrollLeft : box.scrollTop;
+          const max = horizontal ? box.scrollWidth - box.clientWidth : box.scrollHeight - box.clientHeight;
           const name = (box.getAttribute('aria-label') ?? '').replace(/\s+/g, ' ').trim();
-          return { moved: box.scrollTop !== before, pct: max > 0 ? Math.round((box.scrollTop / max) * 100) : 100, name: name.length > 40 ? name.slice(0, 39) + '…' : name };
+          return { moved: after !== before, pct: max > 0 ? Math.round((after / max) * 100) : 100, name: name.length > 40 ? name.slice(0, 39) + '…' : name };
         }, target);
       } catch (e) {
         throw new ActionError(this.explain(e, `#${inside}`));
       } finally {
         await el.dispose();
       }
-      if (!r) return `#${inside} is not inside a scrollable list; ${await this.scrollPage(page, target)}`;
-      const where = r.name ? `"${r.name}"` : `the list containing #${inside}`;
+      if (!r) return `#${inside} is not inside a scrollable container; ${await this.scrollPage(page, target)}`;
+      const where = r.name ? `"${r.name}"` : `the container containing #${inside}`;
       return r.moved
         ? `scrolled ${target} inside ${where}; now at ${r.pct}% of it`
-        : `scroll ${target} inside ${where}: already at the ${target === 'down' ? 'bottom' : 'top'} of it`;
+        : `scroll ${target} inside ${where}: already at the ${target === 'down' ? 'bottom' : target === 'up' ? 'top' : target === 'right' ? 'right edge' : 'left edge'} of it`;
     }, { quiet: true });
   }
 
   /** Scroll the page, or its largest inner scroll container when the page itself cannot scroll. */
-  private async scrollPage(page: Page, target: 'up' | 'down'): Promise<string> {
+  private async scrollPage(page: Page, target: 'up' | 'down' | 'left' | 'right'): Promise<string> {
     const r = await page.evaluate((dir) => {
-      const dy = (dir === 'down' ? 1 : -1) * Math.round(window.innerHeight * 0.8);
-      let scroller: Element = document.scrollingElement ?? document.documentElement;
-      const before = scroller.scrollTop;
-      window.scrollBy(0, dy);
-      if (scroller.scrollTop === before) {
-        // The page itself does not scroll; look for the largest inner scroll container.
+      const horizontal = dir === 'left' || dir === 'right';
+      const delta = (dir === 'down' || dir === 'right' ? 1 : -1) * Math.round((horizontal ? window.innerWidth : window.innerHeight) * 0.8);
+      const pageScroller: Element = document.scrollingElement ?? document.documentElement;
+      let scroller: Element = pageScroller;
+      const position = (element: Element) => horizontal ? element.scrollLeft : element.scrollTop;
+      const extent = (element: Element) => horizontal ? element.scrollWidth - element.clientWidth : element.scrollHeight - element.clientHeight;
+      const before = position(scroller);
+      window.scrollBy(horizontal ? delta : 0, horizontal ? 0 : delta);
+      if (position(scroller) === before) {
+        // The page itself does not scroll on this axis; choose the largest
+        // matching inner container so `scroll({direction:'right'})` remains
+        // useful even when the model has no numbered handle for the table.
         let best = 0;
         for (const e of Array.from(document.querySelectorAll('*'))) {
           const area = e.clientWidth * e.clientHeight;
-          if (area > best && e.scrollHeight > e.clientHeight + 4 && /auto|scroll/.test(getComputedStyle(e).overflowY)) {
+          const style = getComputedStyle(e);
+          const scrolls = horizontal
+            ? e.scrollWidth > e.clientWidth + 4 && /auto|scroll/.test(style.overflowX)
+            : e.scrollHeight > e.clientHeight + 4 && /auto|scroll/.test(style.overflowY);
+          if (area > best && scrolls) {
             best = area;
             scroller = e;
           }
         }
-        if (scroller !== (document.scrollingElement ?? document.documentElement)) scroller.scrollBy(0, dy);
+        if (scroller !== pageScroller) scroller.scrollBy(horizontal ? delta : 0, horizontal ? 0 : delta);
       }
-      const max = scroller.scrollHeight - scroller.clientHeight;
-      return { moved: scroller.scrollTop !== before || scroller !== (document.scrollingElement ?? document.documentElement), pct: max > 0 ? Math.round((scroller.scrollTop / max) * 100) : 100, max };
+      const after = position(scroller);
+      const max = extent(scroller);
+      return { moved: after !== before, pct: max > 0 ? Math.round((after / max) * 100) : 100, max };
     }, target);
     if (r.max <= 0) return `scroll ${target}: nothing to scroll (page fits on screen)`;
-    return r.moved ? `scrolled ${target}; now at ${r.pct}% of page` : `scroll ${target}: already at the ${target === 'down' ? 'bottom' : 'top'}`;
+    return r.moved ? `scrolled ${target}; now at ${r.pct}% of page` : `scroll ${target}: already at the ${target === 'down' ? 'bottom' : target === 'up' ? 'top' : target === 'right' ? 'right edge' : 'left edge'}`;
   }
 
   async back(): Promise<string> {

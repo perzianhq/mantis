@@ -413,6 +413,27 @@ it('rejects a v2 answer that includes a competing structured final line', () => 
   expect(gradeV2DevelopmentCase(entry.id, `${correct}\nFinal answer: Account 074 | Amount | 8,742`, events).ok).toBe(false);
 });
 
+it('accepts presentation-only confirmation punctuation and labels without weakening v2 answer keys', () => {
+  const nested = V2_DEVELOPMENT_CASES.find((entry) => entry.id === 'v2-list-nested-scroll')!;
+  const virtual = V2_DEVELOPMENT_CASES.find((entry) => entry.id === 'v2-list-virtual-target')!;
+  const state = [{ kind: 'settled', fixtureState: nested.expected.state }] as unknown as import('../bench/fixtures.js').FixtureObservation[];
+  expect(gradeV2DevelopmentCase(nested.id, 'inbox-062 | Archive | inbox-062 archived', state)).toEqual({ ok: true });
+  const virtualState = [{ kind: 'settled', fixtureState: virtual.expected.state }] as unknown as import('../bench/fixtures.js').FixtureObservation[];
+  expect(gradeV2DevelopmentCase(virtual.id, 'feed-087 | Pin | Confirmation: Dispatch 087 pinned.', virtualState)).toEqual({ ok: true });
+  expect(gradeV2DevelopmentCase(nested.id, 'inbox-061 | Archive | inbox-061 archived', state).ok).toBe(false);
+});
+
+it('accepts only the bounded visible aliases for image units and responsive chart labels', () => {
+  const image = V2_DEVELOPMENT_CASES.find((entry) => entry.id === 'v2-chart-image-fact')!;
+  const responsive = V2_DEVELOPMENT_CASES.find((entry) => entry.id === 'v2-chart-responsive')!;
+  const imageState = [{ kind: 'settled', fixtureState: image.expected.state }] as unknown as import('../bench/fixtures.js').FixtureObservation[];
+  const responsiveState = [{ kind: 'settled', fixtureState: responsive.expected.state }] as unknown as import('../bench/fixtures.js').FixtureObservation[];
+  expect(gradeV2DevelopmentCase(image.id, 'Dock C | min | 17 min', imageState)).toEqual({ ok: true });
+  expect(gradeV2DevelopmentCase(responsive.id, 'Bookings | Q4 | 147', responsiveState)).toEqual({ ok: true });
+  expect(gradeV2DevelopmentCase(image.id, 'Dock A | min | 17 min', imageState).ok).toBe(false);
+  expect(gradeV2DevelopmentCase(responsive.id, 'Bookings | Q3 | 147', responsiveState).ok).toBe(false);
+});
+
 it('uses the actual virtual and nested scroll owners for the v2 list fixtures', async () => {
   const virtual = V2_DEVELOPMENT_CASES.find((entry) => entry.id === 'v2-list-virtual-target')!;
   await openAttempt(virtual.id, 'v2-virtual-pass', virtual.route);

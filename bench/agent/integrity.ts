@@ -4,7 +4,7 @@ import path from 'node:path';
 
 export const RESULT_SCHEMA_VERSION = 3;
 
-export type AttemptStatus = 'success' | 'wrong_answer' | 'connection_failure' | 'timeout' | 'crash' | 'cli_error';
+export type AttemptStatus = 'success' | 'wrong_answer' | 'connection_failure' | 'timeout' | 'step_limit' | 'crash' | 'cli_error';
 
 /** Infrastructure failures are deliberately identified from harness diagnostics, never model output. */
 export function isHarnessFailure(input: { status: AttemptStatus; error: string; diagnostics?: string[] }): boolean {
@@ -33,13 +33,14 @@ export function wrongAnswerDetail(provider: string, resultText: string, sawResul
 }
 
 export function classifyAttempt(input: {
-  sawInit: boolean; connected: boolean; sawResult: boolean; resultError: boolean; timedOut: boolean;
+  sawInit: boolean; connected: boolean; sawResult: boolean; resultError: boolean; stepLimited?: boolean; timedOut: boolean;
   launchError: string | null; exitCode: number | null; answerMatches: boolean;
   hasFixtureCheck: boolean; fixtureOk: boolean | null;
 }): AttemptStatus {
   if (input.timedOut) return 'timeout';
   if (input.launchError) return 'crash';
   if (input.sawInit && !input.connected) return 'connection_failure';
+  if (input.stepLimited) return 'step_limit';
   if (input.resultError) return 'cli_error';
   if (!input.sawResult) return input.exitCode !== 0 ? 'crash' : 'cli_error';
   if (!input.connected) return 'connection_failure';

@@ -29,6 +29,13 @@ it('rejects appended or contradictory interaction final answers', () => {
   expect(gradeV2InteractionDevelopmentCase(fixture.id, `${fixture.expected.answer} Also changed billing alerts.`, events).ok).toBe(false);
 });
 
+it('accepts the benchmark ANSWER protocol for every interaction oracle', () => {
+  for (const fixture of V2_INTERACTION_DEVELOPMENT_CASES) {
+    const events = [{ kind: 'settled', fixtureState: fixture.expected.state }] as any;
+    expect(gradeV2InteractionDevelopmentCase(fixture.id, `ANSWER: ${fixture.expected.answer}`, events), fixture.id).toEqual({ ok: true });
+  }
+});
+
 it('keeps interaction routes opt-in and isolated from the shared fixture router', () => {
   for (const fixture of V2_INTERACTION_DEVELOPMENT_CASES) {
     const served = v2InteractionDevelopmentRoute(fixture.route);

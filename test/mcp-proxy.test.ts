@@ -1,7 +1,72 @@
 import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
 import { describe, expect, it, vi } from 'vitest';
-import { createMcpProxy } from '../bench/agent/mcp-proxy.js';
+import { createMcpProxy, isForbiddenBenchmarkNavigation } from '../bench/agent/mcp-proxy.js';
+
+it('blocks source and JavaScript URLs for every UI browser navigator while preserving http(s) fixture URLs', () => {
+  for (const tool of ['open', 'navigate', 'browser_navigate']) {
+    expect(isForbiddenBenchmarkNavigation(tool, { url: 'view-source:https://example.test/page' })).toBe(true);
+    expect(isForbiddenBenchmarkNavigation(tool, { url: '  JAVASCRIPT:alert(1)' })).toBe(true);
+    expect(isForbiddenBenchmarkNavigation(tool, { url: 'java\nscript:alert(1)' })).toBe(true);
+    expect(isForbiddenBenchmarkNavigation(tool, { url: 'http://127.0.0.1:4173/fixture' })).toBe(false);
+    expect(isForbiddenBenchmarkNavigation(tool, { url: 'https://example.test/page' })).toBe(false);
+  }
+  expect(isForbiddenBenchmarkNavigation('click', { url: 'javascript:alert(1)' })).toBe(false);
+});
+
+it('returns an MCP error without forwarding a forbidden navigation to the browser child', () => {
+  const stdin = new PassThrough();
+  const stdout = new PassThrough();
+  let forwarded = '';
+  stdin.setEncoding('utf8');
+  stdin.on('data', (chunk: string) => { forwarded += chunk; });
+  const proxy = createMcpProxy({ stdin, stdout });
+  const replies: string[] = [];
+  let socket: EventEmitter & { setEncoding: () => unknown; write: (line: string) => boolean };
+  socket = Object.assign(new EventEmitter(), {
+    setEncoding: () => socket,
+    write: (line: string) => { replies.push(line); return true; },
+  });
+  proxy.attach(socket as never);
+  socket.emit('data', JSON.stringify({ jsonrpc: '2.0', id: 7, method: 'tools/call', params: { name: 'browser_navigate', arguments: { url: 'view-source:https://example.test' } } }) + '\n');
+  expect(forwarded).toBe('');
+  expect(replies.map((line) => JSON.parse(line))).toEqual([expect.objectContaining({ id: 7, error: expect.objectContaining({ message: expect.stringContaining('URL policy blocks') }) })]);
+  proxy.close('test complete');
+});
+
+it('enforces the navigation policy for Sarvam’s direct proxy calls before the child receives them', async () => {
+  const stdin = new PassThrough();
+  const stdout = new PassThrough();
+  let forwarded = '';
+  stdin.setEncoding('utf8');
+  stdin.on('data', (chunk: string) => { forwarded += chunk; });
+  const proxy = createMcpProxy({ stdin, stdout });
+  await expect(proxy.call('tools/call', { name: 'navigate', arguments: { url: 'view-source:https://example.test' } })).rejects.toThrow('URL policy blocks');
+  await expect(proxy.call('tools/call', { name: 'open', arguments: { url: 'java\tscript:alert(1)' } })).rejects.toThrow('URL policy blocks');
+  expect(forwarded).toBe('');
+  proxy.close('test complete');
+});
+
+it('forwards ordinary http(s) and localhost direct navigation calls', async () => {
+  const stdin = new PassThrough();
+  const stdout = new PassThrough();
+  let buffered = '';
+  const forwarded: any[] = [];
+  stdin.setEncoding('utf8');
+  stdin.on('data', (chunk: string) => {
+    buffered += chunk;
+    for (let end = buffered.indexOf('\n'); end >= 0; end = buffered.indexOf('\n')) {
+      const request = JSON.parse(buffered.slice(0, end)); buffered = buffered.slice(end + 1); forwarded.push(request);
+      stdout.write(JSON.stringify({ jsonrpc: '2.0', id: request.id, result: request.method === 'initialize' ? { protocolVersion: '2025-03-26' } : { forwarded: request.params } }) + '\n');
+    }
+  });
+  const proxy = createMcpProxy({ stdin, stdout });
+  for (const url of ['http://127.0.0.1:4173/fixture', 'https://example.test/page']) {
+    await expect(proxy.call('tools/call', { name: 'navigate', arguments: { url } })).resolves.toEqual({ forwarded: { name: 'navigate', arguments: { url } } });
+  }
+  expect(forwarded.filter((request) => request.method === 'tools/call')).toHaveLength(2);
+  proxy.close('test complete');
+});
 
 describe('MCP proxy cancellation', () => {
   it('removes the shared abort listener after every completed harness request', async () => {

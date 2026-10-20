@@ -49,8 +49,9 @@ it('retains read verification, memory expansion and recovery contracts in compac
   expect(description('find')).toContain('Case-insensitive whole-page text search, including trimmed content');
   expect(description('find')).toContain('returns #numbers and region');
   expect(description('forget')).toContain('Clear region memory; next read shows everything');
-  expect(description('scroll')).toContain('Scroll up/down (default down)');
-  expect(description('scroll')).toContain('id alone brings #id into view; id + direction scrolls its containing list/panel');
+  expect(description('scroll')).toContain('Scroll up/down/left/right (default down)');
+  expect(description('scroll')).toContain('id alone brings #id into view; id + direction scrolls its containing list/panel/table');
+  expect(description('scroll')).toContain('For wide tables use right; without id, a scrollable container is used when the page cannot scroll');
 });
 
 it('retains neutral fallback order, visual targeting and human safety in compact descriptions', async () => {

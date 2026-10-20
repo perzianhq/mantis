@@ -9,6 +9,8 @@ import { chromium } from 'playwright';
 import type { Browser, Page } from 'playwright';
 import { z } from 'zod';
 import { chromiumExecutable, userAgentFor } from '../../src/userAgent.js';
+import { NATIVE_SELECT_KEYBOARD_GUIDANCE } from './guidance.js';
+import { resolveScreenshotScroll, SCREENSHOT_SCROLL_DESCRIPTION, screenshotScrollSchema } from './screenshot-scroll.js';
 
 const VIEWPORT = { width: 1280, height: 800 };
 let browser: Browser | null = null;
@@ -40,7 +42,7 @@ server.registerTool('navigate', { description: 'Go to a URL.', inputSchema: { ur
   act(async (p) => { await p.goto(url, { waitUntil: 'domcontentloaded' }); return `navigated to ${p.url()}`; }));
 server.registerTool(
   'screenshot',
-  { description: `Screenshot of the browser viewport (${VIEWPORT.width}x${VIEWPORT.height}). Coordinates for click are in these pixels.`, inputSchema: {} },
+  { description: `Screenshot of the browser viewport (${VIEWPORT.width}x${VIEWPORT.height}). Coordinates for click and scroll targeting are in these pixels. ${NATIVE_SELECT_KEYBOARD_GUIDANCE}`, inputSchema: {} },
   async () => {
     const p = await current();
     const png = await p.screenshot({ type: 'png' });
@@ -55,8 +57,14 @@ server.registerTool('key', { description: 'Press a key, e.g. Enter, Tab, Escape,
   act(async (p) => { await p.keyboard.press(key); return `pressed ${key}`; }));
 server.registerTool(
   'scroll',
-  { description: 'Scroll the page up or down by about one screen.', inputSchema: { direction: z.enum(['up', 'down']) } },
-  ({ direction }) => act(async (p) => { await p.mouse.wheel(0, direction === 'down' ? 700 : -700); return `scrolled ${direction}`; }),
+  { description: SCREENSHOT_SCROLL_DESCRIPTION, inputSchema: screenshotScrollSchema },
+  ({ x, y, ...input }) => act(async (p) => {
+    if (x !== undefined && y !== undefined) await p.mouse.move(x, y);
+    const { deltaX, deltaY } = resolveScreenshotScroll(input);
+    await p.mouse.wheel(deltaX, deltaY);
+    const target = x === undefined ? '' : ` at (${x}, ${y})`;
+    return `scrolled${target} by (${deltaX}, ${deltaY})`;
+  }),
 );
 server.registerTool('back', { description: 'Go back one page.', inputSchema: {} }, () =>
   act(async (p) => { await p.goBack(); return `back to ${p.url()}`; }));

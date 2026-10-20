@@ -1,8 +1,9 @@
 import { expect, it } from 'vitest';
 import { startFixtures } from '../bench/fixtures.js';
-import { LOCAL_V2_DEVELOPMENT_CHECKS, LOCAL_V2_DEVELOPMENT_MANIFEST, LOCAL_V2_DEVELOPMENT_SUITE, LOCAL_V2_DEVELOPMENT_TASKS, gradeLocalV2DevelopmentCase, localV2DevelopmentRoute } from '../bench/agent/local-v2-development.js';
+import { LOCAL_V2_DEVELOPMENT_CHECKS, LOCAL_V2_DEVELOPMENT_MANIFEST, LOCAL_V2_DEVELOPMENT_SUITE, LOCAL_V2_DEVELOPMENT_TASKS, gradeLocalV2DevelopmentCase, localV2DevelopmentRoute, localV2FinalAnswer } from '../bench/agent/local-v2-development.js';
 import { PILOT, TASKS } from '../bench/agent/tasks.js';
 import { assertCompatibleResume, classifyAttempt, makeMetadata } from '../bench/agent/integrity.js';
+import { COMPLETION_GUIDANCE, EXPLICIT_ACTION_GUIDANCE } from '../bench/agent/guidance.js';
 
 it('selects exactly the frozen 32-case local-v2 development suite', () => {
   expect(LOCAL_V2_DEVELOPMENT_SUITE).toBe('local-v2-development');
@@ -19,6 +20,27 @@ it('selects exactly the frozen 32-case local-v2 development suite', () => {
 it('leaves legacy v1 task and pilot selectors unchanged', () => {
   expect(TASKS.some((task) => task.id.startsWith('v2-'))).toBe(false);
   expect(PILOT.every((id) => TASKS.some((task) => task.id === id))).toBe(true);
+});
+
+it('grades only the explicit local-v2 ANSWER line', () => {
+  expect(localV2FinalAnswer('I completed the task.\nANSWER: Project renamed to Aurora.')).toBe('Project renamed to Aurora.');
+  expect(localV2FinalAnswer('ANSWER: First\nANSWER: Final')).toBe('Final');
+});
+
+it('makes virtual-list response fields unambiguous', () => {
+  const task = LOCAL_V2_DEVELOPMENT_TASKS.find((entry) => entry.id === 'v2-list-virtual-target')!;
+  expect(task.prompt('http://fixture')).toContain('only the post-click confirmation text');
+  expect(task.prompt('http://fixture')).toContain('Do not copy row text into the confirmation');
+});
+
+it('keeps explicit-action and completion guidance generic and requires reading submission through the UI', () => {
+  expect(EXPLICIT_ACTION_GUIDANCE).toContain('Perform explicitly requested UI actions');
+  expect(COMPLETION_GUIDANCE).toBe('Once every requested action and constraint is verified and the required answer is available, return the final answer.');
+  expect(COMPLETION_GUIDANCE).not.toMatch(/stop|skip|early/i);
+  const reading = LOCAL_V2_DEVELOPMENT_TASKS.find((entry) => entry.id === 'v2-reading-landmark-jump')!;
+  expect(reading.prompt('http://fixture')).toContain("Enter the requested text into 'Final submission'");
+  expect(reading.prompt('http://fixture')).toContain("click 'Submit answer'");
+  expect(reading.prompt('http://fixture')).toContain('verify the confirmation, then reply ANSWER');
 });
 
 it('requires explicit opt-in for v2 routes and uses exact answer-plus-state grading', async () => {

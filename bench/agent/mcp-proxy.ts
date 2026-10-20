@@ -10,6 +10,18 @@ import type { Readable, Writable } from 'node:stream';
 import type net from 'node:net';
 
 const HARNESS_PREFIX = '__bench_';
+const URL_POLICY_MESSAGE = 'URL policy blocks view-source: and javascript: navigation in UI-only benchmarks.';
+
+/** UI-only browser approaches must not inspect source or execute URL JavaScript. */
+export function isForbiddenBenchmarkNavigation(name: unknown, args: unknown): boolean {
+  if (name !== 'open' && name !== 'navigate' && name !== 'browser_navigate') return false;
+  if (!args || typeof args !== 'object') return false;
+  const url = (args as Record<string, unknown>).url;
+  // Browsers discard ASCII controls around schemes. Apply the same normalization
+  // before checking so a newline or tab cannot turn a forbidden scheme into a bypass.
+  const normalized = typeof url === 'string' ? url.normalize('NFKC').replace(/[\u0000-\u0020\u007f-\u009f]/g, '') : '';
+  return /^(?:view-source|javascript):/i.test(normalized);
+}
 
 export interface McpProxy {
   /** Route one agent connection through the proxy. */
@@ -130,6 +142,10 @@ export function createMcpProxy(child: { stdin: Writable; stdout: Readable }): Mc
       socket.on('close', () => { sockets.delete(socket); agentCalls.delete(socket); });
       socket.on('data', lineSplitter((line) => {
         const message = parseLine(line);
+        if (message?.method === 'tools/call' && isForbiddenBenchmarkNavigation(message.params?.name, message.params?.arguments)) {
+          socket.write(JSON.stringify({ jsonrpc: '2.0', id: message.id, error: { code: -32602, message: 'URL policy blocks view-source: and javascript: navigation in UI-only benchmarks.' } }) + '\n');
+          return;
+        }
         if (message?.method === 'initialize') {
           agentInitialized = true;
           // The harness has already initialized the one stdio MCP session during
@@ -152,6 +168,9 @@ export function createMcpProxy(child: { stdin: Writable; stdout: Readable }): Mc
       }));
     },
     async call(method, params, timeoutMs = 15_000, signal) {
+      if (method === 'tools/call' && isForbiddenBenchmarkNavigation((params as { name?: unknown }).name, (params as { arguments?: unknown }).arguments)) {
+        throw new Error(URL_POLICY_MESSAGE);
+      }
       if (!agentInitialized) {
         await initialize(timeoutMs, signal);
       }

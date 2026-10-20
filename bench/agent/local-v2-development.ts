@@ -27,6 +27,13 @@ export const LOCAL_V2_DEVELOPMENT_TASKS: readonly AgentTask[] = Object.freeze([.
 export const LOCAL_V2_DEVELOPMENT_CHECKS: FixtureCheckEntry[] = [...V2_DEVELOPMENT_CHECKS, ...V2_INTERACTION_DEVELOPMENT_CHECKS, ...V2_READING_WORKFLOW_DEVELOPMENT_CHECKS];
 export const localV2DevelopmentRoute: DevelopmentFixtureRouter = (path) => v2DevelopmentRoute(path) ?? v2InteractionDevelopmentRoute(path) ?? v2ReadingWorkflowDevelopmentRoute(path);
 export const LOCAL_V2_DEVELOPMENT_SUITE = 'local-v2-development' as const;
+/** Grade the explicit final answer, not exploratory prose emitted before it. */
+export function localV2FinalAnswer(reply: string): string {
+  const marked = reply.split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => /^ANSWER:\s*\S/i.test(line));
+  return (marked.at(-1) ?? reply).replace(/^ANSWER:\s*/i, '').trim();
+}
 const allCases = [...V2_DEVELOPMENT_CASES, ...V2_INTERACTION_DEVELOPMENT_CASES, ...V2_READING_WORKFLOW_DEVELOPMENT_CASES];
 export const LOCAL_V2_DEVELOPMENT_MANIFEST = Object.freeze(allCases.map((entry) => ({ id:entry.id, domain:entry.domain, family:entry.family, structuralVariant:entry.structuralVariant, seed:entry.seed, oracleId:entry.oracleId, nearMissId:'nearMissId' in entry ? entry.nearMissId : entry.nearMiss.id })));
 export interface LocalV2AnswerGrade { pass: boolean; requirements: []; failed: string[]; details?: string }

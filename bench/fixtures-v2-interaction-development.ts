@@ -44,7 +44,12 @@ export interface V2InteractionDevelopmentCase {
 }
 
 /** One normalized final confirmation only; appended claims cannot pass. */
-const phrase = (text: string, value: string): boolean => text.trim().replace(/\s+/g, ' ').replace(/[.]$/, '').toLocaleLowerCase() === value.trim().replace(/\s+/g, ' ').replace(/[.]$/, '').toLocaleLowerCase();
+const normalizeAnswer = (text: string): string => text.trim()
+  .replace(/^(?:final(?: answer)?|answer):\s*/i, '')
+  .replace(/\s+/g, ' ')
+  .replace(/[.]$/, '')
+  .toLocaleLowerCase();
+const phrase = (text: string, value: string): boolean => normalizeAnswer(text) === normalizeAnswer(value);
 const settled = (events: FixtureObservation[]) => events.filter((event) => event.kind === 'settled').at(-1);
 const stateIs = (event: FixtureObservation | undefined, state: unknown): boolean => JSON.stringify(event?.fixtureState) === JSON.stringify(state);
 const terminal = (state: Record<string, unknown>) => (events: FixtureObservation[]): boolean => stateIs(settled(events), state);

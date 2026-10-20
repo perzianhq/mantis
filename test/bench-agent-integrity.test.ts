@@ -71,6 +71,13 @@ describe('real-agent benchmark integrity helpers', () => {
     expect(classifyAttempt({ ...common, connected: false, timedOut: true, exitCode: null })).toBe('timeout');
   });
 
+  it('keeps a deliberate agent step cap distinct from a CLI failure', () => {
+    expect(classifyAttempt({
+      sawInit: true, connected: true, sawResult: true, resultError: true, stepLimited: true,
+      timedOut: false, launchError: null, exitCode: 0, answerMatches: false, hasFixtureCheck: false, fixtureOk: null,
+    })).toBe('step_limit');
+  });
+
   it('aggregates retry usage without silently converting wholly unknown usage to zero', () => {
     const unknown = { inputTokens: null, cacheWriteTokens: null, cacheReadTokens: null, outputTokens: null, costUsd: null };
     const known = { inputTokens: 100, cacheWriteTokens: 20, cacheReadTokens: 10, outputTokens: 7, costUsd: 0.01 };

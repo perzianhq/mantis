@@ -26,7 +26,7 @@ import { fixtureVariantFromEnv } from '../fixture-variants.js';
 import { benchUserAgent } from '../../src/userAgent.js';
 import { gradeTaskAnswer, normalizeGradedAnswer, PILOT, TASKS } from './tasks.js';
 import type { AgentTask } from './tasks.js';
-import { LOCAL_V2_DEVELOPMENT_CHECKS, LOCAL_V2_DEVELOPMENT_MANIFEST, LOCAL_V2_DEVELOPMENT_SUITE, LOCAL_V2_DEVELOPMENT_TASKS, gradeLocalV2DevelopmentCase, localV2DevelopmentRoute } from './local-v2-development.js';
+import { LOCAL_V2_DEVELOPMENT_CHECKS, LOCAL_V2_DEVELOPMENT_MANIFEST, LOCAL_V2_DEVELOPMENT_SUITE, LOCAL_V2_DEVELOPMENT_TASKS, gradeLocalV2DevelopmentCase, localV2DevelopmentRoute, localV2FinalAnswer } from './local-v2-development.js';
 import { aggregateUsage, assertCompatibleResume, classifyAttempt, extractGradedAnswer, hashSources, isHarnessFailure, makeMetadata, nextHarnessFailureStreak, parseClaudeStream, validateFlag, validatePositiveInt, wrongAnswerDetail } from './integrity.js';
 import type { AttemptStatus, RunMetadata, StreamUsage } from './integrity.js';
 import { codexArgs, rawMcpToolName } from './codex-config.js';
@@ -43,6 +43,7 @@ import { sarvamExecutionExcludingWaits } from './timing.js';
 import { ActiveWorkTimeout } from './active-timeout.js';
 import type { ActiveTimeoutTelemetry, SarvamWaitKind, TimeoutKind } from './active-timeout.js';
 import { rowKey, selectExactRows } from './row-selector.js';
+import { COMPLETION_GUIDANCE, EXPLICIT_ACTION_GUIDANCE } from './guidance.js';
 
 const REPO = path.resolve(import.meta.dirname, '..', '..');
 const OUT = path.join(REPO, 'bench', 'results');
@@ -62,6 +63,9 @@ const TIMEOUT_MS = TIMEOUT_S * 1000;
 const WALL_TIMEOUT_S = PROVIDER === 'sarvam' ? validatePositiveInt('AGENT_WALL_TIMEOUT_S', process.env.AGENT_WALL_TIMEOUT_S, 1800, 86_400) : 1800;
 const WALL_TIMEOUT_MS = WALL_TIMEOUT_S * 1000;
 const SARVAM_MAX_STEPS = validatePositiveInt('AGENT_MAX_STEPS', process.env.AGENT_MAX_STEPS, 100, 1_000);
+/** Local-v2 is a development suite: cap ordinary tasks before they can loop. */
+const V2_STANDARD_MAX_STEPS = validatePositiveInt('AGENT_V2_STANDARD_MAX_STEPS', process.env.AGENT_V2_STANDARD_MAX_STEPS, 35, 1_000);
+const V2_CIRCUIT_BREAKER_FAILURES = validatePositiveInt('AGENT_V2_CIRCUIT_BREAKER_FAILURES', process.env.AGENT_V2_CIRCUIT_BREAKER_FAILURES, 2, 20);
 const SARVAM_MAX_TOKENS = PROVIDER === 'sarvam' ? sarvamMaxTokens() : null;
 /** Runs in flight at once. Each run is its own provider CLI process, MCP server and browser. */
 const CONCURRENCY = validatePositiveInt('AGENT_CONCURRENCY', process.env.AGENT_CONCURRENCY, PROVIDER === 'sarvam' ? 10 : 3, 64);
@@ -86,6 +90,9 @@ interface ServerSpec { command: string; args: string[]; env?: Record<string, str
 
 interface RawCapture { step: number; png: Buffer; state: string | null; final: boolean }
 type ToolResult = { isError?: boolean; content?: { type: string; mimeType?: string; data?: string; text?: string }[] };
+
+const sarvamMaxStepsForTask = (task: AgentTask): number =>
+  SUITE === LOCAL_V2_DEVELOPMENT_SUITE && task.category !== 'long' ? V2_STANDARD_MAX_STEPS : SARVAM_MAX_STEPS;
 
 /** Viewport PNG plus page state (URL, text, form values) of the live page, through the harness channel; rejects after 15 s. */
 async function captureOnce(server: Pick<McpProxy, 'call'>, approach: Approach, step: number, final: boolean): Promise<RawCapture> {
@@ -419,7 +426,7 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
     // Judged real-site prompts already say how to end the reply (FINAL_URL line); the judge reads the whole reply.
     const prompt = task.judged
       ? `${FIXTURE_VARIANT?.forward(task.prompt(taskBase)) ?? task.prompt(taskBase)}\n\nUse only the browser tools you have.`
-      : `${FIXTURE_VARIANT?.forward(task.prompt(taskBase)) ?? task.prompt(taskBase)}\n\nUse only the browser tools you have. The requested row and column keys are the visible UI labels, and values must use their displayed formatting; never substitute implementation IDs, source fields, or normalized machine values. When done, reply with exactly one line and nothing else: ANSWER: <answer>`;
+      : `${FIXTURE_VARIANT?.forward(task.prompt(taskBase)) ?? task.prompt(taskBase)}\n\nUse only the browser tools you have. ${EXPLICIT_ACTION_GUIDANCE} ${COMPLETION_GUIDANCE} When done, reply with exactly one line and nothing else: ANSWER: <answer>`;
     const a = APPROACHES[approach];
     const codexServer = {
       name, command: node, args: bridge.args,
@@ -456,7 +463,7 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
       sarvamClient = new SarvamClient({ timeoutMs: Math.min(120_000, TIMEOUT_MS), onWait });
       const sarvam = await runSarvamAgent({
         client: sarvamClient, mcp: server, model: MODEL, prompt, server: name,
-        allow: a.allow, deny: a.deny, maxSteps: SARVAM_MAX_STEPS, toolTimeoutMs: Math.min(60_000, TIMEOUT_MS),
+        allow: a.allow, deny: a.deny, maxSteps: sarvamMaxStepsForTask(task), toolTimeoutMs: Math.min(60_000, TIMEOUT_MS),
         trace: (event) => traceLog.write(JSON.stringify({ at: new Date().toISOString(), ...event }) + '\n'),
         onToolResult: () => { toolsDone++; queueCapture(); },
         signal: controller.signal,
@@ -578,17 +585,19 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
   }
   const rawResultText = parsed.resultText ?? '';
   const rawAnswer = extractGradedAnswer(rawResultText, task.judged ?? false);
-  const gradedAnswer = normalizeGradedAnswer(rawAnswer);
+  const gradedAnswer = SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? localV2FinalAnswer(rawAnswer) : normalizeGradedAnswer(rawAnswer);
   // Grade agent-visible seeded facts. Fixture event state is canonicalized
   // separately inside startFixtures so action checks remain deterministic.
   const answerGrade = task.judged ? null : SUITE === LOCAL_V2_DEVELOPMENT_SUITE
-    ? gradeLocalV2DevelopmentCase(task.id, rawAnswer, fixtureEvidence?.events ?? [])
+    ? gradeLocalV2DevelopmentCase(task.id, gradedAnswer, fixtureEvidence?.events ?? [])
     : gradeTaskAnswer(task, rawAnswer);
   const answer = gradedAnswer.slice(0, 160);
   const connected = parsed.connected;
   const connectionState = connected ? 'connected' : parsed.sawInit ? 'failed' : 'unknown';
+  const stepLimited = PROVIDER === 'sarvam' && rawResultText.trim() === 'Agent step budget exhausted.';
   let status = classifyAttempt({
     sawInit: parsed.sawInit, connected, sawResult: parsed.sawResult, resultError: parsed.resultError,
+    stepLimited,
     timedOut: processResult.timedOut, launchError: processResult.launchError ?? startupError,
     exitCode: processResult.exitCode, answerMatches: task.judged ? task.expect.test(parsed.resultText ?? '') : answerGrade!.pass,
     hasFixtureCheck: !!task.check, fixtureOk: fixtureCheck?.ok ?? false,
@@ -602,6 +611,7 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
   else if (status === 'timeout') error = sarvamTimeoutTelemetry?.timeoutKind === 'wall_clock'
     ? `wall-clock safety cap reached after ${WALL_TIMEOUT_S}s`
     : PROVIDER === 'sarvam' ? `active-work timed out after ${TIMEOUT_S}s` : `timed out after ${TIMEOUT_S}s`;
+  else if (status === 'step_limit') error = `agent step budget exhausted at ${parsed.turns ?? 'unknown'} steps`;
   else if (status === 'crash') error = processResult.launchError || startupError || `${PROVIDER} CLI exited with code ${processResult.exitCode ?? 'unknown'}`;
   else if (status === 'cli_error') error = codexConfigFailure
     ? 'Codex Code Mode host is unavailable; check the installed CLI companion executable and configuration.'
@@ -780,7 +790,7 @@ if (!existsSync(jsonPath) && RESUME) throw new Error(`AGENT_RESUME=1 requested, 
 const settings = {
   provider: PROVIDER, suite: SUITE, fixtureSeed: FIXTURE_VARIANT?.seed ?? null,
   ...(SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? { suiteVersion: 1, suiteManifest: LOCAL_V2_DEVELOPMENT_MANIFEST } : {}),
-  tasks: tasks.map((t) => t.id), approaches, runs: RUNS, rows: exactRows.rows, model: MODEL, reasoning: PROVIDER === 'codex' ? REASONING : PROVIDER === 'sarvam' ? `max-steps:${SARVAM_MAX_STEPS}` : 'not-applicable', timeoutMs: TIMEOUT_MS, ...(PROVIDER === 'sarvam' ? { wallTimeoutMs: WALL_TIMEOUT_MS } : {}), concurrency: CONCURRENCY, sarvamMaxTokens: SARVAM_MAX_TOKENS,
+  tasks: tasks.map((t) => t.id), approaches, runs: RUNS, rows: exactRows.rows, model: MODEL, reasoning: PROVIDER === 'codex' ? REASONING : PROVIDER === 'sarvam' ? `max-steps:${SARVAM_MAX_STEPS}${SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? `;v2-standard:${V2_STANDARD_MAX_STEPS};v2-circuit:${V2_CIRCUIT_BREAKER_FAILURES}` : ''}` : 'not-applicable', timeoutMs: TIMEOUT_MS, ...(PROVIDER === 'sarvam' ? { wallTimeoutMs: WALL_TIMEOUT_MS } : {}), concurrency: CONCURRENCY, sarvamMaxTokens: SARVAM_MAX_TOKENS,
   toolRestrictions: {
     builtins: PROVIDER === 'codex'
       ? ['shell', 'apps', 'plugins', 'multi_agent', 'goals', 'sleep_tool', 'skill_search', 'view_image', 'browser_use', 'computer_use', 'in_app_browser', 'web_search']
@@ -808,7 +818,7 @@ const sourceFiles = [
   'bench/agent/run.ts', 'bench/agent/integrity.ts', 'bench/agent/active-timeout.ts', 'bench/agent/row-selector.ts', 'bench/agent/tasks.ts', 'bench/agent/local-v2-development.ts', 'bench/agent/bridge.mjs', 'bench/fixture-variants.ts',
   'bench/agent/codex.ts', 'bench/agent/codex-config.ts', 'bench/agent/sarvam.ts', 'bench/agent/sarvam-agent.ts', 'bench/agent/realsite.ts', 'bench/agent/grading.ts', 'bench/agent/evidence.ts', 'bench/agent/png.ts', 'bench/agent/mcp-proxy.ts',
   ...(existsSync(path.join(REPO, 'bench', 'agent', 'realsite-tasks.json')) ? ['bench/agent/realsite-tasks.json'] : []),
-  'bench/agent/screenshot-mcp.ts', 'bench/fixtures.ts', 'bench/fixtures-more.ts', 'bench/fixtures-long.ts', 'bench/fixtures-v2-development.ts', 'bench/fixtures-v2-interaction-development.ts', 'bench/fixtures-v2-reading-workflows-development.ts', 'bench/adapters.ts',
+  'bench/agent/screenshot-mcp.ts', 'bench/agent/screenshot-scroll.ts', 'bench/agent/guidance.ts', 'bench/fixtures.ts', 'bench/fixtures-more.ts', 'bench/fixtures-long.ts', 'bench/fixtures-v2-development.ts', 'bench/fixtures-v2-interaction-development.ts', 'bench/fixtures-v2-reading-workflows-development.ts', 'bench/adapters.ts',
   ...sourceFilesUnder('src'), ...sourceFilesUnder('dist'), 'package-lock.json',
 ];
 const sourceHashes = hashSources(REPO, sourceFiles);
@@ -827,10 +837,24 @@ const done = new Set(results.map((r) => key(r.task, r.approach, r.run)));
 const todo = plannedJobs.filter((j) => !done.has(key(j.t.id, j.a, j.run)));
 
 /** Results are written after every run, so a stopped eval loses nothing and can resume. */
+function writeCheckpoint(file: string, content: string): void {
+  // Windows/OneDrive can transiently lock a just-updated artifact while several
+  // workers finish together. Retry the synchronous checkpoint rather than
+  // terminating a paid run after useful rows have completed.
+  let last: unknown;
+  for (let attempt = 0; attempt < 8; attempt++) {
+    try { writeFileSync(file, content); return; } catch (error) {
+      last = error;
+      if (attempt === 7) break;
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 100 * (attempt + 1));
+    }
+  }
+  throw last;
+}
 function save(): void {
   results.sort((x, y) => order(x) - order(y));
-  writeFileSync(jsonPath, JSON.stringify({ metadata, model: MODEL, runs: RUNS, results }, null, 2));
-  writeFileSync(markdownPath, report(results, approaches, tasks, metadata, plannedJobs.length));
+  writeCheckpoint(jsonPath, JSON.stringify({ metadata, model: MODEL, runs: RUNS, results }, null, 2));
+  writeCheckpoint(markdownPath, report(results, approaches, tasks, metadata, plannedJobs.length));
 }
 
 let abortReason: string | null = null;
@@ -838,6 +862,7 @@ const fx = await startFixtures({ checks: suiteChecks ?? tasks.map((t) => ({ task
 try {
   let next = 0;
   let consecutiveHarnessFailures = 0;
+  const v2BudgetBreaches = new Map<string, number>();
   const worker = async (): Promise<void> => {
     while (!abortReason && next < todo.length) {
       const { t, a, run } = todo[next++]!;
@@ -886,6 +911,14 @@ try {
       };
       results.push(r);
       save();
+      if (SUITE === LOCAL_V2_DEVELOPMENT_SUITE && r.status !== 'success' && (r.turns ?? 0) >= sarvamMaxStepsForTask(t)) {
+        const breaches = (v2BudgetBreaches.get(t.id) ?? 0) + 1;
+        v2BudgetBreaches.set(t.id, breaches);
+        if (breaches >= V2_CIRCUIT_BREAKER_FAILURES && !abortReason) {
+          abortReason = `local-v2 circuit breaker: ${t.id} exhausted its ${sarvamMaxStepsForTask(t)}-step budget ${breaches} times`;
+          console.error(`ABORTED: ${abortReason}`);
+        }
+      }
       consecutiveHarnessFailures = nextHarnessFailureStreak(consecutiveHarnessFailures, r.attempts);
       if (consecutiveHarnessFailures >= 3 && !abortReason) {
         abortReason = r.error || r.attempts.find((x) => x.harnessFailure)?.error || 'infrastructure diagnostics';

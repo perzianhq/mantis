@@ -146,6 +146,21 @@ it('scroll with id and direction scrolls the containing list and loads more item
   expect(up).toMatch(/scrolled up inside "Results"/);
 });
 
+it('scroll with id and right direction scrolls the containing horizontal container', async () => {
+  const view = await browser.open(fixture('hidden/generic-browser-inner-scroll.html'));
+  const id = idOf(view, 'link "Wide target"');
+  expect(await browser.scroll('right', id)).toMatch(/scrolled right inside "Wide data"; now at \d+% of it/);
+  const page = (browser as unknown as { page: { evaluate: <T>(fn: () => T) => Promise<T> } }).page;
+  expect(await page.evaluate(() => document.querySelector('#wide')!.scrollLeft)).toBeGreaterThan(0);
+});
+
+it('scroll right finds the largest horizontal container without an id', async () => {
+  await browser.open(fixture('hidden/generic-browser-inner-scroll.html'));
+  expect(await browser.scroll('right')).toMatch(/^scrolled right; now at \d+% of page/);
+  const page = (browser as unknown as { page: { evaluate: <T>(fn: () => T) => Promise<T> } }).page;
+  expect(await page.evaluate(() => document.querySelector('#wide')!.scrollLeft)).toBeGreaterThan(0);
+});
+
 it('scroll with id and direction reports the end of the list and does not scroll something else', async () => {
   const view = await browser.open(fixture('hidden/generic-browser-inner-scroll.html'));
   const page = (browser as unknown as { page: { evaluate: <T>(fn: () => T) => Promise<T> } }).page;

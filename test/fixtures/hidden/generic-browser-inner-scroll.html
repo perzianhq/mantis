@@ -8,11 +8,14 @@
   #notes p { height: 100px; margin: 0; }
   #short { width: 200px; height: 100px; overflow-y: auto; border: 1px solid #888; }
   #short li { height: 40px; list-style: none; }
+  #wide { width: 240px; overflow-x: auto; border: 1px solid #888; white-space: nowrap; }
+  #wide a { display: inline-block; width: 720px; }
 </style>
 <div id="wrap">
   <ul id="results" aria-label="Results"></ul>
   <div id="notes"><p>Note 1</p><p>Note 2</p><p>Note 3</p><p>Note 4</p><p>Note 5</p><p>Note 6</p><p>Note 7</p><p>Note 8</p><p>Note 9</p><p>Note 10</p><p>Note 11</p><p>Note 12</p></div>
   <ul id="short"><li><a href="#a">Short A</a></li><li><a href="#b">Short B</a></li></ul>
+  <div id="wide" aria-label="Wide data"><a href="#wide">Wide target</a></div>
 </div>
 <script>
   const list = document.querySelector('#results');
