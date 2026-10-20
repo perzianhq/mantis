@@ -72,21 +72,6 @@ it('retains neutral fallback order, visual targeting and human safety in compact
   expect(description('ask_human')).toContain('Waits for a page change, then returns the page');
 });
 
-it('exposes project only through the explicit general-purpose opt-in', async () => {
-  const optedIn = new Client({ name: 'project-test', version: '0' });
-  const [a, z] = InMemoryTransport.createLinkedPair();
-  await Promise.all([createServer(browser, { project: true }).connect(a), optedIn.connect(z)]);
-  try {
-    const { tools } = await optedIn.listTools();
-    const project = tools.find((tool) => tool.name === 'project');
-    expect(project?.description).toContain('Read-only bounded JSON projection');
-    expect(project?.description).toContain('Never clicks, scrolls, follows UI pagination, or reads hidden/API data');
-    expect(project?.inputSchema).toMatchObject({ properties: expect.objectContaining({ id: expect.any(Object), selector: expect.any(Object), kind: expect.any(Object), fields: expect.any(Object), offset: expect.any(Object), limit: expect.any(Object) }) });
-  } finally {
-    await optedIn.close();
-  }
-});
-
 it('a heading hit supplies a real region for adjacent paragraph context, not a heading-as-region', async () => {
   const html = `<!doctype html><title>Bulletin</title>
     <main aria-label="Bulletins"><h2>Entry Alpha</h2><p>Neighbor note: amber.</p>

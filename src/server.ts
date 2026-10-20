@@ -11,13 +11,8 @@ const reply = (text: string) => ({
   ...(text.startsWith('error:') ? { isError: true } : {}),
 });
 
-export interface MantisServerOptions {
-  /** Opt in to the bounded structured-source projection tool. Defaults off for compatibility. */
-  project?: boolean;
-}
-
 /** Build the MCP server around a browser (launched lazily on first tool call). */
-export function createServer(browser: MantisBrowser = new MantisBrowser(), options: MantisServerOptions = {}): McpServer {
+export function createServer(browser: MantisBrowser = new MantisBrowser()): McpServer {
   const server = new McpServer({ name: 'mantis', version: '0.1.1' });
   const id = z.number().int();
 
@@ -130,24 +125,6 @@ export function createServer(browser: MantisBrowser = new MantisBrowser(), optio
       inputSchema: visual,
     },
     async ({ id, selector }) => reply(await browser.data({ id, selector })),
-  );
-  if (options.project ?? process.env.MANTIS_ENABLE_PROJECT === '1') server.registerTool(
-    'project',
-    {
-      description:
-        'Read-only bounded JSON projection of one grounded table, list/feed, or chart. Give id from read()/media(), or a CSS selector for the source. ' +
-        'fields selects exact source columns; offset/limit page only currently rendered or chart-library data and return next_offset. Never clicks, scrolls, follows UI pagination, or reads hidden/API data; returned action #ids are provenance only.',
-      inputSchema: {
-        id: id.optional(),
-        selector: z.string().optional().describe('CSS selector for one source'),
-        kind: z.enum(['auto', 'table', 'list', 'chart']).optional().describe('Use list for a custom feed container; default auto requires an unambiguous source'),
-        fields: z.array(z.string()).optional().describe('Exact column/field names, case-insensitive'),
-        offset: z.number().int().nonnegative().optional().describe('Zero-based offset in this rendered source'),
-        cursor: z.string().optional().describe('Opaque continuation returned by the previous project page; rejects changed sources'),
-        limit: z.number().int().min(1).max(100).optional().describe('Rows to return; default 25, maximum 100'),
-      },
-    },
-      async ({ id, selector, kind, fields, offset, cursor, limit }) => reply(await browser.project({ id, selector }, { kind, fields, offset, cursor, limit })),
   );
   server.registerTool(
     'ocr',

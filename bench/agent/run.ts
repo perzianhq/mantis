@@ -27,7 +27,6 @@ import { benchUserAgent } from '../../src/userAgent.js';
 import { gradeTaskAnswer, normalizeGradedAnswer, PILOT, TASKS } from './tasks.js';
 import type { AgentTask } from './tasks.js';
 import { LOCAL_V2_DEVELOPMENT_CHECKS, LOCAL_V2_DEVELOPMENT_MANIFEST, LOCAL_V2_DEVELOPMENT_SUITE, LOCAL_V2_DEVELOPMENT_TASKS, gradeLocalV2DevelopmentCase, localV2DevelopmentRoute } from './local-v2-development.js';
-import { PROJECT_EVAL_CHECKS, PROJECT_EVAL_MANIFEST, PROJECT_EVAL_SUITE, PROJECT_EVAL_TASKS, gradeProjectEvalAnswer, projectEvalRoute } from './project-eval.js';
 import { aggregateUsage, assertCompatibleResume, classifyAttempt, extractGradedAnswer, hashSources, isHarnessFailure, makeMetadata, nextHarnessFailureStreak, parseClaudeStream, validateFlag, validatePositiveInt, wrongAnswerDetail } from './integrity.js';
 import type { AttemptStatus, RunMetadata, StreamUsage } from './integrity.js';
 import { codexArgs, rawMcpToolName } from './codex-config.js';
@@ -68,8 +67,6 @@ const SARVAM_MAX_TOKENS = PROVIDER === 'sarvam' ? sarvamMaxTokens() : null;
 const CONCURRENCY = validatePositiveInt('AGENT_CONCURRENCY', process.env.AGENT_CONCURRENCY, PROVIDER === 'sarvam' ? 10 : 3, 64);
 const RESUME = validateFlag('AGENT_RESUME', process.env.AGENT_RESUME);
 const OVERWRITE = validateFlag('AGENT_OVERWRITE', process.env.AGENT_OVERWRITE);
-/** Explicit A/B arm: default keeps the ordinary Mantis tool surface. */
-const MANTIS_PROJECT = validateFlag('AGENT_MANTIS_PROJECT', process.env.AGENT_MANTIS_PROJECT);
 const FIXTURE_VARIANT = fixtureVariantFromEnv();
 if (RESUME && OVERWRITE) throw new Error('AGENT_RESUME=1 and AGENT_OVERWRITE=1 cannot be used together.');
 if (!MODEL.trim() || /[\r\n\0]/.test(MODEL)) throw new Error(`AGENT_MODEL must be a non-empty single-line model name; received ${JSON.stringify(MODEL)}.`);
@@ -203,7 +200,7 @@ async function startServer(spec: ServerSpec, warmMs: number, log: string, waitFo
 const APPROACHES: Record<Approach, { label: string; server: (dir: string) => Record<string, ServerSpec>; warmMs?: number; allow: string[]; deny?: string[] }> = {
   mantis: {
     label: 'Mantis',
-    server: (dir) => ({ mantis: { command: node, args: [path.join(REPO, 'bench', 'agent', 'bridge.mjs'), '--mantis-server'], env: { MANTIS_MEMORY_DIR: path.join(dir, 'mem'), MANTIS_USER_AGENT: BENCH_UA, MANTIS_ENABLE_PROJECT: MANTIS_PROJECT ? '1' : '0' } } }),
+    server: (dir) => ({ mantis: { command: node, args: [path.join(REPO, 'bench', 'agent', 'bridge.mjs'), '--mantis-server'], env: { MANTIS_MEMORY_DIR: path.join(dir, 'mem'), MANTIS_USER_AGENT: BENCH_UA } } }),
     allow: ['mcp__mantis'],
     deny: ['mcp__mantis__bench_capture'],
   },
@@ -586,9 +583,7 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
   // separately inside startFixtures so action checks remain deterministic.
   const answerGrade = task.judged ? null : SUITE === LOCAL_V2_DEVELOPMENT_SUITE
     ? gradeLocalV2DevelopmentCase(task.id, rawAnswer, fixtureEvidence?.events ?? [])
-    : SUITE === PROJECT_EVAL_SUITE
-      ? gradeProjectEvalAnswer(task.id, rawAnswer, fixtureEvidence?.events ?? [])
-      : gradeTaskAnswer(task, rawAnswer);
+    : gradeTaskAnswer(task, rawAnswer);
   const answer = gradedAnswer.slice(0, 160);
   const connected = parsed.connected;
   const connectionState = connected ? 'connected' : parsed.sawInit ? 'failed' : 'unknown';
@@ -736,9 +731,9 @@ function report(results: RunResult[], approaches: Approach[], tasks: AgentTask[]
 }
 
 const SUITE = process.env.AGENT_SUITE ?? 'local-v1';
-if (SUITE !== 'local-v1' && SUITE !== LOCAL_V2_DEVELOPMENT_SUITE && SUITE !== PROJECT_EVAL_SUITE) throw new Error(`unknown AGENT_SUITE ${JSON.stringify(SUITE)}; use local-v1, ${LOCAL_V2_DEVELOPMENT_SUITE}, or ${PROJECT_EVAL_SUITE}`);
-const suiteTasks = SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? LOCAL_V2_DEVELOPMENT_TASKS : SUITE === PROJECT_EVAL_SUITE ? PROJECT_EVAL_TASKS : TASKS;
-const suiteChecks = SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? LOCAL_V2_DEVELOPMENT_CHECKS : SUITE === PROJECT_EVAL_SUITE ? PROJECT_EVAL_CHECKS : undefined;
+if (SUITE !== 'local-v1' && SUITE !== LOCAL_V2_DEVELOPMENT_SUITE) throw new Error(`unknown AGENT_SUITE ${JSON.stringify(SUITE)}; use local-v1 or ${LOCAL_V2_DEVELOPMENT_SUITE}`);
+const suiteTasks = SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? LOCAL_V2_DEVELOPMENT_TASKS : TASKS;
+const suiteChecks = SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? LOCAL_V2_DEVELOPMENT_CHECKS : undefined;
 const want = process.env.AGENT_TASKS ?? (SUITE === 'local-v1' ? PILOT.join(',') : 'all');
 // "all", task ids, or categories ("cat:forms"), comma-separated.
 const picks = want.split(',');
@@ -763,7 +758,7 @@ if (PROVIDER === 'sarvam' && approaches.includes('screenshot') && !sarvamModelSu
   throw new Error(`AGENT_MODEL ${JSON.stringify(MODEL)} cannot run the screenshot approach because it does not support image observations.`);
 }
 const providerPrefix = PROVIDER;
-const rawName = process.env.AGENT_OUT ?? `${providerPrefix}-agent-verified${SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? '-local-v2-development' : SUITE === PROJECT_EVAL_SUITE ? '-project-eval' : want === PILOT.join(',') ? '-pilot' : ''}`;
+const rawName = process.env.AGENT_OUT ?? `${providerPrefix}-agent-verified${SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? '-local-v2-development' : want === PILOT.join(',') ? '-pilot' : ''}`;
 if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$/.test(rawName) || rawName === '.' || rawName === '..') throw new Error(`invalid AGENT_OUT name: ${JSON.stringify(rawName)}`);
 const name = rawName;
 const jobs: { t: AgentTask; a: Approach; run: number }[] = [];
@@ -785,20 +780,17 @@ if (!existsSync(jsonPath) && RESUME) throw new Error(`AGENT_RESUME=1 requested, 
 const settings = {
   provider: PROVIDER, suite: SUITE, fixtureSeed: FIXTURE_VARIANT?.seed ?? null,
   ...(SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? { suiteVersion: 1, suiteManifest: LOCAL_V2_DEVELOPMENT_MANIFEST } : {}),
-  ...(SUITE === PROJECT_EVAL_SUITE ? { suiteVersion: 1, suiteManifest: PROJECT_EVAL_MANIFEST } : {}),
   tasks: tasks.map((t) => t.id), approaches, runs: RUNS, rows: exactRows.rows, model: MODEL, reasoning: PROVIDER === 'codex' ? REASONING : PROVIDER === 'sarvam' ? `max-steps:${SARVAM_MAX_STEPS}` : 'not-applicable', timeoutMs: TIMEOUT_MS, ...(PROVIDER === 'sarvam' ? { wallTimeoutMs: WALL_TIMEOUT_MS } : {}), concurrency: CONCURRENCY, sarvamMaxTokens: SARVAM_MAX_TOKENS,
   toolRestrictions: {
     builtins: PROVIDER === 'codex'
       ? ['shell', 'apps', 'plugins', 'multi_agent', 'goals', 'sleep_tool', 'skill_search', 'view_image', 'browser_use', 'computer_use', 'in_app_browser', 'web_search']
       : ['Claude built-ins disabled by --tools ""'],
     approaches: Object.fromEntries(approaches.map((a) => [a, { allow: APPROACHES[a].allow, deny: APPROACHES[a].deny ?? [] }])),
-    mantisProject: MANTIS_PROJECT,
   },
   runtime: { nodeVersion: process.version, platform: process.platform, arch: process.arch },
   environment: {
     MANTIS_MEMORY: process.env.MANTIS_MEMORY ?? null,
     MANTIS_HEADLESS: process.env.MANTIS_HEADLESS ?? null,
-    AGENT_MANTIS_PROJECT: MANTIS_PROJECT ? '1' : '0',
     BENCH_CHROMIUM: process.env.BENCH_CHROMIUM ?? null,
     MANTIS_CHROMIUM: process.env.MANTIS_CHROMIUM ?? null,
     PLAYWRIGHT_BROWSERS_PATH: process.env.PLAYWRIGHT_BROWSERS_PATH ?? null,
@@ -813,7 +805,7 @@ const settings = {
 };
 preflightApproaches(approaches);
 const sourceFiles = [
-  'bench/agent/run.ts', 'bench/agent/integrity.ts', 'bench/agent/active-timeout.ts', 'bench/agent/row-selector.ts', 'bench/agent/tasks.ts', 'bench/agent/local-v2-development.ts', 'bench/agent/project-eval.ts', 'bench/project-eval.ts', 'bench/agent/bridge.mjs', 'bench/fixture-variants.ts',
+  'bench/agent/run.ts', 'bench/agent/integrity.ts', 'bench/agent/active-timeout.ts', 'bench/agent/row-selector.ts', 'bench/agent/tasks.ts', 'bench/agent/local-v2-development.ts', 'bench/agent/bridge.mjs', 'bench/fixture-variants.ts',
   'bench/agent/codex.ts', 'bench/agent/codex-config.ts', 'bench/agent/sarvam.ts', 'bench/agent/sarvam-agent.ts', 'bench/agent/realsite.ts', 'bench/agent/grading.ts', 'bench/agent/evidence.ts', 'bench/agent/png.ts', 'bench/agent/mcp-proxy.ts',
   ...(existsSync(path.join(REPO, 'bench', 'agent', 'realsite-tasks.json')) ? ['bench/agent/realsite-tasks.json'] : []),
   'bench/agent/screenshot-mcp.ts', 'bench/fixtures.ts', 'bench/fixtures-more.ts', 'bench/fixtures-long.ts', 'bench/fixtures-v2-development.ts', 'bench/fixtures-v2-interaction-development.ts', 'bench/fixtures-v2-reading-workflows-development.ts', 'bench/adapters.ts',
@@ -842,7 +834,7 @@ function save(): void {
 }
 
 let abortReason: string | null = null;
-const fx = await startFixtures({ checks: suiteChecks ?? tasks.map((t) => ({ taskId: t.id, check: t.check })), variant: FIXTURE_VARIANT, ...(SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? { developmentRoute: localV2DevelopmentRoute } : SUITE === PROJECT_EVAL_SUITE ? { developmentRoute: projectEvalRoute } : {}) });
+const fx = await startFixtures({ checks: suiteChecks ?? tasks.map((t) => ({ taskId: t.id, check: t.check })), variant: FIXTURE_VARIANT, ...(SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? { developmentRoute: localV2DevelopmentRoute } : {}) });
 try {
   let next = 0;
   let consecutiveHarnessFailures = 0;

@@ -100,11 +100,6 @@ Follow the [skill's fallback ladder](../skill/SKILL.md#tools): `media`/`data` �
 `look` (one element, ≤800px) → `ask_human` (5-minute default). Only `look` returns an image.
 The human handoff carries browser storage state into a headed window. Mantis never solves CAPTCHAs.
 
-For an intentionally selected dense table, feed, or chart source, the optional `project` MCP tool
-(`MANTIS_ENABLE_PROJECT=1`) returns a bounded JSON page of currently rendered DOM or exposed
-chart-library data. It is read-only: it never scrolls, follows UI pagination, expands virtual data,
-or calls an application API; its `next_offset` only pages the already exposed source.
-
 ## 3. Mantis vs the accessibility tree
 
 | | Accessibility tree | Mantis |
