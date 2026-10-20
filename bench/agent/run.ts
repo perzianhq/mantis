@@ -419,7 +419,7 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
     // Judged real-site prompts already say how to end the reply (FINAL_URL line); the judge reads the whole reply.
     const prompt = task.judged
       ? `${FIXTURE_VARIANT?.forward(task.prompt(taskBase)) ?? task.prompt(taskBase)}\n\nUse only the browser tools you have.`
-      : `${FIXTURE_VARIANT?.forward(task.prompt(taskBase)) ?? task.prompt(taskBase)}\n\nUse only the browser tools you have. When you are done, end your reply with one line: ANSWER: <answer>`;
+      : `${FIXTURE_VARIANT?.forward(task.prompt(taskBase)) ?? task.prompt(taskBase)}\n\nUse only the browser tools you have. The requested row and column keys are the visible UI labels, and values must use their displayed formatting; never substitute implementation IDs, source fields, or normalized machine values. When done, reply with exactly one line and nothing else: ANSWER: <answer>`;
     const a = APPROACHES[approach];
     const codexServer = {
       name, command: node, args: bridge.args,
