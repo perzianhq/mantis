@@ -26,7 +26,10 @@ const same = (left: unknown, right: unknown) => JSON.stringify(left) === JSON.st
 const normalized = (answer: string) => answer.replace(/^\s*final(?: answer)?:\s*/i, '').trim().replace(/\s+/g, ' ').toLocaleLowerCase();
 const check = (expected: Record<string, unknown>): FixtureCheck => (events) => ({ ok: same(state(events), expected), details: 'required visible workflow state was not reached' });
 const grade = (entry: ProjectEvalCase, answer: string, events: FixtureObservation[]) => {
-  const answers = answer.split(/\r?\n/).map(normalized).filter(Boolean);
+  // Agents are asked to end with `ANSWER:` but may explain their work before it.
+  // Grade that explicit final answer, never incidental prose containing facts.
+  const marked = [...answer.matchAll(/^\s*ANSWER:\s*(.+?)\s*$/gim)].map((match) => match[1]!);
+  const answers = (marked.length ? marked : [answer]).map(normalized).filter(Boolean);
   const answerOk = answers.length === 1 && answers[0] === normalized(entry.expected.answer);
   const stateOk = same(state(events), entry.expected.state);
   return answerOk && stateOk ? { ok: true } : { ok: false, details: !answerOk ? 'answer must be exactly one expected final answer' : 'required visible workflow state was not reached' };

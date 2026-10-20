@@ -82,6 +82,14 @@ describe('isolated project-eval holdout', () => {
     try { expect((await fetch(`${normal.base}/project-eval/table/wide-reorder`)).status).toBe(404); } finally { await normal.close(); }
   });
 
+  it('grades the explicit final answer rather than explanatory prose', async () => {
+    const wide = entry('project-eval-table-wide-reorder');
+    await open(wide.id, 'eval-answer-marker');
+    await browser.click(await buttonId('Sort score descending'));
+    const evidence = await verify(wide.id, 'eval-answer-marker', true);
+    expect(gradeProjectEvalCase(wide.id, `Sorted the ledger.\n\nANSWER: ${wide.expected.answer}`, evidence.provenance.events)).toEqual({ ok:true });
+  });
+
   it('uses bounded table fields and cursor pagination, while native pages still require their visible control', async () => {
     const wide = entry('project-eval-table-wide-reorder');
     const [wideRecord,,wideScore] = wide.expected.answer.split(' | ');
