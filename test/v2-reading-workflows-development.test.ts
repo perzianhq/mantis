@@ -107,7 +107,11 @@ it('shows visible evidence after reading actions complete', async () => {
   const landmark = await openPage('v2-reading-landmark-jump');
   try {
     await landmark.page.click('#current'); await landmark.page.click('#open');
-    expect(await landmark.page.locator('#region-status').textContent()).toBe(`Target entry opened: ${entry('v2-reading-landmark-jump').expected.answer.split(': ').at(-1)}`);
+    expect(await landmark.page.locator('#open-status').textContent()).toBe(`Target entry opened: ${entry('v2-reading-landmark-jump').expected.answer.split(': ').at(-1)}`);
+    expect(await landmark.page.locator('#open-status').evaluate((node: HTMLElement) => {
+      const rect = node.getBoundingClientRect(); const parent = node.closest('.reading-region')!.getBoundingClientRect();
+      return rect.top >= parent.top && rect.bottom <= parent.bottom;
+    })).toBe(true);
   } finally { await landmark.browser.close(); }
   const delivery = await openPage('v2-reading-cross-region');
   try {
