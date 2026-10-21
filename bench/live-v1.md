@@ -40,3 +40,12 @@ npx tsx bench/agent/live-v1-preflight.ts
 ```
 
 Review changed redirects, access blocks, and page text before changing a catalog contract or replacing this frozen cohort. Do not rerun a paid benchmark merely to preflight sources.
+
+## Version history
+
+- **v1.1** (task hash `5ca08a21`): loosened five deterministic contracts that rejected legitimate variants of the intended page, using the saved run `live-v1-deepseek-final-20261021`. The URL predicate gained optional `alsoPaths` (alternate pathnames of the same page, `*` = one segment; trailing slashes are ignored) in `bench/agent/realsite.ts`.
+  - `gpl-3`: also accepts `/licenses/gpl-3.0.html`. `rfc-9110`: also `/info/rfc9110`. `node-url`: also `/docs/*/api/url.html` (latest and versioned docs). `nasa-missions`: also `/nasa-missions/`.
+  - Grader hardening (`bench/agent/grading.ts`): the GPL date and OpenAPI keys are `entity` requirements (word-bounded, negation and conflict checks) instead of unbounded `text` substrings, and answers are NFKC-normalized before matching so compatibility forms (full-width digits, ligatures) compare equal.
+  - `census-about`: the page shows "U.S. Census Bureau", never "United States Census Bureau", so the answer and page-text predicate is now "Census Bureau".
+  - Unchanged on purpose: USGS (failures were bot-check access blocks), and the MDN landing, Django marketing and OWID greenhouse-gas pages, which are different pages from the intended ones.
+- **Run 20261021 (`live-v1-deepseek-final-20261021`)** used the earlier uncommitted manifest, task hash `fe757761` (committed hash `8622db61`), and the two judged tasks since swapped (internetarchive -> gutenberg, alltrails -> smithsonian). Its deterministic scores are not comparable with v1.1 for the five rows above; rescore from saved evidence or rerun.

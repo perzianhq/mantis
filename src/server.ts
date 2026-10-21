@@ -5,6 +5,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import { MantisBrowser } from './browser.js';
+import { noHuman } from './fallback/captcha.js';
 
 const reply = (text: string) => ({
   content: [{ type: 'text' as const, text }],
@@ -15,6 +16,7 @@ const reply = (text: string) => ({
 export function createServer(browser: MantisBrowser = new MantisBrowser()): McpServer {
   const server = new McpServer({ name: 'mantis', version: '0.1.1' });
   const id = z.number().int();
+  const humanAvailable = !noHuman();
 
   server.registerTool(
     'open',
@@ -30,7 +32,7 @@ export function createServer(browser: MantisBrowser = new MantisBrowser()): McpS
         'Before finishing, re-read and visibly verify every task constraint (filters, sort, size, quantity, date range). ' +
         'If #number is stale, read() and retry; if on the wrong page, back() and keep searching.',
       inputSchema: {
-        region: z.string().optional().describe('Label substring, e.g. "nav"'),
+        region: z.string().optional().describe('Label substring, e.g. "nav"; if none matches, text inside a region also works'),
         full: z.boolean().optional().describe('No trimming'),
         fresh: z.boolean().optional().describe('Expand seen regions too (this call only)'),
       },
@@ -112,7 +114,7 @@ export function createServer(browser: MantisBrowser = new MantisBrowser()): McpS
   server.registerTool(
     'media',
     {
-      description: 'Only if read is insufficient: media → data (prefer) → ocr → look (last resort) → ask_human. Numbered images/canvases/charts.',
+      description: `Only if read is insufficient: media → data (prefer) → ocr → look (last resort)${humanAvailable ? ' → ask_human' : ''}. Numbered images/canvases/charts.`,
       inputSchema: {},
     },
     async () => reply(await browser.media()),
@@ -152,19 +154,21 @@ export function createServer(browser: MantisBrowser = new MantisBrowser()): McpS
       };
     },
   );
-  server.registerTool(
-    'ask_human',
-    {
-      description:
-        'Human handoff for CAPTCHA, 2FA, payment or login; never solves CAPTCHAs. Waits for a page change, then returns the page.',
-      inputSchema: {
-        reason: z.string().describe('What the human must do'),
-        until: z.string().optional().describe('url_change | selector_gone:<css> | selector_present:<css>; default: URL or content change'),
-        timeout_seconds: z.number().positive().optional().describe('Default 300'),
+  if (humanAvailable) {
+    server.registerTool(
+      'ask_human',
+      {
+        description:
+          'Human handoff for CAPTCHA, 2FA, payment or login; never solves CAPTCHAs. Waits for a page change, then returns the page.',
+        inputSchema: {
+          reason: z.string().describe('What the human must do'),
+          until: z.string().optional().describe('url_change | selector_gone:<css> | selector_present:<css>; default: URL or content change'),
+          timeout_seconds: z.number().positive().optional().describe('Default 300'),
+        },
       },
-    },
-    async ({ reason, until, timeout_seconds }) => reply(await browser.askHuman(reason, until, timeout_seconds)),
-  );
+      async ({ reason, until, timeout_seconds }) => reply(await browser.askHuman(reason, until, timeout_seconds)),
+    );
+  }
   return server;
 }
 

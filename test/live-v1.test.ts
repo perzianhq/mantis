@@ -60,4 +60,26 @@ describe('live-v1 frozen public catalog', () => {
     expect(preflight.candidates).toHaveLength(30);
     expect(preflight.candidates.every((candidate) => candidate.status === 'unverified-offline')).toBe(true);
   });
+
+  describe('contract boundaries and typography', () => {
+    const pass = (id: string, answer: string, text: string): boolean => {
+      const row = LIVE_V1_ROWS.find((r) => r.task_id === id)!;
+      const grader = row.deterministic!;
+      const url = `${grader.final.url.origin}${grader.final.url.path}`;
+      return evaluateDeterministicGrader(grader, answer, [{ final: true, url, text }])?.pass ?? false;
+    };
+
+    it('does not accept a version or date that merely contains the key', () => {
+      expect(pass('livev1-standards-openapi-31', 'The displayed version is 3.1.0', 'OpenAPI Specification v3.1.0')).toBe(true);
+      expect(pass('livev1-standards-openapi-31', 'The displayed version is 3.1.01', 'OpenAPI Specification v3.1.0')).toBe(false);
+      expect(pass('livev1-standards-gpl-3', 'GNU GENERAL PUBLIC LICENSE, 29 June 2007', 'GNU GENERAL PUBLIC LICENSE 29 June 2007')).toBe(true);
+      expect(pass('livev1-standards-gpl-3', 'GNU GENERAL PUBLIC LICENSE, 29 June 20070', 'GNU GENERAL PUBLIC LICENSE 29 June 2007')).toBe(false);
+    });
+
+    it('treats CO2 and CO₂ as the same answer', () => {
+      expect(pass('livev1-data-ourworldindata-co2', 'CO2 emissions', 'CO₂ emissions')).toBe(true);
+      expect(pass('livev1-data-ourworldindata-co2', 'CO₂ emissions', 'CO₂ emissions')).toBe(true);
+      expect(pass('livev1-data-ourworldindata-co2', 'CH4 emissions', 'CO₂ emissions')).toBe(false);
+    });
+  });
 });

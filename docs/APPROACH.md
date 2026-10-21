@@ -140,5 +140,5 @@ Measured results and their limits: [bench/RESULTS.md](../bench/RESULTS.md).
   are read inline under `[iframe "title"]` with their own number range (`#10001…`).
 
 The goal for each change: preserve useful information, use fewer tokens, add meaning, and avoid slowing actions.
-The completed local-v1 result is frozen; the separate planned 48-case local-v2 suite will test broader coverage
-before a separate frozen live-site set. See the [evaluation plan](PLAN.md#evaluation-plan).
+Local-v1, local-v2 (48 cases) and local-v2.1 (54 cases) are complete and frozen; the separate live-site set is
+in progress. See the [evaluation plan](PLAN.md#evaluation-plan).

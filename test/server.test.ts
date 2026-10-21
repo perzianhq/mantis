@@ -87,9 +87,12 @@ it('a heading hit supplies a real region for adjacent paragraph context, not a h
   expect(context.isError).toBe(false);
   expect(context.text).toMatch(/Entry Beta[\s\S]*Target note: indigo\./);
   expect(context.text).not.toContain('Unrelated note: teal.');
-  // A heading match is not itself a valid region, even though its paragraph exists.
-  const wrongRegion = await call('read', { region: 'Entry Beta' });
-  expect(wrongRegion.isError).toBe(true);
+  // A heading is not itself a region: the text fallback returns the region around it, with a note.
+  const byText = await call('read', { region: 'Entry Beta' });
+  expect(byText.isError).toBe(false);
+  expect(byText.text).toContain('containing that text: [main "Bulletins"]');
+  expect(byText.text).toMatch(/Entry Beta[\s\S]*Target note: indigo\./);
+  expect(byText.text).not.toContain('Unrelated note: teal.');
 });
 
 it('open then click by number over MCP', async () => {

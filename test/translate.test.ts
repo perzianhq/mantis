@@ -152,4 +152,88 @@ describe('translate', () => {
     expect(translate(snap(nodes), undefined, { region: 'dialog "Preferences\'' })).toContain('#3 link "Keep literal quotes"');
   });
 
+  describe('region fallback', () => {
+    const child = (n: RawNode, parent: number): RawNode => ({ ...n, parent, depth: 1 });
+    const landless = [
+      region('nav', ''), child(link(1, 'Nav destination'), 0),
+      region('aside', ''), child(link(2, 'Aside destination'), 2),
+      { ...link(3, 'Content destination') },
+      text('Loose content text'),
+    ];
+
+    it('"main" on a page without a main region returns the content outside chrome landmarks, with a note', () => {
+      const out = translate(snap(landless), undefined, { region: 'Main' });
+      expect(out).toContain('#3 link "Content destination"');
+      expect(out).toContain('Loose content text');
+      expect(out).not.toContain('Nav destination');
+      expect(out).not.toContain('Aside destination');
+      expect(out).toContain('(no main region on this page');
+    });
+
+    it('returns non-chrome content for a missing main region', () => {
+      const nodes = [
+        region('header', ''), child(link(1, 'Header destination'), 0),
+        region('search', ''), child(link(2, 'Search destination'), 2),
+        link(3, 'Content destination'),
+      ];
+      const out = translate(snap(nodes), undefined, { region: 'main' });
+      expect(out).toContain('#3 link "Content destination"');
+      expect(out).not.toContain('Header destination');
+      expect(out).not.toContain('Search destination');
+    });
+
+    it('does not use chrome text when the missing main fallback is empty', () => {
+      const nodes = [region('nav', ''), child(link(1, 'Main destination'), 0)];
+      const out = translate(snap(nodes), undefined, { region: 'main' });
+      expect(out).toMatch(/^error: no region matching "main"; regions on this page: \[nav\]; /);
+      expect(out).toContain('to find text use find(), or read without region');
+      expect(out).not.toContain('showing the region containing that text');
+    });
+
+    it('a real main region still selects only that region', () => {
+      const nodes = [
+        region('nav', ''), child(link(1, 'Nav destination'), 0),
+        region('main', ''), child(link(2, 'Main destination'), 2),
+        link(3, 'Loose destination'),
+      ];
+      const out = translate(snap(nodes), undefined, { region: 'main' });
+      expect(out).toContain('#2 link "Main destination"');
+      expect(out).not.toContain('Nav destination');
+      expect(out).not.toContain('Loose destination');
+      expect(out).not.toContain('no main region');
+      expect(out).toContain('(region "main" only)');
+    });
+
+    it('text that sits inside a region returns that region with a note', () => {
+      const nodes = [
+        region('nav', ''), child(link(1, 'Nav destination'), 0),
+        region('form', 'Login'), child(link(2, 'Reset password'), 2),
+      ];
+      const out = translate(snap(nodes), undefined, { region: 'reset pass' });
+      expect(out).toContain('#2 link "Reset password"');
+      expect(out).not.toContain('Nav destination');
+      expect(out).toContain('containing that text: [form "Login"]');
+    });
+
+    it('matches literal quoted text inside a region', () => {
+      const nodes = [region('section', 'Messages'), child(text('He said "ready"'), 0)];
+      const out = translate(snap(nodes), undefined, { region: '  He said "ready"  ' });
+      expect(out).toContain('showing the region containing that text: [section "Messages"]');
+      expect(out).not.toMatch(/^error:/);
+    });
+
+    it('does not match text when literal punctuation is missing', () => {
+      const nodes = [region('section', 'Messages'), child(text('He said ready'), 0)];
+      const out = translate(snap(nodes), undefined, { region: 'He said "ready"' });
+      expect(out).toMatch(/^error: no region matching/);
+      expect(out).not.toContain('showing the region containing that text');
+    });
+
+    it('a nonsense query still errors, lists the regions and points at find', () => {
+      const out = translate(snap(landless), undefined, { region: 'zzqq' });
+      expect(out).toMatch(/^error: no region matching "zzqq"; regions on this page: \[nav\] \[aside\]/);
+      expect(out).toContain('find()');
+    });
+  });
+
 });

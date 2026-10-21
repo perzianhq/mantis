@@ -29,7 +29,7 @@ Frozen `local-v2.1` scorecard: 54 code-graded fixture tasks, `deepseek-v4.1-flas
 
 Mantis scored 98.1%, versus 96.9% for the tree and 92.6% for screenshots, with 41.6% fewer median input tokens than the tree and 50.4% fewer than screenshots. Execution excludes locally measured limiter/retry wait; wall time includes it. Method, audit caveats, and historical baselines: [bench/RESULTS.md](bench/RESULTS.md).
 
-Next: freeze the separate live-site set. See the [evaluation plan](docs/PLAN.md#evaluation-plan).
+Next: a valid, separately reported live-site run (live-v1). See the [evaluation plan](docs/PLAN.md#evaluation-plan).
 
 ## Learn more
 

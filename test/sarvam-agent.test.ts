@@ -79,6 +79,26 @@ describe('Sarvam benchmark agent loop', () => {
     expect(() => sarvamMaxTokens('0')).toThrow('SARVAM_MAX_TOKENS must be a positive integer');
   });
 
+  it('stops repeated empty length completions while allowing a tool turn to reset the streak', async () => {
+    const repeatedLength = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(reply({ content: '' }, 'length'))
+      .mockResolvedValueOnce(reply({ content: '' }, 'length'));
+    const mcp = { call: vi.fn().mockResolvedValue(tools) };
+    const stopped = await base(new SarvamClient({ apiKey: key, fetch: repeatedLength }), mcp, 4);
+    expect(stopped).toMatchObject({ resultText: 'Sarvam completion token limit (length).', resultError: true, turns: 2 });
+    expect(repeatedLength).toHaveBeenCalledTimes(2);
+
+    // A tool reply breaks the no-tool length streak, so a later length reply gets its retry.
+    const resetByTool = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(reply({ content: '' }, 'length'))
+      .mockResolvedValueOnce(reply({ content: null, tool_calls: [{ id: 'one', type: 'function', function: { name: 'open', arguments: '{}' } }] }, 'stop'))
+      .mockResolvedValueOnce(reply({ content: 'ANSWER: recovered' }, 'length'))
+      .mockResolvedValueOnce(reply({ content: '' }, 'stop'));
+    const resetMcp = { call: vi.fn().mockResolvedValueOnce(tools).mockResolvedValueOnce({ content: [{ type: 'text', text: 'ok' }] }) };
+    const reset = await base(new SarvamClient({ apiKey: key, fetch: resetByTool }), resetMcp, 4);
+    expect(reset).toMatchObject({ resultText: 'ANSWER: recovered', resultError: false, turns: 4, toolCalls: 1 });
+  });
+
   it('retains a length-truncated prefix across tool calls', async () => {
     const fetcher = vi.fn<typeof fetch>()
       .mockResolvedValueOnce(reply({ content: 'ANSWER: tool-', tool_calls: [{ id: 'one', type: 'function', function: { name: 'open', arguments: '{}' } }] }, 'length'))

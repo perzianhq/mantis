@@ -207,7 +207,29 @@ export function deriveRegions(snap: Snapshot): RawNode[] {
 
 // ---- region filter ---------------------------------------------------------
 
-function onlyRegion(nodes: RawNode[], query: string): RawNode[] | string {
+/** Landmark regions that are page chrome rather than content. */
+const CHROME_REGIONS = new Set(['header', 'nav', 'aside', 'footer', 'search']);
+
+/** Keep the given region roots and everything inside them; roots become top level. */
+function keepSubtrees(nodes: RawNode[], roots: number[]): RawNode[] {
+  const rootSet = new Set(roots);
+  const keep = new Set<number>();
+  nodes.forEach((_, i) => {
+    if (rootSet.has(i)) keep.add(i);
+    else for (let p = nodes[i].parent; p >= 0; p = nodes[p].parent) if (rootSet.has(p)) { keep.add(i); break; }
+  });
+  const remap: number[] = [];
+  const out: RawNode[] = [];
+  nodes.forEach((n, i) => {
+    if (!keep.has(i)) return;
+    remap[i] = out.length;
+    out.push({ ...n, parent: rootSet.has(i) || n.parent < 0 ? -1 : remap[n.parent] });
+  });
+  return out;
+}
+
+function onlyRegion(nodes: RawNode[], query: string): { nodes: RawNode[]; note?: string } | string {
+  const textQuery = query.toLowerCase().trim();
   const q = query.toLowerCase().trim().replace(
     /^(.*\s)?(?:"([^"]*)"|'([^']*)'|“([^”]*)”|‘([^’]*)’)$/,
     (_match, role, double, single, curlyDouble, curlySingle) => `${role ?? ''}${double ?? single ?? curlyDouble ?? curlySingle}`,
@@ -223,25 +245,58 @@ function onlyRegion(nodes: RawNode[], query: string): RawNode[] | string {
     return false;
   };
   const roots = nodes.map((_, i) => i).filter((i) => matches(i) && !inMatch(i));
-  if (!roots.length) {
+  if (roots.length) return { nodes: keepSubtrees(nodes, roots) };
+
+  // (a) "main" on a page with no main region: everything outside the chrome landmarks.
+  if (q === 'main') {
+    const inChrome = (i: number): boolean => {
+      for (let p = i; p >= 0; p = nodes[p].parent) if (nodes[p].kind === 'region' && CHROME_REGIONS.has(nodes[p].role)) return true;
+      return false;
+    };
+    const remap: number[] = [];
+    const out: RawNode[] = [];
+    nodes.forEach((n, i) => {
+      if (inChrome(i)) return;
+      remap[i] = out.length;
+      out.push({ ...n, parent: n.parent < 0 ? -1 : remap[n.parent] });
+    });
+    if (out.some((n) => n.kind !== 'region')) {
+      return { nodes: out, note: '(no main region on this page; showing content outside header, nav, aside, footer and search)' };
+    }
     const names = nodes.filter((n) => n.kind === 'region').map((n) => `[${n.role}${n.name ? ` "${n.name}"` : ''}]`);
     const uniq = [...new Set(names)].slice(0, 12);
-    return `error: no region matching "${query}"${uniq.length ? `; regions on this page: ${uniq.join(' ')}` : '; this page has no regions'}`;
+    return `error: no region matching "${query}"${uniq.length ? `; regions on this page: ${uniq.join(' ')}` : '; this page has no regions'}; ` +
+      'to find text use find(), or read without region (full for no trimming)';
   }
-  const rootSet = new Set(roots);
-  const keep = new Set<number>();
-  nodes.forEach((_, i) => {
-    if (rootSet.has(i)) keep.add(i);
-    else for (let p = nodes[i].parent; p >= 0; p = nodes[p].parent) if (rootSet.has(p)) { keep.add(i); break; }
-  });
-  const remap: number[] = [];
-  const out: RawNode[] = [];
-  nodes.forEach((n, i) => {
-    if (!keep.has(i)) return;
-    remap[i] = out.length;
-    out.push({ ...n, parent: rootSet.has(i) || n.parent < 0 ? -1 : remap[n.parent] });
-  });
-  return out;
+
+  // (b) the query is text inside one or more regions: return the innermost region around each hit.
+  if (textQuery) {
+    const hit = (n: RawNode): boolean => n.kind !== 'region' && `${n.name} ${n.value ?? ''}`.toLowerCase().includes(textQuery);
+    const holders = new Set<number>();
+    nodes.forEach((n, i) => {
+      if (!hit(n)) return;
+      let p = n.parent;
+      while (p >= 0 && nodes[p].kind !== 'region') p = nodes[p].parent;
+      if (p >= 0) holders.add(p);
+    });
+    const nested = (i: number): boolean => {
+      for (let p = nodes[i].parent; p >= 0; p = nodes[p].parent) if (holders.has(p)) return true;
+      return false;
+    };
+    const found = [...holders].filter((i) => !nested(i));
+    if (found.length) {
+      const names = [...new Set(found.map((i) => `[${nodes[i].role}${nodes[i].name ? ` "${nodes[i].name}"` : ''}]`))].slice(0, 12);
+      return {
+        nodes: keepSubtrees(nodes, found),
+        note: `(no region named "${query}"; showing ${found.length === 1 ? 'the region' : 'regions'} containing that text: ${names.join(' ')})`,
+      };
+    }
+  }
+
+  const names = nodes.filter((n) => n.kind === 'region').map((n) => `[${n.role}${n.name ? ` "${n.name}"` : ''}]`);
+  const uniq = [...new Set(names)].slice(0, 12);
+  return `error: no region matching "${query}"${uniq.length ? `; regions on this page: ${uniq.join(' ')}` : '; this page has no regions'}; ` +
+    'to find text use find(), or read without region (full for no trimming)';
 }
 
 // ---- rendering -------------------------------------------------------------
@@ -555,9 +610,9 @@ export function translate(snap: Snapshot, budget: number = BUDGET_CHARS, opts: R
   if (opts.region) {
     const picked = onlyRegion(nodes, opts.region);
     if (typeof picked === 'string') return picked;
-    nodes = picked;
+    nodes = picked.nodes;
     budget = Math.max(budget, 2 * BUDGET_CHARS); // the agent asked for this region: allow more room
-    head.push(`(region "${opts.region}" only)`);
+    head.push(picked.note ?? `(region "${opts.region}" only)`);
   }
   const full = opts.full === true;
   if (full) budget = Infinity;

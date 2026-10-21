@@ -1,6 +1,17 @@
 import type { Page } from 'playwright';
 
 export const CAPTCHA_WARNING = '⚠ CAPTCHA detected — call ask_human("captcha")';
+const CAPTCHA_WARNING_NO_HUMAN = '⚠ CAPTCHA detected — Mantis cannot solve it; choose another route or report blocked';
+
+/** True when MANTIS_NO_HUMAN=1: no person is available, so nothing should point the agent at ask_human. */
+export function noHuman(): boolean {
+  return process.env.MANTIS_NO_HUMAN === '1';
+}
+
+/** The warning text for the current mode (read per call so the env var can change at runtime). */
+export function captchaWarning(): string {
+  return noHuman() ? CAPTCHA_WARNING_NO_HUMAN : CAPTCHA_WARNING;
+}
 
 const FRAME_URL = /google\.com\/recaptcha|hcaptcha\.com|challenges\.cloudflare\.com/i;
 const CAPTCHA_CANDIDATES = '.g-recaptcha, .h-captcha, .cf-turnstile, iframe[src*="google.com/recaptcha" i], iframe[src*="hcaptcha.com" i], iframe[src*="challenges.cloudflare.com" i]';
@@ -45,7 +56,7 @@ export async function detectCaptcha(page: Page): Promise<string | null> {
         }));
         const known = candidate.widget || FRAME_URL.test(candidate.src);
         if (known && !candidate.invisible && !/size=invisible/i.test(candidate.src) &&
-            await element.evaluate(renderedElement)) return CAPTCHA_WARNING;
+            await element.evaluate(renderedElement)) return captchaWarning();
       } catch {
         // A candidate can detach while the page is settling; inspect the rest.
       } finally {
@@ -58,7 +69,7 @@ export async function detectCaptcha(page: Page): Promise<string | null> {
       const element = await frame.frameElement().catch(() => null);
       if (!element) continue;
       try {
-        if (await element.evaluate(renderedElement)) return CAPTCHA_WARNING;
+        if (await element.evaluate(renderedElement)) return captchaWarning();
       } finally {
         await element.dispose();
       }

@@ -17,7 +17,11 @@ import type { AgentTask } from './tasks.js';
 /** Optional legacy answer key: substrings the final reply / some evidence frame must contain. */
 export interface RealsiteChecks { answerIncludes?: string[]; evidenceIncludes?: string[] }
 export interface MatchPredicate { type: AnswerFactType; value: string | number; with?: { type: AnswerFactType; value: string | number } }
-export interface UrlPredicate { origin: string; path: string; query?: Record<string, string> }
+/**
+ * `path` is the canonical pathname; `alsoPaths` lists other pathnames of the same page that the site legitimately
+ * serves or redirects to (a `*` segment matches exactly one non-empty path segment).  A trailing slash never matters.
+ */
+export interface UrlPredicate { origin: string; path: string; alsoPaths?: string[]; query?: Record<string, string> }
 
 /**
  * Explicit opt-in for answer keys that are safe to grade without a model.  All
@@ -179,7 +183,8 @@ export function validateDeterministicGrader(value: unknown): string | null {
   if (!Array.isArray(o.answerIncludes) || !o.answerIncludes.length || !o.answerIncludes.every(predicate)) return 'deterministic.answerIncludes must be non-empty typed predicates';
   if (!final.url || typeof final.url !== 'object' || Array.isArray(final.url)) return 'deterministic.final.url must be an origin/path predicate';
   const url = final.url as Record<string, unknown>;
-  if (Object.keys(url).some((key) => !['origin', 'path', 'query'].includes(key)) || typeof url.origin !== 'string' || !url.origin.trim() || typeof url.path !== 'string' || !url.path.startsWith('/')) return 'deterministic.final.url must contain an origin and absolute path';
+  if (Object.keys(url).some((key) => !['origin', 'path', 'alsoPaths', 'query'].includes(key)) || typeof url.origin !== 'string' || !url.origin.trim() || typeof url.path !== 'string' || !url.path.startsWith('/')) return 'deterministic.final.url must contain an origin and absolute path';
+  if (url.alsoPaths !== undefined && (!Array.isArray(url.alsoPaths) || !url.alsoPaths.length || !url.alsoPaths.every((p) => typeof p === 'string' && p.startsWith('/')))) return 'deterministic.final.url.alsoPaths must be absolute path strings';
   if (url.query !== undefined && (!url.query || typeof url.query !== 'object' || Array.isArray(url.query) || !Object.values(url.query as Record<string, unknown>).every((v) => typeof v === 'string'))) return 'deterministic.final.url.query must map names to strings';
   if (!Array.isArray(final.textIncludes) || !final.textIncludes.length || !final.textIncludes.every(predicate)) return 'deterministic.final.textIncludes must be non-empty typed predicates';
   const values = final.formValues;
@@ -212,11 +217,22 @@ function parseDeterministicGrader(value: unknown): DeterministicGrader | undefin
     kind: o.kind,
     answerIncludes: predicates(o.answerIncludes),
     final: {
-      url: { origin: o.final.url.origin.trim(), path: o.final.url.path, ...(o.final.url.query ? { query: { ...o.final.url.query } } : {}) },
+      url: { origin: o.final.url.origin.trim(), path: o.final.url.path, ...(o.final.url.alsoPaths ? { alsoPaths: [...o.final.url.alsoPaths] } : {}), ...(o.final.url.query ? { query: { ...o.final.url.query } } : {}) },
       textIncludes: predicates(o.final.textIncludes),
       ...(o.final.formValues ? { formValues: o.final.formValues.map(({ label, value }) => ({ label: label.trim(), value: value.trim() })) } : {}),
     },
   };
+}
+
+const trimSlash = (p: string): string => (p.length > 1 ? p.replace(/\/+$/, '') || '/' : p);
+function urlPathMatches(actual: string, predicate: UrlPredicate): boolean {
+  const got = trimSlash(actual);
+  return [predicate.path, ...(predicate.alsoPaths ?? [])].some((allowed) => {
+    const want = trimSlash(allowed);
+    if (!want.includes('*')) return got === want;
+    const a = got.split('/'); const w = want.split('/');
+    return a.length === w.length && w.every((seg, i) => (seg === '*' ? Boolean(a[i]) : seg === a[i]));
+  });
 }
 
 const norm = (s: string): string => s.replace(/\s+/g, ' ').trim().toLowerCase();
@@ -259,7 +275,7 @@ export function evaluateDeterministicGrader(grader: DeterministicGrader | undefi
   const forms = final.forms ?? [];
   const failed = [
     ...grader.answerIncludes.filter((item) => !matchesPredicate(answer, item)).map((item) => `answer lacks "${predicateLabel(item)}"`),
-    ...(!parsed || parsed.origin !== grader.final.url.origin || parsed.pathname !== grader.final.url.path || Object.entries(grader.final.url.query ?? {}).some(([key, value]) => parsed.searchParams.get(key) !== value) ? ['final URL does not match the required origin/path'] : []),
+    ...(!parsed || parsed.origin !== grader.final.url.origin || !urlPathMatches(parsed.pathname, grader.final.url) || Object.entries(grader.final.url.query ?? {}).some(([key, value]) => parsed.searchParams.get(key) !== value) ? ['final URL does not match the required origin/path'] : []),
     ...grader.final.textIncludes.filter((item) => !matchesPredicate(text, item)).map((item) => `final frame lacks "${predicateLabel(item)}"`),
     ...(grader.final.formValues ?? []).filter((wanted) => !forms.some((actual) => norm(actual.label) === norm(wanted.label) && norm(actual.value) === norm(wanted.value))).map((wanted) => `final form lacks ${JSON.stringify(wanted.label)}=${JSON.stringify(wanted.value)}`),
   ];

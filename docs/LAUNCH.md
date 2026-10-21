@@ -2,8 +2,8 @@
 
 ## 1. The claim
 
-Use the frozen local-v1 scorecard and caveats in [bench/RESULTS.md](../bench/RESULTS.md).
-Label the earlier real-site results as a pilot; broader local-v2 and frozen live-site evaluations are planned separately.
+Use the frozen local-v2.1 scorecard and caveats in [bench/RESULTS.md](../bench/RESULTS.md).
+Label the earlier real-site results as a historical pilot; the frozen live-site set (live-v1) is reported separately once valid.
 Publish failures and method beside the claim. Lead with agent task results; replay measures
 cheap orientation, not reading a whole article.
 

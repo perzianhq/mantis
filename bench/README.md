@@ -28,7 +28,7 @@ $bytes = [Text.UTF8Encoding]::new($false).GetBytes($text)
 ([BitConverter]::ToString([Security.Cryptography.SHA256]::HashData($bytes))).Replace('-', '').ToLowerInvariant()
 ```
 
-`local-v2-development` is frozen at 32 development cases across the eight domains. `local-v2` is the completed historical 48-case scorecard. `local-v2.1` is the completed 54-case local baseline: those 48 plus six reliability contracts, three approaches and three repeats (486 rows); see [RESULTS.md](RESULTS.md). A separate frozen live-site set follows. Report all suites separately; no self-hosted-app stage is planned.
+`local-v2-development` is frozen at 32 development cases across the eight domains. `local-v2` is the completed historical 48-case scorecard. `local-v2.1` is the completed 54-case local baseline: those 48 plus six reliability contracts, three approaches and three repeats (486 rows); see [RESULTS.md](RESULTS.md). The separate frozen live-site set ([live-v1](live-v1.md)) is not yet a valid scored result. Report all suites separately; no self-hosted-app stage is planned.
 
 ## Token replay
 
@@ -53,9 +53,12 @@ AGENT_OUT=my-subset AGENT_APPROACHES=mantis,tree npm run bench:agent            
 AGENT_ROWS='long-shop|tree|1,long-shop|screenshot|1' AGENT_TASKS=local AGENT_RUNS=3 npm run bench:agent # exact recovery rows
 ```
 
+Mantis runs set `MANTIS_NO_HUMAN=1` on the MCP server (`ask_human` returns immediately and the CAPTCHA warning omits it), since no human is present.
+
 | Variable | Default | Meaning |
 |---|---|---|
 | `AGENT_PROVIDER` | `codex` | `codex`, `claude`, or `sarvam` |
+| `AGENT_SUITE` | `local-v1` | `local-v2-development`, `local-v2`, `local-v2.1`, or `live-v1` (see [live-v1](live-v1.md)); use with `AGENT_TASKS=all` |
 | `AGENT_TASKS` | pilot | `all`, task ids, or `cat:<category>`, comma-separated |
 | `AGENT_ROWS` | unset | exact recovery rows: comma-separated `task|approach|run` triples; each must exist in the selected task/approach/run plan |
 | `AGENT_FIXTURE_SEED` | unset | frozen local-fixture variant seed; requires `AGENT_TASKS=local` or explicit local task IDs. Current seed: `20261018` is one frozen profile spanning all 25 local tasks; it is not 25 independently generated profiles. |
@@ -96,7 +99,7 @@ The agent ends with a `FINAL_URL:` line, so the usual grading only checks that i
 
 The "298 rows missing answer-key checks" warning is an annotation gap: the local catalog has 300 rows, only two with checks. The loader warns across the whole catalog before sampling and still loads the rows; `checks` is a repo extension, not supplied by the imported dataset.
 
-The separate frozen public [live-v1 cohort](live-v1.md) now has 30 explicit read-only tasks: 20 deterministic terminal-state contracts and 10 task-specific judged contracts, with the fixed 8 easy / 14 medium / 8 hard allocation. `AGENT_SUITE=live-v1 AGENT_TASKS=all` selects all 30 rows, including judged rows, for Mantis/tree/screenshot and three repeats. Its offline preflight inventory deliberately marks every candidate unverified until a free browser review confirms it; it does not alter the gated source.
+The frozen public live-site cohort, its run plan and preflight status are in [live-v1.md](live-v1.md); it does not alter the gated source above.
 
 ### Sarvam judge and capability probe
 
@@ -286,7 +289,6 @@ settings, environment, source hashes and fingerprint that resume checks.
 |---|---|
 | `codex-sol`, `codex-luna`, `claude-haiku` | 22 short tasks, 1 run, per model |
 | `codex-luna-long`, `claude-haiku-long` | 4 long tasks, 3 runs |
-| `agent`, `agent-pilot` | historical: Claude Sonnet, 5 approaches, graded on the final reply only; older schema, cannot be resumed |
 
 ## Adding a task
 

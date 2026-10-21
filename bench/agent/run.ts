@@ -213,7 +213,7 @@ async function startServer(spec: ServerSpec, warmMs: number, log: string, waitFo
 const APPROACHES: Record<Approach, { label: string; server: (dir: string) => Record<string, ServerSpec>; warmMs?: number; allow: string[]; deny?: string[] }> = {
   mantis: {
     label: 'Mantis',
-    server: (dir) => ({ mantis: { command: node, args: [path.join(REPO, 'bench', 'agent', 'bridge.mjs'), '--mantis-server'], env: { MANTIS_MEMORY_DIR: path.join(dir, 'mem'), MANTIS_USER_AGENT: BENCH_UA } } }),
+    server: (dir) => ({ mantis: { command: node, args: [path.join(REPO, 'bench', 'agent', 'bridge.mjs'), '--mantis-server'], env: { MANTIS_MEMORY_DIR: path.join(dir, 'mem'), MANTIS_USER_AGENT: BENCH_UA, MANTIS_NO_HUMAN: '1' } } }),
     allow: ['mcp__mantis'],
     deny: ['mcp__mantis__bench_capture'],
   },

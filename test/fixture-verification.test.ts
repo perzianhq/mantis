@@ -23,6 +23,7 @@ import type { CapturedFrame } from '../bench/agent/evidence.js';
 import { deterministicGradeForRun, finalizeSiteBrokenVerdicts, parseJudgeOutput, renderJudgedMarkdown, universallySiteBrokenTasks } from '../bench/agent/judge.js';
 import type { JudgedRun } from '../bench/agent/judge.js';
 import { evaluateDeterministicGrader, loadRealsiteRows, validateChecks, validateDeterministicGrader } from '../bench/agent/realsite.js';
+import { LIVE_V1_ROWS } from '../bench/agent/live-v1.js';
 import { createMcpProxy } from '../bench/agent/mcp-proxy.js';
 import { decodePng, encodePng, fitWithin, grayThumb, resizeImage, thumbDiff } from '../bench/agent/png.js';
 import { classifyClickError } from '../src/browser.js';
@@ -213,6 +214,55 @@ it('grades complete opted-in real-site validators against one final captured sta
   expect(deterministicGradeForRun(row, 'success', true, 'The Blue collection is selected.', frames)?.pass).toBe(true);
   expect(deterministicGradeForRun(row, 'timeout', true, 'The Blue collection is selected.', frames)).toBeNull();
   expect(deterministicGradeForRun(row, 'success', false, 'The Blue collection is selected.', frames)).toBeNull();
+});
+
+it('accepts alternate canonical paths and trailing slashes without accepting other pages', () => {
+  const grader = {
+    kind: 'fact' as const, answerIncludes: [{ type: 'entity' as const, value: 'Cedar' }],
+    final: { url: { origin: 'https://fixture.test', path: '/docs/ref.html', alsoPaths: ['/info/ref', '/versions/*/ref.html'] }, textIncludes: [{ type: 'entity' as const, value: 'Cedar' }] },
+  };
+  expect(validateDeterministicGrader(grader)).toBeNull();
+  expect(validateDeterministicGrader({ ...grader, final: { ...grader.final, url: { ...grader.final.url, alsoPaths: ['relative'] } } })).not.toBeNull();
+  const at = (url: string) => evaluateDeterministicGrader(grader, 'Cedar', [{ final: true, url, text: 'Cedar' }])?.pass;
+  for (const url of ['https://fixture.test/docs/ref.html', 'https://fixture.test/info/ref/', 'https://fixture.test/versions/v2.x/ref.html']) expect(at(url), url).toBe(true);
+  for (const url of ['https://fixture.test/info/other', 'https://fixture.test/versions/ref.html', 'https://fixture.test/versions/a/b/ref.html', 'https://other.test/info/ref', 'https://fixture.test/']) expect(at(url), url).toBe(false);
+});
+
+it('live-v1.1 contracts accept the legitimate page variants the 20261021 run reached and still reject near misses', () => {
+  const grader = (suffix: string) => LIVE_V1_ROWS.find((row) => row.task_id.endsWith(suffix))!.deterministic!;
+  const grade = (suffix: string, url: string, text: string, answer: string) => evaluateDeterministicGrader(grader(suffix), answer, [{ final: true, url, text }])?.pass;
+
+  // GPL: the license is served both as gpl-3.0.html and gpl-3.0.en.html; the FAQ/other licence is not the page.
+  const gplText = 'GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007';
+  const gplAnswer = 'GNU GENERAL PUBLIC LICENSE, 29 June 2007';
+  expect(grade('gpl-3', 'https://www.gnu.org/licenses/gpl-3.0.html', gplText, gplAnswer)).toBe(true);
+  expect(grade('gpl-3', 'https://www.gnu.org/licenses/gpl-3.0.en.html', gplText, gplAnswer)).toBe(true);
+  expect(grade('gpl-3', 'https://www.gnu.org/licenses/lgpl-3.0.html', gplText, gplAnswer)).toBe(false);
+  expect(grade('gpl-3', 'https://www.gnu.org/licenses/gpl-3.0.html', 'GNU GENERAL PUBLIC LICENSE Version 2, June 1991', gplAnswer)).toBe(false);
+
+  // Census: the page shows "U.S. Census Bureau" / "Census Bureau", never the long form; the homepage is not the about page.
+  const censusText = 'Within About the U.S. Census Bureau Who We Are';
+  expect(grade('census-about', 'https://www.census.gov/about.html', censusText, 'The U.S. Census Bureau')).toBe(true);
+  expect(grade('census-about', 'https://www.census.gov/', censusText, 'The U.S. Census Bureau')).toBe(false);
+  expect(grade('census-about', 'https://www.census.gov/about.html', 'About the Bureau', 'The U.S. Census Bureau')).toBe(false);
+  expect(grade('census-about', 'https://www.census.gov/about.html', censusText, 'The Bureau of Labor Statistics')).toBe(false);
+
+  // NASA: the missions index lives at /missions/ and /nasa-missions/; a mission detail page is not it.
+  const nasaText = 'All Missions Missions NASA explores the secrets of the universe';
+  expect(grade('nasa-missions', 'https://www.nasa.gov/missions/', nasaText, 'Missions')).toBe(true);
+  expect(grade('nasa-missions', 'https://www.nasa.gov/nasa-missions/', nasaText, 'Missions')).toBe(true);
+  expect(grade('nasa-missions', 'https://www.nasa.gov/mission/artemis-ii/', nasaText, 'Missions')).toBe(false);
+  expect(grade('nasa-missions', 'https://www.nasa.gov/nasa-missions/', 'Explore Search News', 'Missions')).toBe(false);
+
+  // Node: stable, latest and versioned docs all serve the URL API page; another API page does not.
+  for (const url of ['https://nodejs.org/api/url.html', 'https://nodejs.org/docs/latest/api/url.html', 'https://nodejs.org/docs/latest-v26.x/api/url.html']) expect(grade('node-url', url, 'URL WHATWG URL API', 'URL'), url).toBe(true);
+  expect(grade('node-url', 'https://nodejs.org/docs/latest/api/http.html', 'URL WHATWG URL API', 'URL')).toBe(false);
+  expect(grade('node-url', 'https://nodejs.org/docs/latest/api/url.html/extra', 'URL WHATWG URL API', 'URL')).toBe(false);
+
+  // RFC: the datatracker-style info page and the HTML text both show the title; another RFC does not.
+  expect(grade('rfc-9110', 'https://www.rfc-editor.org/rfc/rfc9110.html', 'HTTP Semantics', 'HTTP Semantics')).toBe(true);
+  expect(grade('rfc-9110', 'https://www.rfc-editor.org/info/rfc9110/', 'RFC 9110: HTTP Semantics', 'HTTP Semantics')).toBe(true);
+  expect(grade('rfc-9110', 'https://www.rfc-editor.org/info/rfc9111/', 'RFC 9111: HTTP Caching', 'HTTP Semantics')).toBe(false);
 });
 
 it('Mantis follows a verified label but rejects a covered control', async () => {
@@ -414,7 +464,19 @@ it('accepts each v2.1 reliability answer only with its current-document terminal
     expect(gradeV21ReliabilityCase(entry.id, entry.expected.answer, [loaded, settled]), entry.id).toEqual({ ok:true });
     expect(gradeV21ReliabilityCase(entry.id, entry.nearMiss.answer, [loaded, settled]).ok, entry.nearMiss.id).toBe(false);
     const laterLoad = { kind:'load', documentId:`${entry.id}-later`, fixtureState: entry.expected.state } as unknown as import('../bench/fixtures.js').FixtureObservation;
-    expect(gradeV21ReliabilityCase(entry.id, entry.expected.answer, [loaded, settled, laterLoad]).ok, `${entry.id}/prior-document-state`).toBe(false);
+    const fact = entry.family !== 'recycled-control-current-record' && entry.family !== 'nested-child-action';
+    expect(gradeV21ReliabilityCase(entry.id, entry.expected.answer, [loaded, settled, laterLoad]).ok, `${entry.id}/prior-document-state`).toBe(fact);
+  }
+});
+
+it('uses the latest load state after every fact task scrolls and reloads', () => {
+  for (const entry of V21_RELIABILITY_CASES.filter((candidate) => candidate.family !== 'recycled-control-current-record' && candidate.family !== 'nested-child-action')) {
+    const firstLoad = { kind: 'load', documentId: 'first', fixtureState: entry.expected.state } as unknown as import('../bench/fixtures.js').FixtureObservation;
+    const scrollSettled = { kind: 'settled', documentId: 'first', fixtureState: entry.expected.state } as unknown as import('../bench/fixtures.js').FixtureObservation;
+    const reload = { kind: 'load', documentId: 'reloaded', fixtureState: entry.expected.state } as unknown as import('../bench/fixtures.js').FixtureObservation;
+    const wrongReload = { kind: 'load', documentId: 'reloaded', fixtureState: { ...entry.expected.state, source: 'wrong' } } as unknown as import('../bench/fixtures.js').FixtureObservation;
+    expect(gradeV21ReliabilityCase(entry.id, entry.expected.answer, [firstLoad, scrollSettled, reload]), entry.id).toEqual({ ok: true });
+    expect(gradeV21ReliabilityCase(entry.id, entry.expected.answer, [firstLoad, scrollSettled, wrongReload]).ok, entry.id).toBe(false);
   }
 });
 
