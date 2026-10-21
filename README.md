@@ -16,19 +16,19 @@ It works with Claude Code, Codex, Cursor or your own agent as an MCP server. [In
 
 ## Results
 
-Frozen `local-v2-development` baseline: 32 code-graded fixture tasks, `deepseek-v4.1-flash` through Sarvam V2, three runs per approach (288 logical runs). This covers the development split of the planned 48-case v2 suite; it is a local-fixture result, not a general-model or live-site claim.
+Frozen `local-v2` scorecard: 48 code-graded fixture tasks, `deepseek-v4.1-flash` through Sarvam V2, three runs per approach (432 logical runs). Scores are a versioned offline regrade of the saved outputs after repairing the held-out answer contract and state oracle; this is a local-fixture result, not a general-model or live-site claim.
 
 | | Mantis | Accessibility tree | Screenshots |
 |---|---:|---:|---:|
-| Correct | **93/96** | 92/96 | 92/96 |
-| Median input tokens | **15.8k** | 34.6k | 44.2k |
-| Median execution excl. limiter/retry wait | **11.4s** | 15.4s | 22.0s |
-| Median end-to-end wall time | **64.1s** | 106.1s | 149.6s |
-| Median cost estimate | **₹0.114** | ₹0.187 | ₹0.303 |
+| Correct | **135/144** | 134/144 | 128/144 |
+| Median input tokens | **15.9k** | 28.4k | 42.2k |
+| Median execution excl. limiter/retry wait | **12.7s** | 16.3s | 24.2s |
+| Median end-to-end wall time | **63.3s** | 104.0s | 133.8s |
+| Median cost estimate | **₹0.105** | ₹0.156 | ₹0.284 |
 
-Mantis scored 96.9%, versus 95.8% for both baselines, with 54.2% fewer median input tokens than the tree and 64.2% fewer than screenshots. Execution excludes locally measured limiter/retry wait; wall time includes it. Method, caveats, the historical v1 baseline, and pilot results: [bench/RESULTS.md](bench/RESULTS.md).
+Mantis scored 93.8%, versus 93.1% for the tree and 88.9% for screenshots, with 44.2% fewer median input tokens than the tree and 62.4% fewer than screenshots. Execution excludes locally measured limiter/retry wait; wall time includes it. Method, regrade caveats, the historical v1 baseline, and pilot results: [bench/RESULTS.md](bench/RESULTS.md).
 
-Next: freeze the complete 48-case v2 selector and run the matched scorecard. After that, freeze the separate live-site set. See the [evaluation plan](docs/PLAN.md#evaluation-plan).
+Next: freeze the separate live-site set. See the [evaluation plan](docs/PLAN.md#evaluation-plan).
 
 ## Learn more
 

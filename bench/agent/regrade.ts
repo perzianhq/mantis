@@ -7,6 +7,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { TASKS, gradeTaskAnswer, normalizeGradedAnswer, type AgentTask } from './tasks.js';
+import { LOCAL_V2_TASKS, gradeLocalV2Case } from './local-v2.js';
 import { fixtureVariant } from '../fixture-variants.js';
 import type { FixtureVariant } from '../fixture-variants.js';
 import { fullReplyInTrace, matchSavedTraces, savedResults, type SavedAttempt, type SavedResults, type SavedRun } from './offline-metrics.js';
@@ -69,7 +70,9 @@ export function buildRegrade(input: SavedResults, options: { inputName: string; 
   const seed = savedSettings?.fixtureSeed;
   let variant: FixtureVariant | null = null;
   const variantError = typeof seed === 'number' ? (() => { try { variant = fixtureVariant(seed); return null; } catch (error) { return error instanceof Error ? error.message : String(error); } })() : seed == null ? null : 'saved fixtureSeed is not a number';
-  const tasks = new Map(TASKS.map((task) => [task.id, variant ? variant.task(task) : task])); const traces = matchSavedTraces(input.results, options.traceDirectory);
+  const localV2 = input.results.length > 0 && input.results.every((run) => LOCAL_V2_TASKS.some((task) => task.id === run.task));
+  const catalog = localV2 ? LOCAL_V2_TASKS : TASKS;
+  const tasks = new Map(catalog.map((task) => [task.id, variant ? variant.task(task) : task])); const traces = matchSavedTraces(input.results, options.traceDirectory);
   const savedTaskIds = (input.metadata?.settings as Json | undefined)?.tasks;
   const expectedIds = Array.isArray(savedTaskIds) ? savedTaskIds.filter((value): value is string => typeof value === 'string') : [...new Set(input.results.map((run) => run.task))];
   const sourceHashes = (input.metadata?.sourceHashes ?? input.metadata?.sources ?? input.metadata?.source) as Json | undefined; const savedTaskHash = typeof sourceHashes?.['bench/agent/tasks.ts'] === 'string' ? sourceHashes['bench/agent/tasks.ts'] : null;
@@ -84,8 +87,16 @@ export function buildRegrade(input: SavedResults, options: { inputName: string; 
     if (variantError) needs.push(`seeded fixture replay unavailable: ${variantError}`);
     if (typeof seed === 'number' && (savedVariantHash === null || savedVariantHash !== currentVariantHash)) needs.push('saved seeded-fixture source differs from the current frozen variant mapping');
     if (!task) needs.push('task ID is not in the current task catalog'); if (!tracePath) needs.push('saved provider trace is missing or ambiguous');
-    const grade = task && rawReply !== null ? gradeTaskAnswer(task, rawReply) : null;
-    const replayedLegacyRegexPass = task && rawReply !== null ? task.expect.test(normalizeGradedAnswer(rawReply)) : null;
+    const evidence = evidenceOf(attempt);
+    // Local-v2 stored its already-normalized final answer separately; use that
+    // contract value rather than the conversational trace narration.
+    const gradingAnswer = localV2 ? (run.answer ?? null) : rawReply;
+    const grade = task && gradingAnswer !== null
+      ? localV2
+        ? Array.isArray(evidence?.events) ? gradeLocalV2Case(task.id, gradingAnswer, evidence.events as never[]) : null
+        : gradeTaskAnswer(task, gradingAnswer)
+      : null;
+    const replayedLegacyRegexPass = task && gradingAnswer !== null ? task.expect.test(normalizeGradedAnswer(gradingAnswer)) : null;
     const legacyFixture = attempt.fixtureCheck?.ok ?? null;
     const state = task && !variantError ? hardenedState(task, attempt, variant) : { state: 'unknown_rerun_needed' as const, needs: ['task ID is unavailable for state validation'] };
     needs.push(...state.needs);

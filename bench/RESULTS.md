@@ -3,23 +3,23 @@
 All benchmark numbers in one place. How to re-run them: [README.md](README.md).
 Mantis is compared with the accessibility tree (Playwright MCP 0.0.83) and with screenshots (our own minimal tool).
 
-## Local-v2 development baseline (current)
+## Local-v2 full scorecard (current)
 
-Frozen `local-v2-development`: 32 code-graded local fixture tasks x 3 approaches x 3 runs = 288 logical rows. Agent `deepseek-v4.1-flash` through Sarvam V2; 10 scheduled cases, 16 active model calls, and 50 RPM. This is the development split only, not the planned 48-case v2 scorecard or a live-site claim.
+Frozen `local-v2`: 48 code-graded local fixture tasks x 3 approaches x 3 runs = 432 logical rows. Agent `deepseek-v4.1-flash` through Sarvam V2; 10 scheduled cases, 16 active model calls, and 50 RPM. Scores are an offline regrade of the complete saved outputs under the repaired held-out answer contract and state oracle; it is not a live-site claim.
 
 | Per-run median / total | Mantis | Accessibility tree | Screenshots |
 |---|---:|---:|---:|
-| Correct | **93/96 (96.9%)** | 92/96 (95.8%) | 92/96 (95.8%) |
-| Execution excl. quota/retry wait (p50) | **11.4s** | 15.4s | 22.0s |
-| End-to-end CLI wall time (p50) | **64.1s** | 106.1s | 149.6s |
-| Input tokens incl. cache (p50) | **15.8k** | 34.6k | 44.2k |
-| Output tokens (p50) | **424** | 502 | 847 |
-| Cost estimate, INR (p50) | **0.114** | 0.187 | 0.303 |
-| Total cost estimate, INR | **18.93** | 33.42 | 52.29 |
+| Correct | **135/144 (93.8%)** | 134/144 (93.1%) | 128/144 (88.9%) |
+| Execution excl. quota/retry wait (p50) | **12.7s** | 16.3s | 24.2s |
+| End-to-end CLI wall time (p50) | **63.3s** | 104.0s | 133.8s |
+| Input tokens incl. cache (p50) | **15.9k** | 28.4k | 42.2k |
+| Output tokens (p50) | **363** | 456 | 774 |
+| Cost estimate, INR (p50) | **0.105** | 0.156 | 0.284 |
+| Total cost estimate, INR | **28.27** | 51.02 | 103.77 |
 
-- All 288 rows launched and graded: no HTTP 429s, connection failures, wall-cap timeouts, or harness failures.
-- Eleven valid attempted failures remain: seven reading-landmark step limits, two tree list step limits, one screenshot coordinate miss on Save, and one tree answer-format miss. They are not grader or Mantis defects; no row was regraded or replaced.
-- The raw artifact and traces remain local. `local-v1` below remains a separate historical baseline. The 16 held-out cases are implemented and verified; the first full 48-case v2 scorecard remains to be run.
+- All 432 rows launched: no HTTP 429s, connection failures, wall-cap timeouts, or harness failures.
+- The original state contract marked 20 completed rows wrong for answer-format/oracle reasons. The versioned regrade promotes those rows from their saved final answers and authoritative fixture observations; no agent or browser row was rerun.
+- The 35 remaining misses are 28 step limits and seven task/action mistakes. The raw artifact, traces, and regrade artifact remain local. `local-v1` below remains a separate historical baseline.
 
 ## Real sites (pilot)
 
