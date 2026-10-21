@@ -28,7 +28,7 @@ $bytes = [Text.UTF8Encoding]::new($false).GetBytes($text)
 ([BitConverter]::ToString([Security.Cryptography.SHA256]::HashData($bytes))).Replace('-', '').ToLowerInvariant()
 ```
 
-Next is a separate planned [local-v2 coverage suite](manifests/local-v2-plan.md): 48 scored cases across eight domains, using three behavior families × two materially different structural cases per domain, with held-out discipline. Three approaches and three repeats give 432 runs per model. This is a planning contract; fixtures, runner selection, and a frozen result manifest are not implemented yet. A separate frozen live-site set follows it. Report all three suites separately; no self-hosted-app stage is planned.
+`local-v2-development` is frozen at 32 development cases across the eight domains, with three approaches and three repeats (288 rows); see [RESULTS.md](RESULTS.md). Next, add the 16 held-out cases specified in the [local-v2 coverage contract](manifests/local-v2-plan.md), freeze the complete 48-case manifest, and run 432 matched rows per model. A separate frozen live-site set follows. Report all suites separately; no self-hosted-app stage is planned.
 
 ## Token replay
 

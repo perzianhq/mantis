@@ -3,6 +3,24 @@
 All benchmark numbers in one place. How to re-run them: [README.md](README.md).
 Mantis is compared with the accessibility tree (Playwright MCP 0.0.83) and with screenshots (our own minimal tool).
 
+## Local-v2 development baseline (current)
+
+Frozen `local-v2-development`: 32 code-graded local fixture tasks x 3 approaches x 3 runs = 288 logical rows. Agent `deepseek-v4.1-flash` through Sarvam V2; 10 scheduled cases, 16 active model calls, and 50 RPM. This is the development split only, not the planned 48-case v2 scorecard or a live-site claim.
+
+| Per-run median / total | Mantis | Accessibility tree | Screenshots |
+|---|---:|---:|---:|
+| Correct | **93/96 (96.9%)** | 92/96 (95.8%) | 92/96 (95.8%) |
+| Execution excl. quota/retry wait (p50) | **11.4s** | 15.4s | 22.0s |
+| End-to-end CLI wall time (p50) | **64.1s** | 106.1s | 149.6s |
+| Input tokens incl. cache (p50) | **15.8k** | 34.6k | 44.2k |
+| Output tokens (p50) | **424** | 502 | 847 |
+| Cost estimate, INR (p50) | **0.114** | 0.187 | 0.303 |
+| Total cost estimate, INR | **18.93** | 33.42 | 52.29 |
+
+- All 288 rows launched and graded: no HTTP 429s, connection failures, wall-cap timeouts, or harness failures.
+- Eleven valid attempted failures remain: seven reading-landmark step limits, two tree list step limits, one screenshot coordinate miss on Save, and one tree answer-format miss. They are not grader or Mantis defects; no row was regraded or replaced.
+- The raw artifact and traces remain local. `local-v1` below remains a separate historical baseline. Finish the 16 held-out cases before publishing any full local-v2 claim.
+
 ## Real sites (pilot)
 
 Codex CLI, `gpt-6-luna`, medium reasoning, 1 run per task. Tasks are a seeded, level-stratified sample of
@@ -69,7 +87,7 @@ active-work timeout, and an 1,800s wall cap. There were no HTTP 429s or wall-cap
 - “Execution” removes locally measured quota, cooldown, and retry wait; CLI wall time retains that wait. Medians and totals include every logical run, including screenshot failures. Costs are published-rate INR estimates.
 - The raw result artifact and traces remain local rather than versioned; the frozen configuration above is sufficient to reproduce the scorecard.
 
-The planned [48-case local-v2 suite](manifests/local-v2-plan.md) and later frozen live-site set will be reported separately. Neither has a final scorecard yet.
+The planned [48-case local-v2 suite](manifests/local-v2-plan.md) and later frozen live-site set will be reported separately. The 32-case development baseline above is not the final v2 scorecard.
 
 ## Token replay
 

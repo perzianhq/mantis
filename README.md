@@ -16,19 +16,19 @@ It works with Claude Code, Codex, Cursor or your own agent as an MCP server. [In
 
 ## Results
 
-Frozen `local-v1` baseline: 25 code-graded fixture tasks, `deepseek-v4.1-flash` through Sarvam V2, three runs per approach (225 logical runs). This is a local-fixture result, not a general-model or live-site claim.
+Frozen `local-v2-development` baseline: 32 code-graded fixture tasks, `deepseek-v4.1-flash` through Sarvam V2, three runs per approach (288 logical runs). This covers the development split of the planned 48-case v2 suite; it is a local-fixture result, not a general-model or live-site claim.
 
 | | Mantis | Accessibility tree | Screenshots |
 |---|---:|---:|---:|
-| Correct | **75/75** | **75/75** | 70/75 |
-| Median input tokens | **11.1k** | 22.9k | 27.7k |
-| Median clean execution | **8.14s** | 11.59s | 16.45s |
-| Median end-to-end wall time | **58.56s** | 66.83s | 121.07s |
-| Median cost estimate | **₹0.08** | ₹0.16 | ₹0.22 |
+| Correct | **93/96** | 92/96 | 92/96 |
+| Median input tokens | **15.8k** | 34.6k | 44.2k |
+| Median execution excl. limiter/retry wait | **11.4s** | 15.4s | 22.0s |
+| Median end-to-end wall time | **64.1s** | 106.1s | 149.6s |
+| Median cost estimate | **₹0.114** | ₹0.187 | ₹0.303 |
 
-Mantis reached the same local correctness as the tree with 52.9% fewer median input tokens and 31.6% lower median clean execution time. Screenshot had one visual-read miss and four 100-step budget exhaustions. “Clean execution” excludes locally measured quota/retry wait; wall time includes it. Method, caveats and older pilot results: [bench/RESULTS.md](bench/RESULTS.md).
+Mantis scored 96.9%, versus 95.8% for both baselines, with 54.2% fewer median input tokens than the tree and 64.2% fewer than screenshots. Execution excludes locally measured limiter/retry wait; wall time includes it. Method, caveats, the historical v1 baseline, and pilot results: [bench/RESULTS.md](bench/RESULTS.md).
 
-Next: a separate planned 48-case `local-v2` coverage suite, then a separate frozen live-site set. See the [evaluation plan](docs/PLAN.md#evaluation-plan).
+Next: add and freeze the 16 held-out v2 cases, then run the matched 48-case v2 scorecard. After that, freeze the separate live-site set. See the [evaluation plan](docs/PLAN.md#evaluation-plan).
 
 ## Learn more
 
