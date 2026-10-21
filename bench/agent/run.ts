@@ -7,7 +7,8 @@
  *   AGENT_TASKS=all AGENT_RUNS=3 npx tsx bench/agent/run.ts
  *   AGENT_TASKS=cat:forms AGENT_APPROACHES=mantis,tree npx tsx bench/agent/run.ts
  *   AGENT_SUITE=local-v2-development AGENT_TASKS=all npx tsx bench/agent/run.ts  # opt-in, 32 development cases
- *   AGENT_SUITE=local-v2 AGENT_TASKS=all npx tsx bench/agent/run.ts              # frozen 48-case scorecard
+ *   AGENT_SUITE=local-v2 AGENT_TASKS=all npx tsx bench/agent/run.ts              # frozen historical 48-case scorecard
+ *   AGENT_SUITE=local-v2.1 AGENT_TASKS=all npx tsx bench/agent/run.ts            # permanent 54-case scorecard
  *   AGENT_RESUME=1 ...                                   (continue a stopped run)
  *   AGENT_PROVIDER=codex AGENT_MODEL=gpt-6.1-sol AGENT_REASONING=medium ... (defaults)
  *
@@ -29,6 +30,7 @@ import { gradeTaskAnswer, normalizeGradedAnswer, PILOT, TASKS } from './tasks.js
 import type { AgentTask } from './tasks.js';
 import { LOCAL_V2_DEVELOPMENT_CHECKS, LOCAL_V2_DEVELOPMENT_MANIFEST, LOCAL_V2_DEVELOPMENT_SUITE, LOCAL_V2_DEVELOPMENT_TASKS, gradeLocalV2DevelopmentCase, localV2DevelopmentRoute, localV2FinalAnswer } from './local-v2-development.js';
 import { LOCAL_V2_CHECKS, LOCAL_V2_MANIFEST, LOCAL_V2_SUITE, LOCAL_V2_TASKS, gradeLocalV2Case, localV2Route } from './local-v2.js';
+import { LOCAL_V21_CHECKS, LOCAL_V21_MANIFEST, LOCAL_V21_SUITE, LOCAL_V21_TASKS, gradeLocalV21Case, localV21Route } from './local-v21.js';
 import { aggregateUsage, assertCompatibleResume, classifyAttempt, extractGradedAnswer, hashSources, isHarnessFailure, makeMetadata, nextHarnessFailureStreak, parseClaudeStream, validateFlag, validatePositiveInt, wrongAnswerDetail } from './integrity.js';
 import type { AttemptStatus, RunMetadata, StreamUsage } from './integrity.js';
 import { codexArgs, rawMcpToolName } from './codex-config.js';
@@ -94,7 +96,7 @@ interface RawCapture { step: number; png: Buffer; state: string | null; final: b
 type ToolResult = { isError?: boolean; content?: { type: string; mimeType?: string; data?: string; text?: string }[] };
 
 const sarvamMaxStepsForTask = (task: AgentTask): number =>
-  (SUITE === LOCAL_V2_DEVELOPMENT_SUITE || SUITE === LOCAL_V2_SUITE) && task.category !== 'long' ? V2_STANDARD_MAX_STEPS : SARVAM_MAX_STEPS;
+  (SUITE === LOCAL_V2_DEVELOPMENT_SUITE || SUITE === LOCAL_V2_SUITE || SUITE === LOCAL_V21_SUITE) && task.category !== 'long' ? V2_STANDARD_MAX_STEPS : SARVAM_MAX_STEPS;
 
 /** Viewport PNG plus page state (URL, text, form values) of the live page, through the harness channel; rejects after 15 s. */
 async function captureOnce(server: Pick<McpProxy, 'call'>, approach: Approach, step: number, final: boolean): Promise<RawCapture> {
@@ -587,13 +589,15 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
   }
   const rawResultText = parsed.resultText ?? '';
   const rawAnswer = extractGradedAnswer(rawResultText, task.judged ?? false);
-  const gradedAnswer = isV2Suite ? localV2FinalAnswer(rawAnswer) : normalizeGradedAnswer(rawAnswer);
+  const gradedAnswer = isVersionedLocalSuite ? localV2FinalAnswer(rawAnswer) : normalizeGradedAnswer(rawAnswer);
   // Grade agent-visible seeded facts. Fixture event state is canonicalized
   // separately inside startFixtures so action checks remain deterministic.
   const answerGrade = task.judged ? null : SUITE === LOCAL_V2_DEVELOPMENT_SUITE
     ? gradeLocalV2DevelopmentCase(task.id, gradedAnswer, fixtureEvidence?.events ?? [])
     : SUITE === LOCAL_V2_SUITE
       ? gradeLocalV2Case(task.id, gradedAnswer, fixtureEvidence?.events ?? [])
+      : SUITE === LOCAL_V21_SUITE
+        ? gradeLocalV21Case(task.id, gradedAnswer, fixtureEvidence?.events ?? [])
     : gradeTaskAnswer(task, rawAnswer);
   const answer = gradedAnswer.slice(0, 160);
   const connected = parsed.connected;
@@ -745,12 +749,12 @@ function report(results: RunResult[], approaches: Approach[], tasks: AgentTask[]
 }
 
 const SUITE = process.env.AGENT_SUITE ?? 'local-v1';
-if (SUITE !== 'local-v1' && SUITE !== LOCAL_V2_DEVELOPMENT_SUITE && SUITE !== LOCAL_V2_SUITE) throw new Error(`unknown AGENT_SUITE ${JSON.stringify(SUITE)}; use local-v1, ${LOCAL_V2_DEVELOPMENT_SUITE}, or ${LOCAL_V2_SUITE}`);
-const isV2Suite = SUITE === LOCAL_V2_DEVELOPMENT_SUITE || SUITE === LOCAL_V2_SUITE;
-const suiteTasks = SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? LOCAL_V2_DEVELOPMENT_TASKS : SUITE === LOCAL_V2_SUITE ? LOCAL_V2_TASKS : TASKS;
-const suiteChecks = SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? LOCAL_V2_DEVELOPMENT_CHECKS : SUITE === LOCAL_V2_SUITE ? LOCAL_V2_CHECKS : undefined;
-const suiteManifest = SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? LOCAL_V2_DEVELOPMENT_MANIFEST : SUITE === LOCAL_V2_SUITE ? LOCAL_V2_MANIFEST : undefined;
-const suiteRoute = SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? localV2DevelopmentRoute : SUITE === LOCAL_V2_SUITE ? localV2Route : undefined;
+if (SUITE !== 'local-v1' && SUITE !== LOCAL_V2_DEVELOPMENT_SUITE && SUITE !== LOCAL_V2_SUITE && SUITE !== LOCAL_V21_SUITE) throw new Error(`unknown AGENT_SUITE ${JSON.stringify(SUITE)}; use local-v1, ${LOCAL_V2_DEVELOPMENT_SUITE}, ${LOCAL_V2_SUITE}, or ${LOCAL_V21_SUITE}`);
+const isVersionedLocalSuite = SUITE === LOCAL_V2_DEVELOPMENT_SUITE || SUITE === LOCAL_V2_SUITE || SUITE === LOCAL_V21_SUITE;
+const suiteTasks = SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? LOCAL_V2_DEVELOPMENT_TASKS : SUITE === LOCAL_V2_SUITE ? LOCAL_V2_TASKS : SUITE === LOCAL_V21_SUITE ? LOCAL_V21_TASKS : TASKS;
+const suiteChecks = SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? LOCAL_V2_DEVELOPMENT_CHECKS : SUITE === LOCAL_V2_SUITE ? LOCAL_V2_CHECKS : SUITE === LOCAL_V21_SUITE ? LOCAL_V21_CHECKS : undefined;
+const suiteManifest = SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? LOCAL_V2_DEVELOPMENT_MANIFEST : SUITE === LOCAL_V2_SUITE ? LOCAL_V2_MANIFEST : SUITE === LOCAL_V21_SUITE ? LOCAL_V21_MANIFEST : undefined;
+const suiteRoute = SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? localV2DevelopmentRoute : SUITE === LOCAL_V2_SUITE ? localV2Route : SUITE === LOCAL_V21_SUITE ? localV21Route : undefined;
 const want = process.env.AGENT_TASKS ?? (SUITE === 'local-v1' ? PILOT.join(',') : 'all');
 // "all", task ids, or categories ("cat:forms"), comma-separated.
 const picks = want.split(',');
@@ -775,7 +779,7 @@ if (PROVIDER === 'sarvam' && approaches.includes('screenshot') && !sarvamModelSu
   throw new Error(`AGENT_MODEL ${JSON.stringify(MODEL)} cannot run the screenshot approach because it does not support image observations.`);
 }
 const providerPrefix = PROVIDER;
-const rawName = process.env.AGENT_OUT ?? `${providerPrefix}-agent-verified${SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? '-local-v2-development' : SUITE === LOCAL_V2_SUITE ? '-local-v2' : want === PILOT.join(',') ? '-pilot' : ''}`;
+const rawName = process.env.AGENT_OUT ?? `${providerPrefix}-agent-verified${SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? '-local-v2-development' : SUITE === LOCAL_V2_SUITE ? '-local-v2' : SUITE === LOCAL_V21_SUITE ? '-local-v2.1' : want === PILOT.join(',') ? '-pilot' : ''}`;
 if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$/.test(rawName) || rawName === '.' || rawName === '..') throw new Error(`invalid AGENT_OUT name: ${JSON.stringify(rawName)}`);
 const name = rawName;
 const jobs: { t: AgentTask; a: Approach; run: number }[] = [];
@@ -796,8 +800,8 @@ if (outputExists && !RESUME && !OVERWRITE) {
 if (!existsSync(jsonPath) && RESUME) throw new Error(`AGENT_RESUME=1 requested, but ${jsonPath} does not exist.`);
 const settings = {
   provider: PROVIDER, suite: SUITE, fixtureSeed: FIXTURE_VARIANT?.seed ?? null,
-  ...(isV2Suite ? { suiteVersion: 1, suiteManifest } : {}),
-  tasks: tasks.map((t) => t.id), approaches, runs: RUNS, rows: exactRows.rows, model: MODEL, reasoning: PROVIDER === 'codex' ? REASONING : PROVIDER === 'sarvam' ? `max-steps:${SARVAM_MAX_STEPS}${isV2Suite ? `;v2-standard:${V2_STANDARD_MAX_STEPS};v2-circuit:${V2_CIRCUIT_BREAKER_FAILURES}` : ''}` : 'not-applicable', timeoutMs: TIMEOUT_MS, ...(PROVIDER === 'sarvam' ? { wallTimeoutMs: WALL_TIMEOUT_MS } : {}), concurrency: CONCURRENCY, sarvamMaxTokens: SARVAM_MAX_TOKENS,
+  ...(isVersionedLocalSuite ? { suiteVersion: SUITE === LOCAL_V21_SUITE ? 2 : 1, suiteManifest } : {}),
+  tasks: tasks.map((t) => t.id), approaches, runs: RUNS, rows: exactRows.rows, model: MODEL, reasoning: PROVIDER === 'codex' ? REASONING : PROVIDER === 'sarvam' ? `max-steps:${SARVAM_MAX_STEPS}${isVersionedLocalSuite ? `;v2-standard:${V2_STANDARD_MAX_STEPS};v2-circuit:${V2_CIRCUIT_BREAKER_FAILURES}` : ''}` : 'not-applicable', timeoutMs: TIMEOUT_MS, ...(PROVIDER === 'sarvam' ? { wallTimeoutMs: WALL_TIMEOUT_MS } : {}), concurrency: CONCURRENCY, sarvamMaxTokens: SARVAM_MAX_TOKENS,
   toolRestrictions: {
     builtins: PROVIDER === 'codex'
       ? ['shell', 'apps', 'plugins', 'multi_agent', 'goals', 'sleep_tool', 'skill_search', 'view_image', 'browser_use', 'computer_use', 'in_app_browser', 'web_search']
@@ -822,10 +826,10 @@ const settings = {
 };
 preflightApproaches(approaches);
 const sourceFiles = [
-  'bench/agent/run.ts', 'bench/agent/integrity.ts', 'bench/agent/active-timeout.ts', 'bench/agent/row-selector.ts', 'bench/agent/tasks.ts', 'bench/agent/local-v2-development.ts', 'bench/agent/local-v2.ts', 'bench/agent/bridge.mjs', 'bench/fixture-variants.ts',
+  'bench/agent/run.ts', 'bench/agent/integrity.ts', 'bench/agent/active-timeout.ts', 'bench/agent/row-selector.ts', 'bench/agent/tasks.ts', 'bench/agent/local-v2-development.ts', 'bench/agent/local-v2.ts', 'bench/agent/local-v21.ts', 'bench/agent/bridge.mjs', 'bench/fixture-variants.ts',
   'bench/agent/codex.ts', 'bench/agent/codex-config.ts', 'bench/agent/sarvam.ts', 'bench/agent/sarvam-agent.ts', 'bench/agent/realsite.ts', 'bench/agent/grading.ts', 'bench/agent/evidence.ts', 'bench/agent/png.ts', 'bench/agent/mcp-proxy.ts',
   ...(existsSync(path.join(REPO, 'bench', 'agent', 'realsite-tasks.json')) ? ['bench/agent/realsite-tasks.json'] : []),
-  'bench/agent/screenshot-mcp.ts', 'bench/agent/screenshot-scroll.ts', 'bench/agent/guidance.ts', 'bench/fixtures.ts', 'bench/fixtures-more.ts', 'bench/fixtures-long.ts', 'bench/fixtures-v2-development.ts', 'bench/fixtures-v2-interaction-development.ts', 'bench/fixtures-v2-reading-workflows-development.ts', 'bench/fixtures-v2-remaining-heldout.ts', 'bench/fixtures-v2-reading-workflows-heldout.ts', 'bench/manifests/local-v2.json', 'bench/adapters.ts',
+  'bench/agent/screenshot-mcp.ts', 'bench/agent/screenshot-scroll.ts', 'bench/agent/guidance.ts', 'bench/fixtures.ts', 'bench/fixtures-more.ts', 'bench/fixtures-long.ts', 'bench/fixtures-v2-development.ts', 'bench/fixtures-v2-interaction-development.ts', 'bench/fixtures-v2-reading-workflows-development.ts', 'bench/fixtures-v2-remaining-heldout.ts', 'bench/fixtures-v2-reading-workflows-heldout.ts', 'bench/fixtures-v21-reliability.ts', 'bench/manifests/local-v2.json', 'bench/manifests/local-v21.json', 'bench/adapters.ts',
   ...sourceFilesUnder('src'), ...sourceFilesUnder('dist'), 'package-lock.json',
 ];
 const sourceHashes = hashSources(REPO, sourceFiles);
@@ -918,11 +922,11 @@ try {
       };
       results.push(r);
       save();
-      if (isV2Suite && r.status !== 'success' && (r.turns ?? 0) >= sarvamMaxStepsForTask(t)) {
+      if (isVersionedLocalSuite && r.status !== 'success' && (r.turns ?? 0) >= sarvamMaxStepsForTask(t)) {
         const breaches = (v2BudgetBreaches.get(t.id) ?? 0) + 1;
         v2BudgetBreaches.set(t.id, breaches);
         if (breaches >= V2_CIRCUIT_BREAKER_FAILURES && !abortReason) {
-          abortReason = `local-v2 circuit breaker: ${t.id} exhausted its ${sarvamMaxStepsForTask(t)}-step budget ${breaches} times`;
+          abortReason = `${SUITE} circuit breaker: ${t.id} exhausted its ${sarvamMaxStepsForTask(t)}-step budget ${breaches} times`;
           console.error(`ABORTED: ${abortReason}`);
         }
       }

@@ -10,6 +10,7 @@ import { extractGradedAnswer } from '../bench/agent/integrity.js';
 import { LONG_EXPECT } from '../bench/fixtures-long.js';
 import { V2_DEVELOPMENT_CASES, V2_DEVELOPMENT_CHECKS, gradeV2DevelopmentCase } from '../bench/fixtures-v2-development.js';
 import { v2DevelopmentRoute } from '../bench/fixtures-v2-development.js';
+import { V21_RELIABILITY_CASES, gradeV21ReliabilityCase } from '../bench/fixtures-v21-reliability.js';
 import { spawn } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import net from 'node:net';
@@ -403,6 +404,17 @@ it('rejects v2 development case-specific answer and terminal-state near misses',
     expect(gradeV2DevelopmentCase(entry.id, entry.nearMiss.answer, goodState).ok, `${entry.nearMissId}: answer`).toBe(false);
     const correct = [expected.rowKey, expected.columnKey, expected.value].filter(Boolean).join(' | ');
     expect(gradeV2DevelopmentCase(entry.id, correct, badState).ok, `${entry.nearMissId}: state`).toBe(false);
+  }
+});
+
+it('accepts each v2.1 reliability answer only with its current-document terminal state and rejects its named near miss', () => {
+  for (const entry of V21_RELIABILITY_CASES) {
+    const loaded = { kind:'load', documentId:`${entry.id}-document`, fixtureState: entry.expected.state } as unknown as import('../bench/fixtures.js').FixtureObservation;
+    const settled = { kind:'settled', documentId:`${entry.id}-document`, fixtureState: entry.expected.state } as unknown as import('../bench/fixtures.js').FixtureObservation;
+    expect(gradeV21ReliabilityCase(entry.id, entry.expected.answer, [loaded, settled]), entry.id).toEqual({ ok:true });
+    expect(gradeV21ReliabilityCase(entry.id, entry.nearMiss.answer, [loaded, settled]).ok, entry.nearMiss.id).toBe(false);
+    const laterLoad = { kind:'load', documentId:`${entry.id}-later`, fixtureState: entry.expected.state } as unknown as import('../bench/fixtures.js').FixtureObservation;
+    expect(gradeV21ReliabilityCase(entry.id, entry.expected.answer, [loaded, settled, laterLoad]).ok, `${entry.id}/prior-document-state`).toBe(false);
   }
 });
 

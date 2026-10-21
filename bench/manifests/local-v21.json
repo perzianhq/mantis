@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "local-v2.1",
+  "kind": "permanent-local-fixture-evaluation-config",
+  "baseSuite": "local-v2",
+  "status": "configured",
+  "sourceSelector": "bench/agent/local-v21.ts",
+  "taskCount": 54,
+  "splits": { "frozenV2": 48, "reliability": 6 },
+  "domains": ["dense-tables", "lists-scrolling", "charts-canvas-images", "forms-embedded-controls", "overlays-shadow-dom", "spa-navigation-recovery", "regions-reading", "long-workflows"],
+  "reliabilityCases": [
+    { "id": "v21-reliability-inline-prose-tail", "description": "long inline-marked prose tail fact" },
+    { "id": "v21-reliability-visible-prose", "description": "rendered prose over hidden descendant decoy" },
+    { "id": "v21-reliability-recycled-control", "description": "recycled control after filter and refresh" },
+    { "id": "v21-reliability-iframe-shadow-media", "description": "visible media in iframe and open shadow root" },
+    { "id": "v21-reliability-visible-chart-series", "description": "visible chart series over hidden conflict" },
+    { "id": "v21-reliability-nested-child-action", "description": "nested child action without parent activation" }
+  ],
+  "tasks": [
+    "v2-table-sort-row", "v2-table-filtered-cell", "v2-table-wide-column", "v2-table-paginated-record",
+    "v2-list-virtual-target", "v2-list-paginated-filter", "v2-list-reordered-item", "v2-list-nested-scroll",
+    "v2-chart-svg-series", "v2-chart-canvas-point", "v2-chart-image-fact", "v2-chart-responsive",
+    "v2-interaction-form-preferences", "v2-interaction-form-frame-payment", "v2-interaction-form-combobox", "v2-interaction-form-validation-recovery",
+    "v2-interaction-overlay-dialog", "v2-interaction-overlay-shadow", "v2-interaction-overlay-modal", "v2-interaction-overlay-toast",
+    "v2-interaction-spa-client-route", "v2-interaction-spa-history-draft", "v2-interaction-spa-route-recovery", "v2-interaction-spa-retry-recovery",
+    "v2-reading-landmark-jump", "v2-reading-deep-fact", "v2-reading-cross-region", "v2-reading-collapsed-context",
+    "v2-workflow-multi-step-order", "v2-workflow-cross-page-compare", "v2-workflow-save-resume", "v2-workflow-conditional-branch",
+    "v2-heldout-extra-table-grouped-total", "v2-heldout-extra-table-recovery", "v2-heldout-extra-list-offscreen-action", "v2-heldout-extra-list-recovery",
+    "v2-heldout-extra-chart-legend-filter", "v2-heldout-extra-chart-recovery", "v2-heldout-extra-form-date-range", "v2-heldout-extra-form-custom-toggle",
+    "v2-heldout-extra-overlay-focus-trap", "v2-heldout-extra-overlay-recovery", "v2-heldout-extra-spa-stale-target", "v2-heldout-extra-spa-error-boundary",
+    "v2-heldout-reading-sticky-context", "v2-heldout-reading-recovery", "v2-heldout-workflow-review-submit", "v2-heldout-workflow-recovery",
+    "v21-reliability-inline-prose-tail", "v21-reliability-visible-prose", "v21-reliability-recycled-control", "v21-reliability-iframe-shadow-media", "v21-reliability-visible-chart-series", "v21-reliability-nested-child-action"
+  ],
+  "approaches": ["mantis", "tree", "screenshot"],
+  "runs": 1,
+  "limits": { "standardMaxSteps": 50 },
+  "focusedCommand": "AGENT_SUITE=local-v2.1 AGENT_TASKS=v21-reliability-inline-prose-tail,v21-reliability-visible-prose,v21-reliability-recycled-control,v21-reliability-iframe-shadow-media,v21-reliability-visible-chart-series,v21-reliability-nested-child-action AGENT_APPROACHES=mantis,tree,screenshot AGENT_RUNS=1 AGENT_MAX_STEPS=50 AGENT_V2_STANDARD_MAX_STEPS=50 npm run bench:agent"
+}
