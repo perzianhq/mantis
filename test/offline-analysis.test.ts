@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { buildOfflineMetrics, type SavedResults } from '../bench/agent/offline-metrics.js';
 import { buildRegrade, fullReplyFromTrace } from '../bench/agent/regrade.js';
+import { V21_RELIABILITY_CASES } from '../bench/fixtures-v21-reliability.js';
 
 const trace = (answer: string, observation = 'Team costs $29'): string => [
   JSON.stringify({ type: 'sarvam.tool_result', name: 'read', error: false, resultText: observation, chars: observation.length }),
@@ -90,6 +91,21 @@ describe('offline saved-run analysis', () => {
       expect(report.runs[0]!.answer.pass).toBe(true);
       expect(report.runs[0]!.needs).toContain('saved seeded-fixture source differs from the current frozen variant mapping');
       expect(report.provenance.savedVariantHash).toBe('old-variant');
+    } finally { rmSync(root, { recursive: true, force: true }); }
+  });
+
+  it('regrades v2.1 function-based answer expectations', () => {
+    const root = mkdtempSync(path.join(os.tmpdir(), 'mantis-v21-regrade-'));
+    try {
+      const entry = V21_RELIABILITY_CASES.find((item) => item.id === 'v21-reliability-recycled-control')!;
+      const state = entry.expected.state;
+      const saved = {
+        metadata: { settings: { suite: 'local-v2.1' } },
+        results: [{ ...run({ task: entry.id, answer: 'Cedar-73 completed.' }), attempts: [{ attempt: 1, status: 'success', fixtureCheck: { ok: true }, fixtureEvidence: { version: 1, taskId: entry.id, attemptId: 'v21-attempt', observationCount: 2, events: [{ arrival: 0, path: entry.route, documentId: 'document', kind: 'load', target: {}, controls: {}, text: '', fixtureState: state }, { arrival: 1, path: entry.route, documentId: 'document', kind: 'settled', target: {}, controls: {}, text: '', fixtureState: state }] } }] }],
+      } as SavedResults;
+      const report = buildRegrade(saved, { inputName: 'saved.json', inputText: JSON.stringify(saved), traceDirectory: root, taskFileText: readFileSync(path.resolve(import.meta.dirname, '../bench/agent/tasks.ts'), 'utf8') });
+      expect(report.runs[0]!.answer.pass).toBe(true);
+      expect(report.runs[0]!.answer.replayedLegacyRegexPass).toBe(true);
     } finally { rmSync(root, { recursive: true, force: true }); }
   });
 });

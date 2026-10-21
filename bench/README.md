@@ -28,7 +28,7 @@ $bytes = [Text.UTF8Encoding]::new($false).GetBytes($text)
 ([BitConverter]::ToString([Security.Cryptography.SHA256]::HashData($bytes))).Replace('-', '').ToLowerInvariant()
 ```
 
-`local-v2-development` is frozen at 32 development cases across the eight domains, with three approaches and three repeats (288 rows); see [RESULTS.md](RESULTS.md). The 16 held-out cases specified in the [local-v2 coverage contract](manifests/local-v2-plan.md) are implemented with their oracle/near-miss tests. `AGENT_SUITE=local-v2` selects all 48 cases; freeze that complete manifest and run 432 matched rows per model. A separate frozen live-site set follows. Report all suites separately; no self-hosted-app stage is planned.
+`local-v2-development` is frozen at 32 development cases across the eight domains. `local-v2` is the completed historical 48-case scorecard. `local-v2.1` is the completed 54-case local baseline: those 48 plus six reliability contracts, three approaches and three repeats (486 rows); see [RESULTS.md](RESULTS.md). A separate frozen live-site set follows. Report all suites separately; no self-hosted-app stage is planned.
 
 ## Token replay
 
@@ -64,7 +64,7 @@ AGENT_ROWS='long-shop|tree|1,long-shop|screenshot|1' AGENT_TASKS=local AGENT_RUN
 | `AGENT_MODEL` | `gpt-6.1-sol` (Codex), `claude-haiku-5-5` (Claude) | model of the selected provider |
 | `AGENT_REASONING` | `medium` | Codex reasoning effort (`low`, `medium`, `high`, `xhigh`, `max`) |
 | `AGENT_MAX_STEPS` | `100` | Sarvam tool-loop step budget |
-| `AGENT_V2_STANDARD_MAX_STEPS` | `50` | Sarvam-only cap for non-`long` local-v2 tasks. Counts model completions, including the final answer. The published local-v2 score used the historical explicit value `35`. |
+| `AGENT_V2_STANDARD_MAX_STEPS` | `50` | Sarvam-only cap for non-`long` local-v2/v2.1 tasks. Counts model completions, including the final answer. The historical local-v2 score used explicit `35`; local-v2.1 used `50`. |
 | `SARVAM_MAX_TOKENS` | `8192` | Sarvam completion-token cap per turn (positive integer) |
 | `CODEX_BIN`, `CLAUDE_BIN` | installed CLI | path override for the agent CLI |
 | `AGENT_CONCURRENCY` | 3 (10 for Sarvam) | benchmark cases scheduled in parallel; each run is an agent CLI, an MCP server and a browser, so times then include more contention |
@@ -96,7 +96,7 @@ The agent ends with a `FINAL_URL:` line, so the usual grading only checks that i
 
 The "298 rows missing answer-key checks" warning is an annotation gap: the local catalog has 300 rows, only two with checks. The loader warns across the whole catalog before sampling and still loads the rows; `checks` is a repo extension, not supplied by the imported dataset.
 
-Plan after local-v2: freeze a separate set of about 30 explicit tasks (target 8 easy / 14 medium / 8 hard), aiming for about 20 fully verifiable and 10 live/ambiguous tasks. Add reviewed keys for stable facts, fixed references and verified outputs; retain sol judging against saved evidence for changing or ambiguous answers. Stateful tasks need final URL/form/result predicates together, not scattered matching labels. Complete deterministic validators are implemented as an opt-in: a captured final state can pass or fail them before paid judging; missing final evidence falls back to the judge, and explicit access blocks remain blocked adjudications. Require successful runs, captured evidence and passing/near-miss grader tests in `test/fixture-verification.test.ts`. Keep identical rows/repetitions for Mantis/tree/screenshot, separately for Luna and Haiku.
+Plan after local-v2.1: freeze a separate set of about 30 explicit tasks (target 8 easy / 14 medium / 8 hard), aiming for about 20 fully verifiable and 10 live/ambiguous tasks. Add reviewed keys for stable facts, fixed references and verified outputs; retain Sol judging against saved evidence for changing or ambiguous answers. Stateful tasks need final URL/form/result predicates together, not scattered matching labels. Require successful runs, captured evidence and passing/near-miss grader tests in `test/fixture-verification.test.ts`. Keep identical rows/repetitions for Mantis/tree/screenshot, separately for Luna and Haiku.
 
 ### Sarvam judge and capability probe
 

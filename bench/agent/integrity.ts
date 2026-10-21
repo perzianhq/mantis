@@ -32,6 +32,12 @@ export function wrongAnswerDetail(provider: string, resultText: string, sawResul
   return fixtureDetail ? (empty ? `${empty}; fixture check failed: ${fixtureDetail}` : fixtureDetail) : (empty ?? 'answer did not match the expected result');
 }
 
+/** Sarvam can signal a turn-cap exhaustion before a call or when the final
+ * allowed completion ends with `length`; both are agent step limits. */
+export function isSarvamStepLimit(resultText: string): boolean {
+  return resultText.trim() === 'Agent step budget exhausted.' || resultText.trim() === 'Sarvam completion token limit (length).';
+}
+
 export function classifyAttempt(input: {
   sawInit: boolean; connected: boolean; sawResult: boolean; resultError: boolean; stepLimited?: boolean; timedOut: boolean;
   launchError: string | null; exitCode: number | null; answerMatches: boolean;

@@ -3,7 +3,26 @@
 All benchmark numbers in one place. How to re-run them: [README.md](README.md).
 Mantis is compared with the accessibility tree (Playwright MCP 0.0.83) and with screenshots (our own minimal tool).
 
-## Local-v2 full scorecard (current)
+## Local-v2.1 full scorecard (current)
+
+Frozen `local-v2.1`: 54 code-graded local fixture tasks (the frozen v2 48 plus six reliability contracts) x 3 approaches x 3 runs = 486 logical rows. Agent `deepseek-v4.1-flash` through Sarvam V2; 10 scheduled cases, 16 active model calls, 50 RPM, and a 50-completion cap for non-`long` tasks. This is a local-fixture result, not a live-site claim.
+
+| Per-run median / total | Mantis | Accessibility tree | Screenshots |
+|---|---:|---:|---:|
+| Correct | **159/162 (98.1%)** | 157/162 (96.9%) | 150/162 (92.6%) |
+| Execution excl. quota/retry wait (p50) | **13.1s** | 15.9s | 22.9s |
+| End-to-end CLI wall time (p50) | **63.8s** | 89.3s | 122.9s |
+| Input tokens incl. cache (p50) | **15.7k** | 26.8k | 31.6k |
+| Output tokens (p50) | **364** | 440 | 645 |
+| Cost estimate, INR (p50) | **0.099** | 0.143 | 0.242 |
+| Total cost estimate, INR | **35.29** | 52.75 | 139.34 |
+
+- Overall: 466/486 (95.9%). Mantis uses 41.6% fewer median input tokens than tree and 50.4% fewer than screenshots.
+- The raw artifact records 466 successes, seven wrong answers, 12 step limits, and one 50th-turn Sarvam `length` result. The harness now correctly classifies that terminal `length` result as a 13th step limit; no row was rerun or promoted.
+- Sol audited all 20 misses: 13 are genuine budget exhaustions and seven are genuine task/action mistakes. No fixture, oracle, or provider failure requires a paid rerun.
+- Raw artifacts, traces, and the derived offline regrade remain local. This scorecard is ready as a local-fixture baseline only; frozen live-site evaluation remains separate.
+
+## Local-v2 full scorecard (historical)
 
 Frozen `local-v2`: 48 code-graded local fixture tasks x 3 approaches x 3 runs = 432 logical rows. Agent `deepseek-v4.1-flash` through Sarvam V2; 10 scheduled cases, 16 active model calls, and 50 RPM. Scores are an offline regrade of the complete saved outputs under the repaired held-out answer contract and state oracle; it is not a live-site claim.
 

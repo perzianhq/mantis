@@ -31,7 +31,7 @@ import type { AgentTask } from './tasks.js';
 import { LOCAL_V2_DEVELOPMENT_CHECKS, LOCAL_V2_DEVELOPMENT_MANIFEST, LOCAL_V2_DEVELOPMENT_SUITE, LOCAL_V2_DEVELOPMENT_TASKS, gradeLocalV2DevelopmentCase, localV2DevelopmentRoute, localV2FinalAnswer } from './local-v2-development.js';
 import { LOCAL_V2_CHECKS, LOCAL_V2_MANIFEST, LOCAL_V2_SUITE, LOCAL_V2_TASKS, gradeLocalV2Case, localV2Route } from './local-v2.js';
 import { LOCAL_V21_CHECKS, LOCAL_V21_MANIFEST, LOCAL_V21_SUITE, LOCAL_V21_TASKS, gradeLocalV21Case, localV21Route } from './local-v21.js';
-import { aggregateUsage, assertCompatibleResume, classifyAttempt, extractGradedAnswer, hashSources, isHarnessFailure, makeMetadata, nextHarnessFailureStreak, parseClaudeStream, validateFlag, validatePositiveInt, wrongAnswerDetail } from './integrity.js';
+import { aggregateUsage, assertCompatibleResume, classifyAttempt, extractGradedAnswer, hashSources, isHarnessFailure, isSarvamStepLimit, makeMetadata, nextHarnessFailureStreak, parseClaudeStream, validateFlag, validatePositiveInt, wrongAnswerDetail } from './integrity.js';
 import type { AttemptStatus, RunMetadata, StreamUsage } from './integrity.js';
 import { codexArgs, rawMcpToolName } from './codex-config.js';
 import { PAGE_STATE_FUNCTION, packEvidence, parsePageState, toCapturedFrame } from './evidence.js';
@@ -602,7 +602,7 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
   const answer = gradedAnswer.slice(0, 160);
   const connected = parsed.connected;
   const connectionState = connected ? 'connected' : parsed.sawInit ? 'failed' : 'unknown';
-  const stepLimited = PROVIDER === 'sarvam' && rawResultText.trim() === 'Agent step budget exhausted.';
+  const stepLimited = PROVIDER === 'sarvam' && isSarvamStepLimit(rawResultText);
   let status = classifyAttempt({
     sawInit: parsed.sawInit, connected, sawResult: parsed.sawResult, resultError: parsed.resultError,
     stepLimited,

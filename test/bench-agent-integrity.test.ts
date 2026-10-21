@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  aggregateUsage, assertCompatibleResume, classifyAttempt, makeMetadata, parseClaudeStream, validateFlag, validatePositiveInt,
+  aggregateUsage, assertCompatibleResume, classifyAttempt, isSarvamStepLimit, makeMetadata, parseClaudeStream, validateFlag, validatePositiveInt,
 } from '../bench/agent/integrity.js';
 
 describe('real-agent benchmark integrity helpers', () => {
@@ -76,6 +76,12 @@ describe('real-agent benchmark integrity helpers', () => {
       sawInit: true, connected: true, sawResult: true, resultError: true, stepLimited: true,
       timedOut: false, launchError: null, exitCode: 0, answerMatches: false, hasFixtureCheck: false, fixtureOk: null,
     })).toBe('step_limit');
+  });
+
+  it('recognizes both Sarvam turn-cap terminal messages as step limits', () => {
+    expect(isSarvamStepLimit('Agent step budget exhausted.')).toBe(true);
+    expect(isSarvamStepLimit('Sarvam completion token limit (length).')).toBe(true);
+    expect(isSarvamStepLimit('Sarvam request failed.')).toBe(false);
   });
 
   it('aggregates retry usage without silently converting wholly unknown usage to zero', () => {

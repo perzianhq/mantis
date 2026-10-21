@@ -99,7 +99,13 @@ export function buildRegrade(input: SavedResults, options: { inputName: string; 
         ? Array.isArray(evidence?.events) ? (localV21 ? gradeLocalV21Case(task.id, gradingAnswer, evidence.events as never[]) : gradeLocalV2Case(task.id, gradingAnswer, evidence.events as never[])) : null
         : gradeTaskAnswer(task, gradingAnswer)
       : null;
-    const replayedLegacyRegexPass = task && gradingAnswer !== null ? task.expect.test(normalizeGradedAnswer(gradingAnswer)) : null;
+    // v2.1 has a case-scoped answer predicate for its receipt workflow;
+    // older task catalogs expose a RegExp here.
+    const replayedLegacyRegexPass = task && gradingAnswer !== null
+      ? typeof (task.expect as unknown) === 'function'
+        ? (task.expect as unknown as (answer: string) => boolean)(normalizeGradedAnswer(gradingAnswer))
+        : task.expect.test(normalizeGradedAnswer(gradingAnswer))
+      : null;
     const legacyFixture = attempt.fixtureCheck?.ok ?? null;
     const state = task && !variantError ? hardenedState(task, attempt, variant) : { state: 'unknown_rerun_needed' as const, needs: ['task ID is unavailable for state validation'] };
     needs.push(...state.needs);
