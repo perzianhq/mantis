@@ -135,6 +135,54 @@ describe('long lists', () => {
   });
 });
 
+describe('long prose', () => {
+  it('keeps an inline-markup tail available to full reads and find()', async () => {
+    await b.open(fixture('long-prose.html'));
+    const tail = 'TAIL-NEEDLE-9f86d081884c7d65';
+    const snap = await b.snapshot();
+    expect(snap.nodes.find((n) => n.kind === 'prose')?.name).toContain(tail);
+    expect(await b.read({ full: true })).toContain(tail);
+    expect(await b.find(tail)).toMatch(new RegExp(`^found 1 match for "${tail}"`));
+  });
+});
+
+describe('visible prose boundaries', () => {
+  it('does not pull transparent or fully clipped descendants into visible prose, while preserving accessibility names', async () => {
+    const page = 'data:text/html,' + encodeURIComponent(`<!doctype html><title>Visible text</title>
+      <style>.transparent { opacity: 0 } .clipped { clip-path: inset(100%) } .visible-clip { clip-path: inset(0) }</style>
+      <p>Shown before <span class="transparent">opacity secret</span> <span class="clipped">clip secret</span> <span class="visible-clip">visible child</span> shown after.</p>
+      <span id="assist" class="transparent">Assistive button name</span><button aria-labelledby="assist"></button>
+      <span id="clip-assist" class="clipped">Clipped assistive name</span><button aria-labelledby="clip-assist"></button>
+      <button id="buy">Buy<span class="transparent"> assistive detail</span><span style="display:none"> wrong action</span><span style="visibility:hidden"> hidden action</span></button>`);
+    const view = await b.open(page);
+    expect(view).toContain('Shown before');
+    expect(view).toContain('visible child');
+    expect(view).not.toContain('opacity secret');
+    expect(view).not.toContain('clip secret');
+    // Referenced label text remains an explicit accessibility-name source, not visible prose.
+    expect(view).toMatch(/button "Assistive button name"/);
+    expect(view).toMatch(/button "Clipped assistive name"/);
+    // Hard-hidden descendants are not part of a control name, while the near-transparent
+    // screen-reader-only detail remains available to the accessibility-name path.
+    expect(view).toMatch(/button "Buy assistive detail"/);
+    expect(view).not.toContain('wrong action');
+    expect(view).not.toContain('hidden action');
+  });
+});
+
+describe('nested actions', () => {
+  it('keeps an independently actionable child inside a custom button container without duplicating prose', async () => {
+    const page = 'data:text/html,' + encodeURIComponent(`<!doctype html><title>Nested action</title>
+      <div role="button" tabindex="0" aria-label="Product card"><span>Product card detail</span><button onclick="document.title='Deleted'">Delete</button></div>`);
+    const view = await b.open(page);
+    expect(view).toMatch(/button "Product card"/);
+    expect(view).toMatch(/button "Delete"/);
+    expect(view).not.toMatch(/^.*Product card detail$/m);
+    expect(await b.click(idOf(view, 'button "Delete"'))).toContain('clicked #');
+    expect(await b.read()).toContain('Page: Deleted');
+  });
+});
+
 describe('shadow DOM', () => {
   it('shows and clicks a button inside an open shadow root', async () => {
     const view = await b.open(fixture('shadow.html'));

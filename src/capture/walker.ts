@@ -154,15 +154,23 @@ export function walker(includeSrOnly = false): WalkResult {
       (Number.isFinite(parseFloat(cs.opacity)) && parseFloat(cs.opacity) > 0 && parseFloat(cs.opacity) < 0.01);
   }
 
-  /** Rendered text of a subtree, skipping hidden parts; stops once past `limit` chars. */
-  function deepText(root: Element, limit: number, ratingMetadata = true, withHidden = false): string {
+  /** True when a subtree is painted nowhere, including descendants that otherwise have boxes. */
+  function fullyClipped(cs: CSSStyleDeclaration): boolean {
+    const clip = cs.clip.replace(/\s+/g, '').toLowerCase();
+    const path = cs.clipPath.replace(/\s+/g, '').toLowerCase();
+    return /^rect\((?:0(?:px)?,){3}0(?:px)?\)$/.test(clip) ||
+      /^inset\(100%(?:\)|\s|,)/.test(path);
+  }
+
+  /** Rendered text of a subtree, skipping parts a sighted user cannot read; stops once past `limit` chars. */
+  function deepText(root: Element, limit: number, ratingMetadata = true, withHidden = false, includeAriaHidden = withHidden): string {
     let out = '';
     const rec = (e: Element, isRoot: boolean): void => {
       if (out.length > limit) return;
       const t = e.localName;
       let block = false;
       if (!isRoot) {
-        if (SKIP.has(t) || (!withHidden && e.getAttribute('aria-hidden') === 'true') || (e as HTMLElement).inert) return;
+        if (SKIP.has(t) || (!includeAriaHidden && e.getAttribute('aria-hidden') === 'true') || (e as HTMLElement).inert) return;
         if (t === 'img') { out += ' ' + (e.getAttribute('alt') || (ratingMetadata ? e.getAttribute('title') : '') || '') + ' '; return; }
         if (t === 'input') {
           const ty = (e as HTMLInputElement).type;
@@ -171,8 +179,13 @@ export function walker(includeSrOnly = false): WalkResult {
         }
         if (t === 'textarea' || t === 'select') return;
         const cs = getComputedStyle(e);
-        if (cs.display === 'none') return;
-        if (cs.visibility === 'hidden') { for (const c of childrenOf(e)) if (c.nodeType === 1) rec(c as Element, false); return; }
+        // `withHidden` is for clipped/near-transparent screen-reader wording in accessible
+        // names. CSS hard-hidden descendants are never name text: otherwise an ordinary button
+        // would absorb dormant display:none or visibility:hidden action labels.
+        if (cs.display === 'none' || cs.contentVisibility === 'hidden' || cs.visibility === 'hidden') return;
+        // A screen-reader-only element is still captured when it is itself the leaf. When it is
+        // embedded in visible prose, though, its text is not sighted-readable and must not leak.
+        if (!withHidden && (parseFloat(cs.opacity) === 0 || fullyClipped(cs))) return;
         const semantic = explicitRole(e);
         if (semantic && LABELLED_ROLES.has(semantic)) {
           const label = collapse(e.getAttribute('aria-label') || (ratingMetadata ? e.getAttribute('title') : '') || '');
@@ -202,7 +215,9 @@ export function walker(includeSrOnly = false): WalkResult {
     const parts: string[] = [];
     for (const id of ids.split(/\s+/)) {
       const t = root.getElementById?.(id) ?? document.getElementById(id);
-      if (t) parts.push(deepText(t, 200));
+      // ARIA references are an accessibility-name source, even when their text is intentionally
+      // visually hidden. Ordinary prose still uses the visibility-aware default above.
+      if (t) parts.push(deepText(t, 200, true, true));
     }
     return collapse(parts.join(' '));
   }
@@ -291,7 +306,7 @@ export function walker(includeSrOnly = false): WalkResult {
     if (n) return cap(n, 80);
     const labels = (el as HTMLInputElement).labels;
     if (labels && labels.length) {
-      n = collapse(Array.from(labels).map((l) => deepText(l, 200)).join(' '));
+      n = collapse(Array.from(labels).map((l) => deepText(l, 200, true, true)).join(' '));
       if (n) return cap(n, 80);
     }
     if (t === 'input') {
@@ -305,7 +320,9 @@ export function walker(includeSrOnly = false): WalkResult {
         if (n) return cap(n, 80);
       }
     } else {
-      n = withoutIconText(el, deepText(el, 200, false));
+      // Accessible names include intentionally screen-reader-only descendants, but never
+      // aria-hidden decoration. Ordinary prose keeps the visibility-aware default.
+      n = withoutIconText(el, deepText(el, 200, false, true, false));
       if (n) return cap(n, 80);
     }
     n = collapse(el.getAttribute('title') || '');
@@ -551,7 +568,10 @@ export function walker(includeSrOnly = false): WalkResult {
       if (a.querySelectorAll(INTERACTIVE_SEL).length + (a.matches(INTERACTIVE_SEL) ? 1 : 0) !== 1) return '';
       const rowish = a.localName === 'li' || a.localName === 'tr' || /^(?:row|option|listitem)$/.test(explicitRole(a));
       if (!rowish && getComputedStyle(a).display.startsWith('inline')) continue;
-      const t = deepText(a, 160, false) || deepText(a, 160, false, true);
+      // The visible swatch copy is often aria-hidden while an exactly equivalent clipped
+      // screen-reader label supplies the real name. Include visual hiding for that fallback,
+      // but keep aria-hidden decoration out of it.
+      const t = deepText(a, 160, false) || deepText(a, 160, false, true, false);
       if (!t) { if (rowish) return ''; continue; }
       if (t.length > 120 || !/[\p{L}\p{N}]/u.test(t) || isMachineToken(t)) return '';
       return cap(t, 80);
@@ -1192,6 +1212,17 @@ export function walker(includeSrOnly = false): WalkResult {
     const role = interactiveRole(el, explicit, cs);
     if (role) {
       if (shown) emitInteractive(el, role, parent, depth, r, srOnly, requiresOpen);
+      // Custom interactive containers are common around a real secondary action (for example,
+      // a card-wide role=button with a nested Delete button). The container remains useful, but
+      // hiding the child makes the independently actionable operation unreachable. Descend with
+      // prose suppressed so the parent's accessible name is not repeated as ordinary text.
+      const native = /^(a|area|button|input|select|textarea|summary)$/.test(el.localName);
+      if (shown && !native && el.querySelector(INTERACTIVE_SEL)) {
+        const prevSuppress = suppressText;
+        suppressText = true;
+        visitChildren(el, parent, depth, r, false, childSr, requiresOpen);
+        suppressText = prevSuppress;
+      }
       return;
     }
 
@@ -1216,7 +1247,9 @@ export function walker(includeSrOnly = false): WalkResult {
     }
     if (/^h[1-6]$/.test(tag) || explicit === 'heading') {
       if (shown) {
-        const name = cap(deepText(el, 200), 80);
+        // Heading content is its accessible name, so preserve screen-reader-only wording here
+        // even though that wording is excluded from surrounding visible prose.
+        const name = cap(deepText(el, 200, true, true, false), 80);
         const lvl = tag.length === 2 && tag[0] === 'h' ? Number(tag[1]) : Number(el.getAttribute('aria-level')) || 2;
         if (name) {
           const node = stamp({ kind: 'heading', role: 'heading', name, level: lvl, states: [], parent, depth, inViewport: inView(r), covered: false }, r);
@@ -1279,12 +1312,15 @@ export function walker(includeSrOnly = false): WalkResult {
       if ((t.length > 80 || (isProseTag && t.length >= 40)) && !el.shadowRoot && !el.querySelector(BLOCK_SEL)) {
         // A paragraph of running text (maybe with inline links): keep it as prose, unless it is
         // mostly link text (a headline card), which the links already cover.
-        const full = deepText(el, 600);
+        // `find()` and read(full=true) promise access to content omitted from the
+        // compact view, so retain the complete rendered paragraph here. Rendering
+        // applies its own prose and page budgets later.
+        const full = deepText(el, Infinity);
         let linkLen = 0;
         for (const a of Array.from(el.querySelectorAll('a,button')).slice(0, 60)) linkLen += deepText(a, 200).length;
         const plain = full.length - linkLen;
         if (plain >= 40 && plain >= full.length * 0.5) {
-          const node = stamp({ kind: 'prose', role: 'text', name: cap(full, 1200), states: [], parent, depth, inViewport: inView(r), covered: false }, r);
+          const node = stamp({ kind: 'prose', role: 'text', name: full, states: [], parent, depth, inViewport: inView(r), covered: false }, r);
           if (requiresOpen) node.requiresOpen = requiresOpen;
           nodes.push(node);
           proseHere = true;

@@ -1,4 +1,5 @@
 import type { ElementHandle, Page } from 'playwright';
+import { hasCaptureFrameRange } from '../capture/index.js';
 import { makeProbe } from './probe.js';
 import type { ChartData, DataItem, MediaList } from './probe.js';
 
@@ -18,10 +19,20 @@ const INSTALL = `(${makeProbe.toString()})()`;
 
 /** Visible images / canvases / chart-like SVGs, each with a number from the shared registry. */
 export async function listMedia(page: Page): Promise<string> {
-  const res = (await page.evaluate(`${INSTALL}.list()`)) as MediaList;
-  if (!res.entries.length) return 'no images, canvases or charts on this page';
-  const lines = res.entries.map((e) => `#${e.id} ${e.kind} ${e.text}`);
-  if (res.more) lines.push(`…and ${res.more} more`);
+  // Frames have independent DOM roots (and number ranges assigned by capture()), so probing
+  // each reachable one preserves a usable id instead of pretending embedded media is absent.
+  // Do not initialize an arbitrary hidden/unwalked frame here: its default registry starts at
+  // #1 and would collide with the main document. capture() assigns a range only to frames it
+  // actually represented, so every advertised child-frame id remains resolvable.
+  const frames = page.frames().filter((frame) => frame === page.mainFrame() || hasCaptureFrameRange(frame));
+  const lists = await Promise.all(frames.map((frame) =>
+    frame.evaluate(`${INSTALL}.list()`).catch(() => null) as Promise<MediaList | null>,
+  ));
+  const entries = lists.flatMap((res) => res?.entries ?? []);
+  const more = lists.reduce((total, res) => total + (res?.more ?? 0), 0);
+  if (!entries.length) return 'no images, canvases or charts on this page';
+  const lines = entries.map((e) => `#${e.id} ${e.kind} ${e.text}`);
+  if (more) lines.push(`…and ${more} more`);
   lines.push('use data({id: N}) for hidden text, ocr({id: N}) for text in pixels, look({id: N}) only as a last resort');
   return lines.join('\n');
 }
@@ -34,7 +45,7 @@ export async function describeElement(el: ElementHandle<Element>, chartPointLimi
 }
 
 function table(c: ChartData, budget: number): string[] {
-  const head = `${c.lib}${c.type ? ` ${c.type}` : ''} chart${c.title ? ` "${c.title}"` : ''}`;
+  const head = `${c.lib}${c.type ? ` ${c.type}` : ''} chart${c.title ? ` "${c.title}"` : ''}${c.hiddenSeries ? ` (${c.hiddenSeries} hidden series omitted)` : ''}`;
   const n = Math.max(c.labels.length, ...c.series.map((s) => s.values.length), 0);
   if (!n || !c.series.length) return [head, '(no data points)'];
   const cols = ['', ...c.series.map((s, i) => s.name || `series ${i + 1}`)];

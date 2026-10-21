@@ -20,6 +20,8 @@ export interface ChartData {
   series: ChartSeries[];
   /** Extraction stopped at its caller-provided structural budget. */
   truncated?: boolean;
+  /** Series intentionally hidden by the chart are not exposed as currently visible data. */
+  hiddenSeries?: number;
 }
 
 export interface DataItem {
@@ -119,7 +121,17 @@ export function makeProbe(chartPointLimit = Number.MAX_SAFE_INTEGER): Probe {
     let seriesSeen = 0;
     let truncated = false;
     const series: ChartSeries[] = [];
-    for (const d of ch.data.datasets ?? []) {
+    let hiddenSeries = 0;
+    for (const [datasetIndex, d] of (ch.data.datasets ?? []).entries()) {
+      // The live Chart.js visibility API reflects legend toggles and explicit
+      // setDatasetVisibility() overrides; dataset.hidden is only initial configuration.
+      const hidden = typeof ch.isDatasetVisible === 'function'
+        ? !ch.isDatasetVisible(datasetIndex)
+        : d.hidden === true;
+      if (hidden) {
+        hiddenSeries++;
+        continue;
+      }
       if (seriesSeen++ >= chartCap) { truncated = true; break; }
       const values: Array<number | string> = [];
       for (let i = 0; i < (d.data ?? []).length; i++) {
@@ -139,7 +151,7 @@ export function makeProbe(chartPointLimit = Number.MAX_SAFE_INTEGER): Probe {
     }
     const title = ch.options?.plugins?.title?.text ?? '';
     return finish(
-      { lib: 'Chart.js', type: String(ch.config?.type ?? ch.config?._config?.type ?? ''), title: Array.isArray(title) ? title.join(' ') : String(title || ''), labels, series, truncated },
+      { lib: 'Chart.js', type: String(ch.config?.type ?? ch.config?._config?.type ?? ''), title: Array.isArray(title) ? title.join(' ') : String(title || ''), labels, series, truncated, hiddenSeries: hiddenSeries || undefined },
       xs,
     );
   }
@@ -165,8 +177,17 @@ export function makeProbe(chartPointLimit = Number.MAX_SAFE_INTEGER): Probe {
         labels.push(String(d && typeof d === 'object' ? d.value ?? d.name : d));
       }
     }
+    const selected = new Map<string, boolean>();
+    for (const legend of (Array.isArray(opt.legend) ? opt.legend : [opt.legend])) {
+      for (const [name, visible] of Object.entries(legend?.selected ?? {})) selected.set(name, visible !== false);
+    }
+    let hiddenSeries = 0;
     const series: ChartSeries[] = [];
     for (const s of opt.series ?? []) {
+      if (s?.show === false || s?.selected === false || (s?.name && selected.get(String(s.name)) === false)) {
+        hiddenSeries++;
+        continue;
+      }
       if (seriesSeen++ >= chartCap) { truncated = true; break; }
       const values: Array<number | string> = [];
       for (let i = 0; i < (s.data ?? []).length; i++) {
@@ -180,7 +201,7 @@ export function makeProbe(chartPointLimit = Number.MAX_SAFE_INTEGER): Probe {
       if (truncated) break;
     }
     const t: Any = Array.isArray(opt.title) ? opt.title[0] : opt.title;
-    return finish({ lib: 'ECharts', type: String(opt.series?.[0]?.type ?? ''), title: String(t?.text ?? ''), labels, series, truncated }, xs);
+    return finish({ lib: 'ECharts', type: String(opt.series?.[0]?.type ?? ''), title: String(t?.text ?? ''), labels, series, truncated, hiddenSeries: hiddenSeries || undefined }, xs);
   }
 
   function highcharts(el: Element): ChartData[] {
@@ -195,8 +216,10 @@ export function makeProbe(chartPointLimit = Number.MAX_SAFE_INTEGER): Probe {
       let used = 0;
       let seriesSeen = 0;
       let truncated = false;
+      let hiddenSeries = 0;
       const series: ChartSeries[] = [];
       for (const s of c.series ?? []) {
+        if (s.visible === false) { hiddenSeries++; continue; }
         if (seriesSeen++ >= chartCap) { truncated = true; break; }
         const pts: Any[] | null = s.points && s.points.length ? s.points : null;
         const pointCount = pts ? pts.length : (s.yData?.length ?? 0);
@@ -221,7 +244,7 @@ export function makeProbe(chartPointLimit = Number.MAX_SAFE_INTEGER): Probe {
       out.push(finish({
         lib: 'Highcharts', type: String(c.options?.chart?.type ?? c.series?.[0]?.type ?? ''),
         title: String(c.title?.textStr ?? c.options?.title?.text ?? ''),
-        labels, series, truncated,
+        labels, series, truncated, hiddenSeries: hiddenSeries || undefined,
       }, xs));
     }
     return out;
@@ -380,7 +403,16 @@ export function makeProbe(chartPointLimit = Number.MAX_SAFE_INTEGER): Probe {
   function list(): MediaList {
     const entries: MediaEntry[] = [];
     let more = 0;
-    const all = Array.from(document.querySelectorAll('img,canvas,svg'));
+    // querySelectorAll stops at shadow boundaries. Open roots are page-visible DOM, so include
+    // their media while leaving closed roots (which script cannot inspect) as a known limit.
+    const all: Element[] = [];
+    const seen = new Set<Element>();
+    const add = (el: Element): void => { if (!seen.has(el)) { seen.add(el); all.push(el); } };
+    const collect = (root: Document | ShadowRoot): void => {
+      root.querySelectorAll('img,canvas,svg').forEach(add);
+      root.querySelectorAll('*').forEach((host) => { if (host.shadowRoot) collect(host.shadowRoot); });
+    };
+    collect(document);
     for (const el of all) {
       const t = el.localName;
       if (el.parentElement?.closest('svg')) continue; // nested inside an svg

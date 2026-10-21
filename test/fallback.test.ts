@@ -51,6 +51,26 @@ describe('media()', () => {
     await b.open(fixture('login.html'));
     expect(await b.media()).toBe('no images, canvases or charts on this page');
   });
+
+  it('discovers media in reachable iframes and open shadow roots with ids data() can resolve', async () => {
+    await b.open(fixture('media-embedded.html'));
+    const list = await b.media();
+    const shadow = mediaId(list, 'Shadow artwork');
+    const frame = mediaId(list, 'Frame artwork');
+    expect(shadow).not.toBe(frame);
+    expect(await b.data({ id: shadow })).toContain('fallback content: Shadow fallback content');
+    expect(await b.data({ id: frame })).toContain('fallback content: Frame fallback content');
+  });
+
+  it('does not allocate colliding media ids for a hidden iframe excluded from capture', async () => {
+    const view = await b.open(fixture('media-hidden-frame.html'));
+    const action = idOf(view, 'button "Top action"');
+    const list = await b.media();
+    expect(list).not.toContain('Frame artwork');
+    const main = mediaId(list, 'Main artwork');
+    expect(main).not.toBe(action);
+    expect(await b.data({ id: main })).toContain('fallback content: Main fallback content');
+  });
 });
 
 describe('data()', () => {
@@ -100,6 +120,34 @@ describe('data()', () => {
     expect(out).toContain('Feb | 20 | 8');
     expect(out).toContain('Mar | 30 | 13');
     expect(out.length).toBeLessThanOrEqual(1500);
+  });
+
+  it('omits data series the chart marks hidden instead of presenting them as visible', async () => {
+    await b.open(fixture('chart.html'));
+    await inPage(`
+      const chart = Chart.getChart(document.getElementById('c'));
+      chart.data.datasets.push({ label: 'Private forecast', data: [901, 902, 903], hidden: true });
+      chart.update();
+    `);
+    const out = await b.data({ selector: '#c' });
+    expect(out).toContain('(1 hidden series omitted)');
+    expect(out).not.toContain('Private forecast');
+    expect(out).not.toContain('901');
+  });
+
+  it('uses Chart.js runtime visibility when it overrides an initially hidden dataset', async () => {
+    await b.open(fixture('chart.html'));
+    await inPage(`
+      const chart = Chart.getChart(document.getElementById('c'));
+      chart.data.datasets.push({ label: 'Restored forecast', data: [901, 902, 903], hidden: true });
+      chart.update();
+      chart.setDatasetVisibility(2, true);
+      chart.update();
+    `);
+    const out = await b.data({ selector: '#c' });
+    expect(out).toContain('Restored forecast');
+    expect(out).toContain('901');
+    expect(out).not.toContain('hidden series omitted');
   });
 
   it('works through a container around the chart too (selector on <main>)', async () => {

@@ -231,8 +231,8 @@ export class MantisBrowser {
   private context: BrowserContext | null = null;
   private page: Page | null = null;
   private labels = new Map<number, string>();
-  /** Role and name each number had when last read; kept across reads so an id that went stale can be matched by what it was. */
-  private known = new Map<number, { role: string; name: string }>();
+  /** Identity each number had when it was last shown to the agent. */
+  private known = new Map<number, { role: string; name: string; href?: string }>();
   private notes: string[] = [];
   private scratch: BrowserContext | null = null;
   private readonly actionTimeout: number;
@@ -293,6 +293,10 @@ export class MantisBrowser {
         }
       }
       await this.settle(page);
+      // A navigation starts a new page-scoped number registry. Identities from the previous
+      // document must never be mistaken for a newly allocated media/control number.
+      this.labels.clear();
+      this.known.clear();
       const initial = await this.observe(page);
       const controls = initial.snap.nodes.filter((n) => n.kind === 'interactive');
       const disabled = controls.filter((n) => n.states.includes('disabled') || n.states.includes('looks disabled'));
@@ -619,7 +623,13 @@ export class MantisBrowser {
 
   /** Visible images, canvases and chart-like SVGs, each with a number usable by data/ocr/look. */
   async media(): Promise<string> {
-    return this.guard(async () => listMedia(await this.activePage()));
+    return this.guard(async () => {
+      const page = await this.activePage();
+      // Capture allocates disjoint frame number ranges before media() asks each frame to use
+      // the shared registry. That keeps embedded visual ids resolvable by data()/look().
+      await this.observe(page);
+      return listMedia(page);
+    });
   }
 
   /** Hidden text behind a visual element: alt/caption/filename, SVG text, in-memory chart data. */
@@ -789,7 +799,8 @@ export class MantisBrowser {
     return this.guard(async () => {
       const page = await this.activePage();
       const before = (await this.unchanged(page)) ?? (await this.observe(page).catch(() => null));
-      if (before) this.remember(before.snap);
+      // Do not refresh issued identities from this scan. A SPA can recycle the same DOM element
+      // between the agent's read and its action; the target guard compares against that last read.
       // Stamp the action's start in-page so settle() ignores timers/requests that were already running.
       await page.evaluate(() => { (window as unknown as { __mantisEpoch?: number }).__mantisEpoch = performance.now(); }).catch(() => undefined);
       const msg = await fn(page);
@@ -810,6 +821,8 @@ export class MantisBrowser {
         if (before && after) lines.push(...headerLines(before.snap, after.snap));
         if ((after?.snap.url ?? now.url()).startsWith('chrome-error:')) lines.push('the page failed to load');
         else if (after) {
+          this.labels.clear();
+          this.known.clear();
           lines.push(this.render(after.snap));
           if (this.hasDisabledControls(after.snap)) lines.push(this.hydrationNote());
         }
@@ -872,8 +885,7 @@ export class MantisBrowser {
     for (const n of snap.nodes) {
       if (n.kind === 'interactive' && n.id !== undefined) {
         this.labels.set(n.id, this.labelOf(n));
-        if (n.name) this.known.set(n.id, { role: n.role, name: n.name });
-        else this.known.delete(n.id);
+        this.known.set(n.id, { role: n.role, name: n.name, href: n.href });
       }
     }
   }
@@ -903,6 +915,21 @@ export class MantisBrowser {
           ? `no element #${id} on this page; call read() to see current numbers`
           : `#${id} no longer exists (the page changed); call read() to refresh`,
       );
+    }
+    const issued = this.known.get(id);
+    if (issued) {
+      // Always walk immediately before dispatch. The document MutationObserver does not see
+      // mutations inside an already-open shadow root, so a cached page snapshot is insufficient.
+      const current = (await capture(page)).nodes.find((n) => n.kind === 'interactive' && n.id === id);
+      // A connected element that the visible capture no longer represents should retain the
+      // normal actionability error (for example, "is not visible"), rather than being called a
+      // semantic identity change. Guard only a newly captured, meaningfully different target.
+      if (current && (current.role !== issued.role || current.name !== issued.name || current.href !== issued.href)) {
+        await found.el.dispose().catch(() => undefined);
+        const was = `${issued.role}${issued.name ? ` "${issued.name}"` : ''}`;
+        const now = current ? `${current.role}${current.name ? ` "${current.name}"` : ''}` : 'an unavailable control';
+        throw new ActionError(`#${id} changed from ${was} to ${now}; call read() to refresh`);
+      }
     }
     return { el: found.el, label: this.labels.get(id) ?? `#${id}` };
   }

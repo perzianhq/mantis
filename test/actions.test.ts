@@ -57,6 +57,40 @@ describe('stable ids', () => {
     const res = await b.click(9999);
     expect(res).toBe('error: no element #9999 on this page; call read() to see current numbers');
   });
+
+  it('rejects a reused DOM node whose issued identity changed, without blocking harmless state changes', async () => {
+    const view = await b.open('data:text/html,' + encodeURIComponent(`<!doctype html><title>Identity</title>
+      <button id="buy" onclick="document.body.dataset.clicked='a'">Buy product A</button>
+      <button id="toggle" aria-pressed="false" onclick="this.setAttribute('aria-pressed', this.getAttribute('aria-pressed') !== 'true' ? 'true' : 'false')">Pin</button>`));
+    const buy = idOf(view, 'button "Buy product A"');
+    const pin = idOf(view, 'button "Pin"');
+    const active = await (b as unknown as { activePage: () => Promise<{ evaluate: <T>(fn: () => T) => Promise<T> }> }).activePage();
+    await active.evaluate(() => {
+      const button = document.getElementById('buy')!;
+      button.textContent = 'Buy product B';
+      button.setAttribute('onclick', "document.body.dataset.clicked='b'");
+    });
+    expect(await b.click(buy)).toMatch(new RegExp(`^error: #${buy} changed from button "Buy product A" to button "Buy product B"`));
+    expect(await active.evaluate(() => document.body.dataset.clicked)).toBeUndefined();
+
+    // aria-pressed is a state update, not a different target identity.
+    expect(await b.click(pin)).toContain(`clicked #${pin} button "Pin"`);
+    expect(await b.click(pin)).toContain(`clicked #${pin} button "Pin"`);
+  });
+
+  it('rejects a changed action inside an open shadow root even when the document mutation counter is unchanged', async () => {
+    const view = await b.open('data:text/html,' + encodeURIComponent(`<!doctype html><title>Shadow identity</title>
+      <div id="host"></div><script>const root = host.attachShadow({mode:'open'}); root.innerHTML = '<button id="buy" onclick="document.body.dataset.clicked=\\'a\\'">Buy product A</button>';</script>`));
+    const buy = idOf(view, 'button "Buy product A"');
+    const page = await (b as unknown as { activePage: () => Promise<{ evaluate: <T>(fn: () => T) => Promise<T> }> }).activePage();
+    await page.evaluate(() => {
+      const button = document.getElementById('host')!.shadowRoot!.getElementById('buy')!;
+      button.textContent = 'Buy product B';
+      button.setAttribute('onclick', "document.body.dataset.clicked='b'");
+    });
+    expect(await b.click(buy)).toMatch(new RegExp(`^error: #${buy} changed from button "Buy product A" to button "Buy product B"`));
+    expect(await page.evaluate(() => document.body.dataset.clicked)).toBeUndefined();
+  });
 });
 
 describe('navigation actions', () => {

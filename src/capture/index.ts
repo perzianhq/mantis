@@ -18,6 +18,12 @@ const MAX_FRAMES = 20;
 const frameBase = new WeakMap<Frame, number>();
 const frameByBase = new Map<number, WeakRef<Frame>>();
 
+/** Whether capture() assigned this child frame a disjoint action/media number range. */
+export function hasCaptureFrameRange(frame: Frame): boolean {
+  const base = frameBase.get(frame);
+  return base !== undefined && frameByBase.get(base)?.deref() === frame && !frame.isDetached();
+}
+
 /** The frame's number range; ranges of frames that are gone are reused (like the page restarting at #1). */
 function baseOf(frame: Frame): number {
   const own = frameBase.get(frame);

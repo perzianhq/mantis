@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Embedded media</title></head>
+<body>
+  <main>
+    <div id="shadow-host"></div>
+    <iframe title="Media frame" src="media-embedded-inner.html" width="240" height="140"></iframe>
+  </main>
+  <script>
+    const shadow = document.getElementById('shadow-host').attachShadow({ mode: 'open' });
+    shadow.innerHTML = '<canvas id="shadow-canvas" width="180" height="90" aria-label="Shadow artwork">Shadow fallback content</canvas>';
+  </script>
+</body>
+</html>
