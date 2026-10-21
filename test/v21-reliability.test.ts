@@ -71,6 +71,7 @@ it('uses a Chart.js runtime visibility change and refreshes the recycled-control
   const chart = V21_RELIABILITY_CASES.find((item) => item.family === 'visible-chart-series-over-hidden-decoy')!;
   await open(chart, 'v21-chart-runtime-visibility');
   expect(await page.locator('#shipments').isVisible()).toBe(true);
+  expect(await page.locator('figcaption').textContent()).toContain('values are in units');
   expect(await page.evaluate(() => (window as any).Chart.getChart(document.querySelector('#shipments')).isDatasetVisible(1))).toBe(false);
 
   const recycled = V21_RELIABILITY_CASES.find((item) => item.family === 'recycled-control-current-record')!;
