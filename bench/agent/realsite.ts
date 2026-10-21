@@ -46,6 +46,8 @@ export interface RealsiteRow {
   task_id: string; website: string; task: string; level: string;
   checks?: RealsiteChecks;
   deterministic?: DeterministicGrader;
+  /** Task-specific, non-leading criteria supplied to the blind judge. */
+  judgeRubric?: string;
 }
 
 export const REALSITE_FILE = path.join(import.meta.dirname, 'realsite-tasks.json');
@@ -129,12 +131,13 @@ export function loadRealsiteRows(file: string = REALSITE_FILE, reportIssues: (me
     const deterministicIssue = validateDeterministicGrader(o.deterministic);
     const deterministic = parseDeterministicGrader(o.deterministic);
     const checksIssue = validateChecks(o.checks);
+    const judgeRubric = text(o.judgeRubric);
     // A complete deterministic grader is itself the explicit answer-key opt-in;
     // legacy substring checks remain optional for those rows.
-    if (checksIssue && !deterministic) issues.push(`${task_id}: ${checksIssue}`);
+    if (checksIssue && !deterministic && !judgeRubric) issues.push(`${task_id}: ${checksIssue}`);
     if (deterministicIssue) issues.push(`${task_id}: ${deterministicIssue}`);
     const checks = parseChecks(o.checks);
-    return [{ task_id, website, task, level: text(o.level) ?? 'unknown', ...(checks ? { checks } : {}), ...(deterministic ? { deterministic } : {}) }];
+    return [{ task_id, website, task, level: text(o.level) ?? 'unknown', ...(checks ? { checks } : {}), ...(deterministic ? { deterministic } : {}), ...(judgeRubric ? { judgeRubric } : {}) }];
   });
   if (issues.length) {
     const shown = issues.slice(0, 10).join('; ');

@@ -25,6 +25,7 @@ import { parseClaudeStream } from './integrity.js';
 import { parseCodexStream } from './codex.js';
 import { evaluateChecks, evaluateDeterministicGrader, loadRealsiteRows, mulberry32, parseFinalUrl, sanitizeAnswer, shuffled } from './realsite.js';
 import type { RealsiteRow } from './realsite.js';
+import { LIVE_V1_ROWS } from './live-v1.js';
 import { TASKS } from './tasks.js';
 import { evidenceShowsOnlySiteErrors } from './evidence.js';
 import type { EvidenceFrame, EvidenceSidecar, FormValue } from './evidence.js';
@@ -122,12 +123,13 @@ export async function selectJudgeScreenshot(savedPath: string | null | undefined
 const RULES =
   'Mark "success" only if the task was actually accomplished (or, for questions, the answer is correct and supported by the evidence). Mark "failure" if it was not, or the reply is wrong, evasive, or off-task. If the reply says a required login, purchase, or personal-information prompt stopped it but no such prompt is visible on a live capture, mark "unsure" unless other evidence shows failure. If the task asks for a result the site computes and the agent gives its own estimate or calculation instead, mark "failure". Mark "blocked" only for an explicit site refusal of automation or access, such as a CAPTCHA/bot check, HTTP 403/Access Denied, or country/region block, supported by the evidence. Mark "site_broken" only when the evidence shows the site itself failed (for example a browser load error or server error page) before usable task content was available; do not use it for an agent mistake, incomplete attempt, ordinary missing result, or merely an empty evidence packet. An ordinary 404 is not blocked and is site_broken only when the evidence establishes that the requested site content itself is broken. Mark "unsure" if the evidence is not enough to decide. A normal login, purchase, or personal-information step after correct prior work counts as success, not blocked.';
 
-export function buildJudgePrompt(input: { task: string; website: string; finalUrl: string | null; answer: string; screenshotPath: string | null; screenshotSource?: 'live' | 'fresh'; attached?: boolean }): string {
+export function buildJudgePrompt(input: { task: string; website: string; finalUrl: string | null; answer: string; screenshotPath: string | null; screenshotSource?: 'live' | 'fresh'; attached?: boolean; rubric?: string }): string {
   return [
     'You are grading whether a web agent completed a task on a real website. You are not told how the agent worked; judge only the evidence below.',
     '',
     `Starting site: ${input.website}`,
     `Task: ${input.task}`,
+    ...(input.rubric ? ['', `Task-specific rubric: ${input.rubric}`] : []),
     '',
     'The agent was told not to log in, buy anything, or enter personal information, and to stop before that step. Stopping at such a step counts as success if everything before it was done correctly.',
     '',
@@ -166,7 +168,7 @@ const excerpt = (text: string, max: number): string => {
  * The judge prompt for a run with evidence frames: the frames in chronological order, each with its URL, image and
  * page text. When there are no frames, `freshImage` (a fresh load of the final URL) or nothing replaces them.
  */
-export function buildEvidencePrompt(input: { task: string; website: string; finalUrl: string | null; answer: string; frames: PacketFrame[]; attached: boolean; imagesUnavailable?: boolean; freshImage?: string }): string {
+export function buildEvidencePrompt(input: { task: string; website: string; finalUrl: string | null; answer: string; frames: PacketFrame[]; attached: boolean; imagesUnavailable?: boolean; freshImage?: string; rubric?: string }): string {
   const { frames, attached } = input;
   const where = (image: string): string => input.imagesUnavailable ? 'unavailable for this judge model' : (attached ? `${image} (attached)` : `${image} (open it with the Read tool)`);
   const hasFinal = frames.some((f) => f.final);
@@ -197,6 +199,7 @@ export function buildEvidencePrompt(input: { task: string; website: string; fina
     '',
     `Starting site: ${input.website}`,
     `Task: ${input.task}`,
+    ...(input.rubric ? ['', `Task-specific rubric: ${input.rubric}`] : []),
     '',
     'The agent was told not to log in, buy anything, or enter personal information, and to stop before that step. Stopping at such a step counts as success if everything before it was done correctly.',
     '',
@@ -582,7 +585,7 @@ export async function judgeBenchmark(name: string, options: JudgeOptions = {}): 
   // Missing credentials fail before worker errors can turn them into "unsure" verdicts.
   const sarvam = judgeProvider === 'sarvam' ? options.sarvamClient ?? new SarvamClient({ timeoutMs }) : null;
   const provider = saved.metadata?.settings?.provider ?? 'codex';
-  const catalog = options.rows ?? [...loadRealsiteRows(), ...builtInJudgeRows()];
+  const catalog = options.rows ?? [...loadRealsiteRows(), ...LIVE_V1_ROWS, ...builtInJudgeRows()];
   const rows = new Map(catalog.map((r) => [r.task_id, r]));
   const judgedRuns = saved.results.filter((r) => rows.has(r.task) && (!options.runKeys || options.runKeys.has(runKey(r.task, r.approach, r.run))));
   if (!judgedRuns.length) throw new Error(`${name}.json has no runs of known benchmark tasks.`);
@@ -649,7 +652,7 @@ export async function judgeBenchmark(name: string, options: JudgeOptions = {}): 
       const names = fresh ? [fresh] : packet.frames.map((f) => f.image);
       savedImages = names.map((n) => path.join(dir, n));
       shots = supportsImages ? savedImages : [];
-      prompt = buildEvidencePrompt({ task: row.task, website: row.website, finalUrl, answer, attached,
+      prompt = buildEvidencePrompt({ task: row.task, website: row.website, finalUrl, answer, attached, rubric: row.judgeRubric,
         imagesUnavailable: !supportsImages, freshImage: fresh && (attached ? fresh : path.join(dir, fresh)),
         frames: packet.frames.map((f) => ({ ...f, image: attached ? f.image : path.join(dir, f.image) })),
       });
@@ -658,7 +661,7 @@ export async function judgeBenchmark(name: string, options: JudgeOptions = {}): 
       const source = canJudge ? await selectJudgeScreenshot(r.finalScreenshotPath, shot, finalUrl, screenshot, logs) : null;
       savedImages = source ? [shot] : [];
       shots = supportsImages ? savedImages : [];
-      prompt = buildJudgePrompt({ task: row.task, website: row.website, finalUrl, answer, screenshotPath: source ? (attached ? 'final.png' : shot) : null, screenshotSource: source ?? undefined, attached });
+      prompt = buildJudgePrompt({ task: row.task, website: row.website, finalUrl, answer, screenshotPath: source ? (attached ? 'final.png' : shot) : null, screenshotSource: source ?? undefined, attached, rubric: row.judgeRubric });
     }
     if (options.requireSavedEvidence && !savedImages.length) {
       skipped.push({ task: r.task, approach: r.approach, run: r.run, reason: evidenceRun ? 'No saved evidence frame images are available; fresh page loads are disabled.' : 'No saved final screenshot is available; fresh page loads are disabled.' });

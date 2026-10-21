@@ -96,7 +96,7 @@ The agent ends with a `FINAL_URL:` line, so the usual grading only checks that i
 
 The "298 rows missing answer-key checks" warning is an annotation gap: the local catalog has 300 rows, only two with checks. The loader warns across the whole catalog before sampling and still loads the rows; `checks` is a repo extension, not supplied by the imported dataset.
 
-Plan after local-v2.1: freeze a separate set of about 30 explicit tasks (target 8 easy / 14 medium / 8 hard), aiming for about 20 fully verifiable and 10 live/ambiguous tasks. Add reviewed keys for stable facts, fixed references and verified outputs; retain Sol judging against saved evidence for changing or ambiguous answers. Stateful tasks need final URL/form/result predicates together, not scattered matching labels. Require successful runs, captured evidence and passing/near-miss grader tests in `test/fixture-verification.test.ts`. Keep identical rows/repetitions for Mantis/tree/screenshot, separately for Luna and Haiku.
+The separate frozen public [live-v1 cohort](live-v1.md) now has 30 explicit read-only tasks: 20 deterministic terminal-state contracts and 10 task-specific judged contracts, with the fixed 8 easy / 14 medium / 8 hard allocation. `AGENT_SUITE=live-v1 AGENT_TASKS=all` selects all 30 rows, including judged rows, for Mantis/tree/screenshot and three repeats. Its offline preflight inventory deliberately marks every candidate unverified until a free browser review confirms it; it does not alter the gated source.
 
 ### Sarvam judge and capability probe
 

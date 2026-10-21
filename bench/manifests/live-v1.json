@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "live-v1",
+  "kind": "frozen-public-read-only-live-evaluation-config",
+  "status": "configured-unverified-preflight",
+  "sourceSelector": "bench/agent/live-v1.ts",
+  "catalog": "bench/agent/live-v1-tasks.json",
+  "taskCount": 30,
+  "taskHashAlgorithm": "sha256(canonical sorted task contracts)",
+  "taskHash": "f8347a93b6aab6a03d265616a7cebdd47f457e627b85f3a330cc663657389ad0",
+  "sourceFingerprintAlgorithm": "sha256(canonical URL + task-specific grading contract)",
+  "sourceFingerprintSetHash": "a833c8391d454963e4c21331385fde516fb2a2ba9af087b4cf9d5324c73efd37",
+  "tasks": [
+    "livev1-standards-gpl-3", "livev1-standards-wcag-22", "livev1-standards-rfc-9110", "livev1-standards-openapi-31", "livev1-standards-css-color-4",
+    "livev1-docs-python-json", "livev1-docs-mdn-http-overview", "livev1-docs-node-url", "livev1-docs-django-overview", "livev1-docs-postgresql-types",
+    "livev1-civic-loc-about", "livev1-civic-nasa-missions", "livev1-civic-census-about", "livev1-civic-usgs-about", "livev1-civic-archives-about",
+    "livev1-data-world-bank-population", "livev1-data-ourworldindata-co2", "livev1-data-data-gov-climate", "livev1-data-eurostat-database", "livev1-data-oecd-data-explorer",
+    "livev1-navigation-wikipedia-ada", "livev1-navigation-merriam-serendipity", "livev1-navigation-smithsonian-aircraft", "livev1-navigation-internetarchive-search", "livev1-navigation-met-collection",
+    "livev1-interactive-openlibrary-subject", "livev1-interactive-github-issues", "livev1-interactive-openstreetmap-eiffel", "livev1-interactive-imdb-search", "livev1-interactive-alltrails-search"
+  ],
+  "families": {"standards": 5, "documentation": 5, "civic-reference": 5, "open-data": 5, "site-navigation": 5, "interactive-exploration": 5},
+  "grading": {"deterministic": 20, "judge": 10},
+  "difficulty": {"easy": 8, "medium": 14, "hard": 8},
+  "sitePolicy": {"maxTasksPerSite": 3, "minimumIndependentSites": 15, "access": "public-read-only"},
+  "approaches": ["mantis", "tree", "screenshot"],
+  "runs": 3,
+  "limits": {"completionMaxSteps": 50, "executionTimeoutSeconds": 600},
+  "focusedCommand": "AGENT_SUITE=live-v1 AGENT_TASKS=all AGENT_APPROACHES=mantis,tree,screenshot AGENT_RUNS=3 AGENT_MAX_STEPS=50 AGENT_TIMEOUT_S=600 npm run bench:agent",
+  "notes": ["All rows are public and read-only; no login, purchase, or personal information is permitted.", "Deterministic rows require the final answer, canonical final URL, visible final-page evidence, and the single terminal harness capture.", "Interactive/custom-control rows remain task-specifically blind judged against saved evidence."]
+}
