@@ -45,7 +45,9 @@ const numericPattern = (raw: string | number): string => {
 };
 
 const textPattern = (value: string | number, bounded: boolean): string => {
-  const body = esc(String(value).trim()).replace(/\\ /g, '\\s+');
+  // Page text may use non-breaking spaces in headings. Treat every whitespace
+  // run in a text contract as equivalent while preserving word boundaries.
+  const body = esc(String(value).replace(/\s+/g, ' ').trim()).replace(/ /g, '\\s+');
   return bounded ? `(?<![\\p{L}\\p{N}])${body}(?![\\p{L}\\p{N}])` : body;
 };
 

@@ -40,15 +40,18 @@ describe('live-v1 frozen public catalog', () => {
     expect(prompt).not.toMatch(/mantis|playwright|accessibility tree/i);
   });
 
-  it('requires answer, canonical terminal URL, and visible terminal evidence; a near miss fails', () => {
-    const row = LIVE_V1_ROWS.find((entry) => entry.grading === 'deterministic')!;
-    const grader = row.deterministic!;
-    const answer = grader.answerIncludes.map((item) => String(item.value)).join(' — ');
-    const text = grader.final.textIncludes.map((item) => String(item.value)).join(' — ');
-    const url = `${grader.final.url.origin}${grader.final.url.path}`;
-    expect(evaluateDeterministicGrader(grader, answer, [{ final: true, url, text }])?.pass).toBe(true);
-    expect(evaluateDeterministicGrader(grader, answer, [{ final: true, url: `${grader.final.url.origin}/wrong`, text }])?.pass).toBe(false);
-    expect(evaluateDeterministicGrader(grader, answer, [{ final: true, url, text: 'near miss only' }])?.pass).toBe(false);
+  it('validates every deterministic contract and rejects its URL/text near misses', () => {
+    for (const row of LIVE_V1_ROWS.filter((entry) => entry.grading === 'deterministic')) {
+      const grader = row.deterministic!;
+      const answer = grader.answerIncludes.map((item) => String(item.value)).join(' — ');
+      const text = grader.final.textIncludes.map((item) => String(item.value)).join(' — ');
+      const url = `${grader.final.url.origin}${grader.final.url.path}`;
+      expect(evaluateDeterministicGrader(grader, answer, [{ final: true, url, text }])?.pass, row.task_id).toBe(true);
+      expect(evaluateDeterministicGrader(grader, answer, [{ final: true, url: `${grader.final.url.origin}/wrong`, text }])?.pass, row.task_id).toBe(false);
+      expect(evaluateDeterministicGrader(grader, answer, [{ final: true, url, text: 'near miss only' }])?.pass, row.task_id).toBe(false);
+    }
+    const postgres = LIVE_V1_ROWS.find((row) => row.task_id === 'livev1-docs-postgresql-types')!.deterministic!;
+    expect(evaluateDeterministicGrader(postgres, 'Chapter 8. Data Types', [{ final: true, url: 'https://www.postgresql.org/docs/current/datatype.html', text: 'Chapter\u00a08.\u00a0Data Types' }])?.pass).toBe(true);
   });
 
   it('collects the free offline inventory without claiming live verification', async () => {

@@ -228,7 +228,9 @@ export const isEvidenceRun = (run: SavedRun): boolean => Object.hasOwn(run, 'evi
  */
 export function deterministicGradeForRun(row: RealsiteRow, status: string, evidenceRun: boolean, answer: string, frames: PacketFrame[]): { pass: boolean; failed: string[] } | null {
   const finalFrames = frames.filter((frame) => frame.final);
-  const accessBlock = frames.some((frame) => /\b(?:captcha|access denied|forbidden|unusual traffic|verify you are human|bot check|country\/region (?:not )?available)\b/i.test(frame.text));
+  // Do not treat ordinary documentation text (for example RFC 9110's
+  // "403 Forbidden" table-of-contents entry) as a refusal page.
+  const accessBlock = frames.some((frame) => /\b(?:captcha|access denied|unusual traffic|verify you are human|bot check|country\/region (?:not )?available)\b/i.test(frame.text) || /^(?:\s*(?:403\s+)?forbidden\s*)$/im.test(frame.text));
   // A block is a model-adjudicated outcome, not an answer-key failure.
   return evidenceRun && status === 'success' && finalFrames.length === 1 && !accessBlock
     ? evaluateDeterministicGrader(row.deterministic, answer, frames)
