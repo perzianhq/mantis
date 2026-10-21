@@ -22,14 +22,14 @@ Stack: TypeScript (ESM, Node ≥20), Playwright, `@modelcontextprotocol/sdk`, zo
 ## Evaluation plan
 
 ```text
-frozen local-v1 → frozen local-v2 development (complete) → complete held-out v2 → frozen live-site set → publish
+frozen local-v1 → local-v2 full scorecard (complete) → optional local-v2.1 policy run → frozen live-site set → publish
 ```
 
 | Phase | Run | Gate |
 | --- | --- | --- |
 | Local-v1 — complete | Frozen 25-task seeded local baseline, 3 approaches × 3 repeats = 225 logical runs. | Preserve the [manifest](../bench/manifests/local-v1.json) and [final scorecard](../bench/RESULTS.md#local-tasks-sarvam-final-seeded-baseline). |
-| Local-v2 development — complete | Frozen 32-case development split: 3 approaches × 3 repeats = 288 rows, scored with DeepSeek through Sarvam. | Preserve the result as a development baseline; do not tune or regrade individual failures. See [results](../bench/RESULTS.md#local-v2-development-baseline-current). |
-| Local-v2 held-out — ready | The remaining 16 held-out cases are implemented: two per domain, each with seeded structural variants and executable oracle/near-miss checks. | Freeze the full 48-case manifest, then run matched Mantis/tree/screenshot evaluations (432 rows per model). See the [coverage contract](../bench/manifests/local-v2-plan.md). |
+| Local-v2 full — complete | Frozen 48-case local scorecard: 3 approaches × 3 repeats = 432 rows, DeepSeek through Sarvam. | Preserve the versioned offline regrade and its 35-step policy. See [results](../bench/RESULTS.md#local-v2-full-scorecard-current). |
+| Local-v2.1 — deferred | Optional fresh, matched 432-row run after visible fixture-completion feedback and a 50-completion non-`long` cap. | Publish separately; never replace local-v2 or regrade selected rows. |
 | Frozen live sites — later | Separate reviewed, read-only public-site set for navigation, retrieval, comparison, and multi-page work. | Preflight the [30-slot candidate pool](../bench/manifests/live-site-candidates.md), then freeze explicit rows with date/browser/evidence; reviewed deterministic validators where complete, blind judge for the rest. |
 | Publish | Matched runs for Mantis, tree, and screenshot. | Per-task score, seed/trace, calls, latency, tokens, cost, and failures. |
 
@@ -38,8 +38,8 @@ Keep model, browser, retry policy, timeout, and token budget matched across appr
 ## Current sequence
 
 1. Preserve local-v1 fixtures, tasks, graders, seed, and results; the final 225-run baseline is complete.
-2. Preserve the frozen 32-case local-v2 development baseline; its 288-row score is reported separately from v1 and the future full v2 suite.
-3. Freeze the verified full 48-case selector, then run 48 cases × 3 approaches × 3 repeats = 432 scored rows per model. Keep held-out cases out of tuning.
+2. Preserve the completed 48-case local-v2 scorecard and its regrade; do not replace individual rows.
+3. If another local run is warranted, add visible completion feedback, freeze `local-v2.1`, then run 48 cases × 3 approaches × 3 repeats at the matched 50-completion cap.
 4. Establish the separate frozen live-site set using the [real-site plan](../bench/README.md#real-site-tasks-blind-judge).
 
 ## Deferred work

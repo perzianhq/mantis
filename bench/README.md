@@ -64,6 +64,7 @@ AGENT_ROWS='long-shop|tree|1,long-shop|screenshot|1' AGENT_TASKS=local AGENT_RUN
 | `AGENT_MODEL` | `gpt-6.1-sol` (Codex), `claude-haiku-5-5` (Claude) | model of the selected provider |
 | `AGENT_REASONING` | `medium` | Codex reasoning effort (`low`, `medium`, `high`, `xhigh`, `max`) |
 | `AGENT_MAX_STEPS` | `100` | Sarvam tool-loop step budget |
+| `AGENT_V2_STANDARD_MAX_STEPS` | `50` | Sarvam-only cap for non-`long` local-v2 tasks. Counts model completions, including the final answer. The published local-v2 score used the historical explicit value `35`. |
 | `SARVAM_MAX_TOKENS` | `8192` | Sarvam completion-token cap per turn (positive integer) |
 | `CODEX_BIN`, `CLAUDE_BIN` | installed CLI | path override for the agent CLI |
 | `AGENT_CONCURRENCY` | 3 (10 for Sarvam) | benchmark cases scheduled in parallel; each run is an agent CLI, an MCP server and a browser, so times then include more contention |

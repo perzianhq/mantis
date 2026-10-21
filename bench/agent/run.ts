@@ -65,8 +65,8 @@ const TIMEOUT_MS = TIMEOUT_S * 1000;
 const WALL_TIMEOUT_S = PROVIDER === 'sarvam' ? validatePositiveInt('AGENT_WALL_TIMEOUT_S', process.env.AGENT_WALL_TIMEOUT_S, 1800, 86_400) : 1800;
 const WALL_TIMEOUT_MS = WALL_TIMEOUT_S * 1000;
 const SARVAM_MAX_STEPS = validatePositiveInt('AGENT_MAX_STEPS', process.env.AGENT_MAX_STEPS, 100, 1_000);
-/** Local-v2 suites cap ordinary tasks before they can loop. */
-const V2_STANDARD_MAX_STEPS = validatePositiveInt('AGENT_V2_STANDARD_MAX_STEPS', process.env.AGENT_V2_STANDARD_MAX_STEPS, 35, 1_000);
+/** Local-v2 ordinary-task headroom; Sarvam counts model completions, including the final answer. */
+const V2_STANDARD_MAX_STEPS = validatePositiveInt('AGENT_V2_STANDARD_MAX_STEPS', process.env.AGENT_V2_STANDARD_MAX_STEPS, 50, 1_000);
 const V2_CIRCUIT_BREAKER_FAILURES = validatePositiveInt('AGENT_V2_CIRCUIT_BREAKER_FAILURES', process.env.AGENT_V2_CIRCUIT_BREAKER_FAILURES, 2, 20);
 const SARVAM_MAX_TOKENS = PROVIDER === 'sarvam' ? sarvamMaxTokens() : null;
 /** Runs in flight at once. Each run is its own provider CLI process, MCP server and browser. */
