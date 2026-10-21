@@ -102,3 +102,16 @@ it('drives the remaining reading and workflow cases through real browser happy a
     const near = await openPage(id); try { await miss(near.page); expect(await near.page.evaluate(() => (window as any).__fixtureState)).not.toEqual(entry(id).expected.terminalState); } finally { await near.browser.close(); }
   }
 });
+
+it('shows visible evidence after reading actions complete', async () => {
+  const landmark = await openPage('v2-reading-landmark-jump');
+  try {
+    await landmark.page.click('#current'); await landmark.page.click('#open');
+    expect(await landmark.page.locator('#region-status').textContent()).toBe(`Target entry opened: ${entry('v2-reading-landmark-jump').expected.answer.split(': ').at(-1)}`);
+  } finally { await landmark.browser.close(); }
+  const delivery = await openPage('v2-reading-cross-region');
+  try {
+    await delivery.page.click('#retain'); await delivery.page.click('#read');
+    expect(await delivery.page.locator('#delivery-status').textContent()).toBe(`Delivery fact read: ${entry('v2-reading-cross-region').expected.answer.split(': ').at(-1)}`);
+  } finally { await delivery.browser.close(); }
+});
