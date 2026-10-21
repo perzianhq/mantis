@@ -7,9 +7,9 @@
   "catalog": "bench/agent/live-v1-tasks.json",
   "taskCount": 30,
   "taskHashAlgorithm": "sha256(canonical sorted task contracts)",
-  "taskHash": "f8347a93b6aab6a03d265616a7cebdd47f457e627b85f3a330cc663657389ad0",
+  "taskHash": "03e98b11346b7750de8e2ab52c8ae507b714e4867a5eb76165d996ee42e88552",
   "sourceFingerprintAlgorithm": "sha256(canonical URL + task-specific grading contract)",
-  "sourceFingerprintSetHash": "a833c8391d454963e4c21331385fde516fb2a2ba9af087b4cf9d5324c73efd37",
+  "sourceFingerprintSetHash": "96de48d4476d01a6b512663608bcea3f2ba4384dc51ced64f184232db11c1473",
   "tasks": [
     "livev1-standards-gpl-3", "livev1-standards-wcag-22", "livev1-standards-rfc-9110", "livev1-standards-openapi-31", "livev1-standards-css-color-4",
     "livev1-docs-python-json", "livev1-docs-mdn-http-overview", "livev1-docs-node-url", "livev1-docs-django-overview", "livev1-docs-postgresql-types",
