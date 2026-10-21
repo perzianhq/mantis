@@ -28,7 +28,7 @@ Frozen `local-v2-development` baseline: 32 code-graded fixture tasks, `deepseek-
 
 Mantis scored 96.9%, versus 95.8% for both baselines, with 54.2% fewer median input tokens than the tree and 64.2% fewer than screenshots. Execution excludes locally measured limiter/retry wait; wall time includes it. Method, caveats, the historical v1 baseline, and pilot results: [bench/RESULTS.md](bench/RESULTS.md).
 
-Next: add and freeze the 16 held-out v2 cases, then run the matched 48-case v2 scorecard. After that, freeze the separate live-site set. See the [evaluation plan](docs/PLAN.md#evaluation-plan).
+Next: freeze the complete 48-case v2 selector and run the matched scorecard. After that, freeze the separate live-site set. See the [evaluation plan](docs/PLAN.md#evaluation-plan).
 
 ## Learn more
 

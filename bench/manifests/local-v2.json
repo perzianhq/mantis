@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "local-v2",
+  "kind": "frozen-local-fixture-evaluation-config",
+  "immutable": true,
+  "status": "configured; first scored result pending",
+  "sourceSelector": "bench/agent/local-v2.ts",
+  "splits": { "development": 32, "heldout": 16 },
+  "tasks": [
+    "v2-table-sort-row", "v2-table-filtered-cell", "v2-table-wide-column", "v2-table-paginated-record",
+    "v2-list-virtual-target", "v2-list-paginated-filter", "v2-list-reordered-item", "v2-list-nested-scroll",
+    "v2-chart-svg-series", "v2-chart-canvas-point", "v2-chart-image-fact", "v2-chart-responsive",
+    "v2-interaction-form-preferences", "v2-interaction-form-frame-payment", "v2-interaction-form-combobox", "v2-interaction-form-validation-recovery",
+    "v2-interaction-overlay-dialog", "v2-interaction-overlay-shadow", "v2-interaction-overlay-modal", "v2-interaction-overlay-toast",
+    "v2-interaction-spa-client-route", "v2-interaction-spa-history-draft", "v2-interaction-spa-route-recovery", "v2-interaction-spa-retry-recovery",
+    "v2-reading-landmark-jump", "v2-reading-deep-fact", "v2-reading-cross-region", "v2-reading-collapsed-context",
+    "v2-workflow-multi-step-order", "v2-workflow-cross-page-compare", "v2-workflow-save-resume", "v2-workflow-conditional-branch",
+    "v2-heldout-extra-table-grouped-total", "v2-heldout-extra-table-recovery", "v2-heldout-extra-list-offscreen-action", "v2-heldout-extra-list-recovery",
+    "v2-heldout-extra-chart-legend-filter", "v2-heldout-extra-chart-recovery", "v2-heldout-extra-form-date-range", "v2-heldout-extra-form-custom-toggle",
+    "v2-heldout-extra-overlay-focus-trap", "v2-heldout-extra-overlay-recovery", "v2-heldout-extra-spa-stale-target", "v2-heldout-extra-spa-error-boundary",
+    "v2-heldout-reading-sticky-context", "v2-heldout-reading-recovery", "v2-heldout-workflow-review-submit", "v2-heldout-workflow-recovery"
+  ],
+  "provider": { "name": "sarvam", "model": "deepseek-v4.1-flash", "maxTokens": 8192 },
+  "approaches": ["mantis", "tree", "screenshot"],
+  "runs": 3,
+  "limits": {
+    "maxSteps": 100,
+    "v2StandardMaxSteps": 35,
+    "caseConcurrency": 10,
+    "apiConcurrency": 16,
+    "rpm": 50,
+    "activeTimeoutSeconds": 600,
+    "wallTimeoutSeconds": 1800
+  },
+  "command": "AGENT_PROVIDER=sarvam AGENT_MODEL=deepseek-v4.1-flash SARVAM_MAX_TOKENS=8192 AGENT_SUITE=local-v2 AGENT_TASKS=all AGENT_APPROACHES=mantis,tree,screenshot AGENT_RUNS=3 AGENT_MAX_STEPS=100 AGENT_V2_STANDARD_MAX_STEPS=35 AGENT_CONCURRENCY=10 SARVAM_CONCURRENCY=16 SARVAM_RPM=50 AGENT_TIMEOUT_S=600 AGENT_WALL_TIMEOUT_S=1800 AGENT_OUT=<new-result-name> npm run bench:agent"
+}

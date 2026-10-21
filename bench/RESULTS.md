@@ -19,7 +19,7 @@ Frozen `local-v2-development`: 32 code-graded local fixture tasks x 3 approaches
 
 - All 288 rows launched and graded: no HTTP 429s, connection failures, wall-cap timeouts, or harness failures.
 - Eleven valid attempted failures remain: seven reading-landmark step limits, two tree list step limits, one screenshot coordinate miss on Save, and one tree answer-format miss. They are not grader or Mantis defects; no row was regraded or replaced.
-- The raw artifact and traces remain local. `local-v1` below remains a separate historical baseline. Finish the 16 held-out cases before publishing any full local-v2 claim.
+- The raw artifact and traces remain local. `local-v1` below remains a separate historical baseline. The 16 held-out cases are implemented and verified; the first full 48-case v2 scorecard remains to be run.
 
 ## Real sites (pilot)
 

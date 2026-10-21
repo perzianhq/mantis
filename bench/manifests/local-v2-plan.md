@@ -1,9 +1,11 @@
 # Local v2 coverage contract (plan)
 
-**Status:** planning contract; no v2 fixture, task, runner selection, or result manifest
-exists yet.  `local-v1.json` remains the immutable 25-case baseline and is reported
-separately.  Do not edit v1 fixtures, tasks, graders, seed, or result to satisfy this
-contract.
+**Status:** the 32-case development split and 16 isolated held-out cases are implemented,
+with executable oracles and near-miss tests. [`local-v2.json`](local-v2.json) freezes the
+complete selector and run configuration; `AGENT_SUITE=local-v2` selects its 48 cases. Its
+first scored result is not yet published. `local-v1.json` remains the
+immutable 25-case baseline and is reported separately. Do not edit v1 fixtures, tasks,
+graders, seed, or result to satisfy this contract.
 
 ## Scope and score unit
 

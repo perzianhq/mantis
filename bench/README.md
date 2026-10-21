@@ -28,7 +28,7 @@ $bytes = [Text.UTF8Encoding]::new($false).GetBytes($text)
 ([BitConverter]::ToString([Security.Cryptography.SHA256]::HashData($bytes))).Replace('-', '').ToLowerInvariant()
 ```
 
-`local-v2-development` is frozen at 32 development cases across the eight domains, with three approaches and three repeats (288 rows); see [RESULTS.md](RESULTS.md). Next, add the 16 held-out cases specified in the [local-v2 coverage contract](manifests/local-v2-plan.md), freeze the complete 48-case manifest, and run 432 matched rows per model. A separate frozen live-site set follows. Report all suites separately; no self-hosted-app stage is planned.
+`local-v2-development` is frozen at 32 development cases across the eight domains, with three approaches and three repeats (288 rows); see [RESULTS.md](RESULTS.md). The 16 held-out cases specified in the [local-v2 coverage contract](manifests/local-v2-plan.md) are implemented with their oracle/near-miss tests. `AGENT_SUITE=local-v2` selects all 48 cases; freeze that complete manifest and run 432 matched rows per model. A separate frozen live-site set follows. Report all suites separately; no self-hosted-app stage is planned.
 
 ## Token replay
 
