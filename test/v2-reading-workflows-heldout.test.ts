@@ -15,6 +15,22 @@ it('keeps four executable held-out reading/workflow cases out of the development
   expect(v2ReadingWorkflowHeldOutRoute('/v2/reading/landmark-jump')).toBeNull();
 });
 
+it('accepts the code requested by each held-out prompt, but never a settled state from a prior document', () => {
+  for (const entry of V2_READING_WORKFLOW_HELDOUT_CASES) {
+    const code = entry.expected.answer.split(':').at(-1)!.trim();
+    const loaded = { kind: 'load', documentId: 'current', fixtureState: { ...entry.expected.terminalState, read: false, recovered: false } } as any;
+    const settled = { kind: 'settled', documentId: 'current', fixtureState: entry.expected.terminalState } as any;
+    expect(gradeV2ReadingWorkflowHeldoutCase(entry.id, code, [loaded, settled]), entry.id).toEqual({ ok: true });
+    const reloaded = { kind: 'load', documentId: 'new-document', fixtureState: { ...entry.expected.terminalState, read: false, recovered: false } } as any;
+    expect(gradeV2ReadingWorkflowHeldoutCase(entry.id, code, [loaded, settled, reloaded]), `${entry.id}/reload`).toMatchObject({ ok: false });
+    expect(gradeV2ReadingWorkflowHeldoutCase(entry.id, code, [loaded, settled, reloaded, { ...settled }]), `${entry.id}/late-old-settled`).toMatchObject({ ok: false });
+  }
+  const sticky = v2ReadingWorkflowHeldOutRoute('/v2-heldout/reading/sticky-context')!.body;
+  expect(sticky).toContain('position:sticky');
+  expect(sticky).toContain('Earlier subsection');
+  expect(sticky).toContain('Current code confirmed');
+});
+
 it('proves every held-out terminal state through an opt-in Chromium route', async () => {
   for (const entry of V2_READING_WORKFLOW_HELDOUT_CASES) {
     const attempt=`${entry.id}-happy`; await page.goto(`${fixtures.baseFor(entry.id,attempt)}${entry.route}`);
