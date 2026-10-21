@@ -22,7 +22,8 @@ Frozen `local-v2.1` scorecard: 54 code-graded fixture tasks, `deepseek-v4.1-flas
 |---|---:|---:|---:|
 | Correct | **159/162** | 157/162 | 150/162 |
 | Median input tokens | **15.7k** | 26.8k | 31.6k |
-| Median execution excl. limiter/retry wait | **13.1s** | 15.9s | 22.9s |
+| Median active model-request time | **11.1s** | 13.1s | 20.4s |
+| Median agent execution excl. limiter/retry wait | **13.1s** | 15.9s | 22.9s |
 | Median end-to-end wall time | **63.8s** | 89.3s | 122.9s |
 | Median cost estimate | **₹0.099** | ₹0.143 | ₹0.242 |
 

@@ -10,7 +10,8 @@ Frozen `local-v2.1`: 54 code-graded local fixture tasks (the frozen v2 48 plus s
 | Per-run median / total | Mantis | Accessibility tree | Screenshots |
 |---|---:|---:|---:|
 | Correct | **159/162 (98.1%)** | 157/162 (96.9%) | 150/162 (92.6%) |
-| Execution excl. quota/retry wait (p50) | **13.1s** | 15.9s | 22.9s |
+| Active model-request time (p50) | **11.1s** | 13.1s | 20.4s |
+| Agent execution excl. quota/retry wait (p50) | **13.1s** | 15.9s | 22.9s |
 | End-to-end CLI wall time (p50) | **63.8s** | 89.3s | 122.9s |
 | Input tokens incl. cache (p50) | **15.7k** | 26.8k | 31.6k |
 | Output tokens (p50) | **364** | 440 | 645 |
