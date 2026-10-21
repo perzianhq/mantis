@@ -3,12 +3,10 @@
  * 48-case suite and appends six reliability cases as one 54-case main set.
  */
 import type { DevelopmentFixtureRouter, FixtureCheckEntry, FixtureObservation } from '../fixtures.js';
-import { V21_RELIABILITY_CASES, V21_RELIABILITY_CHECKS, gradeV21ReliabilityCase, v21ReliabilityRoute } from '../fixtures-v21-reliability.js';
+import { V21_RELIABILITY_CASES, V21_RELIABILITY_CHECKS, gradeV21ReliabilityCase, matchesV21ReliabilityAnswer, v21ReliabilityRoute } from '../fixtures-v21-reliability.js';
 import { LOCAL_V2_CHECKS, LOCAL_V2_MANIFEST, LOCAL_V2_TASKS, gradeLocalV2Case, localV2Route } from './local-v2.js';
 import type { AgentTask, Category } from './tasks.js';
 
-const esc = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-const exact = (value: string) => new RegExp(`^\\s*(?:final(?: answer)?:\\s*)?${esc(value).replace(/\\ /g, '\\s+')}\\.?\\s*$`, 'i');
 const category = (domain: string): Category => ({
   'dense-tables': 'reading', 'lists-scrolling': 'lists', 'charts-canvas-images': 'visual',
   'forms-embedded-controls': 'forms', 'overlays-shadow-dom': 'overlays', 'spa-navigation-recovery': 'navigation',
@@ -17,7 +15,7 @@ const category = (domain: string): Category => ({
 
 const reliabilityTasks: AgentTask[] = V21_RELIABILITY_CASES.map((entry) => ({
   id: entry.id, category: category(entry.domain), site: 'local', prompt: entry.prompt,
-  expect: exact(entry.expected.answer), check: entry.check,
+  expect: (answer) => matchesV21ReliabilityAnswer(entry, answer), check: entry.check,
 }));
 
 export const LOCAL_V21_SUITE = 'local-v2.1' as const;

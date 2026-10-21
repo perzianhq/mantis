@@ -418,6 +418,14 @@ it('accepts each v2.1 reliability answer only with its current-document terminal
   }
 });
 
+it('accepts the recycled-control receipt value without its presentation label only after refresh and completion', () => {
+  const entry = V21_RELIABILITY_CASES.find((candidate) => candidate.id === 'v21-reliability-recycled-control')!;
+  const state = entry.expected.state;
+  const settled = [{ kind: 'settled', documentId: 'current', fixtureState: state }] as unknown as import('../bench/fixtures.js').FixtureObservation[];
+  expect(gradeV21ReliabilityCase(entry.id, 'Cedar-73 completed.', settled)).toEqual({ ok:true });
+  expect(gradeV21ReliabilityCase(entry.id, 'Cedar-73 completed.', [{ kind: 'settled', documentId: 'current', fixtureState: { ...state, refreshed:false } }] as unknown as import('../bench/fixtures.js').FixtureObservation[]).ok).toBe(false);
+});
+
 it('rejects a v2 answer that includes a competing structured final line', () => {
   const entry = V2_DEVELOPMENT_CASES.find((candidate) => candidate.id === 'v2-table-sort-row')!;
   const events = [{ kind: 'settled', fixtureState: entry.expected.state }] as unknown as import('../bench/fixtures.js').FixtureObservation[];

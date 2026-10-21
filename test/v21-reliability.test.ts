@@ -67,6 +67,20 @@ it('renders the iframe/open-shadow media fact in the ordinary page surface', asy
   } finally { await mantis.close(); }
 });
 
+it('uses a Chart.js runtime visibility change and refreshes the recycled-control identity', async () => {
+  const chart = V21_RELIABILITY_CASES.find((item) => item.family === 'visible-chart-series-over-hidden-decoy')!;
+  await open(chart, 'v21-chart-runtime-visibility');
+  expect(await page.locator('#shipments').isVisible()).toBe(true);
+  expect(await page.evaluate(() => (window as any).Chart.getChart(document.querySelector('#shipments')).isDatasetVisible(1))).toBe(false);
+
+  const recycled = V21_RELIABILITY_CASES.find((item) => item.family === 'recycled-control-current-record')!;
+  await open(recycled, 'v21-recycled-refresh');
+  await page.fill('#filter', 'Cedar');
+  expect(await page.locator('#complete').textContent()).toBe('Complete Birch-18');
+  await page.click('#refresh');
+  expect(await page.locator('#complete').textContent()).toBe('Complete Cedar-73');
+});
+
 it('proves every reliability happy path with exact answer and terminal-state grading', async () => {
   for (const entry of V21_RELIABILITY_CASES) {
     const attempt = `${entry.id}-happy`;
