@@ -43,6 +43,7 @@ Review changed redirects, access blocks, and page text before changing a catalog
 
 ## Version history
 
+- **v1.2** (task hash `d43e36e4`): replaced `livev1-interactive-smithsonian-search` with `livev1-interactive-arxiv-search` (judged, hard). A 12-run deepseek probe (`live-v1-smithsonian-probe-20261022`) showed Smithsonian search blocked by Cloudflare human verification for all three approaches (6/6 blocked), while `livev1-navigation-smithsonian-aircraft` succeeded 6/6 and stays. The v1.1 hash `5ca08a21` covers the earlier set.
 - **v1.1** (task hash `5ca08a21`): loosened five deterministic contracts that rejected legitimate variants of the intended page, using the saved run `live-v1-deepseek-final-20261021`. The URL predicate gained optional `alsoPaths` (alternate pathnames of the same page, `*` = one segment; trailing slashes are ignored) in `bench/agent/realsite.ts`.
   - `gpl-3`: also accepts `/licenses/gpl-3.0.html`. `rfc-9110`: also `/info/rfc9110`. `node-url`: also `/docs/*/api/url.html` (latest and versioned docs). `nasa-missions`: also `/nasa-missions/`.
   - Grader hardening (`bench/agent/grading.ts`): the GPL date and OpenAPI keys are `entity` requirements (word-bounded, negation and conflict checks) instead of unbounded `text` substrings, and answers are NFKC-normalized before matching so compatibility forms (full-width digits, ligatures) compare equal.

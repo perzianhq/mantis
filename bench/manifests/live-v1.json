@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "id": "live-v1.1",
-  "version": "1.1",
+  "id": "live-v1.2",
+  "version": "1.2",
   "selector": "live-v1",
   "kind": "frozen-public-read-only-live-evaluation-config",
   "status": "configured-unverified-preflight",
@@ -9,16 +9,16 @@
   "catalog": "bench/agent/live-v1-tasks.json",
   "taskCount": 30,
   "taskHashAlgorithm": "sha256(canonical sorted task contracts)",
-  "taskHash": "5ca08a21581649ed2554b5961c6760a48352fcbfdc6b5bc7911165ec16e1f433",
+  "taskHash": "d43e36e4a8c6fbacea41c9ec9d2c55045ed004ff4494b0af3cc31dc8708713ec",
   "sourceFingerprintAlgorithm": "sha256(canonical URL + task-specific grading contract)",
-  "sourceFingerprintSetHash": "35dcffc03fddba929d67f8d4e026f1d93e3b58fa192ea12304417b4303be1c3f",
+  "sourceFingerprintSetHash": "b00031a38985abb8adb147eeecb14f8c24e70c9ccc9e225f06df18e85c028ef9",
   "tasks": [
     "livev1-standards-gpl-3", "livev1-standards-wcag-22", "livev1-standards-rfc-9110", "livev1-standards-openapi-31", "livev1-standards-css-color-4",
     "livev1-docs-python-json", "livev1-docs-mdn-http-overview", "livev1-docs-node-url", "livev1-docs-django-overview", "livev1-docs-postgresql-types",
     "livev1-civic-loc-about", "livev1-civic-nasa-missions", "livev1-civic-census-about", "livev1-civic-usgs-about", "livev1-civic-archives-about",
     "livev1-data-world-bank-population", "livev1-data-ourworldindata-co2", "livev1-data-data-gov-climate", "livev1-data-eurostat-database", "livev1-data-oecd-data-explorer",
     "livev1-navigation-wikipedia-ada", "livev1-navigation-merriam-serendipity", "livev1-navigation-smithsonian-aircraft", "livev1-navigation-gutenberg-search", "livev1-navigation-met-collection",
-    "livev1-interactive-openlibrary-subject", "livev1-interactive-github-issues", "livev1-interactive-openstreetmap-eiffel", "livev1-interactive-imdb-search", "livev1-interactive-smithsonian-search"
+    "livev1-interactive-openlibrary-subject", "livev1-interactive-github-issues", "livev1-interactive-openstreetmap-eiffel", "livev1-interactive-imdb-search", "livev1-interactive-arxiv-search"
   ],
   "families": {"standards": 5, "documentation": 5, "civic-reference": 5, "open-data": 5, "site-navigation": 5, "interactive-exploration": 5},
   "grading": {"deterministic": 20, "judge": 10},

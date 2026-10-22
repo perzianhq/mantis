@@ -2,17 +2,15 @@
   "schemaVersion": 1,
   "suite": "live-v1",
   "mode": "network",
-  "taskHash": "5ca08a21581649ed2554b5961c6760a48352fcbfdc6b5bc7911165ec16e1f433",
+  "taskHash": "d43e36e4a8c6fbacea41c9ec9d2c55045ed004ff4494b0af3cc31dc8708713ec",
   "note": "Public GET probes only; review redirects and content changes before promoting a candidate.",
   "candidates": [
     {
       "taskId": "livev1-standards-gpl-3",
       "canonicalUrl": "https://www.gnu.org/licenses/gpl-3.0.en.html",
-      "sourceFingerprint": "d835c67f2658eb522424be2a9be43e1435bf6dbd0abd6febffb519fd7f3baac8",
-      "status": "reachable",
-      "detail": "public GET completed",
-      "httpStatus": 200,
-      "finalUrl": "https://www.gnu.org/licenses/gpl-3.0.en.html"
+      "sourceFingerprint": "4f71755c59acecbe8254f72dc56f2249b8a287cebaba65530a9810d23641ce98",
+      "status": "blocked",
+      "detail": "request error: fetch failed"
     },
     {
       "taskId": "livev1-standards-wcag-22",
@@ -35,7 +33,7 @@
     {
       "taskId": "livev1-standards-openapi-31",
       "canonicalUrl": "https://spec.openapis.org/oas/v3.1.0.html",
-      "sourceFingerprint": "fd27afe3352a07252a4223b8ebabb882409b0e5280c324ac26e723393dfc465b",
+      "sourceFingerprint": "2a45098f3c454fca5a5df070d1343b9e9384a63ac52c0ba10417c2f7fac94ce9",
       "status": "reachable",
       "detail": "public GET completed",
       "httpStatus": 200,
@@ -267,13 +265,13 @@
       "finalUrl": "https://www.imdb.com/find/?q=Spirited%20Away"
     },
     {
-      "taskId": "livev1-interactive-smithsonian-search",
-      "canonicalUrl": "https://www.si.edu/search?edan_q=Apollo%2011",
-      "sourceFingerprint": "8a82b00c03e3d7594f59fbca2fdf282729217d1eb0f1d3bcfa641ed92fca7bf5",
-      "status": "blocked",
-      "detail": "HTTP 403",
-      "httpStatus": 403,
-      "finalUrl": "https://www.si.edu/search?edan_q=Apollo%2011"
+      "taskId": "livev1-interactive-arxiv-search",
+      "canonicalUrl": "https://arxiv.org/search/?query=attention+is+all+you+need&searchtype=all",
+      "sourceFingerprint": "6f37b0e32ad4dfb428b68214cd8163022fd3f6cd9bcf25d418efa24577203655",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://arxiv.org/search/?query=attention+is+all+you+need&searchtype=all"
     }
   ]
 }
