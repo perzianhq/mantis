@@ -7,7 +7,7 @@
 import { writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { LIVE_V1_ROWS, LIVE_V1_SOURCE_FINGERPRINTS, LIVE_V1_TASK_HASH } from './live-v1.js';
+import { LIVE_V1_SCORED_ROWS, LIVE_V1_SOURCE_FINGERPRINTS, LIVE_V1_TASK_HASH } from './live-v1.js';
 
 export const LIVE_V1_PREFLIGHT_OUTPUT = path.join(import.meta.dirname, '..', 'live-v1-preflight.json');
 
@@ -26,7 +26,7 @@ export async function collectLiveV1Preflight(network = false, probe: (url: strin
   const response = await fetch(url, { redirect: 'follow', signal: AbortSignal.timeout(20_000), headers: { 'user-agent': 'mantis-live-v1-preflight/1.0 (+read-only)' } });
   return { ok: response.ok, status: response.status, finalUrl: response.url, detail: response.ok ? 'public GET completed' : `HTTP ${response.status}` };
 }): Promise<LiveV1Preflight> {
-  const candidates = await Promise.all(LIVE_V1_ROWS.map(async (row) => {
+  const candidates = await Promise.all(LIVE_V1_SCORED_ROWS.map(async (row) => {
     if (!network) return { taskId: row.task_id, canonicalUrl: row.source.canonicalUrl, sourceFingerprint: LIVE_V1_SOURCE_FINGERPRINTS[row.task_id]!, status: 'unverified-offline' as const };
     try {
       const result = await probe(row.source.canonicalUrl);
