@@ -21,6 +21,9 @@ Frozen `live-v1` with v1.3 keys: 29 scored public-site tasks x 3 approaches x 3 
 - Mantis is 8 points behind tree and screenshots on success but uses 63% fewer input tokens than tree and about half the calls of screenshots. This is a Sarvam result only, not a Luna/Haiku claim.
 - Mantis misses: IMDb search (3 blocked/failed; the agent looped on a custom verification gate, since fixed generically and not yet re-run live), USGS about (CAPTCHA/403 on all approaches), Met collection search (2; token exhaustion after detours), and one each on MDN, Census about and Our World in Data CO2.
 - **Disclosure:** Sol failure reviews found no Mantis tool defect apart from the IMDb gate. After seeing v1.2 results, the Django, USGS and OWID task wording and keys were revised (v1.3) to accept equivalent official pages, and GPL-3 was excluded. v1.2 numbers (all 30 tasks, 90 runs each) were Mantis 71, tree 78, screenshots 75 successes.
+- **v1.4 swap:** the excluded GPL-3 row was replaced by `livev1-standards-rfc-8259` (kept GPL-3 as `excluded:true`), so the scored set stays 30. The table above covers the 29 tasks run before the swap; the RFC 8259 task ran separately (Sarvam, judged): 3/3 success for each approach, so the full 30-task set is Mantis 79/90, tree 86/90, screenshots 86/90 (87.8% / 95.6% / 95.6%).
+- **Local-v1 regression after the Opus review fixes (A-E merged):** Mantis 75/75, median 4 tool calls (baseline 74/75, median 4).
+- **IMDb gate fix (generic, fixture-tested):** Sarvam rerun, agent-reported 2/3 success (41, 50 and 13 calls); not judged.
 - Reproduce: `JUDGE_IN=live-v1-deepseek-v1_2-20261022 npm run bench:judge` (raw run JSON/markdown stay local).
 
 ## Local-v2.1 full scorecard (local fixtures)

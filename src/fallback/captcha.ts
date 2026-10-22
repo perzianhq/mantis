@@ -15,11 +15,13 @@ export function captchaWarning(): string {
 
 const FRAME_URL = /google\.com\/recaptcha|hcaptcha\.com|challenges\.cloudflare\.com/i;
 const CAPTCHA_CANDIDATES = '.g-recaptcha, .h-captcha, .cf-turnstile, iframe[src*="google.com/recaptcha" i], iframe[src*="hcaptcha.com" i], iframe[src*="challenges.cloudflare.com" i]';
-const VERIFICATION_TEXT = /\b(?:verify (?:that )?(?:you(?:'re| are) )?(?:human|not (?:a )?(?:robot|bot))|human verification|are you (?:a )?(?:robot|bot)|security check|prove (?:that )?you(?:'re| are) not (?:a )?(?:robot|bot))\b/i;
+const VERIFICATION_TEXT = /\b(?:verify (?:that )?(?:you(?:'re| are) )?(?:human|not (?:a )?(?:robot|bot))|human verification|are you (?:a )?(?:robot|bot)|confirm (?:that )?you(?:'re| are) (?:a )?(?:human|not (?:a )?(?:robot|bot))|security check|prove (?:that )?you(?:'re| are) not (?:a )?(?:robot|bot))\b/i;
 const VERIFICATION_ANCHORS = 'h1, h2, h3, h4, h5, h6, p, [role="heading"], [role="paragraph"], dialog, [role="dialog"], [title]';
 const DIRECT_CHALLENGE_CONTROLS = 'canvas, iframe';
 const CHALLENGE_BUTTONS = 'button, input[type="button"], input[type="submit"], [role="button"], [aria-label], [title]';
 const IMAGE_GRID_CHOICES = 'input[type="checkbox"], input[type="radio"], [role="checkbox"], [role="radio"]';
+/** The button that starts a verification step before its puzzle is rendered. */
+const CHALLENGE_START_TEXT = /^\s*(?:begin|start)(?:\s+(?:the\s+)?(?:challenge|puzzle|verification|security check|check))?\s*$/i;
 const CHALLENGE_CONTROL_TEXT = /\b(?:refresh|reload)\s+(?:the\s+)?(?:challenge|puzzle|verification)\b|\b(?:listen|play)\s+(?:the\s+)?(?:audio\s+)?(?:challenge|puzzle)\b|\bnew\s+(?:challenge|puzzle|verification)\b/i;
 
 /** A widget only counts when a person could see a substantial part of it on the page. */
@@ -54,9 +56,10 @@ function renderedElement(element: Element): boolean {
 async function detectVerificationGateInFrame(frame: Frame): Promise<boolean> {
   // Keep the whole generic scan in one execution context: pages often have hundreds of headings,
   // and a protocol round trip for each one makes a normal read unexpectedly expensive.
-  return frame.evaluate(({ verificationText, anchorSelector, directControls, buttonSelector, choiceSelector, challengeButtonText }) => {
+  return frame.evaluate(({ verificationText, anchorSelector, directControls, buttonSelector, choiceSelector, challengeButtonText, challengeStartText }) => {
     const verification = new RegExp(verificationText, 'i');
     const challengeButton = new RegExp(challengeButtonText, 'i');
+    const startButton = new RegExp(challengeStartText, 'i');
     const visible = (element: Element): boolean => {
       if (!element.isConnected || element.closest('template')) return false;
       const check = (element as Element & {
@@ -114,7 +117,7 @@ async function detectVerificationGateInFrame(frame: Frame): Promise<boolean> {
     if (!anchors.length && !titleMatches) return false;
 
     const challengeButtons = [...document.querySelectorAll(buttonSelector)]
-      .filter((element) => visible(element) && challengeButton.test(text(element)));
+      .filter((element) => visible(element) && (challengeButton.test(text(element)) || startButton.test(text(element))));
     const controls = [
       ...[...document.querySelectorAll(directControls)].filter(visible),
       ...challengeButtons,
@@ -220,6 +223,7 @@ async function detectVerificationGateInFrame(frame: Frame): Promise<boolean> {
     buttonSelector: CHALLENGE_BUTTONS,
     choiceSelector: IMAGE_GRID_CHOICES,
     challengeButtonText: CHALLENGE_CONTROL_TEXT.source,
+    challengeStartText: CHALLENGE_START_TEXT.source,
   }).catch(() => false);
 }
 

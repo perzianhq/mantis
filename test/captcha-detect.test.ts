@@ -115,6 +115,18 @@ describe('rendered CAPTCHA detection', () => {
     expect(await detectCaptcha(page)).toBeNull();
   });
 
+  it('detects a "confirm you are human" gate before and after its puzzle appears', async () => {
+    await page.goto(`${fixture('verification-gate-confirm.html')}`, { waitUntil: 'load' });
+    expect(await detectCaptcha(page)).toBe(CAPTCHA_WARNING);
+    await page.goto(`${fixture('verification-gate-confirm.html')}?case=puzzle`, { waitUntil: 'load' });
+    expect(await detectCaptcha(page)).toBe(CAPTCHA_WARNING);
+  });
+
+  it('does not treat a similar heading over an ordinary article canvas as a gate', async () => {
+    await page.goto(`${fixture('verification-gate-confirm.html')}?case=article`, { waitUntil: 'load' });
+    expect(await detectCaptcha(page)).toBeNull();
+  });
+
   it('detects a concise body-level verification gate', async () => {
     await page.goto(`${fixture('verification-gate.html')}?case=body-direct`, { waitUntil: 'load' });
     expect(await detectCaptcha(page)).toBe(CAPTCHA_WARNING);

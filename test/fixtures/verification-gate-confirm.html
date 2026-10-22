@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Human Verification</title>
+  <style>
+    body { font-family: sans-serif; margin: 0; }
+    #wrap { display: flex; flex-direction: column; align-items: center; padding: 24px; }
+    #intro, #puzzle { max-width: 480px; }
+    canvas { width: 320px; height: 320px; background: #eee; }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <div id="intro">
+      <h1>Let's confirm you are human</h1>
+      <p>Complete the security check before continuing. This step verifies that you are not a bot, which helps to protect your account and prevent spam.</p>
+      <button id="begin" type="button">Begin</button>
+    </div>
+    <div id="puzzle" hidden>
+      <h1>Let's confirm you are human</h1>
+      <p>Choose all the chairs</p>
+      <canvas width="320" height="320"></canvas>
+      <button type="button">Get a new puzzle</button>
+      <button type="button">Instructions</button>
+    </div>
+  </div>
+  <script>
+    const mode = new URLSearchParams(location.search).get('case');
+    if (mode === 'article') {
+      document.title = 'Chairs through history';
+      document.body.innerHTML = '<main><article><h1>Let\'s confirm the history of chairs</h1><p>Chairs have been drawn on canvas by many painters, and the plot below shows how often they appear.</p><canvas width="320" height="320"></canvas><button type="button">Get a new colour palette</button></article></main>';
+    } else {
+      document.querySelector('#begin').addEventListener('click', () => {
+        document.querySelector('#intro').hidden = true;
+        document.querySelector('#puzzle').hidden = false;
+      });
+      if (mode === 'puzzle') document.querySelector('#begin').click();
+    }
+  </script>
+</body>
+</html>
