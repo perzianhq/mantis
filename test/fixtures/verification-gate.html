@@ -1,0 +1,148 @@
+<!doctype html>
+<html>
+<head><title>Verification example</title></head>
+<body>
+  <main id="main-case">
+    <h1>Account access</h1>
+    <button id="begin">Begin</button>
+    <section id="gate" role="dialog" aria-label="Human Verification" style="width: 360px" hidden>
+      <h2>Human Verification</h2>
+      <p>Choose the matching images to continue.</p>
+      <canvas width="260" height="130" aria-label="Image challenge"></canvas>
+      <button id="refresh">Refresh challenge</button>
+      <button id="remove">Use another route</button>
+    </section>
+  </main>
+  <main id="near-miss" hidden>
+    <article>
+      <h1>How challenge systems work</h1>
+      <p>The guide quotes “verify you are human” as an example of wording visitors may encounter.</p>
+      <canvas width="260" height="130" aria-label="Monthly traffic chart"></canvas>
+    </article>
+  </main>
+  <main id="separate-near-miss" hidden>
+    <div>
+      <article>
+        <h1>Human Verification</h1>
+        <p>This article explains how access checks are designed.</p>
+      </article>
+      <section>
+        <canvas width="260" height="130" aria-label="Monthly traffic chart"></canvas>
+      </section>
+    </div>
+  </main>
+  <main id="semantic-siblings" hidden>
+    <article><h1>Human Verification</h1></article>
+    <section><canvas width="260" height="130" aria-label="Monthly traffic chart"></canvas></section>
+  </main>
+  <main id="compact-paragraph-gate" hidden>
+    <section style="width: 360px"><p>Verify you are human</p><canvas width="260" height="130"></canvas></section>
+  </main>
+  <main id="quoted-prose" hidden>
+    <article style="width: 360px"><p>This guide quotes "verify you are human" as an example.</p><canvas width="260" height="130" aria-label="Traffic chart"></canvas></article>
+  </main>
+  <main id="title-video" hidden>
+    <div style="width: 360px"><iframe title="Tutorial video" width="260" height="130"></iframe></div>
+  </main>
+  <main id="title-challenge-frame" hidden>
+    <div style="width: 360px"><iframe title="Verification challenge" width="260" height="130"></iframe></div>
+  </main>
+  <main id="title-canvas" hidden>
+    <div style="width: 360px"><canvas width="260" height="130" aria-label="Traffic chart"></canvas></div>
+  </main>
+  <main id="title-canvas-gate" hidden>
+    <div style="width: 360px"><canvas width="260" height="130"></canvas><button>Refresh challenge</button></div>
+  </main>
+  <main id="nested-form-gate" hidden>
+    <section style="width: 360px"><p>Verify you are human</p><form><canvas width="260" height="130"></canvas><button>Refresh challenge</button></form></section>
+  </main>
+  <main id="nested-form-separate" hidden>
+    <article><h1>Human Verification</h1></article>
+    <section style="width: 360px"><form><canvas width="260" height="130"></canvas><button>Refresh challenge</button></form></section>
+  </main>
+  <main id="frame-case" hidden>
+    <h1>Embedded content</h1>
+    <iframe title="Verification panel" width="400" height="260" srcdoc='<!doctype html><html><head><title>Challenge</title></head><body><main><section role="dialog"><h2>Verify you are human</h2><canvas width="250" height="120" aria-label="Image challenge"></canvas><button id="refresh">Refresh challenge</button></section></main></body></html>'></iframe>
+  </main>
+  <h1 id="body-heading" hidden>Human Verification</h1>
+  <canvas id="body-canvas" hidden width="260" height="130" aria-label="Image challenge"></canvas>
+  <button id="body-refresh" hidden>Refresh challenge</button>
+  <main id="paragraph-body" hidden>
+    <p>Verify you are human</p>
+    <canvas width="260" height="130" aria-label="Image challenge"></canvas>
+    <button>Refresh challenge</button>
+  </main>
+  <main id="generic-control" hidden>
+    <section style="width: 360px">
+      <h1>Security check</h1>
+      <button>Refresh</button>
+    </section>
+  </main>
+  <main id="hidden-wording" hidden>
+    <section role="dialog" style="width: 360px">
+      <p hidden>Human Verification</p>
+      <canvas width="260" height="130" aria-label="Image challenge"></canvas>
+      <button>Refresh account</button>
+    </section>
+  </main>
+  <script>
+    const mode = new URLSearchParams(location.search).get('case');
+    if (mode === 'near-miss') {
+      document.querySelector('#main-case').hidden = true;
+      document.querySelector('#near-miss').hidden = false;
+    } else if (mode === 'separate-near-miss') {
+      document.querySelector('#main-case').hidden = true;
+      document.querySelector('#separate-near-miss').hidden = false;
+    } else if (mode === 'semantic-siblings') {
+      document.title = 'Access';
+      document.querySelector('#main-case').hidden = true;
+      document.querySelector('#semantic-siblings').hidden = false;
+    } else if (mode === 'compact-paragraph-gate') {
+      document.title = 'Access';
+      document.querySelector('#main-case').hidden = true;
+      document.querySelector('#compact-paragraph-gate').hidden = false;
+    } else if (mode === 'quoted-prose') {
+      document.title = 'Access';
+      document.querySelector('#main-case').hidden = true;
+      document.querySelector('#quoted-prose').hidden = false;
+    } else if (mode === 'title-video' || mode === 'title-challenge-frame' || mode === 'title-canvas' || mode === 'title-canvas-gate') {
+      document.title = 'Human Verification';
+      document.querySelector('#main-case').hidden = true;
+      document.querySelector(`#${mode}`).hidden = false;
+    } else if (mode === 'nested-form-gate') {
+      document.title = 'Access';
+      document.querySelector('#main-case').hidden = true;
+      document.querySelector('#nested-form-gate').hidden = false;
+    } else if (mode === 'nested-form-separate') {
+      document.title = 'Access';
+      document.querySelector('#main-case').hidden = true;
+      document.querySelector('#nested-form-separate').hidden = false;
+    } else if (mode === 'iframe') {
+      document.querySelector('#main-case').hidden = true;
+      document.querySelector('#frame-case').hidden = false;
+    } else if (mode === 'body-direct') {
+      document.title = 'Access';
+      document.querySelector('#main-case').hidden = true;
+      document.querySelector('#body-heading').hidden = false;
+      document.querySelector('#body-canvas').hidden = false;
+      document.querySelector('#body-refresh').hidden = false;
+    } else if (mode === 'paragraph-body') {
+      document.title = 'Access';
+      document.querySelector('#main-case').hidden = true;
+      document.querySelector('#paragraph-body').hidden = false;
+    } else if (mode === 'generic-control') {
+      document.querySelector('#main-case').hidden = true;
+      document.querySelector('#generic-control').hidden = false;
+    } else if (mode === 'hidden-wording') {
+      document.querySelector('#main-case').hidden = true;
+      document.querySelector('#hidden-wording').hidden = false;
+    }
+    document.querySelector('#begin').addEventListener('click', () => {
+      document.querySelector('#gate').hidden = false;
+    });
+    document.querySelector('#remove').addEventListener('click', () => {
+      document.querySelector('#gate').remove();
+    });
+  </script>
+</body>
+</html>

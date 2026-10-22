@@ -381,10 +381,13 @@ export class MantisBrowser {
   /** Search the whole page, including parts read() trimmed or summarised, for controls and text. */
   async find(query: string): Promise<string> {
     return this.guard(async () => {
-      const observed = await this.observe(await this.activePage());
+      const page = await this.activePage();
+      const observed = await this.observe(page);
       const { snap } = observed;
       this.remember(snap, observed.doc);
-      return findInSnapshot(snap, query);
+      const text = findInSnapshot(snap, query);
+      const captcha = await detectCaptcha(page);
+      return captcha ? `${text}\n${captcha}` : text;
     });
   }
 
@@ -684,7 +687,9 @@ export class MantisBrowser {
       // Capture allocates disjoint frame number ranges before media() asks each frame to use
       // the shared registry. That keeps embedded visual ids resolvable by data()/look().
       await this.observe(page);
-      return listMedia(page);
+      const text = await listMedia(page);
+      const captcha = await detectCaptcha(page);
+      return captcha ? `${text}\n${captcha}` : text;
     });
   }
 
@@ -902,6 +907,8 @@ export class MantisBrowser {
           if (this.hasDisabledControls(after.snap)) lines.push(this.hydrationNote());
         }
       }
+      const captcha = await detectCaptcha(now);
+      if (captcha) lines.push(captcha);
       lines.push(...this.notes.splice(0));
       return lines.join('\n');
     });
@@ -941,7 +948,10 @@ export class MantisBrowser {
     const after = await this.observe(now);
     this.labels.clear();
     this.known.clear();
-    return `page navigated; showing the current page\n${this.render(after.snap, {}, after.doc)}`;
+    let text = `page navigated; showing the current page\n${this.render(after.snap, {}, after.doc)}`;
+    const captcha = await detectCaptcha(now);
+    if (captcha) text += `\n${captcha}`;
+    return text;
   }
 
   private async view(page: Page, opts: ReadOptions = {}): Promise<string> {
