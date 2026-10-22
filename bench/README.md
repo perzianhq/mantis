@@ -28,7 +28,7 @@ $bytes = [Text.UTF8Encoding]::new($false).GetBytes($text)
 ([BitConverter]::ToString([Security.Cryptography.SHA256]::HashData($bytes))).Replace('-', '').ToLowerInvariant()
 ```
 
-`local-v2-development` is frozen at 32 development cases across the eight domains. `local-v2` is the completed historical 48-case scorecard. `local-v2.1` is the completed 54-case local baseline: those 48 plus six reliability contracts, three approaches and three repeats (486 rows); see [RESULTS.md](RESULTS.md). The separate frozen live-site set ([live-v1](live-v1.md)) is not yet a valid scored result. Report all suites separately; no self-hosted-app stage is planned.
+`local-v2-development` is frozen at 32 development cases across the eight domains. `local-v2` is the completed historical 48-case scorecard. `local-v2.1` is the completed 54-case local baseline: those 48 plus six reliability contracts, three approaches and three repeats (486 rows); see [RESULTS.md](RESULTS.md). The separate frozen live-site set ([live-v1](live-v1.md)) is scored in [RESULTS.md](RESULTS.md). Report all suites separately; no self-hosted-app stage is planned.
 
 ## Token replay
 

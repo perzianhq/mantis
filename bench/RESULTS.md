@@ -2,52 +2,34 @@
 
 All benchmark numbers in one place. How to re-run them: [README.md](README.md).
 Mantis is compared with the accessibility tree (Playwright MCP 0.0.83) and with screenshots (our own minimal tool).
-Suites are reported separately; the sections below run from current scorecards to historical pilots.
-The frozen live-site cohort ([live-v1](live-v1.md), v1.3 keys) has scored Luna and Haiku results (next section) and a separate Sarvam result below.
+Suites are reported separately; the sections below run from the live-site scorecard to local fixtures and historical pilots.
 
-## Live-v1.7 real sites, Luna and Haiku (current)
+## Live-site scorecard (live-v1 v1.7)
 
-Frozen `live-v1` v1.7: 30 tasks x 3 approaches x 3 runs = 270 runs per model. Judged blind by Codex `gpt-6.1-sol` (high reasoning); 20+ tasks are graded by deterministic validators on captured final state. Results: `live-v1-luna-20261022-judged`, `live-v1-haiku-20261022-judged`. These are separate from the Sarvam table below.
+Frozen [live-v1](live-v1.md) v1.7: 30 real-site tasks x 3 approaches x 3 runs = 90 runs per approach and model, judged blind by Codex `gpt-6.1-sol`. Task changes, regrades and run notes are in the [live-v1 changelog](live-v1.md#changelog-and-disclosures).
 
-| Success (of 90) | Mantis | Accessibility tree | Screenshots |
+**Sarvam (`deepseek-v4.1-flash`)**
+
+| | Mantis | Accessibility tree | Screenshots |
 |---|---:|---:|---:|
-| Luna (`gpt-6-luna`, local run) | **90** | **90** | 85 |
-| Haiku (`claude-haiku-5-5`, cloud run + local rerun of 33 gated runs) | 88 | 86 | **89** |
-
-| Avg input tokens | Mantis | Accessibility tree | Screenshots |
-|---|---:|---:|---:|
-| Luna | **91.5k** | 123.1k | 122.7k |
-| Haiku | **50.4k** | 116.5k | 53.1k |
-
-- **Luna:** Mantis and tree are perfect; Mantis uses about 26% fewer input tokens than either baseline. The five screenshot misses are two wrong RFC URLs (rfc-8259 run 2, rfc-9110 run 3), two Django overviews without the "Why Django?" heading, and one borderline Census About page.
-- **Haiku:** the cloud run hit Cloudflare/Vercel bot checks on W3C (WCAG 2.2, CSS Color 4), the Met and TMDB: 33 runs were judged blocked, not failed. Those 33 were rerun locally (same model and settings) and judged by sol; all 33 are merged into the headline above (pre-merge file in `bench/results/prev/haiku-judged-pre-local-rerun.*`, rerun in `live-v1-haiku-20261022-localrerun-judged`). Final: 7 failures. Six are `docs-node-url` (Mantis 2, tree 3, screenshots 1): Haiku stopped on the API index instead of the `url.html` page, a Haiku-specific weakness (Luna passed all 9). One is a tree WCAG 2.2 run with an empty final reply. Mantis uses about 57% fewer input tokens than tree; median task time is equal across approaches (17.5s, 17.9s, 17.9s).
-- **Disclosure (made after seeing Luna results):** (1) answer matching now strips markdown backticks and bold markers before comparing (a correct answer written as `` `application/json` `` previously failed a literal match); a pickle near-miss still fails. (2) The Eurostat key accepts `/eurostat/data/database` as an alias of `/eurostat/web/main/data/database`. Both are generic grader rules with passing and near-miss tests in `test/live-v1.test.ts`; the task hash changed accordingly (see [live-v1.md](live-v1.md)). Luna was regraded with them (pre-regrade file kept in `bench/results/prev/`); Haiku had no deterministic failures to regrade.
-- **Judge note:** Haiku's first judge pass ran on cloud Sonnet and was redone with sol; the Sonnet pass is kept in `bench/results/prev/`. The first sol pass was text-only because the cloud run recorded evidence paths from another machine (fixed by relocating them to the local log folder) and was redone with the evidence frames. The deterministic gate then treated 18 Cloudflare interstitial final frames (WCAG 2.2, CSS Color 4) as answer failures; `isAccessBlockText` now recognises Cloudflare and Vercel checkpoint pages, with tests, so they go to model adjudication and came back blocked. Only those 18 rows were rejudged; the other 252 verdicts were unchanged. The 33 blocked runs were then rerun locally (the first local judge attempt failed with `spawn codex ENOENT` and was redone with Codex on PATH). One Luna judge run hit a stale-log error and was rerun (`live-v1-luna-20261022-unsure`).
-- Reproduce: `JUDGE_IN=live-v1-luna-20261022 npm run bench:judge` (and `live-v1-haiku-20261022`).
-
-## Live-v1.3 real sites, Sarvam
-
-Frozen `live-v1` with v1.3 keys: 29 scored public-site tasks x 3 approaches x 3 runs = 261 runs (the GNU GPL-3 task is excluded: the host timed out for all nine runs, so it was unwinnable here). Agent `deepseek-v4.1-flash` through Sarvam; 10 scheduled cases. 20 tasks are graded by deterministic validators on captured final state; the rest are judged blind by Codex `gpt-6.1-sol` (0 judge errors). Result: `live-v1-deepseek-v1_2-20261022-judged`.
-
-| Per-run | Mantis | Accessibility tree | Screenshots |
-|---|---:|---:|---:|
-| Success / failure / blocked | 76 / 8 / 3 | 83 / 3 / 1 | 83 / 4 / 0 |
-| Success rate (87 runs) | 87.4% | **95.4%** | **95.4%** |
-| Deterministic-graded tasks | 48 / 53 | 50 / 53 | 53 / 54 |
-| Judge-graded tasks | 28 / 31 | 33 / 33 | 30 / 33 |
-| Avg tool calls | **6.2** | 6.9 | 12.3 |
+| Success (of 90) | 88 | **90** | 89 |
 | Avg input tokens | **51.0k** | 139.4k | 55.5k |
 
-- On the v1.5 set Mantis was 8 points behind tree and screenshots on success but uses 63% fewer input tokens than tree and about half the calls of screenshots. This is a Sarvam result only, not a Luna/Haiku claim.
-- Mantis misses: IMDb search (3 blocked/failed; the agent looped on a custom verification gate, since fixed generically and not yet re-run live), USGS about (CAPTCHA/403 mentions in all approaches, mixed rather than Mantis-specific), Met collection search (2; token exhaustion after detours), and one each on MDN, Census about and Our World in Data CO2.
-- **Disclosure:** Sol failure reviews found no Mantis tool defect apart from the IMDb gate. After seeing v1.2 results, the Django, USGS and OWID task wording and keys were revised (v1.3) to accept equivalent official pages, and GPL-3 was excluded. v1.2 numbers (all 30 tasks, 90 runs each) were Mantis 71, tree 78, screenshots 75 successes.
-- **v1.4 swap:** the excluded GPL-3 row was replaced by `livev1-standards-rfc-8259` (kept GPL-3 as `excluded:true`), so the scored set stays 30. The table above covers the 29 tasks run before the swap; the RFC 8259 task ran separately (Sarvam, judged): 3/3 success for each approach, so the full 30-task set is Mantis 79/90, tree 86/90, screenshots 86/90 (87.8% / 95.6% / 95.6%).
-- **v1.5 key/task fixes (disclosed, made after seeing v1.4 results):** the MDN key was too strict (failed tree 2/3 and Mantis 1/3), so it now accepts the HTTP landing page or the Overview guide with its matching heading. The Met "Starry Night" query is not in the Met collection, so the task now searches "Wheat Field with Cypresses". Both tasks were rerun (Sarvam, judged by Codex sol, 3 runs per approach): 6/6 success for each of Mantis, tree and screenshots. Replacing the old MDN and Met results, the 30-task set is Mantis 82/90, tree 88/90, screenshots 89/90 (91.1% / 97.8% / 98.9%). Remaining Mantis misses are IMDb (3), USGS (3), Census (1) and OWID (1), all counted as misses. **IMDb root cause (diagnosed, not worked around):** the site shows a human-verification gate to Playwright's default headless launch, with or without Mantis code. The Playwright MCP baseline is not gated because it launches Chromium with `--disable-blink-features=AutomationControlled` by default, which hides the automation signal; adding that flag to a plain launch reproduced the pass (3/3 vs 0/2). Screenshots were gated too but their agent solved the CAPTCHA by clicking images. Mantis hands CAPTCHAs to a human and does not mask automation, so its IMDb result is an environment difference, not a Mantis navigation bug. Treat IMDb as non-comparable across approaches. Sarvam only, not a Luna/Haiku claim.
-- **v1.6 swap (disclosed, made after seeing v1.5 results):** `livev1-interactive-imdb-search` was replaced by `livev1-interactive-tmdb-search` (same "Spirited Away" search on TMDB), because IMDb measured launch fingerprints rather than navigation (see the IMDb root cause above). The new task ran on Sarvam, judged by Codex sol, 3 runs per approach: 9/9 success (Mantis 3/3 in 3-5 calls and about 23k input tokens on average; tree 3/3 in 6-12 calls, about 133k; screenshots 3/3 in 16-18 calls, about 68k). The 30-task set is now Mantis 85/90, tree 88/90, screenshots 89/90 (94.4% / 97.8% / 98.9%). The IMDb v1.5 line stays above as historical (Mantis 0/3, tree 3/3, screenshots 3/3 by solving the CAPTCHA). The token/call table above is the v1.5 set, not recomputed. Remaining Mantis misses: USGS (3), Census (1), OWID (1). Sarvam only, not a Luna/Haiku claim.
-- **v1.7 swap (disclosed, made after seeing v1.6 results):** `livev1-civic-usgs-about` was replaced by `livev1-civic-nist-about` because USGS returned bot-check/CAPTCHA/403 pages (Mantis 0/3, tree 1/3, screenshots 3/3), so it measured access gates rather than navigation. The new task ran on Sarvam with its deterministic key, 3 runs per approach: 9/9 success (Mantis 3/3 in 4-7 calls, about 23k input tokens on average; tree 3/3 in 7-8 calls, about 36k; screenshots 3/3 in 7-8 calls, about 19k). The 30-task set is now Mantis 88/90, tree 90/90, screenshots 89/90 (97.8% / 100% / 98.9%). The USGS v1.2 evidence stays in `bench/results/agent-logs/live-v1-deepseek-v1_2-20261022/`. Remaining Mantis misses: Census (1) and OWID (1); screenshots missed Census once. The token/call table above is the v1.5 set, not recomputed. Sarvam only, not a Luna/Haiku claim.
-- **Local-v1 regression after the Opus review fixes (A-E merged):** Mantis 75/75, median 4 tool calls (baseline 74/75, median 4).
-- **IMDb gate fix (generic, fixture-tested):** Sarvam rerun, agent-reported 2/3 success (41, 50 and 13 calls); not judged.
-- Reproduce: `JUDGE_IN=live-v1-deepseek-v1_2-20261022 npm run bench:judge` (raw run JSON/markdown stay local).
+Token row is from the v1.5 task set.
+
+**Luna (`gpt-6-luna`)**
+
+| | Mantis | Accessibility tree | Screenshots |
+|---|---:|---:|---:|
+| Success (of 90) | **90** | **90** | 85 |
+| Avg input tokens | **91.5k** | 123.1k | 122.7k |
+
+**Haiku (`claude-haiku-5-5`)**
+
+| | Mantis | Accessibility tree | Screenshots |
+|---|---:|---:|---:|
+| Success (of 90) | 88 | 86 | **89** |
+| Avg input tokens | **50.4k** | 116.5k | 53.1k |
 
 ## Local-v2.1 full scorecard (local fixtures)
 

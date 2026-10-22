@@ -29,7 +29,15 @@ Frozen `local-v2.1` scorecard: 54 code-graded fixture tasks, `deepseek-v4.1-flas
 
 Mantis scored 98.1%, versus 96.9% for the tree and 92.6% for screenshots, with 41.6% fewer median input tokens than the tree and 50.4% fewer than screenshots. Execution excludes locally measured limiter/retry wait; wall time includes it. Method, audit caveats, and historical baselines: [bench/RESULTS.md](bench/RESULTS.md).
 
-Frozen live-site set `live-v1` (30 real-site tasks, same model, three runs per approach, judged by a different model): Mantis 88/90, tree 90/90, screenshots 89/90. Mantis is slightly behind on success here (two misses: Census About and Our World in Data CO₂), and it used far fewer input tokens than the tree on the v1.5 set (about 63% fewer). Two tasks were swapped after seeing results: IMDb to TMDB (IMDb's human-verification gate blocked Mantis and screenshots' plain headless launch but not the tree baseline, whose Playwright MCP hides the automation signal by default) and USGS to NIST (USGS served bot-check pages); see [bench/RESULTS.md](bench/RESULTS.md). That is the Sarvam (`deepseek-v4.1-flash`) table. On the final v1.7 set, Luna (`gpt-6-luna`, local) scored Mantis 90/90, tree 90/90, screenshots 85/90 with Mantis using about 26% fewer input tokens than tree; Haiku (`claude-haiku-5-5`, judged by `gpt-6.1-sol`) scored 88/90, 86/90, 89/90 (33 runs bot-blocked on the cloud IP were rerun locally; about 57% fewer input tokens than tree). The catalog and two grader rules were revised after seeing results, as disclosed in [bench/RESULTS.md](bench/RESULTS.md). See the [evaluation plan](docs/PLAN.md#evaluation-plan).
+Live-site set `live-v1` (v1.7): 30 real-site tasks, three runs per approach, judged by `gpt-6.1-sol`. Success out of 90 (average input tokens per run):
+
+| Model | Mantis | Accessibility tree | Screenshots |
+|---|---:|---:|---:|
+| `deepseek-v4.1-flash` (Sarvam) | 88 (51.0k) | **90** (139.4k) | 89 (55.5k) |
+| `gpt-6-luna` | **90** (91.5k) | **90** (123.1k) | 85 (122.7k) |
+| `claude-haiku-5-5` | 88 (50.4k) | 86 (116.5k) | **89** (53.1k) |
+
+Full tables and the task changelog: [bench/RESULTS.md](bench/RESULTS.md) and [bench/live-v1.md](bench/live-v1.md).
 
 ## Learn more
 

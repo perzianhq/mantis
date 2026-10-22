@@ -3,7 +3,7 @@
 ## 1. The claim
 
 Use the frozen local-v2.1 scorecard and caveats in [bench/RESULTS.md](../bench/RESULTS.md).
-Label the earlier real-site results as a historical pilot; the frozen live-site set (live-v1 v1.7, Sarvam: Mantis 88/90, tree 90/90, screenshots 89/90) is reported separately with its disclosures. Luna and Haiku are now reported too, also separately (live-v1 v1.7: Luna 90/90, 90/90, 85/90; Haiku 88/90, 86/90, 89/90 after rerunning the 33 cloud-IP bot-blocked runs locally), with disclosures in `bench/RESULTS.md`.
+Label the earlier real-site results as a historical pilot; the frozen live-site set (live-v1 v1.7, 30 tasks x 3 runs, success out of 90 for Mantis / tree / screenshots) is reported separately: Sarvam `deepseek-v4.1-flash` 88/90/89, Luna `gpt-6-luna` 90/90/85, Haiku `claude-haiku-5-5` 88/86/89. Per-task changes and disclosures: [bench/live-v1.md](../bench/live-v1.md#changelog-and-disclosures); tables: `bench/RESULTS.md`.
 Publish failures and method beside the claim. Lead with agent task results; replay measures
 cheap orientation, not reading a whole article.
 
