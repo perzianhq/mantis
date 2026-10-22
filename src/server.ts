@@ -72,7 +72,7 @@ export function createServer(browser: MantisBrowser = new MantisBrowser()): McpS
   );
   server.registerTool(
     'select',
-    { description: 'Choose option (label or value) in dropdown #id.', inputSchema: { id, option: z.string() } },
+    { description: 'Choose option text in select or combobox #id.', inputSchema: { id, option: z.string() } },
     async ({ id, option }) => reply(await browser.select(id, option)),
   );
   server.registerTool(

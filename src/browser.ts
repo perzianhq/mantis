@@ -542,7 +542,10 @@ export class MantisBrowser {
     return this.act(async (page) => {
       const { el, label } = await this.target(page, id);
       try {
-        const picked = await this.chooseOption(el, label, option);
+        const native = await el.evaluate((node) => node instanceof HTMLSelectElement);
+        const picked = native
+          ? await this.chooseOption(el, label, option)
+          : await this.chooseCustomOption(el, label, option);
         return `selected "${picked}" in ${label}`;
       } catch (e) {
         throw e instanceof ActionError ? e : new ActionError(this.explain(e, label));
@@ -575,6 +578,105 @@ export class MantisBrowser {
     }
     await el.selectOption({ index: found.index }, { timeout: this.actionTimeout });
     return found.picked ?? option;
+  }
+
+  /** Open a custom combobox/listbox and choose its one unambiguous matching option. */
+  private async chooseCustomOption(el: ElementHandle<Element>, label: string, option: string): Promise<string> {
+    // Runs in the control's own frame: lists the visible options of its popup and matches
+    // the wanted text exactly, then case-insensitively, then as a substring.
+    const scan = () => el.evaluateHandle((control, want) => {
+      const clean = (text: string | null | undefined): string => (text ?? '').replace(/\s+/g, ' ').trim();
+      const visible = (node: Element): boolean => {
+        if (!node.getClientRects().length) return false;
+        const style = getComputedStyle(node);
+        return style.display !== 'none' && style.visibility !== 'hidden' && style.visibility !== 'collapse';
+      };
+      const doc = control.ownerDocument;
+      const ids = (control.getAttribute('aria-controls') || control.getAttribute('aria-owns') || '').split(/\s+/).filter(Boolean);
+      const roots: Element[] = [];
+      if (control.getAttribute('role') === 'listbox') roots.push(control);
+      for (const id of ids) {
+        const root = doc.getElementById(id);
+        if (root && visible(root)) roots.push(root);
+      }
+      // A popup rendered outside the combobox is common. If ARIA does not identify it,
+      // use the visible listbox only when that is the sole possible popup.
+      if (!roots.length) {
+        const lists = Array.from(doc.querySelectorAll('[role="listbox"], [role="menu"]')).filter(visible);
+        if (lists.length === 1) roots.push(lists[0]!);
+      }
+      const options: Element[] = [];
+      const add = (node: Element): void => { if (!options.includes(node) && visible(node)) options.push(node); };
+      for (const root of roots) {
+        if (root.matches('[role="option"], option')) add(root);
+        for (const node of Array.from(root.querySelectorAll('[role="option"], option'))) add(node);
+        // Some listboxes omit explicit option roles; their direct children are still options.
+        if (root.getAttribute('role') === 'listbox') for (const node of Array.from(root.children)) add(node);
+      }
+      const entries = options.map((node) => ({ node, label: clean(node.getAttribute('aria-label') || node.textContent) })).filter((entry) => entry.label);
+      const lower = want.toLowerCase();
+      const exact = entries.filter((entry) => entry.label === want);
+      const insensitive = entries.filter((entry) => entry.label.toLowerCase() === lower);
+      const substring = entries.filter((entry) => entry.label.toLowerCase().includes(lower));
+      const matches = exact.length ? exact : insensitive.length ? insensitive : substring;
+      return {
+        labels: entries.map((entry) => entry.label),
+        matches: matches.map((entry) => entry.label),
+        node: matches.length === 1 ? matches[0]!.node : null,
+      };
+    }, option);
+    type Found = { labels: string[]; matches: string[]; node: ElementHandle<Element> | null };
+    const find = async (): Promise<Found> => {
+      const handle = await scan();
+      try {
+        const [labels, matches, node] = await Promise.all([
+          handle.getProperty('labels').then((h) => h.jsonValue() as Promise<string[]>),
+          handle.getProperty('matches').then((h) => h.jsonValue() as Promise<string[]>),
+          handle.getProperty('node').then((h) => h.asElement() as ElementHandle<Element> | null),
+        ]);
+        return { labels, matches, node };
+      } finally {
+        await handle.dispose();
+      }
+    };
+    try {
+      await el.click({ timeout: this.actionTimeout });
+    } catch (e) {
+      throw new ActionError(this.explain(e, label));
+    }
+    const waitForOptions = async (): Promise<Found> => {
+      let found = await find();
+      for (let attempt = 0; !found.labels.length && attempt < 4; attempt++) {
+        await found.node?.dispose();
+        await new Promise<void>((done) => setTimeout(done, 50));
+        found = await find();
+      }
+      return found;
+    };
+    let found = await waitForOptions();
+    // Autocomplete inputs often do not render their choices until they have a query.
+    if (!found.matches.length && await el.evaluate((node) => node instanceof HTMLInputElement || node instanceof HTMLTextAreaElement)) {
+      await found.node?.dispose();
+      await el.fill(option, { timeout: this.actionTimeout });
+      found = await waitForOptions();
+    }
+    const choice = found.node;
+    try {
+      if (found.matches.length > 1) {
+        throw new ActionError(`ambiguous option "${option}" in ${label}; candidates: ${found.matches.slice(0, 15).join(' | ')}`);
+      }
+      if (!choice) {
+        throw new ActionError(`no option "${option}" in ${label}; options: ${found.labels.slice(0, 15).join(' | ')}`);
+      }
+      try {
+        await choice.click({ timeout: this.actionTimeout });
+      } catch (e) {
+        throw new ActionError(this.explain(e, label));
+      }
+    } finally {
+      await choice?.dispose();
+    }
+    return found.matches[0]!;
   }
 
   /** Fill several fields in one call: text, dropdown option, or true/false for checkboxes and radios. */
@@ -1709,11 +1811,18 @@ export class MantisBrowser {
   private async visualTarget(page: Page, t: Target): Promise<{ el: ElementHandle<Element>; label: string }> {
     if (t.id !== undefined) return this.target(page, t.id);
     if (t.selector) {
-      let el: ElementHandle<Element> | null;
+      // Validate once in the main document, then search each child frame. A selector has
+      // document-local scope, so the first match follows the same main-frame-first order as
+      // ordinary page.$(), while still reaching cross-origin frames through Playwright.
       try {
-        el = await page.$(t.selector);
+        await page.evaluate((selector) => void document.querySelector(selector), t.selector);
       } catch {
         throw new ActionError(`invalid CSS selector "${t.selector}"`);
+      }
+      let el: ElementHandle<Element> | null = null;
+      for (const frame of page.frames()) {
+        el = await frame.$(t.selector).catch(() => null);
+        if (el) break;
       }
       if (!el) throw new ActionError(`nothing matches selector "${t.selector}"; call media() to list images and charts`);
       return { el, label: `"${t.selector}"` };

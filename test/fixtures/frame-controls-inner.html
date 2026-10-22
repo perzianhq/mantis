@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Cross origin form</title></head>
+<body>
+  <form aria-label="Cross origin form">
+    <label for="cross-name">Cross name</label><input id="cross-name">
+    <label for="cross-city">Cross city</label>
+    <input id="cross-city" role="combobox" aria-autocomplete="list" aria-controls="cross-cities" aria-expanded="false">
+    <ul id="cross-cities" role="listbox" hidden>
+      <li role="option">Pine Harbor</li>
+      <li role="option">Cedar Ridge</li>
+    </ul>
+    <p id="cross-result">No city selected</p>
+    <img id="frame-art" alt="Embedded route map" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==">
+  </form>
+  <script>
+    const input = document.querySelector('#cross-city');
+    const list = document.querySelector('#cross-cities');
+    input.addEventListener('focus', () => { list.hidden = false; input.setAttribute('aria-expanded', 'true'); });
+    input.addEventListener('input', () => { list.hidden = false; input.setAttribute('aria-expanded', 'true'); });
+    list.addEventListener('click', (event) => {
+      const item = event.target.closest('[role=option]');
+      if (!item) return;
+      input.value = item.textContent;
+      list.hidden = true;
+      input.setAttribute('aria-expanded', 'false');
+      document.querySelector('#cross-result').textContent = 'Selected: ' + item.textContent;
+    });
+  </script>
+</body>
+</html>

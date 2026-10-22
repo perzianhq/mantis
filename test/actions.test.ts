@@ -156,6 +156,26 @@ describe('select', () => {
     expect(view).toContain('value "Spain"');
     expect(await b.select(id, 'Mars')).toBe(`error: no option "Mars" in #${id} combobox "Country"; options: France | Spain`);
   });
+
+  it('opens a custom combobox and only accepts an unambiguous text match', async () => {
+    const url =
+      'data:text/html,' +
+      encodeURIComponent(
+        '<label for=city>City</label><input id=city role=combobox aria-controls=cities aria-expanded=false>' +
+        '<ul id=cities role=listbox hidden><li role=option>North Harbor</li><li role=option>North Point</li><li role=option>Cedar Ridge</li></ul><p id=result>None</p>' +
+        '<script>const input=document.querySelector("#city"),list=document.querySelector("#cities");input.addEventListener("focus",()=>{list.hidden=false});list.addEventListener("click",e=>{const item=e.target.closest("[role=option]");if(item){input.value=item.textContent;list.hidden=true;document.querySelector("#result").textContent="Selected: "+item.textContent}})</script>',
+      );
+    const view = await b.open(url);
+    const city = idOf(view, 'combobox "City"');
+    const selected = await b.select(city, 'cedar ridge');
+    expect(selected).toContain(`selected "Cedar Ridge" in #${city} combobox "City"`);
+    expect(selected).toContain('Selected: Cedar Ridge');
+
+    // Near miss: a non-unique substring must report candidates instead of clicking the first one.
+    expect(await b.select(city, 'north')).toBe(
+      `error: ambiguous option "north" in #${city} combobox "City"; candidates: North Harbor | North Point`,
+    );
+  });
 });
 
 describe('fill', () => {
