@@ -1,0 +1,41 @@
+
+> mantis-browser@0.1.3 bench:judge
+> tsx bench/agent/judge.ts
+
+[realsite] 298 task rows missing valid checks or deterministic graders in D:\Aadit\claudez\mantis\bench\agent\realsite-tasks.json: b7258ee05d75e6c50673a59914db412e_110325: missing checks; ade4c09ad3fdb1607209750924cd232f: missing checks; fb7b4f784cfde003e2548fdf4e8d6b4f: missing checks; 046138801a05ddf56ad94e8672942496_070826: missing checks; 92a3d4236f167af4afdc08876a902ba6: missing checks; 48c73f3f53e2611c4a1052457c1033db: missing checks; 8f2611047de227a2ca8bda13f6e2e5fb_110325: missing checks; b320c68bffc1f3c7f2a8dc9d5478fb27: missing checks; aa4b5cb7114fcc138ade82b4b9716d24: missing checks; 005be9dd91c95669d6ddde9ae667125c: missing checks; and 288 more
+[realsite] 298 task rows missing valid checks or deterministic graders in D:\Aadit\claudez\mantis\bench\agent\realsite-tasks.json: b7258ee05d75e6c50673a59914db412e_110325: missing checks; ade4c09ad3fdb1607209750924cd232f: missing checks; fb7b4f784cfde003e2548fdf4e8d6b4f: missing checks; 046138801a05ddf56ad94e8672942496_070826: missing checks; 92a3d4236f167af4afdc08876a902ba6: missing checks; 48c73f3f53e2611c4a1052457c1033db: missing checks; 8f2611047de227a2ca8bda13f6e2e5fb_110325: missing checks; b320c68bffc1f3c7f2a8dc9d5478fb27: missing checks; aa4b5cb7114fcc138ade82b4b9716d24: missing checks; 005be9dd91c95669d6ddde9ae667125c: missing checks; and 288 more
+[judge] 33 runs, 6 at a time, model gpt-6.1-sol
+[judge] (1/33) livev1-s ... success
+[judge] (2/33) livev1-s ... success
+[judge] (3/33) livev1-s ... success
+[judge] (4/33) livev1-s ... success
+[judge] (5/33) livev1-s ... success
+[judge] (6/33) livev1-s ... success
+[judge] (7/33) livev1-s ... success
+[judge] (8/33) livev1-i ... success
+[judge] (9/33) livev1-s ... success
+[judge] (10/33) livev1-i ... success
+[judge] (11/33) livev1-s ... success
+[judge] (12/33) livev1-i ... success
+[judge] (13/33) livev1-n ... success
+[judge] (14/33) livev1-s ... success
+[judge] (15/33) livev1-n ... success
+[judge] (16/33) livev1-i ... success
+[judge] (17/33) livev1-s ... failure
+[judge] (18/33) livev1-s ... success
+[judge] (19/33) livev1-n ... success
+[judge] (20/33) livev1-s ... success
+[judge] (21/33) livev1-s ... success
+[judge] (22/33) livev1-s ... success
+[judge] (23/33) livev1-n ... success
+[judge] (24/33) livev1-n ... success
+[judge] (25/33) livev1-n ... success
+[judge] (26/33) livev1-s ... success
+[judge] (27/33) livev1-n ... success
+[judge] (28/33) livev1-s ... success
+[judge] (29/33) livev1-i ... success
+[judge] (30/33) livev1-i ... success
+[judge] (31/33) livev1-s ... success
+[judge] (32/33) livev1-i ... success
+[judge] (33/33) livev1-n ... success
+[judge] wrote bench/results/live-v1-haiku-20261022-localrerun-judged.{json,md}

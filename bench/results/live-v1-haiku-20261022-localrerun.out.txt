@@ -1,0 +1,44 @@
+
+> mantis-browser@0.1.3 bench:agent
+> npm run build && tsx bench/agent/run.ts
+
+
+> mantis-browser@0.1.3 build
+> tsc
+
+[realsite] 298 task rows missing valid checks or deterministic graders in D:\Aadit\claudez\mantis\bench\agent\realsite-tasks.json: b7258ee05d75e6c50673a59914db412e_110325: missing checks; ade4c09ad3fdb1607209750924cd232f: missing checks; fb7b4f784cfde003e2548fdf4e8d6b4f: missing checks; 046138801a05ddf56ad94e8672942496_070826: missing checks; 92a3d4236f167af4afdc08876a902ba6: missing checks; 48c73f3f53e2611c4a1052457c1033db: missing checks; 8f2611047de227a2ca8bda13f6e2e5fb_110325: missing checks; b320c68bffc1f3c7f2a8dc9d5478fb27: missing checks; aa4b5cb7114fcc138ade82b4b9716d24: missing checks; 005be9dd91c95669d6ddde9ae667125c: missing checks; and 288 more
+[agent] 33 runs to do (0 kept), 6 at a time, provider claude, model claude-haiku-5-5, CLI 2.1.161 (Claude Code)
+[agent] (1/36) livev1-standards-wcag-22 / screenshot / run 2 ... success · 4 tool calls · 34,281 input · 19.0s
+[agent] (2/36) livev1-standards-wcag-22 / screenshot / run 1 ... success · 4 tool calls · 34,300 input · 23.7s
+[agent] (3/36) livev1-standards-wcag-22 / tree / run 2 ... success · 11 tool calls · 236,604 input · 38.0s
+[agent] (4/36) livev1-standards-wcag-22 / mantis / run 3 ... success · 3 tool calls · 40,945 input · 21.8s
+[agent] (5/36) livev1-standards-wcag-22 / tree / run 1 ... success · 15 tool calls · 296,128 input · 47.7s
+[agent] (6/36) livev1-standards-wcag-22 / screenshot / run 3 ... success · 4 tool calls · 34,283 input · 12.1s
+[agent] (7/36) livev1-standards-wcag-22 / tree / run 3 ... success · 13 tool calls · 269,428 input · 33.1s
+[agent] (8/36) livev1-standards-wcag-22 / mantis / run 2 ... success · 7 tool calls · 99,776 input · 63.4s
+[agent] (9/36) livev1-standards-wcag-22 / mantis / run 1 ... success · 7 tool calls · 91,605 input · 69.6s
+[agent] (10/36) livev1-standards-css-color-4 / tree / run 1 ... success · 9 tool calls · 131,176 input · 22.8s
+[agent] (11/36) livev1-standards-css-color-4 / screenshot / run 1 ... success · 19 tool calls · 163,384 input · 26.5s
+[agent] (12/36) livev1-standards-css-color-4 / screenshot / run 2 ... success · 4 tool calls · 34,466 input · 16.7s
+[agent] (13/36) livev1-standards-css-color-4 / tree / run 2 ... success · 12 tool calls · 259,029 input · 37.4s
+[agent] (14/36) livev1-standards-css-color-4 / mantis / run 1 ... success · 8 tool calls · 100,957 input · 59.2s
+[agent] (15/36) livev1-standards-css-color-4 / mantis / run 2 ... success · 5 tool calls · 90,621 input · 52.4s
+[agent] (16/36) livev1-standards-css-color-4 / tree / run 3 ... success · 10 tool calls · 177,830 input · 30.3s
+[agent] (17/36) livev1-standards-css-color-4 / screenshot / run 3 ... success · 18 tool calls · 146,858 input · 26.1s
+[agent] (18/36) livev1-navigation-met-collection / screenshot / run 1 ... success · 11 tool calls · 83,105 input · 25.8s
+[agent] (19/36) livev1-navigation-met-collection / mantis / run 1 ... success · 6 tool calls · 85,934 input · 29.9s
+[agent] (20/36) livev1-standards-css-color-4 / mantis / run 3 ... success · 9 tool calls · 103,726 input · 68.3s
+[agent] (21/36) livev1-navigation-met-collection / mantis / run 2 ... success · 5 tool calls · 97,763 input · 30.2s
+[agent] (22/36) livev1-navigation-met-collection / screenshot / run 2 ... success · 15 tool calls · 125,051 input · 40.3s
+[agent] (23/36) livev1-navigation-met-collection / mantis / run 3 ... success · 5 tool calls · 97,987 input · 27.6s
+[agent] (24/36) livev1-navigation-met-collection / tree / run 2 ... success · 10 tool calls · 249,486 input · 39.5s
+[agent] (25/36) livev1-navigation-met-collection / screenshot / run 3 ... success · 13 tool calls · 103,059 input · 27.5s
+[agent] (26/36) livev1-interactive-tmdb-search / mantis / run 1 ... success · 3 tool calls · 61,909 input · 27.7s
+[agent] (27/36) livev1-navigation-met-collection / tree / run 3 ... success · 11 tool calls · 175,963 input · 38.4s
+[agent] (28/36) livev1-interactive-tmdb-search / screenshot / run 1 ... success · 9 tool calls · 65,489 input · 20.5s
+[agent] (29/36) livev1-interactive-tmdb-search / mantis / run 2 ... success · 4 tool calls · 64,267 input · 26.0s
+[agent] (30/36) livev1-interactive-tmdb-search / screenshot / run 2 ... success · 9 tool calls · 65,450 input · 24.9s
+[agent] (31/36) livev1-interactive-tmdb-search / tree / run 3 ... success · 7 tool calls · 155,401 input · 19.0s
+[agent] (32/36) livev1-interactive-tmdb-search / screenshot / run 3 ... success · 9 tool calls · 65,369 input · 22.1s
+[agent] (33/36) livev1-interactive-tmdb-search / mantis / run 3 ... success · 5 tool calls · 68,901 input · 27.7s
+[agent] wrote bench/results/live-v1-haiku-20261022-localrerun.{json,md}
