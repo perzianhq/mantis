@@ -153,8 +153,61 @@ const TRACKER = `(() => {
   }
   // Bumped by anything that can change what a scan sees, so an unchanged page can reuse its last scan.
   window.__mantisMut = 0;
+  // DOM mutations only (not scroll/input/hover): lets settle() tell an action that changed nothing from one that did.
+  window.__mantisDomChanges = 0;
   const bump = () => { window.__mantisMut++; };
-  new MutationObserver(bump).observe(document, { subtree: true, childList: true, attributes: true, characterData: true });
+  const domBump = () => { window.__mantisMut++; window.__mantisDomChanges++; };
+  // An observer on the document does not see inside shadow roots. Open roots are tracked here (those
+  // attached later through attachShadow, nested ones, and ones the parser made, found by a scan) so every
+  // observer can be pointed at them too. Bounded: past MAX_SHADOW_ROOTS the roots are not tracked and
+  // __mantisShadowFull makes page snapshots non-reusable. Closed roots are invisible to script and out of scope.
+  const MAX_SHADOW_ROOTS = 256;
+  const MAX_SCAN_NODES = 30000;
+  const shadowRoots = [];
+  const knownRoots = new WeakSet();
+  const watchers = new Set();
+  window.__mantisShadowFull = false;
+  const trackRoot = (root) => {
+    if (knownRoots.has(root)) return;
+    if (shadowRoots.length >= MAX_SHADOW_ROOTS) {
+      for (let i = shadowRoots.length - 1; i >= 0; i--) if (!shadowRoots[i].deref()) shadowRoots.splice(i, 1);
+      if (shadowRoots.length >= MAX_SHADOW_ROOTS) { window.__mantisShadowFull = true; return; }
+    }
+    knownRoots.add(root);
+    shadowRoots.push(new WeakRef(root));
+    for (const watch of watchers) watch(root);
+  };
+  const attachShadow = Element.prototype.attachShadow;
+  Element.prototype.attachShadow = function (init) {
+    const root = attachShadow.call(this, init);
+    if (init && init.mode === 'open') trackRoot(root);
+    return root;
+  };
+  let scanned = -1;
+  const scanShadows = () => {
+    if (scanned === window.__mantisDomChanges) return;
+    scanned = window.__mantisDomChanges;
+    let budget = MAX_SCAN_NODES;
+    const walk = (start) => {
+      const walker = document.createTreeWalker(start, NodeFilter.SHOW_ELEMENT);
+      for (let n = walker.nextNode(); n && budget-- > 0; n = walker.nextNode()) {
+        if (n.shadowRoot) { trackRoot(n.shadowRoot); walk(n.shadowRoot); }
+      }
+    };
+    walk(document);
+  };
+  window.__mantisObserveShadows = (observer, options) => {
+    scanShadows();
+    const watch = (root) => { try { observer.observe(root, options); } catch (e) {} };
+    for (const ref of shadowRoots) { const root = ref.deref(); if (root) watch(root); }
+    watchers.add(watch);
+    return () => { watchers.delete(watch); };
+  };
+  const MUTATIONS = { subtree: true, childList: true, attributes: true, characterData: true };
+  const domObserver = new MutationObserver(domBump);
+  domObserver.observe(document, MUTATIONS);
+  window.__mantisObserveShadows(domObserver, MUTATIONS);
+  addEventListener('DOMContentLoaded', scanShadows, { once: true });
   for (const ev of ['scroll', 'input', 'change', 'focusin', 'focusout', 'resize', 'load', 'mouseover', 'mouseout', 'toggle', 'transitionend', 'animationend']) {
     addEventListener(ev, bump, { capture: true, passive: true });
   }
@@ -199,7 +252,7 @@ const COVERED_CLICK_TIMEOUT = 600;
 /** Navigation gets its own budget after a click has dispatched. */
 const NAVIGATION_TIMEOUT = 5000;
 /** A main-frame request starts immediately for ordinary document navigations. */
-const NAVIGATION_START_TIMEOUT = 250;
+const NAVIGATION_START_TIMEOUT = 100;
 /** A brief, bounded chance for a non-interactive painted veil to finish clearing. */
 const VEIL_CLEAR_TIMEOUT = 1500;
 const VEIL_RECHECK_MS = 100;
@@ -883,9 +936,10 @@ export class MantisBrowser {
       // between the agent's read and its action; the target guard compares against that last read.
       // Stamp the action's start in-page so settle() ignores timers/requests that were already running.
       await page.evaluate(() => {
-        const w = window as unknown as { __mantisDoc?: string; __mantisEpoch?: number; __mantisEpochDoc?: string };
+        const w = window as unknown as { __mantisDoc?: string; __mantisEpoch?: number; __mantisEpochDoc?: string; __mantisDomChanges?: number; __mantisEpochDomChanges?: number };
         w.__mantisEpoch = performance.now();
         w.__mantisEpochDoc = w.__mantisDoc;
+        w.__mantisEpochDomChanges = w.__mantisDomChanges;
       }).catch(() => undefined);
       let msg: string;
       try {
@@ -951,8 +1005,9 @@ export class MantisBrowser {
   private async pageState(page: Page): Promise<{ doc: string | null; mut: number }> {
     return page
       .evaluate(() => {
-        const w = window as unknown as { __mantisDoc?: string; __mantisMut?: number };
-        return { doc: w.__mantisDoc ?? null, mut: w.__mantisMut ?? -1 };
+        const w = window as unknown as { __mantisDoc?: string; __mantisMut?: number; __mantisShadowFull?: boolean };
+        // Past the shadow-root tracking cap some roots go unobserved, so the counter cannot vouch for the page.
+        return { doc: w.__mantisDoc ?? null, mut: w.__mantisShadowFull ? -1 : (w.__mantisMut ?? -1) };
       })
       .catch(() => ({ doc: null, mut: -1 }));
   }
@@ -1561,25 +1616,33 @@ export class MantisBrowser {
     if (!afterAction) await page.waitForLoadState('domcontentloaded', { timeout: 5000 }).catch(() => undefined);
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        const metaRefreshMs = await page.evaluate(() => {
-          for (const meta of Array.from(document.querySelectorAll('meta[http-equiv="refresh" i]'))) {
-            const match = meta.getAttribute('content')?.trim().match(/^([\d.]+)/);
-            const delay = match ? Number(match[1]) * 1000 : NaN;
-            if (Number.isFinite(delay) && delay >= 0 && delay <= 3000) return delay;
-          }
-          return 0;
-        }).catch(() => 0);
         await page.evaluate(
-          ({ quiet, max, busyMax, metaRefreshMs, useEpoch }) =>
+          ({ quiet, idleGrace, max, busyMax, useEpoch }) =>
             new Promise<void>((done) => {
-              const w = window as unknown as { __mantisSetTimeout?: typeof setTimeout; __mantisBusy?: (since?: number, includeIntervals?: boolean, maxDelay?: number) => boolean; __mantisEpoch?: number; __mantisDocStart?: number };
+              const w = window as unknown as {
+                __mantisSetTimeout?: typeof setTimeout;
+                __mantisBusy?: (since?: number, includeIntervals?: boolean, maxDelay?: number) => boolean;
+                __mantisEpoch?: number;
+                __mantisDocStart?: number;
+                __mantisDomChanges?: number;
+                __mantisEpochDomChanges?: number;
+                __mantisObserveShadows?: (observer: MutationObserver, options: MutationObserverInit) => () => void;
+              };
               const st = w.__mantisSetTimeout ?? setTimeout;
+              let metaRefreshMs = 0;
+              for (const meta of Array.from(document.querySelectorAll('meta[http-equiv="refresh" i]'))) {
+                const match = meta.getAttribute('content')?.trim().match(/^([\d.]+)/);
+                const delay = match ? Number(match[1]) * 1000 : NaN;
+                if (Number.isFinite(delay) && delay >= 0 && delay <= 3000) { metaRefreshMs = delay; break; }
+              }
               // Only work begun since the action (or post-navigation epoch) counts as pending.
               const since = useEpoch ? (w.__mantisEpoch ?? 0) : 0;
               const start = Date.now();
               let timer: ReturnType<typeof setTimeout>;
+              let unwatchShadows: (() => void) | undefined;
               const finish = (): void => {
                 obs.disconnect();
+                unwatchShadows?.();
                 clearTimeout(timer);
                 clearTimeout(cap);
                 done();
@@ -1643,11 +1706,20 @@ export class MantisBrowser {
                 clearTimeout(timer);
                 timer = st(check, quiet);
               });
-              obs.observe(document, { subtree: true, childList: true, attributes: true, characterData: true });
-              timer = st(check, quiet);
+              const options = { subtree: true, childList: true, attributes: true, characterData: true };
+              obs.observe(document, options);
+              // Open shadow roots (also ones attached while we wait) are not covered by an observer on the document.
+              unwatchShadows = w.__mantisObserveShadows?.(obs, options);
+              // The action left the DOM untouched and started no timer or request: nothing is known to be
+              // coming, so a short grace for a frame-delayed effect replaces the full quiet window.
+              // Any mutation during it restarts the normal window.
+              const idle = useEpoch && metaRefreshMs === 0 && w.__mantisEpochDomChanges !== undefined
+                && w.__mantisDomChanges === w.__mantisEpochDomChanges
+                && !w.__mantisBusy?.(since, (w.__mantisEpoch ?? 0) > (w.__mantisDocStart ?? Infinity), busyMax);
+              timer = st(check, idle ? idleGrace : quiet);
               const cap = st(finish, max);
             }),
-          { quiet: 150, max: 3000, busyMax: 3000, metaRefreshMs, useEpoch: afterAction },
+          { quiet: 150, idleGrace: 60, max: 3000, busyMax: 3000, useEpoch: afterAction },
         );
         // A timer can start a main-frame request after its own pending entry has fired. Do not
         // cancel that request's watcher just because the old document has become quiet.

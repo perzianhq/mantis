@@ -196,3 +196,25 @@ describe('stale ids', () => {
     expect(await browser.read()).not.toContain('Saved');
   });
 });
+
+describe('settle does not over-wait', () => {
+  it('returns quickly when the action changed nothing and started no work', async () => {
+    const view = await browser.open(fixture('settle-idle.html'));
+    await browser.click(idOf(view, 'Do nothing')); // first action after open pays one-off warm-up
+    const { text, ms } = await timed(() => browser.click(idOf(view, 'Do nothing')));
+    expect(text).toContain('no visible change');
+    expect(ms).toBeLessThan(380);
+  });
+
+  it('still waits for an effect a timer delivers later (near miss)', async () => {
+    const view = await browser.open(fixture('settle-idle.html'));
+    const { text, ms } = await timed(() => browser.click(idOf(view, 'Add row later')));
+    expect(text).toContain('Row later');
+    expect(ms).toBeGreaterThan(550);
+  });
+
+  it('still reports an immediate change (near miss)', async () => {
+    const view = await browser.open(fixture('settle-idle.html'));
+    expect(await browser.click(idOf(view, 'Add row'))).toContain('Row now');
+  });
+});
