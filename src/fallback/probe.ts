@@ -64,13 +64,15 @@ export function makeProbe(chartPointLimit = Number.MAX_SAFE_INTEGER): Probe {
   const collapse = (s: string | null | undefined): string => (s ?? '').replace(/\s+/g, ' ').trim();
   const cap = (s: string, n: number): string => (s.length > n ? s.slice(0, n - 1).trimEnd() + '…' : s);
 
-  function idFor(el: Element): number {
+  function idFor(el: Element): number | undefined {
     let id = reg.ids.get(el);
-    if (id === undefined) {
-      id = reg.next++;
-      reg.ids.set(el, id);
-      reg.byId.set(id, new WeakRef(el));
-    }
+    const rangeStart = (win.__mantisBase ?? 0) + 1;
+    const rangeEnd = rangeStart + 9_999;
+    if (id !== undefined) return id >= rangeStart && id < rangeEnd ? id : undefined;
+    if (reg.next < rangeStart || reg.next >= rangeEnd) return undefined;
+    id = reg.next++;
+    reg.ids.set(el, id);
+    reg.byId.set(id, new WeakRef(el));
     return id;
   }
 
@@ -446,7 +448,9 @@ export function makeProbe(chartPointLimit = Number.MAX_SAFE_INTEGER): Probe {
         entry = { kind: 'svg', text: `${w}×${h}${title ? ` "${cap(title, 60)}"` : ''}${notes.length ? ` (${notes.join(', ')})` : ''}` };
       }
       if (entries.length >= MAX_LIST) { more++; continue; }
-      entries.push({ id: idFor(el), ...entry });
+      const id = idFor(el);
+      if (id === undefined) { more++; continue; }
+      entries.push({ id, ...entry });
     }
     return { entries, more };
   }

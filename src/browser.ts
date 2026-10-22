@@ -276,6 +276,10 @@ export class MantisBrowser {
   private browser: Browser | null = null;
   private context: BrowserContext | null = null;
   private page: Page | null = null;
+  /** Pages whose listeners have already been installed (newPage also fires context's page event). */
+  private readonly adopted = new WeakSet<Page>();
+  /** The opener to return to when an active popup closes. */
+  private readonly opener = new WeakMap<Page, Page | null>();
   private labels = new Map<number, string>();
   /** Identity each number had when it was last shown to the agent. */
   private known = new Map<number, { id: number; role: string; name: string; href?: string; doc: string | null }>();
@@ -828,14 +832,26 @@ export class MantisBrowser {
   // ---- internals ---------------------------------------------------------
 
   private adopt(p: Page): void {
+    if (this.adopted.has(p)) {
+      this.page = p;
+      return;
+    }
+    this.adopted.add(p);
+    // Keep the current page as a synchronous fallback: Playwright resolves opener() asynchronously,
+    // while a script is allowed to close a newly opened window immediately.
+    this.opener.set(p, this.page);
     this.page = p;
+    void p.opener().then((opener) => { this.opener.set(p, opener); }).catch(() => undefined);
     p.on('dialog', (d) => {
-      const accept = d.type() === 'alert' || d.type() === 'beforeunload';
+      const accept = d.type() === 'alert' || d.type() === 'beforeunload' || d.type() === 'confirm' || d.type() === 'prompt';
       this.notes.push(`dialog: ${d.type()} "${d.message().slice(0, 120)}" (${accept ? 'accepted' : 'dismissed'})`);
-      void (accept ? d.accept() : d.dismiss()).catch(() => undefined);
+      void (accept ? (d.type() === 'prompt' ? d.accept(d.defaultValue()) : d.accept()) : d.dismiss()).catch(() => undefined);
     });
     p.on('close', () => {
-      if (this.page === p) this.page = this.context?.pages().at(-1) ?? null;
+      if (this.page !== p) return;
+      const previous = this.opener.get(p);
+      this.page = previous && !previous.isClosed() ? previous : null;
+      if (this.page) this.notes.push('popup: closed (back on the page that opened it)');
     });
   }
 

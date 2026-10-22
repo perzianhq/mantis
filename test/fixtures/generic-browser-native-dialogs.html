@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Native dialogs</title></head>
+<body>
+  <main>
+    <h1>Native dialogs</h1>
+    <button id="confirm">Confirm change</button>
+    <button id="prompt">Use suggested label</button>
+    <button id="ordinary">Ordinary action</button>
+    <p id="result">Waiting</p>
+  </main>
+  <script>
+    const result = document.getElementById('result');
+    document.getElementById('confirm').addEventListener('click', () => {
+      result.textContent = confirm('Apply this change?') ? 'Change confirmed' : 'Change rejected';
+    });
+    document.getElementById('prompt').addEventListener('click', () => {
+      result.textContent = `Chosen: ${prompt('Choose a label', 'Suggested label')}`;
+    });
+    document.getElementById('ordinary').addEventListener('click', () => {
+      result.textContent = 'Ordinary action completed';
+    });
+  </script>
+</body>
+</html>
