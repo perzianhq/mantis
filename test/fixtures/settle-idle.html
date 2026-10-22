@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Settle idle</title></head>
+<body>
+<main>
+  <h1>Counter</h1>
+  <button id="noop" type="button">Do nothing</button>
+  <button id="add" type="button">Add row</button>
+  <button id="later" type="button">Add row later</button>
+  <ul id="rows"></ul>
+</main>
+<script>
+  const rows = document.getElementById('rows');
+  const add = (text) => { const li = document.createElement('li'); li.textContent = text; rows.appendChild(li); };
+  document.getElementById('add').addEventListener('click', () => add('Row now'));
+  // Near miss: the effect arrives later through a timer, and must still be waited for.
+  document.getElementById('later').addEventListener('click', () => setTimeout(() => add('Row later'), 600));
+</script>
+</body>
+</html>

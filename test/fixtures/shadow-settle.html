@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Shadow settle</title></head>
+<body>
+<main>
+  <h1>Shadow settle</h1>
+  <button id="open" type="button">Start open steps</button>
+  <button id="closed" type="button">Start closed steps</button>
+  <p id="status"></p>
+  <div id="mount"></div>
+  <div id="static-host">
+    <template shadowrootmode="open">
+      <label>Shadow name <input id="name"></label>
+      <button id="steps" type="button">Start static steps</button>
+      <output id="echo"></output>
+      <div id="log"></div>
+    </template>
+  </div>
+</main>
+<script>
+  // Frame-driven (not timer-driven) so that nothing but the DOM itself shows the update is coming.
+  // One step per ~60ms, sixteen steps, always written into the given root.
+  function stage(root, label) {
+    let step = 0, last = performance.now();
+    const tick = (now) => {
+      if (now - last >= 60) {
+        last = now;
+        step++;
+        const p = document.createElement('p');
+        p.textContent = label + ' step ' + step;
+        root.appendChild(p);
+      }
+      if (step < 16) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+  const working = () => { document.getElementById('status').textContent = 'Working'; };
+
+  // A root attached after load, with a second open root nested inside it.
+  document.getElementById('open').addEventListener('click', () => {
+    working();
+    const host = document.createElement('div');
+    document.getElementById('mount').appendChild(host);
+    const outer = host.attachShadow({ mode: 'open' });
+    const inner = document.createElement('div');
+    outer.appendChild(inner);
+    stage(inner.attachShadow({ mode: 'open' }), 'Open');
+  });
+
+  // Near miss: closed roots are not reachable from script or from the page walk, and settle must not wait for them.
+  document.getElementById('closed').addEventListener('click', () => {
+    working();
+    const host = document.createElement('div');
+    document.getElementById('mount').appendChild(host);
+    stage(host.attachShadow({ mode: 'closed' }), 'Closed');
+  });
+
+  // A root the parser made (declarative shadow DOM): script never called attachShadow for it.
+  const staticRoot = document.getElementById('static-host').shadowRoot;
+  staticRoot.getElementById('steps').addEventListener('click', () => {
+    working();
+    stage(staticRoot.getElementById('log'), 'Static');
+  });
+  staticRoot.getElementById('name').addEventListener('input', (e) => {
+    staticRoot.getElementById('echo').textContent = 'Hello ' + e.target.value;
+  });
+</script>
+</body>
+</html>
