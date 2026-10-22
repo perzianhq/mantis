@@ -8,7 +8,7 @@ For all coding agents (Claude Code loads this via CLAUDE.md).
 ## Working
 - Run things in parallel whenever you can: reads, searches, edits, builds, tests, Codex jobs, regrades, doc updates, and any other work that doesn't depend on another step's result. Only sequence genuinely dependent steps (and Sarvam jobs, which share one RPM budget).
 - Codex jobs: use `scripts/codex-job.sh` with a short label; from Claude Code, use Bash with `run_in_background` to show in background tasks. Don't poll; read only `.codex-jobs/<label>.out.md` after completion.
-- Whenever you launch a run (eval, regression, Codex job), also open a terminal tab showing its status, refreshed every 3 minutes: `powershell -File scripts/run-status.ps1 -Dir <agent-logs dir> -Total <runs> -Job <.codex-jobs/label.status>`. Stop the tab when the run ends.
+- Whenever you launch a run (eval, regression), redirect its output to a file and open a terminal tab (`run_in_terminal`, no `tab_id`) with the one-row live status, refreshed every second from local logs only (no API calls): `powershell -File scripts/run-status.ps1 -Dir <agent-logs dir> -Total <runs> -Out <output file>`. It shows e.g. `done 36/270  running 10  |  mantis 13/13 | tree 12/12 | screenshot 11/11` (agent-reported success per approach, not the judge score). Stop the tab when the run ends.
 - Run heavy jobs (agent evals, full suites, many browsers) one at a time to avoid RAM contention.
 - Fix bugs that evals expose in general, never around the case that exposed them. No site names, URLs, site class names or task text in `src/`. Reproduce the pattern in a synthetic fixture, then test it with a passing case and a near miss.
 
