@@ -29,7 +29,7 @@ Frozen `local-v2.1` scorecard: 54 code-graded fixture tasks, `deepseek-v4.1-flas
 
 Mantis scored 98.1%, versus 96.9% for the tree and 92.6% for screenshots, with 41.6% fewer median input tokens than the tree and 50.4% fewer than screenshots. Execution excludes locally measured limiter/retry wait; wall time includes it. Method, audit caveats, and historical baselines: [bench/RESULTS.md](bench/RESULTS.md).
 
-Next: a valid, separately reported live-site run (live-v1). See the [evaluation plan](docs/PLAN.md#evaluation-plan).
+Frozen live-site set `live-v1` (30 real-site tasks, same model, three runs per approach, judged by a different model): Mantis 82/90, tree 88/90, screenshots 89/90. Mantis is behind on success here, mostly from bot walls (IMDb, USGS), while using about 63% fewer input tokens than the tree. Sarvam only, not a Luna/Haiku claim; the catalog was revised after seeing results, as disclosed in [bench/RESULTS.md](bench/RESULTS.md). See the [evaluation plan](docs/PLAN.md#evaluation-plan).
 
 ## Learn more
 
