@@ -130,6 +130,9 @@ export type Resolved =
 
 /** Look up the live element behind a number handed out by a previous capture (in any frame). */
 export async function resolve(page: Page, id: number): Promise<Resolved> {
+  // Every frame owns the open interval (base, base + FRAME_STEP). Exact multiples are separators,
+  // never issued ids; rejecting them also keeps a main-frame lookup out of a child's range.
+  if (!Number.isInteger(id) || id <= 0 || id % FRAME_STEP === 0) return { ok: false, reason: 'unknown' };
   let frame: Frame = page.mainFrame();
   if (id > FRAME_STEP) {
     const f = frameByBase.get(Math.floor((id - 1) / FRAME_STEP) * FRAME_STEP)?.deref();

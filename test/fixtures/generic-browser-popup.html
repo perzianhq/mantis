@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Popup parent</title></head>
+<body>
+  <main>
+    <h1>Popup parent</h1>
+    <button id="open">Open child</button>
+    <p>Parent remains available</p>
+  </main>
+  <script>
+    document.getElementById('open').addEventListener('click', () => {
+      window.open('generic-browser-popup-child.html', 'mantis-popup');
+    });
+  </script>
+</body>
+</html>

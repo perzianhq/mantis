@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Frame replacement</title></head>
+<body>
+  <main>
+    <h1>Frame replacement</h1>
+    <button id="replace">Replace embedded document</button>
+    <div id="slot"><iframe title="Original frame" width="400" height="120" srcdoc="&lt;!doctype html&gt;&lt;button id='original'&gt;Original frame action&lt;/button&gt;&lt;p id='result'&gt;Original waiting&lt;/p&gt;&lt;script&gt;document.getElementById('original').onclick=()=&gt;document.getElementById('result').textContent='original clicked';&lt;/script&gt;"></iframe></div>
+  </main>
+  <script>
+    document.getElementById('replace').addEventListener('click', () => {
+      document.getElementById('slot').innerHTML = "<iframe title='Replacement frame' width='400' height='120' srcdoc=\"&lt;!doctype html&gt;&lt;button id='replacement'&gt;Replacement frame action&lt;/button&gt;&lt;p id='result'&gt;Replacement waiting&lt;/p&gt;&lt;script&gt;document.getElementById('replacement').onclick=()=&gt;document.getElementById('result').textContent='replacement clicked';&lt;/script&gt;\"></iframe>";
+    });
+  </script>
+</body>
+</html>

@@ -83,6 +83,10 @@ export function walker(includeSrOnly = false): WalkResult {
   // Numbers in a child frame start at its base (10001, 20001, ...) so they never clash with the page's.
   const win = window as unknown as { __mantis?: Registry; __mantisBase?: number };
   const reg: Registry = (win.__mantis ??= { ids: new WeakMap(), next: (win.__mantisBase ?? 0) + 1, byId: new Map() });
+  // A frame owns [base + 1, base + 10_000). The registry persists across captures, so the
+  // per-walk node budget alone cannot prevent a long-lived page from crossing into another frame.
+  const rangeStart = (win.__mantisBase ?? 0) + 1;
+  const rangeEnd = rangeStart + 9_999;
   /** Elements given a click-type listener by page script (recorded by Mantis's init script, if loaded). */
   const clickListeners = (window as unknown as { __mantisClick?: WeakSet<Element> }).__mantisClick;
 
@@ -116,6 +120,24 @@ export function walker(includeSrOnly = false): WalkResult {
 
   const nodes: RawNode[] = [];
   let truncated = false;
+
+  /** Allocate only inside this document's frame range. */
+  function idFor(el: Element): number | undefined {
+    const known = reg.ids.get(el);
+    if (known !== undefined) {
+      if (known >= rangeStart && known < rangeEnd) return known;
+      truncated = true;
+      return undefined;
+    }
+    if (reg.next < rangeStart || reg.next >= rangeEnd) {
+      truncated = true;
+      return undefined;
+    }
+    const id = reg.next++;
+    reg.ids.set(el, id);
+    reg.byId.set(id, new WeakRef(el));
+    return id;
+  }
 
   const vw = document.documentElement.clientWidth || window.innerWidth;
   // In quirks mode (no doctype) clientHeight is the whole document, which would make everything "in view".
@@ -852,19 +874,11 @@ export function walker(includeSrOnly = false): WalkResult {
       const root = node.getRootNode();
       return root instanceof ShadowRoot ? root : document;
     };
-    const idOf = (node: Element): number => {
-      let id = reg.ids.get(node);
-      if (id === undefined) {
-        id = reg.next++;
-        reg.ids.set(node, id);
-        reg.byId.set(id, new WeakRef(node));
-      }
-      return id;
-    };
     const describe = (node: Element): { id: number; name: string } | undefined => {
       const role = interactiveRole(node, explicitRole(node), getComputedStyle(node));
       if (!role || !node.getClientRects().length) return undefined;
-      return { id: idOf(node), name: cap(accName(node, role) || collapse(node.textContent || '') || role, 60) };
+      const id = idFor(node);
+      return id === undefined ? undefined : { id, name: cap(accName(node, role) || collapse(node.textContent || '') || role, 60) };
     };
     for (let node: Element | null = parent(el); node; node = parent(node)) {
       if (node instanceof HTMLDetailsElement && !node.open) {
@@ -976,12 +990,8 @@ export function walker(includeSrOnly = false): WalkResult {
 
     if (t === 'a' || t === 'area') node.href = hrefOf(el);
 
-    let id = reg.ids.get(el);
-    if (id === undefined) {
-      id = reg.next++;
-      reg.ids.set(el, id);
-      reg.byId.set(id, new WeakRef(el));
-    }
+    const id = idFor(el);
+    if (id === undefined) return;
     node.id = id;
     if (el === deepActive && (field || (el as HTMLElement).isContentEditable)) node.focused = true;
     stamp(node, r);
@@ -1032,12 +1042,8 @@ export function walker(includeSrOnly = false): WalkResult {
     if (cs.display === 'none' || cs.visibility !== 'visible' || parseFloat(cs.opacity) === 0) return;
     const r = el.getBoundingClientRect();
     if (r.width < 80 || r.height < 40 || !inDoc(r)) return;
-    let id = reg.ids.get(el);
-    if (id === undefined) {
-      id = reg.next++;
-      reg.ids.set(el, id);
-      reg.byId.set(id, new WeakRef(el));
-    }
+    const id = idFor(el);
+    if (id === undefined) return;
     const label = collapse(el.getAttribute('aria-label') || el.getAttribute('title') || '');
     const name = `${label ? ` "${label}"` : ''} ${Math.round(r.width)}×${Math.round(r.height)}: chart or drawing; data({id: ${id}})`;
     nodes.push(stamp({ kind: 'text', id, role: 'canvas', name, states: [], parent, depth, inViewport: inView(r), covered: false }, r));
@@ -1050,12 +1056,8 @@ export function walker(includeSrOnly = false): WalkResult {
     if (cs.display === 'none' || cs.visibility !== 'visible' || parseFloat(cs.opacity) === 0) return;
     const r = el.getBoundingClientRect();
     if (r.width < 20 || r.height < 20 || !inDoc(r)) return;
-    let id = reg.ids.get(el);
-    if (id === undefined) {
-      id = reg.next++;
-      reg.ids.set(el, id);
-      reg.byId.set(id, new WeakRef(el));
-    }
+    const id = idFor(el);
+    if (id === undefined) return;
     let name = collapse(el.getAttribute('title') || el.getAttribute('aria-label') || el.getAttribute('name') || '');
     if (!name) { try { name = new URL((el as HTMLIFrameElement).src).hostname; } catch { /* srcdoc / about:blank */ } }
     nodes.push(stamp({ kind: 'region', role: 'iframe', name: cap(name, 60), frame: id, states: [], parent, depth, inViewport: inView(r), covered: false }, r));

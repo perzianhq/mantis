@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Popup child</title></head>
+<body>
+  <main>
+    <h1>Popup child</h1>
+    <button id="work">Child action</button>
+    <button id="close">Close child</button>
+    <p id="result">Child waiting</p>
+  </main>
+  <script>
+    document.getElementById('work').addEventListener('click', () => {
+      document.getElementById('result').textContent = 'Child action completed';
+    });
+    document.getElementById('close').addEventListener('click', () => window.close());
+  </script>
+</body>
+</html>
