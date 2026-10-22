@@ -23,6 +23,8 @@ export type V21ReliabilityFamily =
   | 'visible-chart-series-over-hidden-decoy'
   | 'nested-child-action';
 
+export type V21ReliabilityKind = 'fact' | 'workflow';
+
 export interface V21ReliabilityCase {
   id: string;
   domain: V21ReliabilityDomain;
@@ -44,27 +46,29 @@ const normalize = (value: string) => value.trim()
   .replace(/[.]$/, '')
   .toLocaleLowerCase();
 const exact = (answer: string, expected: string) => normalize(answer) === normalize(expected);
+const kindOf = (family: V21ReliabilityFamily): V21ReliabilityKind =>
+  family === 'recycled-control-current-record' || family === 'nested-child-action' ? 'workflow' : 'fact';
 export const matchesV21ReliabilityAnswer = (entry: V21ReliabilityCase, answer: string) =>
   exact(answer, entry.expected.answer)
   // The task asks for the receipt, not its UI label. Keep this scoped to the
   // receipt workflow; the terminal-state check still proves the action.
   || (entry.family === 'recycled-control-current-record' && exact(answer, entry.expected.answer.replace(/^Receipt:\s*/i, '')));
 /** Ignore completion snapshots from a document the agent subsequently left. */
-const currentDocumentState = (events: FixtureObservation[], loadStateIsTerminal = false) => {
+const currentDocumentState = (events: FixtureObservation[], kind: V21ReliabilityKind) => {
   const documentId = events.filter((event) => event.kind === 'load').at(-1)?.documentId;
   if (!documentId) return events.filter((event) => event.kind === 'settled').at(-1);
   const current = events.filter((event) => event.documentId === documentId);
   // Fact-retrieval tasks have no required interaction, so the latest document's
   // load state is authoritative even if an earlier document previously settled.
-  if (loadStateIsTerminal) return current.filter((event) => event.kind === 'load').at(-1);
+  if (kind === 'fact') return current.filter((event) => event.kind === 'load').at(-1);
   // Workflows require a settled snapshot after their requested action.
   const settled = current.filter((event) => event.kind === 'settled').at(-1);
   if (settled) return settled;
   // A load-only document is authoritative only when the run never settled elsewhere; otherwise the agent left a completed document for an unsettled one.
   return events.some((event) => event.kind === 'settled') ? undefined : current.filter((event) => event.kind === 'load').at(-1);
 };
-const terminal = (state: Record<string, unknown>, loadStateIsTerminal = false): FixtureCheck => (events) =>
-  JSON.stringify(currentDocumentState(events, loadStateIsTerminal)?.fixtureState) === JSON.stringify(state);
+const terminal = (state: Record<string, unknown>, _legacyLoadStateIsTerminal?: boolean): FixtureCheck => (events) =>
+  JSON.stringify(currentDocumentState(events, kindOf(state.family as V21ReliabilityFamily))?.fixtureState) === JSON.stringify(state);
 const page = (title: string, body: string, script = '') =>
   `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${title}</title><style>body{font:16px/1.5 system-ui,sans-serif;margin:28px;max-width:780px}.card{border:1px solid #8b98a5;border-radius:8px;padding:16px;margin:12px 0}button,input{font:inherit;padding:5px 9px}mark{background:#fff1a8}.chart{border:1px solid #b8c3cf;background:#fbfdff}svg{max-width:100%;height:auto}</style></head><body>${body}<script>${script}</script></body></html>`;
 

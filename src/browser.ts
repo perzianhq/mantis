@@ -1,5 +1,5 @@
 import { chromium } from 'playwright';
-import type { Browser, BrowserContext, ElementHandle, Page } from 'playwright';
+import type { Browser, BrowserContext, ElementHandle, Frame, Page } from 'playwright';
 import { capture, resolve } from './capture/index.js';
 import type { RawNode, Snapshot } from './capture/index.js';
 import { findInSnapshot, translate } from './translate.js';
@@ -38,20 +38,21 @@ type NavigationWatch = {
   started: Promise<boolean>;
   hasStarted: () => boolean;
   remainingMs: () => number | null;
-  finished: Promise<'finished' | 'aborted'>;
+  finished: Promise<'finished'>;
   cancel: () => void;
 };
 
 /** Live count badges and durations may tick without changing a persisted control's identity. */
 function sameIdentity(
-  issued: { role: string; name: string; href?: string },
-  current: { role: string; name: string; href?: string },
+  issued: { id?: number; role: string; name: string; href?: string },
+  current: { id?: number; role: string; name: string; href?: string },
   allowLiveNameChange = false,
 ): boolean {
   if (issued.role !== current.role || issued.href !== current.href) return false;
   if (!allowLiveNameChange) return issued.name === current.name;
-  // Only a stable DOM node can safely retain an issued id while a live badge or
-  // countdown ticks. A replacement/rematch must keep its accessible name exactly.
+  // Only a persisted registry identity can safely retain an issued id while a live
+  // badge or countdown ticks. A replacement/rematch must keep its name exactly.
+  if (issued.id === undefined || issued.id !== current.id) return issued.name === current.name;
   const withoutLiveCounts = (name: string): string => name
     .replace(/([\[(]\s*)\d+(?:[.,]\d+)*(?=\s*[\])])/g, '$1#')
     .replace(/\b(in\s+)\d+(?:[.,]\d+)*\s*(?:ms|msec(?:ond)?s?|s|sec(?:ond)?s?|m|mins?|minutes?|h|hours?)\b/gi, '$1#')
@@ -277,7 +278,7 @@ export class MantisBrowser {
   private page: Page | null = null;
   private labels = new Map<number, string>();
   /** Identity each number had when it was last shown to the agent. */
-  private known = new Map<number, { role: string; name: string; href?: string; doc: string | null }>();
+  private known = new Map<number, { id: number; role: string; name: string; href?: string; doc: string | null }>();
   /** A click watcher that has not yet seen its navigation start. */
   private pendingNavigation: NavigationWatch | null = null;
   private notes: string[] = [];
@@ -970,7 +971,7 @@ export class MantisBrowser {
     for (const n of snap.nodes) {
       if (n.kind === 'interactive' && n.id !== undefined) {
         this.labels.set(n.id, this.labelOf(n));
-        this.known.set(n.id, { role: n.role, name: n.name, href: n.href, doc });
+        this.known.set(n.id, { id: n.id, role: n.role, name: n.name, href: n.href, doc });
       }
     }
   }
@@ -1256,16 +1257,26 @@ export class MantisBrowser {
       deadline = Date.now() + NAVIGATION_TIMEOUT;
       return true;
     }, () => false);
-    // A rejected navigation is still a terminal outcome: Chromium may have committed its
-    // error document (or another document) by the time act() observes the page.
-    const finished = page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 0, signal: controller.signal })
-      .then(() => 'finished' as const, () => 'aborted' as const);
+    // A replacement navigation aborts Playwright's wait for the first request. Watch main-frame
+    // commits instead, so a replacement remains observable under the deadline the first request set.
+    let onFrameNavigated: (frame: Frame) => void;
+    const finished = new Promise<'finished'>((resolve) => {
+      onFrameNavigated = (frame) => {
+        if (frame !== page.mainFrame()) return;
+        page.off('framenavigated', onFrameNavigated);
+        resolve('finished');
+      };
+      page.on('framenavigated', onFrameNavigated);
+    });
     return {
       started,
       hasStarted: () => hasStarted,
       remainingMs: () => deadline === null ? null : Math.max(0, deadline - Date.now()),
       finished,
-      cancel: () => controller.abort(),
+      cancel: () => {
+        controller.abort();
+        page.off('framenavigated', onFrameNavigated);
+      },
     };
   }
 
@@ -1519,7 +1530,9 @@ export class MantisBrowser {
    * keep changing on one element (animation) stop resetting the quiet timer.
    */
   private async settle(page: Page, afterAction = false, navigation: NavigationWatch | null = null): Promise<void> {
-    await page.waitForLoadState('domcontentloaded', { timeout: 5000 }).catch(() => undefined);
+    // An action begins on an already-loaded document. Skipping this independent load wait
+    // leaves a started navigation to the watcher's single bounded completion budget.
+    if (!afterAction) await page.waitForLoadState('domcontentloaded', { timeout: 5000 }).catch(() => undefined);
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
         const metaRefreshMs = await page.evaluate(() => {
@@ -1616,6 +1629,9 @@ export class MantisBrowser {
         return;
       } catch (e) {
         if (e instanceof ActionError) throw e;
+        // Do not spend a second load-state timeout after a request has started. In particular,
+        // a timer-triggered navigation that never commits has exactly the watcher's budget.
+        if (navigation?.hasStarted()) await this.waitForInFlightNavigation(navigation);
         // A navigation replaced the document under us; wait for it and try once more.
         await page.waitForLoadState('domcontentloaded', { timeout: 5000 }).catch(() => undefined);
         await sleep(50);

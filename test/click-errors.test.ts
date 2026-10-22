@@ -64,6 +64,24 @@ beforeAll(async () => {
       response.end('<title>Hanging timer start</title><button onclick="setTimeout(() => location.href = \'/never-responds\', 300)">Continue to stalled page</button>');
       return;
     }
+    if (request.url === '/superseded-start') {
+      response.writeHead(200, { 'content-type': 'text/html' });
+      response.end('<title>Superseded start</title><button onclick="location.href = \'/slow\'; setTimeout(() => location.href = \'/done\', 100)">Continue with replacement</button>');
+      return;
+    }
+    if (request.url === '/direct-done-start') {
+      response.writeHead(200, { 'content-type': 'text/html' });
+      response.end('<title>Direct done start</title><button onclick="location.href = \'/done\'">Continue directly</button>');
+      return;
+    }
+    if (request.url === '/slow') {
+      return;
+    }
+    if (request.url === '/done') {
+      response.writeHead(200, { 'content-type': 'text/html' });
+      response.end('<title>Done</title><main>Replacement destination loaded</main>');
+      return;
+    }
     if (request.url === '/never-responds') {
       return;
     }
@@ -229,6 +247,24 @@ describe('click errors and navigation', () => {
     expect(result).toBe('error: click was dispatched, but the navigation did not finish in time');
     expect(Date.now() - started).toBeGreaterThanOrEqual(4800);
     expect(Date.now() - started).toBeLessThan(6500);
+  });
+
+  it('keeps watching when a started navigation is replaced', async () => {
+    const view = await b.open(`${base}/superseded-start`);
+    const result = await b.click(idOf(view, 'button "Continue with replacement"'));
+
+    expect(result).toMatch(/^clicked #\d+ button "Continue with replacement"/);
+    expect(result).toContain('Replacement destination loaded');
+    const page = await (b as unknown as { activePage(): Promise<{ url(): string }> }).activePage();
+    expect(page.url()).toBe(`${base}/done`);
+  });
+
+  it('still reports a directly completed replacement destination', async () => {
+    const view = await b.open(`${base}/direct-done-start`);
+    const result = await b.click(idOf(view, 'button "Continue directly"'));
+
+    expect(result).toMatch(/^clicked #\d+ button "Continue directly"/);
+    expect(result).toContain('Replacement destination loaded');
   });
 
   it('waits for a main-frame request that starts after a timer and commits slowly', async () => {
