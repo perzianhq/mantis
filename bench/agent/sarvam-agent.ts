@@ -5,6 +5,9 @@
 import { estimateSarvamCost, resolveSarvamModel, sarvamModelSupportsImages, sarvamTransportStats } from './sarvam.js';
 import type { SarvamClient, SarvamContentPart, SarvamMessage, SarvamToolCall, SarvamUsage, SarvamTiming } from './sarvam.js';
 import type { StreamUsage } from './integrity.js';
+import type { ToolCallGate, ToolEventHooks, ToolLimitKind } from './long-telemetry.js';
+
+const TOOL_CAP_MESSAGE = 'Tool-call budget exhausted: this run may not make further tool calls. Give your final answer now.';
 
 export interface SarvamMcp {
   call(method: string, params: object, timeoutMs?: number, signal?: AbortSignal): Promise<any>;
@@ -23,6 +26,13 @@ export interface SarvamAgentOptions {
   trace?: (event: SarvamTraceEvent) => void;
   /** The harness uses this to capture a frame without routing a direct call through its proxy. */
   onToolResult?: () => void;
+  /**
+   * Optional shared `AGENT_MAX_TOOL_CALLS` gate. Agent calls only: `tools/list` is never counted, and the harness's own
+   * captures do not pass through this loop. A refused call gets a tool response and ends the run with `limitKind`.
+   */
+  toolCap?: ToolCallGate;
+  /** Optional dispatch/blocked/result events (and per-completion usage) for long-task telemetry. */
+  toolHooks?: ToolEventHooks;
   /** Cancels completion, limiter waits, and outstanding harness tool calls. */
   signal?: AbortSignal;
 }
@@ -56,6 +66,8 @@ export interface SarvamAgentResult {
   rateLimits: number;
   timing: SarvamTiming;
   diagnostics: string[];
+  /** Present only when the run ended because the shared tool-call cap refused a call; the runner maps it to `step_limit`. */
+  limitKind?: ToolLimitKind;
 }
 
 /** Keep provider requests bounded when an agent repeatedly asks for screenshots. */
@@ -162,6 +174,10 @@ export async function runSarvamAgent(options: SarvamAgentOptions): Promise<Sarva
   const models = new Set<string>(); const diagnostics: string[] = [];
   let truncatedPrefix = '';
   let consecutiveLengthWithoutTools = 0;
+  let toolCapHit = false, toolSeq = 0, blockedSeq = 0;
+  const hook = (event: Parameters<NonNullable<ToolEventHooks['onToolCall']>>[0]): void => {
+    try { options.toolHooks?.onToolCall?.(event); } catch { /* telemetry must not break the agent loop */ }
+  };
   for (let turn = 1; turn <= options.maxSteps; turn++) {
     if (aborted()) return result(abortMessage(), true, turn - 1, true);
     const resolved = resolveSarvamModel(options.model);
@@ -182,6 +198,13 @@ export async function runSarvamAgent(options: SarvamAgentOptions): Promise<Sarva
     usage = addUsage(usage, reply.usage);
     apiAttempts += reply.attempts ?? 1; rateLimits += reply.rateLimits ?? 0;
     addTiming(reply.timing);
+    try {
+      const known = reply.usage.promptTokens !== null && reply.usage.completionTokens !== null;
+      options.toolHooks?.onCompletion?.({ at: Date.now(), usage: known ? {
+        inputTokens: reply.usage.cachedTokens !== null && reply.usage.cachedTokens !== undefined ? Math.max(0, reply.usage.promptTokens! - reply.usage.cachedTokens) : reply.usage.promptTokens,
+        cacheReadTokens: reply.usage.cachedTokens ?? null, cacheWriteTokens: 0, outputTokens: reply.usage.completionTokens,
+      } : null });
+    } catch { /* telemetry must not break the agent loop */ }
     trace({ type: 'sarvam.completion', turn, model: reply.model, finishReason: reply.finishReason ?? null, content: reply.content ?? '', toolCalls: reply.toolCalls ?? [],
       attempts: reply.attempts ?? 1, rateLimits: reply.rateLimits ?? 0, promptTokens: reply.usage.promptTokens, completionTokens: reply.usage.completionTokens });
     const lengthWithoutTools = reply.finishReason === 'length' && !reply.toolCalls?.length;
@@ -227,13 +250,24 @@ export async function runSarvamAgent(options: SarvamAgentOptions): Promise<Sarva
         messages.push({ role: 'tool', tool_call_id: call.id ?? `denied-${turn}`, content: 'This tool is not available.' });
         continue;
       }
+      if (options.toolCap && !options.toolCap.tryDispatch()) {
+        // Every call in a batch needs a tool response; refuse it without dispatching and end the run after the batch.
+        toolCapHit = true;
+        hook({ phase: 'blocked', source: 'sarvam', key: `blocked-${++blockedSeq}`, name: call.function.name, arguments: args, at: Date.now() });
+        messages.push({ role: 'tool', tool_call_id: call.id ?? `blocked-${turn}-${blockedSeq}`, content: TOOL_CAP_MESSAGE });
+        trace({ type: 'sarvam.tool_error', name: call.function.name, arguments: args, error: 'tool_call_cap', resultText: TOOL_CAP_MESSAGE });
+        continue;
+      }
       calls++;
+      const eventKey = `call-${++toolSeq}`, dispatchedAt = Date.now();
+      hook({ phase: 'dispatch', source: 'sarvam', key: eventKey, name: call.function.name, arguments: args, at: dispatchedAt });
       try {
         const response = await mcpCall('tools/call', { name: call.function.name, arguments: args });
         options.onToolResult?.();
         const content = textContent(object(response)?.content ?? response);
         chars += content.count; images += content.images.length;
         const isError = object(response)?.isError === true; if (isError) errors++;
+        hook({ phase: 'result', source: 'sarvam', key: eventKey, name: call.function.name, arguments: args, at: Date.now(), dispatchedAt, isError, error: isError ? (content.text || 'tool error') : null, text: content.text, images: content.images.length });
         // Sarvam accepts tool results as text only.  A multimodal `tool` message caused
         // 400s after screenshot tools; retain the required tool response, then put any
         // supported image in a separate ordinary user turn.
@@ -249,6 +283,7 @@ export async function runSarvamAgent(options: SarvamAgentOptions): Promise<Sarva
       } catch (error) {
         if (aborted()) return result(abortMessage(), true, turn, true);
         const detail = error instanceof Error ? error.message : String(error);
+        hook({ phase: 'result', source: 'sarvam', key: eventKey, name: call.function.name, arguments: args, at: Date.now(), dispatchedAt, isError: true, error: detail || 'mcp_failed', text: '', images: 0 });
         errors++; diagnostics.push(`MCP tool failed: ${call.function.name}${detail ? `: ${detail}` : ''}`);
         messages.push({ role: 'tool', tool_call_id: call.id ?? `tool-${calls}`, content: 'The browser tool failed. Choose another action or retry.' });
         trace({ type: 'sarvam.tool_error', name: call.function.name, arguments: args, error: 'mcp_failed', resultText: 'The browser tool failed. Choose another action or retry.' });
@@ -260,6 +295,7 @@ export async function runSarvamAgent(options: SarvamAgentOptions): Promise<Sarva
       messages.push({ role: 'user', content: [{ type: 'text', text: 'The preceding tool returned these image observations.' }, ...imageObservations] });
       trimSarvamImageHistory(messages);
     }
+    if (toolCapHit) return result('Agent tool-call budget exhausted.', true, turn, true);
   }
   return result('Agent step budget exhausted.', true, options.maxSteps, true);
 
@@ -269,6 +305,6 @@ export async function runSarvamAgent(options: SarvamAgentOptions): Promise<Sarva
     stream.cacheWriteTokens = 0; stream.outputTokens = usageKnown ? usage.completionTokens : null;
     const complete = usageKnown && usage.promptTokens !== null && usage.completionTokens !== null;
     trace({ type: 'sarvam.summary', resultText: text, attempts: apiAttempts, rateLimits, promptTokens: usage.promptTokens, completionTokens: usage.completionTokens });
-    return { connected: true, initModel: [...models][0] ?? resolveSarvamModel(options.model), resolvedModels: [...models], toolCalls: calls, toolErrors: errors, observationChars: chars, observationImages: images, turns, resultText: text, resultError, sawResult, sawInit: true, mcpStatuses: ['connected'], usage: stream, totalInputTokens: usageKnown ? usage.promptTokens : null, usageComplete: complete, costInr: complete ? estimateSarvamCost(options.model, usage) : null, apiAttempts, rateLimits, timing, diagnostics };
+    return { connected: true, initModel: [...models][0] ?? resolveSarvamModel(options.model), resolvedModels: [...models], toolCalls: calls, toolErrors: errors, observationChars: chars, observationImages: images, turns, resultText: text, resultError, sawResult, sawInit: true, mcpStatuses: ['connected'], usage: stream, totalInputTokens: usageKnown ? usage.promptTokens : null, usageComplete: complete, costInr: complete ? estimateSarvamCost(options.model, usage) : null, apiAttempts, rateLimits, timing, diagnostics, ...(toolCapHit ? { limitKind: 'tool_calls' as const } : {}) };
   }
 }

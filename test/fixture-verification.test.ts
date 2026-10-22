@@ -11,6 +11,7 @@ import { extractGradedAnswer } from '../bench/agent/integrity.js';
 import { LONG_EXPECT } from '../bench/fixtures-long.js';
 import { V2_DEVELOPMENT_CASES, V2_DEVELOPMENT_CHECKS, gradeV2DevelopmentCase } from '../bench/fixtures-v2-development.js';
 import { v2DevelopmentRoute } from '../bench/fixtures-v2-development.js';
+import { LIVE_LONG_FIXTURE_CASES, gradeLiveLongFixtureCase } from '../bench/agent/live-long-fixtures.js';
 import { V21_RELIABILITY_CASES, gradeV21ReliabilityCase } from '../bench/fixtures-v21-reliability.js';
 import { spawn } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
@@ -1193,4 +1194,15 @@ it('grader: a settled beacon that reaches the server before its click is reorder
   // Ordering is per document: a different document's events keep their received slots.
   const mixed = [event('load', 1, 0, 'x', 'x', 'a'), event('load', 1, 0, 'y', 'y', 'b'), event('settled', 2, 1, 'z', 'z', 'a')].map((e, arrival) => ({ ...e, arrival }));
   expect(orderObservations(mixed).map((e) => e.documentId)).toEqual(['a', 'b', 'a']);
+});
+
+// Full replay passes, near-miss, rollback and late-revision cases live in test/live-long-fixtures.test.ts.
+it('live-long-fixtures: no ledger, no pass, even with the right receipt in the answer', () => {
+  expect(gradeLiveLongFixtureCase('llf-unknown-off', 'x', []).pass).toBe(false);
+  for (const entry of LIVE_LONG_FIXTURE_CASES) {
+    const expected = entry.expected as { receipt?: string; workspace?: { receipt?: string } };
+    const receipt = expected.receipt ?? expected.workspace?.receipt;
+    const grade = gradeLiveLongFixtureCase(entry.id, `Receipt ${receipt} total 101.29 and 870.00`, []);
+    expect(grade.pass).toBe(false);
+  }
 });

@@ -8,6 +8,7 @@
  */
 import type { Readable, Writable } from 'node:stream';
 import type net from 'node:net';
+import type { ToolCallEvent, ToolCallGate, ToolEventHooks } from './long-telemetry.js';
 
 const HARNESS_PREFIX = '__bench_';
 const URL_POLICY_MESSAGE = 'URL policy blocks view-source: and javascript: navigation in UI-only benchmarks.';
@@ -35,8 +36,36 @@ export interface McpProxy {
   ready(timeoutMs?: number, signal?: AbortSignal): Promise<void>;
   /** Called after an agent tools/call response has been forwarded, with the number of agent tool calls completed. */
   onToolResult(callback: (count: number) => void): void;
+  /**
+   * Optional tool-call accounting for agent calls only (never `call()`, so harness captures are not counted): a dispatch
+   * cap applied synchronously before forwarding, and dispatch/blocked/result hooks. Can also be passed to the factory.
+   */
+  setToolControl(control: ProxyToolControl): void;
   /** Reject the harness requests still waiting (the server is going away). */
   close(reason: string): void;
+}
+
+export interface ProxyToolControl { cap?: ToolCallGate | null; hooks?: ToolEventHooks | null }
+
+const CAP_MESSAGE = 'Tool-call budget exhausted: this run may not make further tool calls. Give your final answer now.';
+
+interface AgentCallMeta { key: string; name: string; arguments: unknown; dispatchedAt: number }
+
+function summarizeResult(message: Record<string, any>): { isError: boolean; error: string | null; text: string; images: number } {
+  if (message.error) { const text = String(message.error.message ?? 'MCP error'); return { isError: true, error: text, text, images: 0 }; }
+  const content: unknown = message.result?.content;
+  const texts: string[] = [];
+  let images = 0;
+  if (Array.isArray(content)) {
+    for (const part of content) {
+      if (!part || typeof part !== 'object') continue;
+      if (part.type === 'text' && typeof part.text === 'string') texts.push(part.text);
+      else if (part.type === 'image') images++;
+    }
+  }
+  const text = texts.join('\n');
+  const isError = message.result?.isError === true;
+  return { isError, error: isError ? (text || 'tool error') : null, text, images };
 }
 
 function lineSplitter(onLine: (line: string) => void): (chunk: string) => void {
@@ -56,10 +85,16 @@ function parseLine(line: string): Record<string, any> | null {
   try { const value: unknown = JSON.parse(line); return value && typeof value === 'object' ? value as Record<string, any> : null; } catch { return null; }
 }
 
-export function createMcpProxy(child: { stdin: Writable; stdout: Readable }): McpProxy {
+export function createMcpProxy(child: { stdin: Writable; stdout: Readable }, toolControl: ProxyToolControl = {}): McpProxy {
   const sockets = new Set<net.Socket>();
-  /** Ids of the agent's tools/call requests still unanswered, per connection. */
-  const agentCalls = new Map<net.Socket, Set<string>>();
+  /** The agent's tools/call requests still unanswered, per connection, keyed by JSON-RPC id. */
+  const agentCalls = new Map<net.Socket, Map<string, AgentCallMeta>>();
+  const socketIds = new Map<net.Socket, number>();
+  let nextSocketId = 0;
+  let control: ProxyToolControl = toolControl;
+  const emit = (event: ToolCallEvent): void => {
+    try { control.hooks?.onToolCall?.(event); } catch { /* a harness hook must not break forwarding */ }
+  };
   const pending = new Map<string, { resolve: (value: any) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout> }>();
   const listeners: ((count: number) => void)[] = [];
   let agentInitialized = false;
@@ -125,7 +160,9 @@ export function createMcpProxy(child: { stdin: Writable; stdout: Readable }): Mc
     if (message && message.method === undefined && message.id !== undefined && ('result' in message || 'error' in message)) {
       const key = JSON.stringify(message.id);
       for (const calls of agentCalls.values()) {
-        if (!calls.delete(key)) continue;
+        const meta = calls.get(key);
+        if (!meta || !calls.delete(key)) continue;
+        if (control.hooks) emit({ phase: 'result', source: 'proxy', key: meta.key, name: meta.name, arguments: meta.arguments, at: Date.now(), dispatchedAt: meta.dispatchedAt, ...summarizeResult(message) });
         completed++;
         for (const listener of listeners) { try { listener(completed); } catch { /* a harness hook must not break forwarding */ } }
         break;
@@ -136,14 +173,28 @@ export function createMcpProxy(child: { stdin: Writable; stdout: Readable }): Mc
   return {
     attach(socket) {
       sockets.add(socket);
-      agentCalls.set(socket, new Set());
+      agentCalls.set(socket, new Map());
+      socketIds.set(socket, ++nextSocketId);
       socket.setEncoding('utf8');
       socket.on('error', () => { /* MCP clients can disconnect while the child remains healthy */ });
       socket.on('close', () => { sockets.delete(socket); agentCalls.delete(socket); });
       socket.on('data', lineSplitter((line) => {
         const message = parseLine(line);
+        const isAgentCall = message?.method === 'tools/call' && message.id !== undefined;
+        let meta: AgentCallMeta | null = null;
+        if (isAgentCall) {
+          meta = { key: `${socketIds.get(socket)}:${JSON.stringify(message.id)}`, name: String(message.params?.name ?? ''), arguments: message.params?.arguments, dispatchedAt: Date.now() };
+          if (control.cap && !control.cap.tryDispatch()) {
+            // Provider protocols need an answer for every call in a batch, so refuse with a tool error instead of forwarding.
+            emit({ phase: 'blocked', source: 'proxy', key: meta.key, name: meta.name, arguments: meta.arguments, at: Date.now() });
+            socket.write(JSON.stringify({ jsonrpc: '2.0', id: message.id, result: { content: [{ type: 'text', text: CAP_MESSAGE }], isError: true } }) + '\n');
+            return;
+          }
+          emit({ phase: 'dispatch', source: 'proxy', key: meta.key, name: meta.name, arguments: meta.arguments, at: meta.dispatchedAt });
+        }
         if (message?.method === 'tools/call' && isForbiddenBenchmarkNavigation(message.params?.name, message.params?.arguments)) {
-          socket.write(JSON.stringify({ jsonrpc: '2.0', id: message.id, error: { code: -32602, message: 'URL policy blocks view-source: and javascript: navigation in UI-only benchmarks.' } }) + '\n');
+          socket.write(JSON.stringify({ jsonrpc: '2.0', id: message.id, error: { code: -32602, message: URL_POLICY_MESSAGE } }) + '\n');
+          if (meta) emit({ phase: 'result', source: 'proxy', key: meta.key, name: meta.name, arguments: meta.arguments, at: Date.now(), dispatchedAt: meta.dispatchedAt, isError: true, error: URL_POLICY_MESSAGE, text: URL_POLICY_MESSAGE, images: 0 });
           return;
         }
         if (message?.method === 'initialize') {
@@ -163,7 +214,7 @@ export function createMcpProxy(child: { stdin: Writable; stdout: Readable }): Mc
         // `ready()` already notified the server. The agent's corresponding
         // notification is local protocol bookkeeping and must not be replayed.
         if (message?.method === 'notifications/initialized' && serverReady) return;
-        if (message?.method === 'tools/call' && message.id !== undefined) agentCalls.get(socket)?.add(JSON.stringify(message.id));
+        if (isAgentCall && meta) agentCalls.get(socket)?.set(JSON.stringify(message.id), meta);
         child.stdin.write(line + '\n');
       }));
     },
@@ -180,6 +231,7 @@ export function createMcpProxy(child: { stdin: Writable; stdout: Readable }): Mc
       await initialize(timeoutMs, signal);
     },
     onToolResult(callback) { listeners.push(callback); },
+    setToolControl(next) { control = next; },
     close(reason) { closePending(reason); },
   };
 }

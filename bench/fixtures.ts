@@ -20,12 +20,38 @@ export interface FixtureObservation {
   target: { tag: string; id: string; name: string; type: string; ariaLabel: string; text: string; href: string; value: string; checked: boolean };
   controls: Record<string, { value: string; checked: boolean }>;
   text: string;
+  /** Opt-in long-suite trace. Absent unless the page defines `window.__fixtureLong`; historical suites never carry it. */
+  long?: FixtureLongTrace;
+}
+
+/** One business-state change in a long workflow: the entity touched and its value before and after. */
+export interface FixtureLongMutation { entity: string; field?: string; before: unknown; after: unknown }
+/**
+ * Page-reported evidence for the long-workflow suite. The page owns the authoritative ledger (`ledger`),
+ * stable entity/operation identity and a monotonically increasing `revision`; `pending` counts delayed fixture
+ * work (simulated requests, staged intermediate revisions) not yet committed. `url` includes query and hash;
+ * `notification` is set on post-commit settlement notifications and page-hide flushes.
+ */
+export interface FixtureLongTrace {
+  url?: string;
+  revision?: number;
+  entityId?: string;
+  operationId?: string;
+  mutations?: FixtureLongMutation[];
+  pending?: number;
+  ledger?: unknown;
+  notification?: string;
+  error?: string;
 }
 
 export interface FixtureCheckResult { ok: boolean; details?: string }
 /** Authoritative observations retained with future benchmark attempts for offline regrading. */
 export interface FixtureVerification extends FixtureCheckResult {
-  provenance: { version: 1; taskId: string; attemptId: string; observationCount: number; events: FixtureObservation[] };
+  provenance: {
+    version: 1; taskId: string; attemptId: string; observationCount: number; events: FixtureObservation[];
+    /** Last ledger-bearing observation after outstanding fixture work finished (long suites only). */
+    longTerminal?: FixtureObservation | null;
+  };
 }
 export type FixtureCheck = (events: FixtureObservation[]) => boolean | FixtureCheckResult;
 export interface FixtureCheckEntry { taskId: string; check?: FixtureCheck }
@@ -68,8 +94,16 @@ const observer = String.raw`<script>
     }
     return result;
   };
-  const send = (kind, target, targetSummary, controlState, actionId) => {
-    const data = { path: location.pathname.replace(/^\/__attempt\/[A-Za-z0-9_-]+/, '') || '/', kind, documentId, actionId, seq: ++sendSerial, target: targetSummary || summarize(target), controls: controlState || controls(), text: (document.body?.innerText || '').replace(/\s+/g, ' ').slice(0, 5000), fixtureState: window.__fixtureState || undefined };
+  const logicalPath = () => location.pathname.replace(/^\/__attempt\/[A-Za-z0-9_-]+/, '') || '/';
+  // Opt-in long-suite evidence: only pages that define window.__fixtureLong carry it.
+  const longTrace = (kind, reason) => {
+    if (typeof window.__fixtureLong !== 'function') return undefined;
+    let snapshot = {};
+    try { snapshot = window.__fixtureLong(kind, reason) || {}; } catch (error) { snapshot = { error: String(error) }; }
+    return { ...snapshot, url: logicalPath() + location.search + location.hash, notification: reason };
+  };
+  const send = (kind, target, targetSummary, controlState, actionId, reason) => {
+    const data = { path: logicalPath(), kind, documentId, actionId, seq: ++sendSerial, target: targetSummary || summarize(target), controls: controlState || controls(), text: (document.body?.innerText || '').replace(/\s+/g, ' ').slice(0, 5000), fixtureState: window.__fixtureState || undefined, long: longTrace(kind, reason) };
     pending++;
     fetch('/__verify/' + encodeURIComponent(token), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(data), keepalive: true }).catch(() => {}).finally(() => { pending--; });
   };
@@ -89,6 +123,13 @@ const observer = String.raw`<script>
     }, true);
   }
   if (window.__fixtureFrameObserver) addEventListener('message', () => setTimeout(() => send('settled', document.body), 0));
+  // Explicit post-commit settlement for delayed updates: a long-workflow page calls this after each committed
+  // revision (including late or intermediate ones) so the terminal state is observed after the work finishes.
+  Object.defineProperty(window, '__fixtureNotify', { value: (reason) => {
+    if (typeof window.__fixtureLong === 'function') setTimeout(() => send('settled', document.body, undefined, undefined, undefined, String(reason || 'commit')), 0);
+  } });
+  // Flush the ledger when the document goes away (navigation, tab close) so the last state is never lost.
+  addEventListener('pagehide', () => { if (typeof window.__fixtureLong === 'function') send('settled', document.body, undefined, undefined, undefined, 'pagehide'); });
 })();
 </script>`;
 /** Only opt-in v2 iframe workflows need a parent message settlement hook. */
@@ -128,11 +169,28 @@ const newAttempt = (taskId: string): AttemptState => ({ taskId, events: [], pend
 /** Observations are posted asynchronously, so wait until none is in flight and none has arrived for a while. */
 const QUIET_MS = 250;
 const MAX_WAIT_MS = 3000;
+/** Long workflows simulate delayed requests: wait (bounded) until the page reports no outstanding fixture work. */
+const LONG_MAX_WAIT_MS = 5000;
 async function quiet(state: AttemptState | undefined): Promise<void> {
   const deadline = Date.now() + MAX_WAIT_MS;
   while (state && Date.now() < deadline && (state.pending > 0 || Date.now() - state.lastAt < QUIET_MS)) {
     await new Promise((resolve) => setTimeout(resolve, 25));
   }
+  if (!state) return;
+  const longDeadline = Date.now() + LONG_MAX_WAIT_MS;
+  while (Date.now() < longDeadline && longWorkOutstanding(state)) {
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
+}
+/** True while the last long-trace observation still reports delayed fixture work, or beacons are in flight/recent. */
+function longWorkOutstanding(state: AttemptState): boolean {
+  const last = orderObservations(state.events).filter((event) => event.long !== undefined).at(-1);
+  if (!last) return false;
+  return (last.long?.pending ?? 0) > 0 || state.pending > 0 || Date.now() - state.lastAt < QUIET_MS;
+}
+/** The authoritative terminal ledger: the last long-trace observation once outstanding work has completed. */
+export function longTerminalObservation(events: FixtureObservation[]): FixtureObservation | null {
+  return events.filter((event) => event.long !== undefined && event.long.ledger !== undefined).at(-1) ?? null;
 }
 
 const page = (title: string, body: string, script = ''): string =>
@@ -345,7 +403,8 @@ export async function startFixtures(options: { checks?: FixtureCheckEntry[]; var
       const result = check(options.variant ? events.map((event) => options.variant!.canonicalObservation(event)) : events);
       attempts.delete(attemptId);
       const checked = typeof result === 'boolean' ? { ok: result, details: result ? undefined : `fixture check failed (${events.length} observations)` } : result;
-      return { ...checked, provenance: { version: 1, taskId, attemptId, observationCount: events.length, events: [...events] } };
+      const longTerminal = longTerminalObservation(events);
+      return { ...checked, provenance: { version: 1, taskId, attemptId, observationCount: events.length, events: [...events], ...(longTerminal ? { longTerminal } : {}) } };
     },
     close: () => new Promise((ok) => server.close(() => ok())),
   };

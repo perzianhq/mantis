@@ -1,0 +1,306 @@
+[
+  {
+    "task_id": "livelong-wiki-probes",
+    "family": "civic-reference",
+    "grading": "deterministic",
+    "level": "hard",
+    "website": "https://en.wikipedia.org/",
+    "confirmed_task": "Compare Voyager 1, Voyager 2, Pioneer 10, Pioneer 11, New Horizons, Cassini-Huygens, Galileo spacecraft and Juno spacecraft. Report each launch date, COSPAR ID, rocket and launch mass; identify the lightest launch mass and finish on its article.",
+    "source": {
+      "canonicalUrl": "https://en.wikipedia.org/wiki/Voyager_1",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "unverified-offline"
+    },
+    "key": {
+      "status": "to-verify",
+      "verify": "Resolve all eight canonical articles; capture labelled launch fields with units and revision IDs; review mass definitions and freeze associated tuples plus the minimum.",
+      "nearMiss": "Swap launch and dry mass for one probe."
+    },
+    "referencePath": [
+      "site search",
+      "eight articles and launch/property sections",
+      "lightest probe article"
+    ],
+    "referenceActions": [
+      24,
+      36
+    ],
+    "botRisk": "low-medium; throttling or regional access",
+    "excluded": true,
+    "exclusionReason": "Candidate: key and walkthrough unverified."
+  },
+  {
+    "task_id": "livelong-wiki-moons",
+    "family": "civic-reference",
+    "grading": "deterministic",
+    "level": "hard",
+    "website": "https://en.wikipedia.org/",
+    "confirmed_task": "Compare Io, Europa, Ganymede, Callisto, Titan, Triton, Enceladus and Mimas. Report each mean radius, orbital period and discovery date; order by mean radius and finish on the smallest moon's article.",
+    "source": {
+      "canonicalUrl": "https://en.wikipedia.org/wiki/Io_(moon)",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "unverified-offline"
+    },
+    "key": {
+      "status": "to-verify",
+      "verify": "Capture eight canonical infobox tuples and revision IDs; normalize units; explicitly distinguish mean from equatorial radius; freeze ordering.",
+      "nearMiss": "Use an equatorial radius or transpose two moons' periods."
+    },
+    "referencePath": [
+      "site search",
+      "eight articles and physical/orbital sections",
+      "smallest moon article"
+    ],
+    "referenceActions": [
+      24,
+      36
+    ],
+    "botRisk": "low-medium; throttling or regional access",
+    "excluded": true,
+    "exclusionReason": "Candidate: key and walkthrough unverified."
+  },
+  {
+    "task_id": "livelong-gutenberg-novels",
+    "family": "site-navigation",
+    "grading": "deterministic",
+    "level": "hard",
+    "website": "https://www.gutenberg.org/",
+    "confirmed_task": "Compare the English Text records for Pride and Prejudice, Sense and Sensibility, Emma, Mansfield Park, Persuasion, Northanger Abbey, Jane Eyre and Wuthering Heights. Use the lowest eBook number when multiple records qualify. Report title, eBook number, release date and LoC class; identify the earliest Gutenberg release, breaking ties by eBook number, and finish on that record.",
+    "source": {
+      "canonicalUrl": "https://www.gutenberg.org/ebooks/1342",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "unverified-offline"
+    },
+    "key": {
+      "status": "to-verify",
+      "verify": "Search each title/author; establish qualifying record IDs; capture About this eBook fields; independently sort release dates. Freeze IDs into the final task before scoring.",
+      "nearMiss": "Substitute original publication year for Gutenberg release date."
+    },
+    "referencePath": [
+      "title/author searches",
+      "eight catalogue records",
+      "earliest-release record"
+    ],
+    "referenceActions": [
+      24,
+      40
+    ],
+    "botRisk": "low-medium; automated-access throttling",
+    "excluded": true,
+    "exclusionReason": "Candidate: key and walkthrough unverified."
+  },
+  {
+    "task_id": "livelong-gutenberg-gothic",
+    "family": "site-navigation",
+    "grading": "deterministic",
+    "level": "hard",
+    "website": "https://www.gutenberg.org/",
+    "confirmed_task": "Audit Frankenstein, Dracula, The Picture of Dorian Gray, Strange Case of Dr Jekyll and Mr Hyde, The Castle of Otranto, The Mysteries of Udolpho, The Monk and The Turn of the Screw. For each use the lowest-numbered English Text record and report eBook number, credited author, release date and LoC class. Finish on the Frankenstein record.",
+    "source": {
+      "canonicalUrl": "https://www.gutenberg.org/ebooks/84",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "unverified-offline"
+    },
+    "key": {
+      "status": "to-verify",
+      "verify": "Resolve exact titles/authors and qualifying IDs; capture catalogue metadata; freeze record URLs and accepted title variants.",
+      "nearMiss": "Use metadata from a different Frankenstein edition."
+    },
+    "referencePath": [
+      "title/author searches",
+      "eight About this eBook sections",
+      "Frankenstein catalogue record"
+    ],
+    "referenceActions": [
+      24,
+      40
+    ],
+    "botRisk": "low-medium; automated-access throttling",
+    "excluded": true,
+    "exclusionReason": "Candidate: key and walkthrough unverified."
+  },
+  {
+    "task_id": "livelong-met-vangogh",
+    "family": "interactive-exploration",
+    "grading": "deterministic",
+    "level": "hard",
+    "website": "https://www.metmuseum.org/art/collection",
+    "confirmed_task": "Prepare an object checklist for Met collection IDs 436528, 436532, 436535, 436524, 436525, 436526, 436527 and 436530. Report each title, displayed date, medium, object number and centimetre dimensions. Finish on record 436530.",
+    "source": {
+      "canonicalUrl": "https://www.metmuseum.org/art/collection/search/436530",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "unverified-offline"
+    },
+    "key": {
+      "status": "to-verify",
+      "verify": "Use artist-filtered collection search; capture all eight Artwork Details sections; distinguish collection ID from Object Number and framed from unframed dimensions.",
+      "nearMiss": "Swap two records' object numbers or dimensions."
+    },
+    "referencePath": [
+      "artist search and filters",
+      "eight object detail/Overview panels",
+      "/art/collection/search/436530"
+    ],
+    "referenceActions": [
+      24,
+      40
+    ],
+    "botRisk": "medium; dynamic search, CDN or bot checks",
+    "excluded": true,
+    "exclusionReason": "Candidate: key and walkthrough unverified."
+  },
+  {
+    "task_id": "livelong-met-monet",
+    "family": "interactive-exploration",
+    "grading": "deterministic",
+    "level": "hard",
+    "website": "https://www.metmuseum.org/art/collection",
+    "confirmed_task": "Compare Met records 438008, 437137, 437127, 437131, 437133, 437142, 438003 and 438005. Report title, displayed date, object number, credit line and centimetre dimensions for each. Finish on record 438005.",
+    "source": {
+      "canonicalUrl": "https://www.metmuseum.org/art/collection/search/438005",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "unverified-offline"
+    },
+    "key": {
+      "status": "to-verify",
+      "verify": "Verify every listed ID and artist before eligibility; capture exact labelled tuples and resolve same-title records. Replace any mistyped candidate ID before freezing, with provenance.",
+      "nearMiss": "Merge the two Water Lilies records into one tuple."
+    },
+    "referencePath": [
+      "Claude Monet search and artist filter",
+      "eight record detail panels",
+      "/art/collection/search/438005"
+    ],
+    "referenceActions": [
+      24,
+      40
+    ],
+    "botRisk": "medium; dynamic search, CDN or bot checks",
+    "excluded": true,
+    "exclusionReason": "Candidate: key and walkthrough unverified."
+  },
+  {
+    "task_id": "livelong-openlibrary-austen",
+    "family": "interactive-exploration",
+    "grading": "deterministic",
+    "level": "hard",
+    "website": "https://openlibrary.org/advancedsearch",
+    "confirmed_task": "Compare the earliest dated English print editions with a named publisher for Austen's six completed novels. Break same-year ties by edition OLID. Report edition OLID, publication date, publisher and pagination for each; finish on the Emma edition.",
+    "source": {
+      "canonicalUrl": "https://openlibrary.org/advancedsearch",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "unverified-offline"
+    },
+    "key": {
+      "status": "to-verify",
+      "verify": "Inspect work/edition searches; establish eligibility and tie ordering; capture six edition records. Freeze the six OLIDs explicitly into the final prompt; reject if earliest-edition selection cannot be established reliably.",
+      "nearMiss": "Use work-level first-publication metadata for an edition."
+    },
+    "referencePath": [
+      "advanced title/author search",
+      "six work edition lists and edition records",
+      "verified Emma edition"
+    ],
+    "referenceActions": [
+      24,
+      40
+    ],
+    "botRisk": "medium-high; search probe failed, rate limits",
+    "excluded": true,
+    "exclusionReason": "Candidate: key and walkthrough unverified."
+  },
+  {
+    "task_id": "livelong-openlibrary-dickens",
+    "family": "interactive-exploration",
+    "grading": "deterministic",
+    "level": "hard",
+    "website": "https://openlibrary.org/advancedsearch",
+    "confirmed_task": "Compare the earliest dated English print editions with a named publisher for Oliver Twist, David Copperfield, Bleak House, Hard Times, A Tale of Two Cities and Great Expectations. Break same-year ties by edition OLID. Report OLID, date, publisher and pagination; finish on the Great Expectations edition.",
+    "source": {
+      "canonicalUrl": "https://openlibrary.org/advancedsearch",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "unverified-offline"
+    },
+    "key": {
+      "status": "to-verify",
+      "verify": "Resolve six edition records through UI searches; review volumes, abridgements and missing pagination; freeze explicit eligible OLIDs and exact tuples before scoring.",
+      "nearMiss": "Substitute an abridged edition with the same work title."
+    },
+    "referencePath": [
+      "advanced searches",
+      "six edition lists and edition records",
+      "verified Great Expectations edition"
+    ],
+    "referenceActions": [
+      24,
+      40
+    ],
+    "botRisk": "medium-high; search probe failed, rate limits",
+    "excluded": true,
+    "exclusionReason": "Candidate: key and walkthrough unverified."
+  },
+  {
+    "task_id": "livelong-eurostat-population",
+    "family": "open-data",
+    "grading": "deterministic",
+    "level": "hard",
+    "website": "https://ec.europa.eu/eurostat/databrowser/",
+    "confirmed_task": "Configure demo_pjan for Germany, France, Italy and Spain; total sex, total age, persons; years 2010, 2015, 2020 and 2023. Display countries as rows and years as columns, report all 16 cells with any status flags, inspect dataset metadata, and finish with that table visible.",
+    "source": {
+      "canonicalUrl": "https://ec.europa.eu/eurostat/databrowser/view/demo_pjan/default/table?lang=en",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "unverified-offline"
+    },
+    "key": {
+      "status": "to-verify",
+      "verify": "Headless UI walkthrough; verify dimension codes/labels and all selections; capture table cells, units, flags and dataset update date. Freeze accepted query/state representation.",
+      "nearMiss": "One year or sex selection differs despite the correct dataset title."
+    },
+    "referencePath": [
+      "dataset navigation",
+      "dimension dialogs",
+      "table layout",
+      "metadata panel",
+      "configured table"
+    ],
+    "referenceActions": [
+      24,
+      38
+    ],
+    "botRisk": "medium; JavaScript shell, consent or service failures",
+    "excluded": true,
+    "exclusionReason": "Candidate: key and walkthrough unverified."
+  },
+  {
+    "task_id": "livelong-eurostat-unemployment",
+    "family": "open-data",
+    "grading": "deterministic",
+    "level": "hard",
+    "website": "https://ec.europa.eu/eurostat/databrowser/",
+    "confirmed_task": "Configure une_rt_a for Germany, France, Italy and Spain; total sex, ages 15-74, percentage of active population; years 2015, 2019, 2020 and 2023. Report the 16 annual values and status flags, inspect definitions, and finish with countries as rows and years as columns.",
+    "source": {
+      "canonicalUrl": "https://ec.europa.eu/eurostat/databrowser/view/une_rt_a/default/table?lang=en",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "unverified-offline"
+    },
+    "key": {
+      "status": "to-verify",
+      "verify": "Confirm dataset and dimension availability in Chromium; capture exact unit/age/sex selections, 16 cells, flags and update date; verify annual rather than monthly data.",
+      "nearMiss": "Use youth unemployment or a different unit with otherwise matching selections."
+    },
+    "referencePath": [
+      "dataset navigation",
+      "dimension dialogs",
+      "definitions",
+      "table layout",
+      "configured table"
+    ],
+    "referenceActions": [
+      24,
+      38
+    ],
+    "botRisk": "medium; JavaScript shell, consent or service failures",
+    "excluded": true,
+    "exclusionReason": "Candidate: key and walkthrough unverified."
+  }
+]

@@ -1,0 +1,178 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "live-long-fixtures",
+  "kind": "long-local-fixture-evaluation-config",
+  "status": "configured",
+  "sourceSelector": "bench/agent/live-long-fixtures.ts",
+  "taskCount": 16,
+  "workflows": [
+    "basket",
+    "access",
+    "suppliers",
+    "retention",
+    "workspace",
+    "casework",
+    "budgets",
+    "dispatch"
+  ],
+  "hazard": {
+    "off": "frozen seed 44117, no hazard",
+    "on": "paired dev seed 11903 with one semantic-event hazard"
+  },
+  "tasks": [
+    "llf-basket-off",
+    "llf-basket-on",
+    "llf-access-off",
+    "llf-access-on",
+    "llf-suppliers-off",
+    "llf-suppliers-on",
+    "llf-retention-off",
+    "llf-retention-on",
+    "llf-workspace-off",
+    "llf-workspace-on",
+    "llf-casework-off",
+    "llf-casework-on",
+    "llf-budgets-off",
+    "llf-budgets-on",
+    "llf-dispatch-off",
+    "llf-dispatch-on"
+  ],
+  "approaches": [
+    "mantis",
+    "tree",
+    "screenshot"
+  ],
+  "runs": 3,
+  "grading": "full business ledger vs independently written expected state; terminal URL, visible confirmation, completed=true, pending=0, matching revision; receipt in answer",
+  "limits": {
+    "pilot": {
+      "timeoutS": 1800,
+      "maxToolCalls": 160,
+      "maxSteps": 200,
+      "concurrency": 3,
+      "runs": 1
+    },
+    "scored": {
+      "timeoutS": 1200,
+      "maxToolCalls": 100,
+      "maxSteps": 150,
+      "concurrency": 3,
+      "runs": 3
+    }
+  },
+  "cases": [
+    {
+      "id": "llf-basket-off",
+      "workflow": "basket",
+      "hazard": "off",
+      "nearMiss": "named plausible wrong final state",
+      "hazardTrigger": "add a product"
+    },
+    {
+      "id": "llf-basket-on",
+      "workflow": "basket",
+      "hazard": "on",
+      "nearMiss": "named plausible wrong final state",
+      "hazardTrigger": "add a product"
+    },
+    {
+      "id": "llf-access-off",
+      "workflow": "access",
+      "hazard": "off",
+      "nearMiss": "named plausible wrong final state",
+      "hazardTrigger": "stage a staff edit"
+    },
+    {
+      "id": "llf-access-on",
+      "workflow": "access",
+      "hazard": "on",
+      "nearMiss": "named plausible wrong final state",
+      "hazardTrigger": "stage a staff edit"
+    },
+    {
+      "id": "llf-suppliers-off",
+      "workflow": "suppliers",
+      "hazard": "off",
+      "nearMiss": "named plausible wrong final state",
+      "hazardTrigger": "change offer page"
+    },
+    {
+      "id": "llf-suppliers-on",
+      "workflow": "suppliers",
+      "hazard": "on",
+      "nearMiss": "named plausible wrong final state",
+      "hazardTrigger": "change offer page"
+    },
+    {
+      "id": "llf-retention-off",
+      "workflow": "retention",
+      "hazard": "off",
+      "nearMiss": "named plausible wrong final state",
+      "hazardTrigger": "archive a version"
+    },
+    {
+      "id": "llf-retention-on",
+      "workflow": "retention",
+      "hazard": "on",
+      "nearMiss": "named plausible wrong final state",
+      "hazardTrigger": "archive a version"
+    },
+    {
+      "id": "llf-workspace-off",
+      "workflow": "workspace",
+      "hazard": "off",
+      "nearMiss": "sam remains while taylor is missing",
+      "hazardTrigger": "remove an invite"
+    },
+    {
+      "id": "llf-workspace-on",
+      "workflow": "workspace",
+      "hazard": "on",
+      "nearMiss": "sam remains while taylor is missing",
+      "hazardTrigger": "remove an invite"
+    },
+    {
+      "id": "llf-casework-off",
+      "workflow": "casework",
+      "hazard": "off",
+      "nearMiss": "queue restored to East page 1",
+      "hazardTrigger": "Back or Forward history event"
+    },
+    {
+      "id": "llf-casework-on",
+      "workflow": "casework",
+      "hazard": "on",
+      "nearMiss": "queue restored to East page 1",
+      "hazardTrigger": "Back or Forward history event"
+    },
+    {
+      "id": "llf-budgets-off",
+      "workflow": "budgets",
+      "hazard": "off",
+      "nearMiss": "Engineering and Operations owners swapped",
+      "hazardTrigger": "select a department tab"
+    },
+    {
+      "id": "llf-budgets-on",
+      "workflow": "budgets",
+      "hazard": "on",
+      "nearMiss": "Engineering and Operations owners swapped",
+      "hazardTrigger": "select a department tab"
+    },
+    {
+      "id": "llf-dispatch-off",
+      "workflow": "dispatch",
+      "hazard": "off",
+      "nearMiss": "q20 receives q19 preparation",
+      "hazardTrigger": "dispatch staged orders"
+    },
+    {
+      "id": "llf-dispatch-on",
+      "workflow": "dispatch",
+      "hazard": "on",
+      "nearMiss": "q20 receives q19 preparation",
+      "hazardTrigger": "dispatch staged orders"
+    }
+  ],
+  "focusedCommand": "AGENT_SUITE=live-long-fixtures AGENT_TASKS=all AGENT_RUNS=3 AGENT_CONCURRENCY=3"
+}
