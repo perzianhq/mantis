@@ -15,6 +15,6 @@ while ($true) {
   }
   $score = ($per.Keys | ForEach-Object { "{0} {1}/{2}" -f $_, $per[$_][0], $per[$_][1] }) -join ' | '
   $line = "{0:HH:mm:ss}  done {1}/{2}  running {3}  |  {4}" -f (Get-Date), $done, $Total, [Math]::Max(0, $started - $done), $score
-  Write-Host -NoNewline ("`r" + $line.PadRight(150))
+  Clear-Host; Write-Host $line
   Start-Sleep $Every
 }
