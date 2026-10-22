@@ -87,6 +87,9 @@ export function walker(includeSrOnly = false): WalkResult {
   const clickListeners = (window as unknown as { __mantisClick?: WeakSet<Element> }).__mantisClick;
 
   const MAX_NODES = 3000;
+  // The walk itself stops at a multiple of the cap so a huge page stays cheap; the nodes kept in the
+  // end are chosen by closeness to the viewport (see the budgeting step after the walk).
+  const WALK_LIMIT = MAX_NODES * 4;
   const SKIP = new Set([
     'script', 'style', 'noscript', 'template', 'head', 'svg', 'canvas',
     'object', 'embed', 'link', 'meta', 'title', 'audio', 'video', 'datalist',
@@ -114,7 +117,7 @@ export function walker(includeSrOnly = false): WalkResult {
     ':not(span,b,i,em,strong,small,sub,sup,br,code,abbr,mark,u,s,time,cite,q,wbr,font,img,bdi,del,ins,var,kbd,samp),' +
     '[role],[onclick],[tabindex],[contenteditable]';
 
-  const nodes: RawNode[] = [];
+  let nodes: RawNode[] = [];
   let truncated = false;
 
   const vw = document.documentElement.clientWidth || window.innerWidth;
@@ -1101,7 +1104,7 @@ export function walker(includeSrOnly = false): WalkResult {
     const found = Array.from(root.querySelectorAll(sel));
     if (root.matches(sel)) found.unshift(root);
     for (const c of found) {
-      if (nodes.length >= MAX_NODES) { truncated = true; return; }
+      if (nodes.length >= WALK_LIMIT) { truncated = true; return; }
       if (c.closest('[aria-hidden="true"],[inert]')) continue;
       const cs = getComputedStyle(c);
       if (cs.visibility !== 'visible' || cs.pointerEvents === 'none' || cs.display === 'none' || (c !== root && parseFloat(cs.opacity) === 0)) continue;
@@ -1187,7 +1190,7 @@ export function walker(includeSrOnly = false): WalkResult {
   }
 
   function visit(el: Element, parent: number, depth: number, box: DOMRect, inheritedSr = false, inheritedOpen?: { id: number; name: string }): void {
-    if (nodes.length >= MAX_NODES) { truncated = true; return; }
+    if (nodes.length >= WALK_LIMIT) { truncated = true; return; }
     if (el.localName === 'canvas') { canvasMark(el, parent, depth); return; }
     if (SKIP.has(el.localName)) return;
     if (el.localName === 'iframe' || el.localName === 'frame') { frameMark(el, parent, depth); return; }
@@ -1387,6 +1390,59 @@ export function walker(includeSrOnly = false): WalkResult {
     hintSeen.set(h.hint, at);
     h.node.name = total > 1 && !/ \d+( of \d+)?$/.test(h.hint) ? `${h.hint} ${at} of ${total}` : h.hint;
     h.node.inferred = true;
+  }
+
+  // Do not let document order decide which third of a long page is useful.  We still walk the
+  // page to find content around the current scroll position, then retain the viewport, its near
+  // neighbours and landmark roots before older far-offscreen material.  Ancestors come along so
+  // the compacted result remains a valid tree.
+  if (nodes.length > MAX_NODES) {
+    truncated = true;
+    const viewportTop = window.scrollY;
+    const viewportBottom = viewportTop + vh;
+    const landmark = new Set(['header', 'nav', 'main', 'aside', 'footer', 'search', 'dialog', 'alertdialog']);
+    const priority = (n: RawNode): number => {
+      let score = n.kind === 'region' && landmark.has(n.role) ? 1000 : 0;
+      const box = n.box;
+      if (!box) return score;
+      const top = box[1];
+      const bottom = top + box[3];
+      if (bottom > viewportTop && top < viewportBottom) return score + 900;
+      const distance = bottom <= viewportTop ? viewportTop - bottom : top - viewportBottom;
+      if (distance <= vh) return score + 600;
+      if (distance <= 2 * vh) return score + 300;
+      return score;
+    };
+    const distanceOf = (n: RawNode): number => {
+      const box = n.box;
+      if (!box) return Infinity;
+      const top = box[1];
+      const bottom = top + box[3];
+      if (bottom > viewportTop && top < viewportBottom) return 0;
+      return bottom <= viewportTop ? viewportTop - bottom : top - viewportBottom;
+    };
+    // Within a band, the node closest to the viewport wins; document order only breaks exact ties.
+    const ranked = nodes.map((n, index) => ({ index, score: priority(n), distance: distanceOf(n) }))
+      .sort((a, b) => b.score - a.score || a.distance - b.distance || a.index - b.index);
+    const kept = new Set<number>();
+    const add = (index: number): void => {
+      const chain: number[] = [];
+      for (let at = index; at >= 0 && !kept.has(at); at = nodes[at].parent) chain.push(at);
+      if (kept.size + chain.length > MAX_NODES) return;
+      chain.reverse().forEach((at) => kept.add(at));
+    };
+    for (const candidate of ranked) {
+      if (kept.size >= MAX_NODES) break;
+      add(candidate.index);
+    }
+    const newIndex = new Map<number, number>();
+    const compact: RawNode[] = [];
+    nodes.forEach((n, index) => {
+      if (!kept.has(index)) return;
+      newIndex.set(index, compact.length);
+      compact.push({ ...n, parent: n.parent >= 0 ? newIndex.get(n.parent) ?? -1 : -1 });
+    });
+    nodes = compact;
   }
 
   // Visible text is kept even away from controls (prices, status lines, table cells): dropping it

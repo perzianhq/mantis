@@ -5,7 +5,7 @@ import type { RawNode, Snapshot } from './capture/index.js';
 import { findInSnapshot, translate } from './translate.js';
 import type { ReadOptions } from './translate.js';
 import { SiteMemory, originOf } from './memory.js';
-import { NO_CHANGE, diffSnapshots, headerLines } from './diff.js';
+import { NO_CHANGE, answerReadyCue, diffSnapshots, headerLines } from './diff.js';
 import { listMedia, describeElement, formatData } from './fallback/media.js';
 import type { Target } from './fallback/media.js';
 import { detectCaptcha, noHuman } from './fallback/captcha.js';
@@ -894,6 +894,8 @@ export class MantisBrowser {
       const after = await this.observe(now).catch(() => null);
       if (before && after && now === page && before.doc !== null && before.doc === after.doc) {
         this.remember(after.snap, after.doc);
+        const cue = answerReadyCue(before.snap, after.snap);
+        if (cue) lines.push(cue);
         const d = diffSnapshots(before.snap, after.snap);
         if (!(opts.quiet && d === NO_CHANGE)) lines.push(d);
       } else {
@@ -903,6 +905,8 @@ export class MantisBrowser {
         else if (after) {
           this.labels.clear();
           this.known.clear();
+          const cue = before ? answerReadyCue(before.snap, after.snap) : null;
+          if (cue) lines.push(cue);
           lines.push(this.render(after.snap, {}, after.doc));
           if (this.hasDisabledControls(after.snap)) lines.push(this.hydrationNote());
         }

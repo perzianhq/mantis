@@ -603,7 +603,7 @@ function regionInfos(nodes: RawNode[]): RegionInfo[] {
 export function translate(snap: Snapshot, budget: number = BUDGET_CHARS, opts: ReadOptions = {}, hook?: RegionHook): string {
   const header = `Page: ${snap.title || '(no title)'}  (${snap.url.length > 160 ? snap.url.slice(0, 159) + '…' : snap.url})`;
   const tail: string[] = [];
-  if (snap.truncated) tail.push('(capture stopped: page has more than 3000 elements)');
+  if (snap.truncated) tail.push('(capture stopped: page has more than 3000 elements; kept those nearest the viewport and landmarks, omitted the rest)');
 
   let nodes = deriveRegions(snap);
   const head = [header];

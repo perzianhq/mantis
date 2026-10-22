@@ -16,7 +16,8 @@ import { fixture } from './helpers.js';
 // Pages whose point is something other than reading (human hand-off, OCR of pixels, CAPTCHAs), and
 // hidden.html: elements a person cannot see (opacity 0, zero size, off screen, collapsed). The tree
 // keeps them; Mantis drops them on purpose (tested in reading.test.ts).
-const SKIP = new Set(['human.html', 'ocr.html', 'captcha.html', 'invisible-captcha.html', 'bigcanvas.html', 'hidden.html']);
+// viewport-cap.html is over the node cap on purpose, so it drops far-offscreen content (tested in generic-capture-fixes.test.ts).
+const SKIP = new Set(['human.html', 'ocr.html', 'captcha.html', 'invisible-captcha.html', 'bigcanvas.html', 'hidden.html', 'viewport-cap.html']);
 const PAGES = readdirSync(resolve(import.meta.dirname, 'fixtures')).filter((f) => f.endsWith('.html') && !SKIP.has(f));
 
 // Roles that carry no information of their own (containers, structure).

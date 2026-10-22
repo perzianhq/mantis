@@ -48,4 +48,18 @@ describe('generic capture fixes', () => {
     expect(snap.nodes.find((n) => n.name === 'Ready now')?.live).toBe('status');
     expect(names.filter((n) => n.includes('disk icon'))).toHaveLength(1);
   });
+
+  it('keeps the current viewport when a page exceeds the capture cap', async () => {
+    await browser.open(fixture('viewport-cap.html'));
+    const page = (browser as unknown as { page: { evaluate: (fn: () => void) => Promise<void> } }).page;
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    const snap = await browser.snapshot();
+    expect(snap.truncated).toBe(true);
+    expect(snap.nodes.length).toBeLessThanOrEqual(3000);
+    expect(snap.nodes.length).toBeGreaterThan(2900);
+    expect(snap.nodes.some((n) => n.name === 'Far item 3050')).toBe(true);
+    expect(snap.nodes.some((n) => n.name === 'Current result')).toBe(true);
+    // Near miss: document-order truncation would retain the first distant item instead.
+    expect(snap.nodes.some((n) => n.name === 'Far item 1')).toBe(false);
+  });
 });

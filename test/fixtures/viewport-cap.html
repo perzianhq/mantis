@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Viewport budget</title>
+  <style>#far button { display: block; height: 24px; } main { min-height: 200px; }</style>
+</head>
+<body>
+  <header><a href="#current">Primary navigation</a></header>
+  <div id="far"></div>
+  <main id="current"><h1>Current content</h1><button>Current result</button></main>
+  <script>
+    const far = document.querySelector('#far');
+    for (let i = 1; i <= 3050; i++) {
+      const button = document.createElement('button');
+      button.textContent = `Far item ${i}`;
+      far.append(button);
+    }
+  </script>
+</body>
+</html>
