@@ -5,4 +5,4 @@ export const EXPLICIT_ACTION_GUIDANCE = 'Perform explicitly requested UI actions
 export const COMPLETION_GUIDANCE = 'Once every requested action and constraint is verified and the required answer is available, return the final answer.';
 
 /** Screenshot agents have pixels and keyboard input, but no DOM/select inspection. */
-export const NATIVE_SELECT_KEYBOARD_GUIDANCE = 'For a native dropdown, click it to focus, use ArrowDown or ArrowUp to choose, press Enter, then take a screenshot to verify the displayed selection.';
+export const NATIVE_SELECT_KEYBOARD_GUIDANCE = 'For a native dropdown, click it to reveal its visible menu and click the desired item, or use Down or Up then press Return; take a screenshot to verify the displayed selection.';

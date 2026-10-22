@@ -16,6 +16,13 @@ export interface ScreenshotScrollInput {
 
 export const SCREENSHOT_SCROLL_DESCRIPTION = 'Scroll the page or the scrollable UI under an optional viewport coordinate. Use direction (up/down/left/right) with optional amount, or direct deltaX/deltaY for custom or diagonal movement.';
 
+/** Anthropic-style `computer` scroll amounts are wheel ticks, not CSS pixels. */
+export const COMPUTER_SCROLL_TICK_PIXELS = 100;
+
+export function resolveComputerScroll(direction: ScreenshotScrollDirection, amount: number): { deltaX: number; deltaY: number } {
+  return resolveScreenshotScroll({ direction, amount: amount * COMPUTER_SCROLL_TICK_PIXELS });
+}
+
 export const screenshotScrollSchema = z.object({
   direction: z.enum(['up', 'down', 'left', 'right']).optional(),
   amount: z.number().positive().max(5_000).optional(),

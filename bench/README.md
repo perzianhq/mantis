@@ -243,8 +243,9 @@ A cloud session can't message back and sends no notice when it ends. Have it com
 
 - `mantis`: all Mantis tools (`dist/server.js`).
 - `tree`: Playwright MCP 0.0.83, headless, isolated, without its JavaScript-running tools.
-- `screenshot`: `agent/screenshot-mcp.ts`, a minimal computer-use-style server
-  (screenshot, click(x, y), type, key, scroll, back).
+- `screenshot`: `agent/screenshot-mcp.ts`, an Anthropic-style `computer` tool
+  (screenshot, zoom, cursor, clicks/drags, type, xdotool-style keys, waits and scrolling), plus `navigate` and `back`.
+  Scroll amounts are wheel ticks (100 CSS pixels each). Native dropdown popups are replaced in headless Chromium by a temporary in-page option menu, because OS popups are not reliably screenshot-visible or coordinate-hit-testable; choosing an option updates the real select and fires its normal `input` and `change` events.
 - `devtools` (optional): Chrome DevTools MCP 1.10.1 with page JavaScript and unrelated categories disabled.
 - `browseruse` (optional): browser-use MCP, with LLM-backed and raw-HTML tools disabled.
 
