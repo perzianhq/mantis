@@ -24,7 +24,7 @@ const receiptOf = (entry: Entry): string => {
 };
 
 /** Replay the reference walkthrough in a fresh page and return the server-side verification. */
-async function replay(entry: Entry, attempt: string, steps = entry.walkthrough) {
+async function replay(entry: Entry, attempt: string, steps = entry.walkthrough, inspect?: (page: import('playwright').Page, base: string) => Promise<void>) {
   const context = await browser.newContext();
   const page = await context.newPage();
   const errors: string[] = [];
@@ -38,6 +38,7 @@ async function replay(entry: Entry, attempt: string, steps = entry.walkthrough) 
       else if (step.op === 'select') await page.locator(step.target).first().selectOption(step.value ?? '', { timeout: 5000 });
       else await page.locator(step.target).first().check({ timeout: 5000 });
     }
+    if (inspect) await inspect(page, base);
     await page.waitForTimeout(900);
     const verification = await fixtures.verify(entry.id, attempt);
     return { verification: verification!, errors };
@@ -86,6 +87,79 @@ describe('live-long-fixtures answers', () => {
     const basket = LIVE_LONG_FIXTURE_TASKS.find((task) => task.id === 'llf-basket-off')!;
     expect((basket.expect as RegExp).test(`Receipt ${receiptOf(LIVE_LONG_FIXTURE_CASES.find((e) => e.id === 'llf-basket-off')!)} only`)).toBe(false);
   });
+});
+
+describe('live-long fixture regression coverage', () => {
+  it('accepts terminal fragments but rejects a different terminal route', async () => {
+    for (const id of ['llf-access-on', 'llf-dispatch-on']) {
+      const entry = LIVE_LONG_FIXTURE_CASES.find((candidate) => candidate.id === id)!;
+      const { verification } = await replay(entry, `${id}-fragment`);
+      const fragment = withLast(verification.provenance.events, (event) => ({ ...event, long: { ...event.long!, url: `${event.long!.url}#top` } }));
+      expect(entry.check(fragment)).toBe(true);
+      const wrongRoute = withLast(fragment, (event) => ({ ...event, long: { ...event.long!, url: '/live-long/other/on/summary' } }));
+      expect(entry.check(wrongRoute)).not.toBe(true);
+    }
+  }, 120_000);
+
+  it('preserves completed access and retention ledgers across a direct summary reload, while incomplete work remains failing', async () => {
+    for (const id of ['llf-access-off', 'llf-retention-off']) {
+      const entry = LIVE_LONG_FIXTURE_CASES.find((candidate) => candidate.id === id)!;
+      const summary = entry.name === 'access' ? 'summary' : 'summary';
+      const completed = await replay(entry, `${id}-reload-complete`, entry.walkthrough, async (page, base) => {
+        await page.goto(`${base}/live-long/${entry.name}/off/${summary}`);
+        expect(await page.locator('main').innerText()).toContain(receiptOf(entry));
+      });
+      expect(completed.verification.ok).toBe(true);
+      const incomplete = await replay(entry, `${id}-reload-incomplete`, entry.walkthrough.slice(0, -1), async (page, base) => {
+        await page.goto(`${base}/live-long/${entry.name}/off/${summary}`);
+        expect(await page.locator('main').innerText()).not.toContain(receiptOf(entry));
+      });
+      expect(incomplete.verification.ok).toBe(false);
+    }
+  }, 120_000);
+
+  it('renders charged and quoted totals from saved state, rejecting wrong selections', async () => {
+    const basket = LIVE_LONG_FIXTURE_CASES.find((entry) => entry.id === 'llf-basket-off')!;
+    const correctBasket = await replay(basket, 'basket-real-total-correct');
+    expect(correctBasket.verification.ok).toBe(true);
+    const wrongBasketSteps = basket.walkthrough.filter((step) => step.target !== '[aria-label="Add p25"]' && step.target !== '[aria-label="Add p42"]');
+    const wrongBasket = await replay(basket, 'basket-real-total-wrong', wrongBasketSteps, async (page) => {
+      expect(await page.locator('#done').innerText()).toContain('Total charged €28.39');
+      expect(await page.locator('#done').innerText()).not.toContain(receiptOf(basket));
+    });
+    expect(wrongBasket.verification.ok).toBe(false);
+
+    const suppliers = LIVE_LONG_FIXTURE_CASES.find((entry) => entry.id === 'llf-suppliers-off')!;
+    const wrongSupplierSteps = suppliers.walkthrough.map((step) => step.target === '#chosen' ? { ...step, value: 'o03' } : step);
+    const wrongSupplier = await replay(suppliers, 'suppliers-real-total-wrong', wrongSupplierSteps, async (page) => {
+      expect(await page.locator('#quote').innerText()).toContain('EUR 850.00');
+      expect(await page.locator('#quote').innerText()).not.toContain(receiptOf(suppliers));
+    });
+    expect(wrongSupplier.verification.ok).toBe(false);
+  }, 120_000);
+
+  it('re-renders the matching view after supplier Back and preserves a dispatch receipt through history and hash navigation', async () => {
+    const suppliers = LIVE_LONG_FIXTURE_CASES.find((entry) => entry.id === 'llf-suppliers-off')!;
+    const comparisonSteps = suppliers.walkthrough.slice(0, -3);
+    const supplierBack = await replay(suppliers, 'suppliers-history-back', comparisonSteps, async (page) => {
+      await page.goBack();
+      expect(await page.locator('#offers').isVisible()).toBe(true);
+      expect(await page.locator('#comparison').isVisible()).toBe(false);
+      expect(await page.locator('#offer-list').innerText()).toContain('o01');
+    });
+    expect(supplierBack.verification.ok).toBe(false);
+
+    const dispatch = LIVE_LONG_FIXTURE_CASES.find((entry) => entry.id === 'llf-dispatch-off')!;
+    const receipt = await replay(dispatch, 'dispatch-history-receipt', dispatch.walkthrough, async (page) => {
+      await page.waitForFunction((value) => document.querySelector('#view')?.textContent?.includes(value), receiptOf(dispatch));
+      await page.goBack();
+      await page.goForward();
+      expect(await page.locator('#view').innerText()).toContain(receiptOf(dispatch));
+      await page.evaluate(() => { location.hash = 'top'; });
+      expect(await page.locator('#view').innerText()).toContain(receiptOf(dispatch));
+    });
+    expect(receipt.verification.ok).toBe(true);
+  }, 120_000);
 });
 
 describe.each(LIVE_LONG_FIXTURE_CASES.map((entry) => [entry.id, entry] as const))('%s', (_id, entry) => {

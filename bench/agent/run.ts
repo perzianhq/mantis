@@ -341,7 +341,7 @@ interface AttemptResult {
   usageComplete: boolean;
   /** Sarvam's published-price estimate; other providers leave this unknown. */
   costInr: number | null;
-  /** API calls including retries, and provider 429s, for Sarvam only. */
+  /** API calls including retries, and provider 429s, for Sarvam and Claude. */
   apiAttempts: number;
   rateLimits: number;
   usage: StreamUsage;
@@ -654,8 +654,8 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
       (PROVIDER === 'sarvam' ? (parsed as SarvamAgentResult).totalInputTokens : [parsed.usage.inputTokens, parsed.usage.cacheWriteTokens, parsed.usage.cacheReadTokens].some((n) => n === null)
         ? null : (parsed.usage.inputTokens ?? 0) + (parsed.usage.cacheWriteTokens ?? 0) + (parsed.usage.cacheReadTokens ?? 0)),
     usageComplete: parsed.usageComplete, usage: parsed.usage, costInr,
-    apiAttempts: PROVIDER === 'sarvam' ? ((parsed as SarvamAgentResult).apiAttempts ?? 0) : 0,
-    rateLimits: PROVIDER === 'sarvam' ? ((parsed as SarvamAgentResult).rateLimits ?? 0) : 0,
+    apiAttempts: PROVIDER === 'sarvam' ? ((parsed as SarvamAgentResult).apiAttempts ?? 0) : PROVIDER === 'claude' ? parsed.apiAttempts : 0,
+    rateLimits: PROVIDER === 'sarvam' ? ((parsed as SarvamAgentResult).rateLimits ?? 0) : PROVIDER === 'claude' ? parsed.rateLimits : 0,
     timings: {
       mcpStartupMs, cliStartupMs: processResult.initAt === null || cliStart === null ? null : processResult.initAt - cliStart,
       cliExecutionMs: processResult.initAt === null || cliExitAt === null ? null : cliExitAt - processResult.initAt,

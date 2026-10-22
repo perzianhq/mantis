@@ -78,6 +78,10 @@ export interface ParsedStream {
   mcpStatuses: string[];
   sawResult: boolean;
   sawInit: boolean;
+  /** Claude calls: one initial call plus each `system/api_retry` event. */
+  apiAttempts: number;
+  /** Claude `system/api_retry` events whose reported HTTP status is 429. */
+  rateLimits: number;
 }
 
 const emptyUsage = (): StreamUsage => ({
@@ -115,6 +119,9 @@ export function parseClaudeStream(stream: string): ParsedStream {
   let resultError = false;
   let toolErrors = 0;
   let sawResult = false;
+  // Claude only emits events for retries, so include the initial API call.
+  let apiAttempts = 1;
+  let rateLimits = 0;
   let usage = emptyUsage();
   const usageMessages = new Set<string>();
   const toolUseIds = new Set<string>();
@@ -129,6 +136,10 @@ export function parseClaudeStream(stream: string): ParsedStream {
       const servers = Array.isArray(event.mcp_servers) ? event.mcp_servers as Record<string, unknown>[] : [];
       mcpStatuses = servers.map((s) => typeof s.status === 'string' ? s.status : 'unknown');
       if (typeof event.model === 'string') { initModel = event.model; resolvedModels.push(event.model); }
+    }
+    if (type === 'system' && event.subtype === 'api_retry') {
+      apiAttempts++;
+      if (event.error_status === 429 || event.error_status === '429') rateLimits++;
     }
     if (type === 'assistant') {
       const message = event.message && typeof event.message === 'object' ? event.message as Record<string, unknown> : {};
@@ -186,7 +197,7 @@ export function parseClaudeStream(stream: string): ParsedStream {
   resolvedModels = [...new Set(resolvedModels)];
   return {
     connected: sawInit && mcpStatuses.length > 0 && mcpStatuses.every((status) => status === 'connected'),
-    initModel, resolvedModels, toolCalls, observationChars, observationImages, turns, resultText, usage, usageComplete: sawResult, resultError, toolErrors, mcpStatuses, sawResult, sawInit,
+    initModel, resolvedModels, toolCalls, observationChars, observationImages, turns, resultText, usage, usageComplete: sawResult, resultError, toolErrors, mcpStatuses, sawResult, sawInit, apiAttempts, rateLimits,
   };
 }
 

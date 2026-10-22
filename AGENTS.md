@@ -28,6 +28,15 @@ Plan on the strong model; delegate coding to the cheaper one with files and acce
 - Trial Sarvam trace/log analysis and doc summaries with source references and sol sampling for omissions and invented claims. Tool diagnostics flag steps for planned semantic review; sol validates a sample.
 - Put `SARVAM_API_KEY` only in gitignored `.env`.
 
+## Running Codex from Claude Code (Windows)
+Codex is the default worker: sol analyses and reviews, terra writes code. Claude orchestrates and reviews the diff; don't fall back to a Sonnet subagent for implementation unless the user says so.
+- Launch: `scripts/codex-job.sh <label> <model> <effort> <sandbox> <brief.md>` through Bash with `run_in_background`. Use `read-only` for analysis/review and `workspace-write` for edits. Read only `.codex-jobs/<label>.out.md` and `.status` (`state=done`, `exit=0`) afterwards; never poll.
+- Put the briefing in a file: the task, files, acceptance criteria, "do NOT commit". Codex has no context from the chat.
+- PATH: Git Bash can't find `codex`. Prepend `export PATH="/c/Users/aadit/.codex/plugins/.plugin-appserver:$PATH"` before the script. `.codex/.sandbox-bin` has `codex.exe` but no `codex-windows-sandbox-setup.exe`, so `workspace-write` fails there with "every command fails before launch" and no files are edited. A `spawnSync codex ENOENT` means the PATH line is missing.
+- Smoke first, in the same sandbox as the real job: a "say hi" `read-only` smoke passes even when `workspace-write` is broken, so smoke with `workspace-write` and have it create and delete a scratch file.
+- After a job: check `git status`/`git diff` yourself. A job can exit 0 and report being blocked, with nothing changed.
+- Several runs at once get one status tab via `scripts/run-status-multi.ps1`.
+
 ## Testing and evals
 - Use the highest parallelism this 12-core machine allows: vitest's default thread pool (don't serialise). Sarvam defaults to 10 scheduled cases; each case starts a browser, so lower it if RAM becomes constrained.
 - Don't run the unit suite while a big eval is running; they compete for RAM.

@@ -16,6 +16,23 @@ describe('real-agent benchmark integrity helpers', () => {
     expect(parsed.usage).toEqual({ inputTokens: 100, cacheWriteTokens: 30, cacheReadTokens: 50, outputTokens: 12, costUsd: 0.012 });
   });
 
+  it('counts Claude API retries as additional attempts and records retry 429s', () => {
+    const parsed = parseClaudeStream([
+      JSON.stringify({ type: 'system', subtype: 'api_retry', attempt: 1, error_status: null }),
+      JSON.stringify({ type: 'system', subtype: 'api_retry', attempt: 2, error_status: 429 }),
+      JSON.stringify({ type: 'system', subtype: 'api_retry', attempt: 3, error_status: '429' }),
+    ].join('\n'));
+    // Retry events omit the initial request, so attempts are retries plus one.
+    expect(parsed.apiAttempts).toBe(4);
+    expect(parsed.rateLimits).toBe(2);
+  });
+
+  it('keeps the initial Claude API attempt when its stream has no retries', () => {
+    const parsed = parseClaudeStream(JSON.stringify({ type: 'system', subtype: 'init', mcp_servers: [{ status: 'connected' }] }));
+    expect(parsed.apiAttempts).toBe(1);
+    expect(parsed.rateLimits).toBe(0);
+  });
+
   it('does not count repeated assistant message snapshots twice or invent absent cache counts', () => {
     const message = { id: 'msg-1', model: 'claude-sonnet-4-6-20250514', usage: { input_tokens: 10, output_tokens: 2 }, content: [{ type: 'tool_use', id: 'tool-1', name: 'read' }] };
     const parsed = parseClaudeStream([
