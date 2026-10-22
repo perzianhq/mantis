@@ -59,16 +59,16 @@ function loadRaw(file: string): Record<string, unknown>[] {
 
 export function validateLiveV1Rows(rows: readonly LiveV1Row[]): void {
   const fail = (message: string): never => { throw new Error(`live-v1 catalog invalid: ${message}`); };
-  if (rows.length !== 30) fail(`expected 30 documented tasks, got ${rows.length}`);
+  if (rows.length !== 31) fail(`expected 31 documented tasks, got ${rows.length}`);
   const scored = rows.filter((row) => !row.excluded);
-  if (scored.length !== 29) fail(`expected 29 scored tasks, got ${scored.length}`);
+  if (scored.length !== 30) fail(`expected 30 scored tasks, got ${scored.length}`);
   if (new Set(rows.map((row) => row.task_id)).size !== rows.length) fail('task ids must be unique');
   const count = (items: readonly string[], value: string) => items.filter((item) => item === value).length;
-  const families = rows.map((row) => row.family);
-  if (families.some((family) => !LIVE_V1_FAMILIES.includes(family))) fail('contains an unknown family');
-  for (const family of LIVE_V1_FAMILIES) if (count(families, family) !== 5) fail(`family ${family} must contain exactly five tasks`);
+  const families = scored.map((row) => row.family);
+  if (rows.some((row) => !LIVE_V1_FAMILIES.includes(row.family))) fail('contains an unknown family');
+  for (const family of LIVE_V1_FAMILIES) if (count(families, family) !== 5) fail(`family ${family} must contain exactly five scored tasks`);
   const gradings = scored.map((row) => row.grading);
-  if (count(gradings, 'deterministic') !== 19 || count(gradings, 'judge') !== 10) fail('requires 19 deterministic and 10 judged scored tasks');
+  if (count(gradings, 'deterministic') !== 20 || count(gradings, 'judge') !== 10) fail('requires 20 deterministic and 10 judged scored tasks');
   for (const row of rows) {
     if (row.excluded && !row.exclusionReason?.trim()) fail(`${row.task_id} is excluded without an exclusion reason`);
     if (!row.excluded && row.exclusionReason !== undefined) fail(`${row.task_id} has an exclusion reason but is not excluded`);
@@ -78,7 +78,7 @@ export function validateLiveV1Rows(rows: readonly LiveV1Row[]): void {
     if (!row.source.canonicalUrl.startsWith('https://') || row.source.fingerprintBasis !== 'canonical-url-and-contract') fail(`${row.task_id} has no canonical HTTPS source fingerprint basis`);
     if (!['unverified-offline', 'reachable', 'blocked', 'changed'].includes(row.source.preflight)) fail(`${row.task_id} has an invalid preflight status`);
   }
-  for (const [level, expected] of Object.entries({ easy: 7, medium: 14, hard: 8 })) if (count(scored.map((row) => row.level), level) !== expected) fail(`expected ${expected} scored ${level} tasks`);
+  for (const [level, expected] of Object.entries({ easy: 8, medium: 14, hard: 8 })) if (count(scored.map((row) => row.level), level) !== expected) fail(`expected ${expected} scored ${level} tasks`);
   const sites = new Map<string, number>();
   for (const row of rows) {
     const origin = new URL(row.website).origin;

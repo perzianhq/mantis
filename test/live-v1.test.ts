@@ -10,12 +10,12 @@ import type { LiveV1Row } from '../bench/agent/live-v1.js';
 
 describe('live-v1 frozen public catalog', () => {
   it('documents excluded rows but schedules and scores only the frozen scored cohort', () => {
-    expect(LIVE_V1_ROWS).toHaveLength(30);
-    expect(LIVE_V1_SCORED_ROWS).toHaveLength(29);
+    expect(LIVE_V1_ROWS).toHaveLength(31);
+    expect(LIVE_V1_SCORED_ROWS).toHaveLength(30);
     expect(LIVE_V1_ROWS.filter((row) => row.excluded)).toEqual([expect.objectContaining({ task_id: 'livev1-standards-gpl-3', exclusionReason: expect.any(String) })]);
-    expect(LIVE_V1_TASKS).toHaveLength(29);
-    expect(LIVE_V1_TASKS.filter((task) => task.judged)).toHaveLength(29);
-    expect(LIVE_V1_SCORED_ROWS.filter((row) => row.grading === 'deterministic')).toHaveLength(19);
+    expect(LIVE_V1_TASKS).toHaveLength(30);
+    expect(LIVE_V1_TASKS.filter((task) => task.judged)).toHaveLength(30);
+    expect(LIVE_V1_SCORED_ROWS.filter((row) => row.grading === 'deterministic')).toHaveLength(20);
     expect(LIVE_V1_SCORED_ROWS.filter((row) => row.grading === 'judge')).toHaveLength(10);
     expect(LIVE_V1_TASKS.map((task) => task.id)).not.toContain('livev1-standards-gpl-3');
   });
@@ -24,18 +24,18 @@ describe('live-v1 frozen public catalog', () => {
     const corrupt = LIVE_V1_ROWS.map((row) => ({ ...row })) as LiveV1Row[];
     const scoredIndex = corrupt.findIndex((row) => !row.excluded);
     corrupt[scoredIndex] = { ...corrupt[scoredIndex]!, grading: 'judge', deterministic: undefined, judgeRubric: 'A rubric alone cannot repair the frozen allocation.' };
-    expect(() => validateLiveV1Rows(corrupt)).toThrow(/19 deterministic and 10 judged scored/);
+    expect(() => validateLiveV1Rows(corrupt)).toThrow(/20 deterministic and 10 judged scored/);
     expect(() => loadLiveV1Rows(fileURLToPath(new URL('../bench/agent/live-v1-tasks.json', import.meta.url)))).not.toThrow();
   });
 
   it('matches the immutable manifest task and source-fingerprint hashes', () => {
     const manifest = JSON.parse(readFileSync(new URL('../bench/manifests/live-v1.json', import.meta.url), 'utf8')) as { taskCount: number; tasks: string[]; taskHash: string; sourceFingerprintSetHash: string; grading: Record<string, number>; difficulty: Record<string, number> };
-    expect(manifest.taskCount).toBe(29);
+    expect(manifest.taskCount).toBe(30);
     expect(manifest.tasks).toEqual(LIVE_V1_ROWS.map((row) => row.task_id));
     expect(manifest.taskHash).toBe(LIVE_V1_TASK_HASH);
     expect(manifest.sourceFingerprintSetHash).toBe(createHash('sha256').update(JSON.stringify(LIVE_V1_SOURCE_FINGERPRINTS)).digest('hex'));
-    expect(manifest.grading).toEqual({ deterministic: 19, judge: 10 });
-    expect(manifest.difficulty).toEqual({ easy: 7, medium: 14, hard: 8 });
+    expect(manifest.grading).toEqual({ deterministic: 20, judge: 10 });
+    expect(manifest.difficulty).toEqual({ easy: 8, medium: 14, hard: 8 });
   });
 
   it('delivers the task-specific rubric to a blind judge without exposing tool details', () => {
@@ -86,7 +86,7 @@ describe('live-v1 frozen public catalog', () => {
   it('collects the free offline inventory without claiming live verification', async () => {
     const preflight = await collectLiveV1Preflight();
     expect(preflight).toMatchObject({ suite: 'live-v1', mode: 'offline', taskHash: LIVE_V1_TASK_HASH });
-    expect(preflight.candidates).toHaveLength(29);
+    expect(preflight.candidates).toHaveLength(30);
     expect(preflight.candidates.every((candidate) => candidate.status === 'unverified-offline')).toBe(true);
   });
 
@@ -102,6 +102,8 @@ describe('live-v1 frozen public catalog', () => {
       expect(pass('livev1-standards-openapi-31', 'The displayed version is 3.1.0', 'OpenAPI Specification v3.1.0')).toBe(true);
       expect(pass('livev1-standards-openapi-31', 'The displayed version is 3.1.01', 'OpenAPI Specification v3.1.0')).toBe(false);
       expect(pass('livev1-standards-gpl-3', 'GNU GENERAL PUBLIC LICENSE, 29 June 2007', 'GNU GENERAL PUBLIC LICENSE 29 June 2007')).toBe(true);
+      expect(pass('livev1-standards-rfc-8259', 'The title is The JavaScript Object Notation (JSON) Data Interchange Format', 'RFC 8259 The JavaScript Object Notation (JSON) Data Interchange Format')).toBe(true);
+      expect(pass('livev1-standards-rfc-8259', 'The title is Hypertext Transfer Protocol Semantics', 'RFC 8259 The JavaScript Object Notation (JSON) Data Interchange Format')).toBe(false);
       expect(pass('livev1-standards-gpl-3', 'GNU GENERAL PUBLIC LICENSE, 29 June 20070', 'GNU GENERAL PUBLIC LICENSE 29 June 2007')).toBe(false);
     });
 

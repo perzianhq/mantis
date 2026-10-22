@@ -2,15 +2,17 @@
   "schemaVersion": 1,
   "suite": "live-v1",
   "mode": "network",
-  "taskHash": "d43e36e4a8c6fbacea41c9ec9d2c55045ed004ff4494b0af3cc31dc8708713ec",
+  "taskHash": "5f5107ed18df9feac6df750af1cc1c0a1bc12b33356666de78de392fbd0bfd0c",
   "note": "Public GET probes only; review redirects and content changes before promoting a candidate.",
   "candidates": [
     {
-      "taskId": "livev1-standards-gpl-3",
-      "canonicalUrl": "https://www.gnu.org/licenses/gpl-3.0.en.html",
-      "sourceFingerprint": "4f71755c59acecbe8254f72dc56f2249b8a287cebaba65530a9810d23641ce98",
-      "status": "blocked",
-      "detail": "request error: fetch failed"
+      "taskId": "livev1-standards-rfc-8259",
+      "canonicalUrl": "https://www.rfc-editor.org/rfc/rfc8259.html",
+      "sourceFingerprint": "86b1a243ca7dfc6c651a36bee42b81ab2f9255e334d7b50126556cf354c9486a",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://www.rfc-editor.org/rfc/rfc8259.html"
     },
     {
       "taskId": "livev1-standards-wcag-22",
@@ -78,16 +80,14 @@
     {
       "taskId": "livev1-docs-django-overview",
       "canonicalUrl": "https://docs.djangoproject.com/en/6.1/intro/overview/",
-      "sourceFingerprint": "90186a9976c1b624899bf041e4c840a1b1855be85741018606e6ec5a425e8d53",
-      "status": "reachable",
-      "detail": "public GET completed",
-      "httpStatus": 200,
-      "finalUrl": "https://docs.djangoproject.com/en/6.1/intro/overview/"
+      "sourceFingerprint": "e1417eeac1170d8211e3e41a42696ae0b41dd5575f13df8f4acccf9e01d9546f",
+      "status": "blocked",
+      "detail": "request error: fetch failed"
     },
     {
       "taskId": "livev1-docs-postgresql-types",
       "canonicalUrl": "https://www.postgresql.org/docs/current/datatype.html",
-      "sourceFingerprint": "a0909f31fa9aff08d6ca56ba7f8a992cbc2e484eecfeccc00ba77376579f01c2",
+      "sourceFingerprint": "10cbe70ff4e52e69bd2c5cadd48d9dac1a1f162818e4cd113018a0cbdce8abcd",
       "status": "reachable",
       "detail": "public GET completed",
       "httpStatus": 200,
@@ -123,7 +123,7 @@
     {
       "taskId": "livev1-civic-usgs-about",
       "canonicalUrl": "https://www.usgs.gov/about",
-      "sourceFingerprint": "0219b26067bdd926cff0b997a2837a911956391d24707e0fd40a663a40530dc6",
+      "sourceFingerprint": "24a880197989945778b6e9af70ba39393d693bab01eb769fbe67750baa216f0d",
       "status": "reachable",
       "detail": "public GET completed",
       "httpStatus": 202,
@@ -150,7 +150,7 @@
     {
       "taskId": "livev1-data-ourworldindata-co2",
       "canonicalUrl": "https://ourworldindata.org/co2-emissions",
-      "sourceFingerprint": "c765e3d8aa2a99b593a936adb8ca811ec25b793cb09b117a9da2667904e01272",
+      "sourceFingerprint": "5b259b02bd978124f0ddac9e2d6d33c0a90fb5ad81c65ca8aede9c8b30ed6f26",
       "status": "reachable",
       "detail": "public GET completed",
       "httpStatus": 200,
