@@ -90,6 +90,71 @@ describe('live-long-fixtures answers', () => {
 });
 
 describe('live-long fixture regression coverage', () => {
+  it('keeps canonical basket and supplier receipts across redundant commits, while a wrong cart still fails', async () => {
+    const basket = LIVE_LONG_FIXTURE_CASES.find((entry) => entry.id === 'llf-basket-off')!;
+    const basketSteps = [...basket.walkthrough];
+    const coupon = basketSteps.findIndex((step) => step.target === '#apply-coupon');
+    basketSteps.splice(coupon + 1, 0, { op: 'type', target: '#coupon', value: 'SPRING10' }, { op: 'click', target: '#apply-coupon' });
+    const redundantCoupon = await replay(basket, 'basket-redundant-coupon', basketSteps);
+    expect(redundantCoupon.verification.ok).toBe(true);
+    expect((lastLong(redundantCoupon.verification.provenance.events).long!.ledger as { receipt: string }).receipt).toBe(receiptOf(basket));
+
+    const suppliers = LIVE_LONG_FIXTURE_CASES.find((entry) => entry.id === 'llf-suppliers-off')!;
+    const supplierSteps = [...suppliers.walkthrough];
+    const compared = supplierSteps.findIndex((step) => step.target === '[data-compare="o01"]');
+    supplierSteps.splice(compared + 1, 0, { op: 'click', target: '[data-compare="o01"]' });
+    const redundantCommit = await replay(suppliers, 'suppliers-redundant-commit', supplierSteps);
+    expect(redundantCommit.verification.ok).toBe(true);
+    expect((lastLong(redundantCommit.verification.provenance.events).long!.ledger as { receipt: string }).receipt).toBe(receiptOf(suppliers));
+
+    const wrongCartSteps = basket.walkthrough.filter((step) => step.target !== '[aria-label="Add p25"]' && step.target !== '[aria-label="Add p42"]');
+    expect((await replay(basket, 'basket-redundant-wrong-cart', wrongCartSteps)).verification.ok).toBe(false);
+  }, 120_000);
+
+  it('restores a completed dispatch receipt after reload but does not promote an incomplete dispatch', async () => {
+    const dispatch = LIVE_LONG_FIXTURE_CASES.find((entry) => entry.id === 'llf-dispatch-off')!;
+    const completed = await replay(dispatch, 'dispatch-reload-complete', dispatch.walkthrough, async (page) => {
+      await page.waitForFunction((value) => document.querySelector('#view')?.textContent?.includes(value), receiptOf(dispatch));
+      await page.reload();
+      expect(await page.locator('#view').innerText()).toContain(receiptOf(dispatch));
+    });
+    expect(completed.verification.ok).toBe(true);
+
+    const incomplete = await replay(dispatch, 'dispatch-reload-incomplete', dispatch.walkthrough.slice(0, -1), async (page, base) => {
+      await page.goto(`${base}/live-long/dispatch/off/receipt`);
+      await page.reload();
+      expect(await page.locator('#view').innerText()).not.toContain(receiptOf(dispatch));
+    });
+    expect(incomplete.verification.ok).toBe(false);
+  }, 120_000);
+
+  it('rebuilds selected access and retention controls after a detail-route reload', async () => {
+    for (const id of ['llf-access-off', 'llf-retention-off']) {
+      const entry = LIVE_LONG_FIXTURE_CASES.find((candidate) => candidate.id === id)!;
+      const detail = entry.name === 'access' ? 'detail' : 'document';
+      const summary = 'summary';
+      const completed = await replay(entry, `${id}-detail-reload-complete`, entry.walkthrough, async (page, base) => {
+        await page.goto(`${base}/live-long/${entry.name}/off/${detail}`);
+        await page.reload();
+        if (entry.name === 'access') {
+          await page.locator('#role').selectOption({ label: 'Viewer' });
+          expect(await page.locator('#staff-title').innerText()).not.toBe('');
+        } else {
+          await page.locator('#versions-tab').click();
+          expect(await page.locator('#version-list button').count()).toBeGreaterThan(0);
+        }
+        await page.goto(`${base}/live-long/${entry.name}/off/${summary}`);
+      });
+      expect(completed.verification.ok).toBe(true);
+
+      const incomplete = await replay(entry, `${id}-detail-reload-incomplete`, entry.walkthrough.slice(0, 1), async (page, base) => {
+        await page.goto(`${base}/live-long/${entry.name}/off/${detail}`);
+        await page.reload();
+      });
+      expect(incomplete.verification.ok).toBe(false);
+    }
+  }, 120_000);
+
   it('accepts terminal fragments but rejects a different terminal route', async () => {
     for (const id of ['llf-access-on', 'llf-dispatch-on']) {
       const entry = LIVE_LONG_FIXTURE_CASES.find((candidate) => candidate.id === id)!;

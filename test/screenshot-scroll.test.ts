@@ -23,8 +23,8 @@ it('requires a complete coordinate target and one coherent scrolling mode', () =
 it('keeps screenshot guidance pixel-only and gives native selects generic keyboard recovery', () => {
   expect(SCREENSHOT_SCROLL_DESCRIPTION).toContain('optional viewport coordinate');
   expect(SCREENSHOT_SCROLL_DESCRIPTION).toContain('deltaX/deltaY');
-  expect(NATIVE_SELECT_KEYBOARD_GUIDANCE).toContain('ArrowDown or ArrowUp');
-  expect(NATIVE_SELECT_KEYBOARD_GUIDANCE).toContain('press Enter');
+  expect(NATIVE_SELECT_KEYBOARD_GUIDANCE).toContain('Down or Up');
+  expect(NATIVE_SELECT_KEYBOARD_GUIDANCE).toContain('press Return');
   expect(NATIVE_SELECT_KEYBOARD_GUIDANCE).toContain('screenshot to verify');
   expect(NATIVE_SELECT_KEYBOARD_GUIDANCE).not.toMatch(/\b(?:\d{2,}|option \w+|at \()\b/i);
 });
