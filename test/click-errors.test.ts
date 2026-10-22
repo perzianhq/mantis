@@ -461,4 +461,12 @@ describe('click errors and navigation', () => {
     const error = `TimeoutError: locator.click: Timeout 1500ms exceeded.\nCall log:\n  - waiting for element to be visible, enabled and stable\n  - element is visible, enabled and stable\n  - waiting for scheduled navigations to finish`;
     expect(classifyClickError(error)).toBeNull();
   });
+
+  it('keeps an interception when a timed-out retry only logged visibility', () => {
+    const retry = 'Timeout 300ms exceeded.\nCall log:\n  - waiting for element to be visible, enabled and stable\n  - element is visible, enabled and stable\n  - <html>…</html> intercepts pointer events\n  - retrying click action\n  - waiting for element to be visible, enabled and stable\n  - element is visible, enabled and stable\n  - scrolling into view if needed';
+    expect(classifyClickError(retry)).toBe('intercepted');
+    // Near miss: visibility after a hidden state still clears it, and navigation waiting clears an interception.
+    expect(classifyClickError('element is not visible\n  element is visible, enabled and stable')).toBeNull();
+    expect(classifyClickError(`${retry}\n  - waiting for scheduled navigations to finish`)).toBeNull();
+  });
 });

@@ -233,19 +233,26 @@ export type ClickFailure = 'not-visible' | 'outside-viewport' | 'intercepted';
  */
 export function classifyClickError(e: unknown): ClickFailure | null {
   const message = String(e instanceof Error ? e.message : e);
-  const states: Array<{ at: number; failure: ClickFailure | null }> = [];
-  const add = (pattern: RegExp, failure: ClickFailure | null): void => {
-    for (const match of message.matchAll(pattern)) states.push({ at: match.index ?? -1, failure });
+  const states: Array<{ at: number; failure: ClickFailure | null; clears: 'visibility' | 'all' }> = [];
+  const add = (pattern: RegExp, failure: ClickFailure | null, clears: 'visibility' | 'all' = 'all'): void => {
+    for (const match of message.matchAll(pattern)) states.push({ at: match.index ?? -1, failure, clears });
   };
   add(/element is not visible/gi, 'not-visible');
   add(/(?:element is )?outside of the viewport/gi, 'outside-viewport');
   add(/intercepts pointer events/gi, 'intercepted');
   // These are successful later states, not failures. Keep them in the sequence so
   // a retry-log preamble cannot outweigh a click that reached navigation waiting.
-  add(/element is visible, enabled and stable/gi, null);
+  // Visibility only proves the element is visible: every retry logs it before the
+  // hit-target check, so a timeout landing there must keep the earlier interception.
+  add(/element is visible, enabled and stable/gi, null, 'visibility');
   add(/waiting for scheduled navigations/gi, null);
   states.sort((a, b) => a.at - b.at);
-  return states.at(-1)?.failure ?? null;
+  let current: ClickFailure | null = null;
+  for (const state of states) {
+    if (state.failure) current = state.failure;
+    else if (state.clears === 'all' || current === 'not-visible') current = null;
+  }
+  return current;
 }
 
 /** How long Playwright keeps retrying a click on an element something else is covering. */
