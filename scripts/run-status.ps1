@@ -1,5 +1,5 @@
 # One-line live status. Local only (parses the run's output log and agent-logs dir); makes no API calls.
-param([string]$Dir = "", [int]$Total = 75, [string]$Out = "", [int]$Every = 30)
+param([string]$Dir = "", [int]$Total = 75, [string]$Out = "", [int]$Every = 1)
 while ($true) {
   $started = 0
   if ($Dir) { $started = (Get-ChildItem "$Dir/*.jsonl" -ErrorAction SilentlyContinue | Measure-Object).Count }
