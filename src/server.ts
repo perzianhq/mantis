@@ -105,6 +105,48 @@ export function createServer(browser: MantisBrowser = new MantisBrowser()): McpS
     { description: 'Back one page in history.', inputSchema: {} },
     async () => reply(await browser.back()),
   );
+  server.registerTool(
+    'wait_for',
+    {
+      description: 'Wait up to 10s for text or #id state, then show changes.',
+      inputSchema: {
+        text: z.string().optional(),
+        id: id.optional(),
+        state: z.enum(['appears', 'disappears', 'present', 'enabled']).optional(),
+        timeout_seconds: z.number().positive().max(10).optional(),
+      },
+    },
+    async ({ text, id, state, timeout_seconds }) => reply(await browser.waitFor({ text, id, state, timeoutSeconds: timeout_seconds })),
+  );
+  server.registerTool(
+    'hover',
+    { description: 'Hover element #id and show changes.', inputSchema: { id } },
+    async ({ id }) => reply(await browser.hover(id)),
+  );
+  server.registerTool(
+    'upload',
+    {
+      description: 'Set local file path(s) on #id.',
+      inputSchema: {
+        id,
+        path: z.string().optional(),
+        paths: z.array(z.string()).min(1).optional(),
+        files: z.array(z.string()).min(1).optional(),
+      },
+    },
+    async ({ id, path, paths, files }) => {
+      const supplied = [path === undefined ? undefined : [path], paths, files].filter((value): value is string[] => value !== undefined);
+      return reply(supplied.length === 1 ? await browser.upload(id, supplied[0]!) : 'error: give exactly one of path, paths, or files');
+    },
+  );
+  server.registerTool(
+    'tabs',
+    {
+      description: 'List tabs, or switch/close tab #id.',
+      inputSchema: { action: z.enum(['list', 'switch', 'close']).optional(), id: id.optional() },
+    },
+    async ({ action, id }) => reply(await browser.tabs(action, id)),
+  );
 
   // ---- fallback ladder: only when read() is not enough. Try in this order. ----
   const visual = {
