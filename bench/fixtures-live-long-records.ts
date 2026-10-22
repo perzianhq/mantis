@@ -25,6 +25,8 @@ const DEV_SEED = 11903;
 const norm = (value: string) => value.trim().toLowerCase().replace(/\s+/g, ' ');
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 const equal = (left: unknown, right: unknown) => JSON.stringify(left) === JSON.stringify(right);
+/** The commit count and the order offers were added in depend on the path taken, so the grade compares business state only. */
+const withoutRevision = (value: unknown) => { const { revision: _revision, ...rest } = value as Record<string, unknown>; return Array.isArray(rest.compared) ? { ...rest, compared: [...rest.compared].sort() } : rest; };
 const receipt = (prefix: string, ledger: unknown): string => {
   const text = JSON.stringify(ledger);
   let hash = 5381;
@@ -43,9 +45,8 @@ const terminalCheck = (expected: unknown, terminalPath: string, confirmation: st
   if (!event.text.toLowerCase().includes(confirmation.toLowerCase())) return { ok: false, details: 'terminal confirmation is not visible' };
   const ledger = long.ledger as { completed?: boolean; pending?: number; revision?: number } | undefined;
   if (!ledger?.completed || ledger.pending !== 0) return { ok: false, details: 'workflow is incomplete or still pending' };
-  const expectedRevision = (expected as { revision?: number }).revision;
-  if (long.revision !== expectedRevision || ledger.revision !== expectedRevision) return { ok: false, details: 'terminal revision does not match the completed revision' };
-  return equal(ledger, expected) ? true : { ok: false, details: 'full terminal ledger differs from expected state' };
+  if (long.revision !== ledger.revision) return { ok: false, details: 'terminal revision does not match the ledger revision' };
+  return equal(withoutRevision(ledger), withoutRevision(expected)) ? true : { ok: false, details: 'full terminal ledger differs from expected state' };
 };
 
 const basketInitial = () => ({

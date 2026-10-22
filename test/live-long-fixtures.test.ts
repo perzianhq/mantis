@@ -118,6 +118,15 @@ describe.each(LIVE_LONG_FIXTURE_CASES.map((entry) => [entry.id, entry] as const)
     expect(entry.check(elsewhere)).not.toBe(true);
   }, 120_000);
 
+  it('passes the same business state reached through a different number of commits', async () => {
+    const { verification } = await replay(entry, `${entry.id}-path`);
+    const events = verification.provenance.events;
+    const bump = (revision: number) => withLast(events, (event) => ({ ...event, long: { ...event.long!, revision, ledger: { ...(event.long!.ledger as object), revision } } }));
+    expect(entry.check(bump((lastLong(events).long!.revision ?? 0) + 3))).toBe(true);
+    const mismatch = withLast(events, (event) => ({ ...event, long: { ...event.long!, revision: (event.long!.revision ?? 0) + 3 } }));
+    expect(entry.check(mismatch)).not.toBe(true);
+  }, 120_000);
+
   it('does not pass when the workflow stops before the final step', async () => {
     const { verification } = await replay(entry, `${entry.id}-stop`, entry.walkthrough.slice(0, -1));
     expect(verification.ok).toBe(false);

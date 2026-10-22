@@ -30,6 +30,8 @@ const DEVELOPMENT_SEED = 19417;
 const norm = (value: string) => value.trim().toLowerCase().replace(/\s+/g, ' ');
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+/** The commit count depends on the path taken, so the grade compares business state only. */
+const withoutRevision = (value: unknown) => { const { revision: _revision, ...rest } = value as Record<string, unknown>; return rest; };
 const chrome = (name: string, title: string, main: string, script: string): string => page(title,
   `<header><nav aria-label="Main"><a href="#home">${name}</a> <a href="#help">Help</a> <a href="#settings">Settings</a></nav></header><main id="app">${main}</main><footer><hr><small>© 2026 ${name} · Privacy · Terms · Support</small></footer>`, script);
 
@@ -156,9 +158,8 @@ const checker = (name: string, variant: 'off' | 'on', expected: unknown) => (eve
   if (name === 'workspace' && !terminal.text.includes('Workspace created')) return { ok: false, details: 'workspace confirmation is not visible' };
   const ledger = terminal.long.ledger as any;
   if (!ledger.completed || ledger.pending !== 0) return { ok: false, details: 'workflow is not settled' };
-  const revision = (expected as { revision?: number }).revision;
-  if (terminal.long.revision !== revision || ledger.revision !== revision) return { ok: false, details: 'terminal revision does not match the completed revision' };
-  return same(ledger, expected) ? true : { ok: false, details: 'terminal ledger differs from the full expected state' };
+  if (terminal.long.revision !== ledger.revision) return { ok: false, details: 'terminal revision does not match the ledger revision' };
+  return same(withoutRevision(ledger), withoutRevision(expected)) ? true : { ok: false, details: 'terminal ledger differs from the full expected state' };
 };
 
 const wsWalk = (variant: 'off' | 'on'): LongFixtureCase['walkthrough'] => [
