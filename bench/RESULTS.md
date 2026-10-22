@@ -3,9 +3,26 @@
 All benchmark numbers in one place. How to re-run them: [README.md](README.md).
 Mantis is compared with the accessibility tree (Playwright MCP 0.0.83) and with screenshots (our own minimal tool).
 Suites are reported separately; the sections below run from current scorecards to historical pilots.
-The frozen live-site cohort ([live-v1](live-v1.md)) has no valid scored result yet.
+The frozen live-site cohort ([live-v1](live-v1.md), v1.2) has a first scored Sarvam result below; Luna/Haiku confirmation is pending.
 
-## Local-v2.1 full scorecard (current)
+## Live-v1.2 real sites, Sarvam (current)
+
+Frozen `live-v1` v1.2: 30 public-site tasks x 3 approaches x 3 runs = 270 runs. Agent `deepseek-v4.1-flash` through Sarvam; 10 scheduled cases. 20 tasks are graded by deterministic validators on captured final state; the rest are judged blind by Codex `gpt-6.1-sol`. No check/judge disagreements. Result: `live-v1-deepseek-v1_2-20261022-judged`.
+
+| Per-run | Mantis | Accessibility tree | Screenshots |
+|---|---:|---:|---:|
+| Success / failure / blocked | 71 / 16 / 3 | 78 / 11 / 1 | 75 / 15 / 0 |
+| Success rate, all 30 tasks | 78.9% | **86.7%** | 83.3% |
+| Success rate excl. the GNU GPL task (failed 9/9 for every approach) | 81.6% | **89.7%** | 86.2% |
+| Avg tool calls | **6.5** | 7.3 | 12.7 |
+| Avg input tokens | **51.0k** | 137.6k | 57.6k |
+
+- Mantis is behind tree here by 8 points on success but uses 63% fewer input tokens and fewer calls. This is a Sarvam result only, not a Luna/Haiku claim.
+- Where Mantis loses to the others: IMDb search (blocked 3/3; the agent loops on a custom "human verification" gate that Mantis did not flag, fix in progress), Met collection search, PostgreSQL data types, Census about. Mantis wins Our World in Data CO2 (1/3 vs 0/3, 0/3).
+- Near-universal site failures (Django overview, USGS about) are kept in the score; only the all-approach-zero GPL task is excluded in the second row.
+- Reproduce: `JUDGE_IN=live-v1-deepseek-v1_2-20261022 npm run bench:judge` (raw run JSON/markdown stay local).
+
+## Local-v2.1 full scorecard (local fixtures)
 
 Frozen `local-v2.1`: 54 code-graded local fixture tasks (the frozen v2 48 plus six reliability contracts) x 3 approaches x 3 runs = 486 logical rows. Agent `deepseek-v4.1-flash` through Sarvam V2; 10 scheduled cases, 16 active model calls, 50 RPM, and a 50-completion cap for non-`long` tasks. This is a local-fixture result, not a live-site claim.
 
