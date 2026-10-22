@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "id": "live-v1.5",
-  "version": "1.5",
+  "id": "live-v1.6",
+  "version": "1.6",
   "selector": "live-v1",
   "kind": "frozen-public-read-only-live-evaluation-config",
   "status": "configured-unverified-preflight",
@@ -11,16 +11,16 @@
   "documentedTaskCount": 31,
   "excludedTasks": {"livev1-standards-gpl-3": "The live GNU host timed out for every approach in the captured 20261022 run; archive.org cannot satisfy the required live-origin contract."},
   "taskHashAlgorithm": "sha256(canonical sorted task contracts)",
-  "taskHash": "e352e85d1fb1db7343a43c857f9dcdf9ca5235aa1d5f26957281dcb765b1ba2e",
+  "taskHash": "02304cfbe74df27c3654942e0cd56921f5a2ed3cda825e427bc20f9c6fef546d",
   "sourceFingerprintAlgorithm": "sha256(canonical URL + task-specific grading contract)",
-  "sourceFingerprintSetHash": "3a9a9594b83e8763e287eb06395830c8679f7b16472f294e8313dd727adb2c9b",
+  "sourceFingerprintSetHash": "02ccdaed7ea27a49187d3e277f26c55acf89966f017ad392660b4d265c95e93b",
   "tasks": [
     "livev1-standards-gpl-3", "livev1-standards-rfc-8259", "livev1-standards-wcag-22", "livev1-standards-rfc-9110", "livev1-standards-openapi-31", "livev1-standards-css-color-4",
     "livev1-docs-python-json", "livev1-docs-mdn-http-overview", "livev1-docs-node-url", "livev1-docs-django-overview", "livev1-docs-postgresql-types",
     "livev1-civic-loc-about", "livev1-civic-nasa-missions", "livev1-civic-census-about", "livev1-civic-usgs-about", "livev1-civic-archives-about",
     "livev1-data-world-bank-population", "livev1-data-ourworldindata-co2", "livev1-data-data-gov-climate", "livev1-data-eurostat-database", "livev1-data-oecd-data-explorer",
     "livev1-navigation-wikipedia-ada", "livev1-navigation-merriam-serendipity", "livev1-navigation-smithsonian-aircraft", "livev1-navigation-gutenberg-search", "livev1-navigation-met-collection",
-    "livev1-interactive-openlibrary-subject", "livev1-interactive-github-issues", "livev1-interactive-openstreetmap-eiffel", "livev1-interactive-imdb-search", "livev1-interactive-arxiv-search"
+    "livev1-interactive-openlibrary-subject", "livev1-interactive-github-issues", "livev1-interactive-openstreetmap-eiffel", "livev1-interactive-tmdb-search", "livev1-interactive-arxiv-search"
   ],
   "families": {"standards": 5, "documentation": 5, "civic-reference": 5, "open-data": 5, "site-navigation": 5, "interactive-exploration": 5},
   "grading": {"deterministic": 20, "judge": 10},

@@ -1,0 +1,219 @@
+{
+  "source": "live-v1-v16-tmdb-20261022",
+  "judgeProvider": "codex",
+  "judgeModel": "gpt-6.1-sol",
+  "judgeModels": [
+    "gpt-6.1-sol"
+  ],
+  "siteBrokenTasks": [],
+  "runs": [
+    {
+      "task": "livev1-interactive-tmdb-search",
+      "approach": "mantis",
+      "run": 1,
+      "finalUrl": "https://www.themoviedb.org/movie/129",
+      "toolCalls": 5,
+      "totalInputTokens": 26513,
+      "wallS": 64.378,
+      "verdict": "success",
+      "reason": "F4 shows submitted search results for “Spirited Away,” and F5 shows its title page visible at TMDB /movie/129.",
+      "evidence": [
+        "F4",
+        "F5"
+      ],
+      "frameCount": 5,
+      "finalFrame": "F5",
+      "judgeVerdict": "success",
+      "checks": null,
+      "deterministic": null,
+      "grading": "judge",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "livev1-interactive-tmdb-search",
+      "approach": "tree",
+      "run": 1,
+      "finalUrl": "https://www.themoviedb.org/search?query=Spirited%20Away",
+      "toolCalls": 11,
+      "totalInputTokens": 140050,
+      "wallS": 88.369,
+      "verdict": "success",
+      "reason": "F4 shows the TMDB search results for “Spirited Away” with the film’s localized title and poster visibly displayed as the top result, satisfying the requirement beyond autocomplete.",
+      "evidence": [
+        "F4"
+      ],
+      "frameCount": 4,
+      "finalFrame": "F4",
+      "judgeVerdict": "success",
+      "checks": null,
+      "deterministic": null,
+      "grading": "judge",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "livev1-interactive-tmdb-search",
+      "approach": "screenshot",
+      "run": 1,
+      "finalUrl": "https://www.themoviedb.org/movie/129-spirited-away",
+      "toolCalls": 16,
+      "totalInputTokens": 61843,
+      "wallS": 88.835,
+      "verdict": "success",
+      "reason": "F6 shows the Spirited Away movie result, and F7–F8 show its title page with the film’s poster and localized title visible.",
+      "evidence": [
+        "F6",
+        "F7",
+        "F8"
+      ],
+      "frameCount": 8,
+      "finalFrame": "F8",
+      "judgeVerdict": "success",
+      "checks": null,
+      "deterministic": null,
+      "grading": "judge",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "livev1-interactive-tmdb-search",
+      "approach": "mantis",
+      "run": 2,
+      "finalUrl": "https://www.themoviedb.org/movie/129",
+      "toolCalls": 4,
+      "totalInputTokens": 23128,
+      "wallS": 65.067,
+      "verdict": "success",
+      "reason": "F3 shows search results for “Spirited Away,” and F4 confirms its title page is visible at TMDB movie/129.",
+      "evidence": [
+        "F3",
+        "F4"
+      ],
+      "frameCount": 4,
+      "finalFrame": "F4",
+      "judgeVerdict": "success",
+      "checks": null,
+      "deterministic": null,
+      "grading": "judge",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "livev1-interactive-tmdb-search",
+      "approach": "tree",
+      "run": 2,
+      "finalUrl": "https://www.themoviedb.org/search?query=Spirited%20Away",
+      "toolCalls": 12,
+      "totalInputTokens": 190687,
+      "wallS": 84.235,
+      "verdict": "success",
+      "reason": "F7 shows the submitted “Spirited Away” search with the film’s localized title result visible, and F6 also confirms its title page was opened.",
+      "evidence": [
+        "F6",
+        "F7"
+      ],
+      "frameCount": 7,
+      "finalFrame": "F7",
+      "judgeVerdict": "success",
+      "checks": null,
+      "deterministic": null,
+      "grading": "judge",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "livev1-interactive-tmdb-search",
+      "approach": "screenshot",
+      "run": 2,
+      "finalUrl": "https://www.themoviedb.org/movie/129-spirited-away?language=hi-IN",
+      "toolCalls": 18,
+      "totalInputTokens": 68302,
+      "wallS": 99.177,
+      "verdict": "success",
+      "reason": "F11 shows the Spirited Away movie search result, and F12 confirms its title page is visible with the film’s poster and 2001 title.",
+      "evidence": [
+        "F11",
+        "F12"
+      ],
+      "frameCount": 12,
+      "finalFrame": "F12",
+      "judgeVerdict": "success",
+      "checks": null,
+      "deterministic": null,
+      "grading": "judge",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "livev1-interactive-tmdb-search",
+      "approach": "mantis",
+      "run": 3,
+      "finalUrl": "https://www.themoviedb.org/movie/129",
+      "toolCalls": 3,
+      "totalInputTokens": 18517,
+      "wallS": 72.209,
+      "verdict": "success",
+      "reason": "F2 shows search results for “Spirited Away,” and F3 confirms its TMDB title page is visible at /movie/129.",
+      "evidence": [
+        "F2",
+        "F3"
+      ],
+      "frameCount": 3,
+      "finalFrame": "F3",
+      "judgeVerdict": "success",
+      "checks": null,
+      "deterministic": null,
+      "grading": "judge",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "livev1-interactive-tmdb-search",
+      "approach": "tree",
+      "run": 3,
+      "finalUrl": "https://www.themoviedb.org/search?query=Spirited%20Away",
+      "toolCalls": 6,
+      "totalInputTokens": 69127,
+      "wallS": 25.063,
+      "verdict": "success",
+      "reason": "F3 shows TMDB’s submitted search results for “Spirited Away,” with the film’s title result visibly displayed at the top.",
+      "evidence": [
+        "F3"
+      ],
+      "frameCount": 3,
+      "finalFrame": "F3",
+      "judgeVerdict": "success",
+      "checks": null,
+      "deterministic": null,
+      "grading": "judge",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "livev1-interactive-tmdb-search",
+      "approach": "screenshot",
+      "run": 3,
+      "finalUrl": "https://www.themoviedb.org/movie/129",
+      "toolCalls": 18,
+      "totalInputTokens": 72728,
+      "wallS": 127.014,
+      "verdict": "success",
+      "reason": "F10 shows the Spirited Away movie result, and F11–F12 confirm its title page is left visible at https://www.themoviedb.org/movie/129.",
+      "evidence": [
+        "F10",
+        "F11",
+        "F12"
+      ],
+      "frameCount": 12,
+      "finalFrame": "F12",
+      "judgeVerdict": "success",
+      "checks": null,
+      "deterministic": null,
+      "grading": "judge",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    }
+  ],
+  "skipped": []
+}

@@ -256,13 +256,10 @@
       "finalUrl": "https://www.openstreetmap.org/search?query=Eiffel%20Tower"
     },
     {
-      "taskId": "livev1-interactive-imdb-search",
-      "canonicalUrl": "https://www.imdb.com/find/?q=Spirited%20Away",
-      "sourceFingerprint": "d84a5fd23a41f7fdad4842e680f1928899f119ba8c827f92d5ba4dd8d67640ef",
-      "status": "reachable",
-      "detail": "public GET completed",
-      "httpStatus": 202,
-      "finalUrl": "https://www.imdb.com/find/?q=Spirited%20Away"
+      "taskId": "livev1-interactive-tmdb-search",
+      "canonicalUrl": "https://www.themoviedb.org/search?query=Spirited%20Away",
+      "sourceFingerprint": "456f59e0948b37731c4589007974cd556fb403d7ed3071d1fadd89b5fed421d8",
+      "status": "unverified-offline"
     },
     {
       "taskId": "livev1-interactive-arxiv-search",
