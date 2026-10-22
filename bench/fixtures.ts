@@ -14,6 +14,8 @@ export interface FixtureObservation {
   path: string;
   kind: 'load' | 'click' | 'input' | 'change' | 'submit' | 'scroll' | 'settled';
   documentId: string;
+  /** Page-side send order within one document; concurrent keepalive requests can arrive out of order. */
+  seq?: number;
   actionId?: number;
   target: { tag: string; id: string; name: string; type: string; ariaLabel: string; text: string; href: string; value: string; checked: boolean };
   controls: Record<string, { value: string; checked: boolean }>;
@@ -44,6 +46,7 @@ const observer = String.raw`<script>
   if (!token) return;
   const documentId = Math.random().toString(36).slice(2);
   let actionSerial = 0;
+  let sendSerial = 0;
   const summarize = (el) => {
     if (!(el instanceof Element)) el = document.documentElement;
     const target = el.closest('button,a,input,select,textarea,[role="menuitem"],[data-plan],[data-v]') || el;
@@ -66,7 +69,7 @@ const observer = String.raw`<script>
     return result;
   };
   const send = (kind, target, targetSummary, controlState, actionId) => {
-    const data = { path: location.pathname.replace(/^\/__attempt\/[A-Za-z0-9_-]+/, '') || '/', kind, documentId, actionId, target: targetSummary || summarize(target), controls: controlState || controls(), text: (document.body?.innerText || '').replace(/\s+/g, ' ').slice(0, 5000), fixtureState: window.__fixtureState || undefined };
+    const data = { path: location.pathname.replace(/^\/__attempt\/[A-Za-z0-9_-]+/, '') || '/', kind, documentId, actionId, seq: ++sendSerial, target: targetSummary || summarize(target), controls: controlState || controls(), text: (document.body?.innerText || '').replace(/\s+/g, ' ').slice(0, 5000), fixtureState: window.__fixtureState || undefined };
     pending++;
     fetch('/__verify/' + encodeURIComponent(token), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(data), keepalive: true }).catch(() => {}).finally(() => { pending--; });
   };
@@ -95,6 +98,27 @@ function instrument(html: string, includeFrameObserver = false): string {
   const bootstrapped = html.includes('</head>') ? html.replace('</head>', `${attemptBootstrap}</head>`) : `${attemptBootstrap}${html}`;
   const scripts = `${includeFrameObserver ? frameObserver : ''}${observer}`;
   return bootstrapped.includes('</body>') ? bootstrapped.replace('</body>', `${scripts}</body>`) : `${bootstrapped}${scripts}`;
+}
+
+/**
+ * Restore page-side send order within each document. Every beacon is its own request, so two
+ * near-simultaneous posts (a click and its settled snapshot) can reach the server swapped. Each
+ * document keeps the arrival slots it occupied; only the events inside those slots are re-sorted
+ * by `seq`, so cross-document order is untouched. Observations without `seq` are left as received.
+ */
+export function orderObservations(events: FixtureObservation[]): FixtureObservation[] {
+  const byDocument = new Map<string, number[]>();
+  events.forEach((event, index) => {
+    if (typeof event.seq !== 'number') return;
+    const slots = byDocument.get(event.documentId);
+    if (slots) slots.push(index); else byDocument.set(event.documentId, [index]);
+  });
+  const ordered = [...events];
+  for (const slots of byDocument.values()) {
+    const sorted = slots.map((slot) => events[slot]).sort((a, b) => a.seq! - b.seq!);
+    slots.forEach((slot, i) => { ordered[slot] = { ...sorted[i], arrival: events[slot].arrival }; });
+  }
+  return ordered;
 }
 
 interface AttemptState { taskId: string; events: FixtureObservation[]; pending: number; lastAt: number; nextArrival: number }
@@ -317,7 +341,7 @@ export async function startFixtures(options: { checks?: FixtureCheckEntry[]; var
       const state = attempts.get(attemptId);
       await quiet(state);
       if (state && state.taskId !== taskId) return { ok: false, details: 'attempt belongs to a different task', provenance: { version: 1, taskId, attemptId, observationCount: 0, events: [] } };
-      const events = state?.events ?? [];
+      const events = orderObservations(state?.events ?? []);
       const result = check(options.variant ? events.map((event) => options.variant!.canonicalObservation(event)) : events);
       attempts.delete(attemptId);
       const checked = typeof result === 'boolean' ? { ok: result, details: result ? undefined : `fixture check failed (${events.length} observations)` } : result;

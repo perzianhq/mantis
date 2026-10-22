@@ -3,7 +3,8 @@ import { chromium } from 'playwright';
 import type { Browser, Page } from 'playwright';
 import { chromiumExecutable } from '../src/userAgent.js';
 import { MantisBrowser } from '../src/index.js';
-import { startFixtures } from '../bench/fixtures.js';
+import { orderObservations, startFixtures } from '../bench/fixtures.js';
+import type { FixtureObservation } from '../bench/fixtures.js';
 import { gradeTaskAnswer, normalizeGradedAnswer, TASKS } from '../bench/agent/tasks.js';
 import { gradeRequirements } from '../bench/agent/grading.js';
 import { extractGradedAnswer } from '../bench/agent/integrity.js';
@@ -1159,4 +1160,27 @@ it('proxy: initializes the server for the harness only when the agent never did,
     expect((await proxy.call('tools/call', { name: 'inits', arguments: {} })).content[0].text).toBe('1');
     await expect(proxy.call('tools/call', { name: 'slow', arguments: {} }, 1)).rejects.toThrow(/timed out/);
   });
+});
+
+it('grader: a settled beacon that reaches the server before its click is reordered by page send order', () => {
+  const search = TASKS.find((entry) => entry.id === 'search-pagination')!;
+  const target = (text: string) => ({ tag: 'button', id: '', name: '', type: '', ariaLabel: '', text, href: '', value: '', checked: false });
+  const event = (kind: FixtureObservation['kind'], seq: number, actionId: number, text: string, label: string, documentId = 'doc'): FixtureObservation =>
+    ({ arrival: 0, path: '/search', kind, documentId, seq, actionId, target: target(label), controls: {}, text });
+  const final = 'Quokka facts Written by dana.r.';
+  const sequence = (settledActionId: number, settledText: string): FixtureObservation[] => [
+    event('click', 2, 1, 'Next', 'Next'),
+    event('settled', 3, 1, 'Page 2', 'Next'),
+    // The settled snapshot of the last click arrives first; page-side seq says the click came first.
+    event('settled', 5, settledActionId, settledText, 'Quokka facts'),
+    event('click', 4, 2, 'Quokka facts', 'Quokka facts'),
+  ].map((e, arrival) => ({ ...e, arrival }));
+  const grade = (events: FixtureObservation[]) => search.check(orderObservations(events));
+  expect(grade(sequence(2, final))).toBe(true);
+  // Near misses: the settled snapshot belongs to another action, or has the wrong text.
+  expect(grade(sequence(1, final))).toBe(false);
+  expect(grade(sequence(2, 'Quokka facts Written by someone.else.'))).toBe(false);
+  // Ordering is per document: a different document's events keep their received slots.
+  const mixed = [event('load', 1, 0, 'x', 'x', 'a'), event('load', 1, 0, 'y', 'y', 'b'), event('settled', 2, 1, 'z', 'z', 'a')].map((e, arrival) => ({ ...e, arrival }));
+  expect(orderObservations(mixed).map((e) => e.documentId)).toEqual(['a', 'b', 'a']);
 });
