@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "id": "live-v1.4",
-  "version": "1.4",
+  "id": "live-v1.5",
+  "version": "1.5",
   "selector": "live-v1",
   "kind": "frozen-public-read-only-live-evaluation-config",
   "status": "configured-unverified-preflight",
@@ -11,9 +11,9 @@
   "documentedTaskCount": 31,
   "excludedTasks": {"livev1-standards-gpl-3": "The live GNU host timed out for every approach in the captured 20261022 run; archive.org cannot satisfy the required live-origin contract."},
   "taskHashAlgorithm": "sha256(canonical sorted task contracts)",
-  "taskHash": "5f5107ed18df9feac6df750af1cc1c0a1bc12b33356666de78de392fbd0bfd0c",
+  "taskHash": "e352e85d1fb1db7343a43c857f9dcdf9ca5235aa1d5f26957281dcb765b1ba2e",
   "sourceFingerprintAlgorithm": "sha256(canonical URL + task-specific grading contract)",
-  "sourceFingerprintSetHash": "902a4475d5e654e649a8ad739ad951a0ba91a68bdcef6b78dda1b66b34d1f529",
+  "sourceFingerprintSetHash": "3a9a9594b83e8763e287eb06395830c8679f7b16472f294e8313dd727adb2c9b",
   "tasks": [
     "livev1-standards-gpl-3", "livev1-standards-rfc-8259", "livev1-standards-wcag-22", "livev1-standards-rfc-9110", "livev1-standards-openapi-31", "livev1-standards-css-color-4",
     "livev1-docs-python-json", "livev1-docs-mdn-http-overview", "livev1-docs-node-url", "livev1-docs-django-overview", "livev1-docs-postgresql-types",

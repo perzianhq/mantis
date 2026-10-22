@@ -81,6 +81,12 @@ describe('live-v1 frozen public catalog', () => {
     expect(grade('livev1-data-ourworldindata-co2', 'CO2 emissions', 'https://ourworldindata.org/co2-emissions', 'CO2 emissions')).toBe(true);
     expect(grade('livev1-data-ourworldindata-co2', 'CO2 and Greenhouse Gas Emissions', 'https://ourworldindata.org/co2-and-greenhouse-gas-emissions', 'CO2 and Greenhouse Gas Emissions')).toBe(true);
     expect(grade('livev1-data-ourworldindata-co2', 'CO2 emissions', 'https://ourworldindata.org/co2-and-greenhouse-gas-emissions', 'CO2 emissions')).toBe(false);
+
+    expect(grade('livev1-docs-mdn-http-overview', 'Overview of HTTP', 'https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Overview', 'Overview of HTTP')).toBe(true);
+    expect(grade('livev1-docs-mdn-http-overview', 'HTTP', 'https://developer.mozilla.org/en-US/docs/Web/HTTP', 'HTTP')).toBe(true);
+    expect(grade('livev1-docs-mdn-http-overview', 'Overview of HTTP', 'https://developer.mozilla.org/en-US/docs/Web/HTTP', 'HTTP')).toBe(true);
+    expect(grade('livev1-docs-mdn-http-overview', 'Overview of HTTP', 'https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Caching', 'Overview of HTTP')).toBe(false);
+    expect(grade('livev1-docs-mdn-http-overview', 'HTTP caching', 'https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Overview', 'Overview of HTTP')).toBe(false);
   });
 
   it('collects the free offline inventory without claiming live verification', async () => {
