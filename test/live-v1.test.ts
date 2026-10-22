@@ -112,6 +112,22 @@ describe('live-v1 frozen public catalog', () => {
       expect(pass('livev1-standards-gpl-3', 'GNU GENERAL PUBLIC LICENSE, 29 June 20070', 'GNU GENERAL PUBLIC LICENSE 29 June 2007')).toBe(false);
     });
 
+    it('ignores markdown code/bold wrappers in an answer but still rejects a different title', () => {
+      const text = 'json — JSON encoder and decoder';
+      expect(pass('livev1-docs-python-json', 'The title is `json` — JSON encoder and decoder', text)).toBe(true);
+      expect(pass('livev1-docs-python-json', 'The title is **json — JSON encoder and decoder**', text)).toBe(true);
+      expect(pass('livev1-docs-python-json', 'The title is `json` — JSON encoder', text)).toBe(false);
+      expect(pass('livev1-docs-python-json', 'The title is `pickle` — Python object serialization', text)).toBe(false);
+    });
+
+    it('accepts the short-link path for the database landing page but no other path', () => {
+      const grade = (url: string): boolean => evaluateDeterministicGrader(LIVE_V1_ROWS.find((r) => r.task_id === 'livev1-data-eurostat-database')!.deterministic!, 'Database', [{ final: true, url, text: 'Database' }])?.pass ?? false;
+      expect(grade('https://ec.europa.eu/eurostat/web/main/data/database')).toBe(true);
+      expect(grade('https://ec.europa.eu/eurostat/data/database')).toBe(true);
+      expect(grade('https://ec.europa.eu/eurostat/data/database/other')).toBe(false);
+      expect(grade('https://ec.europa.eu/eurostat/web/main/data')).toBe(false);
+    });
+
     it('treats CO2 and CO₂ as the same answer', () => {
       expect(pass('livev1-data-ourworldindata-co2', 'CO2 emissions', 'CO₂ emissions')).toBe(true);
       expect(pass('livev1-data-ourworldindata-co2', 'CO₂ emissions', 'CO₂ emissions')).toBe(true);

@@ -3,7 +3,7 @@
 ## 1. The claim
 
 Use the frozen local-v2.1 scorecard and caveats in [bench/RESULTS.md](../bench/RESULTS.md).
-Label the earlier real-site results as a historical pilot; the frozen live-site set (live-v1 v1.7, Sarvam: Mantis 88/90, tree 90/90, screenshots 89/90) is reported separately with its disclosures. Luna/Haiku confirmation is still pending.
+Label the earlier real-site results as a historical pilot; the frozen live-site set (live-v1 v1.7, Sarvam: Mantis 88/90, tree 90/90, screenshots 89/90) is reported separately with its disclosures. Luna and Haiku are now reported too, also separately (live-v1 v1.7: Luna 90/90, 90/90, 85/90; Haiku cloud run 76/90, 78/90, 77/90 with 33 of 270 runs blocked by bot checks and 6 real failures), with disclosures in `bench/RESULTS.md`.
 Publish failures and method beside the claim. Lead with agent task results; replay measures
 cheap orientation, not reading a whole article.
 

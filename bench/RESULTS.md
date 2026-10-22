@@ -3,9 +3,30 @@
 All benchmark numbers in one place. How to re-run them: [README.md](README.md).
 Mantis is compared with the accessibility tree (Playwright MCP 0.0.83) and with screenshots (our own minimal tool).
 Suites are reported separately; the sections below run from current scorecards to historical pilots.
-The frozen live-site cohort ([live-v1](live-v1.md), v1.3 keys) has a scored Sarvam result below; Luna/Haiku confirmation is pending.
+The frozen live-site cohort ([live-v1](live-v1.md), v1.3 keys) has scored Luna and Haiku results (next section) and a separate Sarvam result below.
 
-## Live-v1.3 real sites, Sarvam (current)
+## Live-v1.7 real sites, Luna and Haiku (current)
+
+Frozen `live-v1` v1.7: 30 tasks x 3 approaches x 3 runs = 270 runs per model. Judged blind by Codex `gpt-6.1-sol` (high reasoning); 20+ tasks are graded by deterministic validators on captured final state. Results: `live-v1-luna-20261022-judged`, `live-v1-haiku-20261022-judged`. These are separate from the Sarvam table below.
+
+| Success (of 90) | Mantis | Accessibility tree | Screenshots |
+|---|---:|---:|---:|
+| Luna (`gpt-6-luna`, local run) | **90** | **90** | 85 |
+| Haiku (`claude-haiku-5-5`, cloud run) | 76 | 78 | 77 |
+| Haiku, 26 tasks with no bot-check blocks (of 78) | 76 | 75 | 77 |
+
+| Avg input tokens | Mantis | Accessibility tree | Screenshots |
+|---|---:|---:|---:|
+| Luna | **91.5k** | 123.1k | 122.7k |
+| Haiku | **45.1k** | 102.7k | 56.2k |
+
+- **Luna:** Mantis and tree are perfect; Mantis uses about 26% fewer input tokens than either baseline. The five screenshot misses are two wrong RFC URLs (rfc-8259 run 2, rfc-9110 run 3), two Django overviews without the "Why Django?" heading, and one borderline Census About page.
+- **Haiku:** Haiku ran in a cloud environment where W3C (WCAG 2.2, CSS Color 4), the Met and TMDB served Cloudflare/Vercel bot checks. Those 33 runs are judged blocked, not failed (Mantis 12, tree 9, screenshots 12), so the headline counts understate all three. Only 6 runs failed, all `docs-node-url` (Mantis 2, tree 3, screenshots 1): Haiku stopped on the API index instead of the `url.html` page, a Haiku-specific weakness (Luna passed all 9). Haiku has not been rerun locally on the gated sites; that would cost Claude credits and is open.
+- **Disclosure (made after seeing Luna results):** (1) answer matching now strips markdown backticks and bold markers before comparing (a correct answer written as `` `application/json` `` previously failed a literal match); a pickle near-miss still fails. (2) The Eurostat key accepts `/eurostat/data/database` as an alias of `/eurostat/web/main/data/database`. Both are generic grader rules with passing and near-miss tests in `test/live-v1.test.ts`; the task hash changed accordingly (see [live-v1.md](live-v1.md)). Luna was regraded with them (pre-regrade file kept in `bench/results/prev/`); Haiku had no deterministic failures to regrade.
+- **Judge note:** Haiku's first judge pass ran on cloud Sonnet and was redone with sol; the Sonnet pass is kept in `bench/results/prev/`. The first sol pass was text-only because the cloud run recorded evidence paths from another machine (fixed by relocating them to the local log folder) and was redone with the evidence frames. The deterministic gate then treated 18 Cloudflare interstitial final frames (WCAG 2.2, CSS Color 4) as answer failures; `isAccessBlockText` now recognises Cloudflare and Vercel checkpoint pages, with tests, so they go to model adjudication and came back blocked. Only those 18 rows were rejudged; the other 252 verdicts are unchanged. One Luna judge run hit a stale-log error and was rerun (`live-v1-luna-20261022-unsure`).
+- Reproduce: `JUDGE_IN=live-v1-luna-20261022 npm run bench:judge` (and `live-v1-haiku-20261022`).
+
+## Live-v1.3 real sites, Sarvam
 
 Frozen `live-v1` with v1.3 keys: 29 scored public-site tasks x 3 approaches x 3 runs = 261 runs (the GNU GPL-3 task is excluded: the host timed out for all nine runs, so it was unwinnable here). Agent `deepseek-v4.1-flash` through Sarvam; 10 scheduled cases. 20 tasks are graded by deterministic validators on captured final state; the rest are judged blind by Codex `gpt-6.1-sol` (0 judge errors). Result: `live-v1-deepseek-v1_2-20261022-judged`.
 

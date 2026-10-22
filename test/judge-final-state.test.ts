@@ -5,7 +5,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { applyRunStatus, buildEvidencePacket, buildEvidencePrompt, buildJudgePrompt, deterministicGradeForRun, isEvidenceRun, parseJudgeOutput, prepareFrameImage, renderJudgedMarkdown, selectJudgeScreenshot, shouldJudgeNonSuccess, universallyBlockedTasks } from '../bench/agent/judge.js';
+import { applyRunStatus, buildEvidencePacket, buildEvidencePrompt, buildJudgePrompt, deterministicGradeForRun, isAccessBlockText, isEvidenceRun, parseJudgeOutput, relocateSavedPath, prepareFrameImage, renderJudgedMarkdown, selectJudgeScreenshot, shouldJudgeNonSuccess, universallyBlockedTasks } from '../bench/agent/judge.js';
 import type { JudgedRun, PacketFrame } from '../bench/agent/judge.js';
 import { decodePng, encodePng } from '../bench/agent/png.js';
 import { PAGE_STATE_FUNCTION, parsePageState } from '../bench/agent/evidence.js';
@@ -27,6 +27,15 @@ describe('final-page screenshot evidence', () => {
   it('does not mistake a legitimate RFC 403 Forbidden reference for an access block', () => {
     const row = { task_id: 'synthetic', website: 'https://example.test/', task: 'Find HTTP Semantics', level: 'easy', deterministic: { kind: 'fact' as const, answerIncludes: [{ type: 'text' as const, value: 'HTTP Semantics' }], final: { url: { origin: 'https://example.test', path: '/rfc' }, textIncludes: [{ type: 'text' as const, value: 'HTTP Semantics' }] } } };
     expect(deterministicGradeForRun(row, 'success', true, 'HTTP Semantics', [{ id: 'F1', image: 'f.png', final: true, url: 'https://example.test/rfc', text: 'HTTP Semantics\n15.5.4 403 Forbidden' }])?.pass).toBe(true);
+  });
+  it('recognises bot-check interstitials and not ordinary prose that mentions verification', () => {
+    expect(isAccessBlockText('Just a moment...\nPerforming security verification\nThis website uses a security service to protect against malicious bots. This page verifies you are not a bot.')).toBe(true);
+    expect(isAccessBlockText('Vercel Security Checkpoint\nWe are verifying your browser')).toBe(true);
+    expect(isAccessBlockText('Security Checkpoint')).toBe(true);
+    expect(isAccessBlockText('Performing security verification of the signed manifest is described below.')).toBe(false);
+    expect(isAccessBlockText('The security checkpoint at the airport screens passengers.')).toBe(false);
+    expect(isAccessBlockText('A validator verifies the user is not a robot arm.')).toBe(false);
+    expect(isAccessBlockText('HTTP Semantics\n15.5.4 403 Forbidden')).toBe(false);
   });
   it('prefers the saved live capture and keeps the identifying filename out of the judge prompt', async () => {
     const folder = dir();
@@ -275,6 +284,21 @@ describe('evidence packet files', () => {
     return { logs, sidecar, dest };
   };
   const size = (file: string): [number, number] => { const img = decodePng(readFileSync(file)); return [img.width, img.height]; };
+
+  it('finds a recorded foreign-machine evidence path by basename in the log folder, and keeps unknown paths unchanged', () => {
+    const { logs, sidecar, dest } = setup([{ file: 'a.final.png', png: solid(100, 80), final: true }]);
+    const foreign = '/home/user/mantis/bench/results/agent-logs/run/run.evidence.json';
+    const winForeign = 'C:\\other\\run.evidence.json';
+    expect(relocateSavedPath(foreign, logs)).toBe(sidecar);
+    expect(relocateSavedPath(winForeign, logs)).toBe(sidecar);
+    expect(relocateSavedPath(sidecar, logs)).toBe(sidecar);
+    expect(buildEvidencePacket(relocateSavedPath(foreign, logs), logs, dest).frames).toHaveLength(1);
+    // near miss: a basename with no counterpart in this folder is left as recorded, so no frames are found
+    const missing = '/home/user/mantis/other.evidence.json';
+    expect(relocateSavedPath(missing, logs)).toBe(missing);
+    expect(buildEvidencePacket(relocateSavedPath(missing, logs), logs, dest).frames).toEqual([]);
+    expect(relocateSavedPath(null, logs)).toBeNull();
+  });
 
   it('downscales earlier frames to fit 640x400 and keeps the final frame full size', () => {
     const { logs, sidecar, dest } = setup([{ file: 'a.step-01.png', png: solid(1280, 800) }, { file: 'a.step-02.png', png: solid(300, 200) }, { file: 'a.final.png', png: solid(1280, 800), final: true }]);

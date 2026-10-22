@@ -221,6 +221,18 @@ export function buildEvidencePrompt(input: { task: string; website: string; fina
 export const isEvidenceRun = (run: SavedRun): boolean => Object.hasOwn(run, 'evidenceFrames');
 
 /**
+ * Signatures of bot-check and refusal interstitials. They are whole-line or fixed-phrase matches so ordinary
+ * documentation text (RFC 9110's "403 Forbidden" entry, prose about security verification) does not count.
+ */
+export function isAccessBlockText(text: string): boolean {
+  return /\b(?:captcha|access denied|unusual traffic|verify you are human|bot check|country\/region (?:not )?available)\b/i.test(text)
+    || /^\s*(?:403\s+)?forbidden\s*$/im.test(text)
+    || /^\s*performing security verification\s*$/im.test(text)
+    || /\bverif(?:y|ies) (?:that )?you(?: are|['’]re) not a (?:bot|robot)\b/i.test(text)
+    || /^\s*(?:vercel )?security checkpoint\s*$/im.test(text);
+}
+
+/**
  * Return a deterministic result only for a successful evidence-format run.
  * Legacy and interrupted runs return null for the existing status/model path;
  * an opted-in run with unavailable terminal evidence falls back to the normal
@@ -230,7 +242,7 @@ export function deterministicGradeForRun(row: RealsiteRow, status: string, evide
   const finalFrames = frames.filter((frame) => frame.final);
   // Do not treat ordinary documentation text (for example RFC 9110's
   // "403 Forbidden" table-of-contents entry) as a refusal page.
-  const accessBlock = frames.some((frame) => /\b(?:captcha|access denied|unusual traffic|verify you are human|bot check|country\/region (?:not )?available)\b/i.test(frame.text) || /^(?:\s*(?:403\s+)?forbidden\s*)$/im.test(frame.text));
+  const accessBlock = frames.some((frame) => isAccessBlockText(frame.text));
   // A block is a model-adjudicated outcome, not an answer-key failure.
   return evidenceRun && status === 'success' && finalFrames.length === 1 && !accessBlock
     ? evaluateDeterministicGrader(row.deterministic, answer, frames)
@@ -248,6 +260,18 @@ export function readEvidenceSidecar(sidecarPath: string | null | undefined, allo
     const frames = raw.frames.filter((f): f is EvidenceFrame => !!f && typeof f === 'object' && typeof f.id === 'string' && typeof f.file === 'string' && typeof f.url === 'string' && typeof f.text === 'string');
     return { ...(raw as EvidenceSidecar), frames };
   } catch { return null; }
+}
+
+/**
+ * Saved result files record absolute paths of the machine that ran the agent (a cloud run records its own checkout).
+ * When the recorded path is missing here, look for the same basename in this run's log folder instead.
+ */
+export function relocateSavedPath(saved: string | null | undefined, logDir: string): string | null | undefined {
+  if (!saved || existsSync(saved)) return saved;
+  const base = saved.split(/[\\/]/).pop();
+  if (!base) return saved;
+  const local = path.join(logDir, base);
+  return existsSync(local) ? local : saved;
 }
 
 /** Earlier frames shrink to fit 640x400 (never enlarged); the final frame and undecodable PNGs are kept as captured. */
@@ -628,9 +652,9 @@ export async function judgeBenchmark(name: string, options: JudgeOptions = {}): 
     // Per-judge folder, named by position only so nothing about the approach leaks into the path.
     const dir = path.join(work, `j${index}`);
     mkdirSync(dir, { recursive: true });
-    const packet = evidenceRun && r.status !== 'connection_failure' ? buildEvidencePacket(r.evidencePath, logs, dir) : { frames: [] as PacketFrame[], texts: [] as string[], siteFailure: false };
+    const packet = evidenceRun && r.status !== 'connection_failure' ? buildEvidencePacket(relocateSavedPath(r.evidencePath, logs), logs, dir) : { frames: [] as PacketFrame[], texts: [] as string[], siteFailure: false };
     if (options.requireSavedEvidence && evidenceRun) {
-      const sidecar = readEvidenceSidecar(r.evidencePath, logs);
+      const sidecar = readEvidenceSidecar(relocateSavedPath(r.evidencePath, logs), logs);
       const baselineCount = options.expectedFrameCounts?.get(runKey(r.task, r.approach, r.run));
       if (!sidecar || sidecar.frames.length !== packet.frames.length || (r.evidenceFrames?.length ?? 0) !== packet.frames.length || (baselineCount !== undefined && baselineCount !== packet.frames.length)) {
         skipped.push({ task: r.task, approach: r.approach, run: r.run, reason: 'Saved evidence packet is missing or incomplete, or differs from the baseline frame count; fresh page loads are disabled.' });
@@ -660,7 +684,7 @@ export async function judgeBenchmark(name: string, options: JudgeOptions = {}): 
       });
     } else {
       const shot = path.join(dir, 'final.png');
-      const source = canJudge ? await selectJudgeScreenshot(r.finalScreenshotPath, shot, finalUrl, screenshot, logs) : null;
+      const source = canJudge ? await selectJudgeScreenshot(relocateSavedPath(r.finalScreenshotPath, logs) ?? null, shot, finalUrl, screenshot, logs) : null;
       savedImages = source ? [shot] : [];
       shots = supportsImages ? savedImages : [];
       prompt = buildJudgePrompt({ task: row.task, website: row.website, finalUrl, answer, screenshotPath: source ? (attached ? 'final.png' : shot) : null, screenshotSource: source ?? undefined, attached, rubric: row.judgeRubric });

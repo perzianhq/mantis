@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "suite": "live-v1",
   "mode": "network",
-  "taskHash": "6ff478db4dd5c50cdd175e9da85b4e9d2d904019244ff12c7e1729cb9c773644",
+  "taskHash": "38a1ec62e200ec6da9af0008046ba07a3c14245a20cce7e541cd2569ed8bfa9c",
   "note": "Public GET probes only; review redirects and content changes before promoting a candidate.",
   "candidates": [
     {
