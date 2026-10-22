@@ -1,0 +1,201 @@
+{
+  "source": "live-v1-v17-nist-20261022",
+  "judgeProvider": "codex",
+  "judgeModel": "gpt-6.1-sol",
+  "judgeModels": [
+    "gpt-6.1-sol"
+  ],
+  "siteBrokenTasks": [],
+  "runs": [
+    {
+      "task": "livev1-civic-nist-about",
+      "approach": "mantis",
+      "run": 1,
+      "finalUrl": "https://www.nist.gov/about-nist",
+      "toolCalls": 4,
+      "totalInputTokens": 18936,
+      "wallS": 63.726,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 4,
+      "finalFrame": "F4",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "livev1-civic-nist-about",
+      "approach": "tree",
+      "run": 1,
+      "finalUrl": "https://www.nist.gov/about-nist",
+      "toolCalls": 7,
+      "totalInputTokens": 35124,
+      "wallS": 71.966,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 5,
+      "finalFrame": "F5",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "livev1-civic-nist-about",
+      "approach": "screenshot",
+      "run": 1,
+      "finalUrl": "https://www.nist.gov/about-nist",
+      "toolCalls": 7,
+      "totalInputTokens": 17893,
+      "wallS": 17.001,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 4,
+      "finalFrame": "F4",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "livev1-civic-nist-about",
+      "approach": "mantis",
+      "run": 2,
+      "finalUrl": "https://www.nist.gov/about-nist",
+      "toolCalls": 7,
+      "totalInputTokens": 31779,
+      "wallS": 68.994,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 4,
+      "finalFrame": "F4",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "livev1-civic-nist-about",
+      "approach": "tree",
+      "run": 2,
+      "finalUrl": "https://www.nist.gov/about-nist",
+      "toolCalls": 7,
+      "totalInputTokens": 33565,
+      "wallS": 73.302,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 6,
+      "finalFrame": "F6",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "livev1-civic-nist-about",
+      "approach": "screenshot",
+      "run": 2,
+      "finalUrl": "https://www.nist.gov/about-nist",
+      "toolCalls": 7,
+      "totalInputTokens": 17855,
+      "wallS": 65.455,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 5,
+      "finalFrame": "F5",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "livev1-civic-nist-about",
+      "approach": "mantis",
+      "run": 3,
+      "finalUrl": "https://www.nist.gov/about-nist",
+      "toolCalls": 4,
+      "totalInputTokens": 18303,
+      "wallS": 65.14,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 4,
+      "finalFrame": "F4",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "livev1-civic-nist-about",
+      "approach": "tree",
+      "run": 3,
+      "finalUrl": "https://www.nist.gov/about-nist",
+      "toolCalls": 8,
+      "totalInputTokens": 38301,
+      "wallS": 74.292,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 6,
+      "finalFrame": "F6",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "livev1-civic-nist-about",
+      "approach": "screenshot",
+      "run": 3,
+      "finalUrl": "https://www.nist.gov/about-nist",
+      "toolCalls": 8,
+      "totalInputTokens": 21619,
+      "wallS": 63.948,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 4,
+      "finalFrame": "F4",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    }
+  ],
+  "skipped": []
+}

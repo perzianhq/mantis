@@ -74,9 +74,8 @@ describe('live-v1 frozen public catalog', () => {
     expect(grade('livev1-docs-postgresql-types', 'Chapter 8. Data Types', 'https://www.postgresql.org/docs/18/datatype.html', 'Chapter 8. Data Types')).toBe(true);
     expect(grade('livev1-docs-postgresql-types', 'Chapter 8. Data Types', 'https://www.postgresql.org/docs/17/datatype.html', 'Chapter 8. Data Types')).toBe(false);
 
-    expect(grade('livev1-civic-usgs-about', 'About', 'https://www.usgs.gov/about', 'USGS About')).toBe(true);
-    expect(grade('livev1-civic-usgs-about', 'Who We Are', 'https://www.usgs.gov/about/about-us/who-we-are', 'USGS Who We Are')).toBe(true);
-    expect(grade('livev1-civic-usgs-about', 'About', 'https://www.usgs.gov/about/about-us/who-we-are', 'USGS About')).toBe(false);
+    expect(grade('livev1-civic-nist-about', 'About NIST', 'https://www.nist.gov/about-nist', 'About NIST | NIST')).toBe(true);
+    expect(grade('livev1-civic-nist-about', 'About NIST', 'https://www.nist.gov/about-nist/leadership', 'About NIST | NIST')).toBe(false);
 
     expect(grade('livev1-data-ourworldindata-co2', 'CO2 emissions', 'https://ourworldindata.org/co2-emissions', 'CO2 emissions')).toBe(true);
     expect(grade('livev1-data-ourworldindata-co2', 'CO2 and Greenhouse Gas Emissions', 'https://ourworldindata.org/co2-and-greenhouse-gas-emissions', 'CO2 and Greenhouse Gas Emissions')).toBe(true);
