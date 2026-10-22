@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DIFF_BUDGET_CHARS, NO_CHANGE, diffSnapshots } from '../src/diff.js';
+import { DIFF_BUDGET_CHARS, NO_CHANGE, answerReadyCue, diffSnapshots } from '../src/diff.js';
 import type { RawNode, Snapshot } from '../src/index.js';
 
 type Extra = Partial<RawNode>;
@@ -125,6 +125,26 @@ describe('diffSnapshots (pure)', () => {
     const b = snap([btn(1, 'Go')], 'https://x.test/dashboard', 'Dashboard');
     expect(diffSnapshots(a, b)).toBe('url: /login → /dashboard\ntitle: "Login" → "Dashboard"');
     expect(diffSnapshots(a, snap([btn(1, 'Go')], 'https://y.test/', 'Login'))).toBe('url: https://x.test/login → https://y.test/');
+  });
+
+  it('adds a short ready cue for loaded content, a changed main view, or a new live result only', () => {
+    const before = snap([region('main'), btn(1, 'Search', { parent: 0 })]);
+    const loaded = snap([region('main'), heading('Results', 1, { parent: 0 })], 'https://x.test/results', 'Results');
+    const result = snap([region('main'), btn(1, 'Search', { parent: 0 }), heading('Results', 1, { parent: 0 })]);
+    const confirmed = snap([region('main'), btn(1, 'Save', { parent: 0 }), text('Saved', { parent: 0, live: 'status' })]);
+
+    expect(answerReadyCue(before, loaded)).toBe('page loaded: Results');
+    expect(answerReadyCue(before, result)).toBe('new content: Results');
+    expect(answerReadyCue(before, confirmed)).toBe('status: Saved');
+    expect(answerReadyCue(snap([btn(1, 'Search')]), snap([region('main'), text('Hello', { parent: 0 })]))).toBe('page ready: A');
+    // Near miss: a live "Loading…" status and a newly opened control are progress, not an answer.
+    expect(answerReadyCue(before, snap([region('main'), btn(1, 'Search', { parent: 0 }), text('Loading…', { parent: 0, live: 'status' })]))).toBeNull();
+    expect(answerReadyCue(before, snap([region('main'), btn(1, 'Search', { parent: 0 }), btn(2, 'Menu item', { parent: 0 })]))).toBeNull();
+    // Near misses: an error alert, in-place text change and the same observation again stay silent.
+    expect(answerReadyCue(before, snap([region('main'), btn(1, 'Search', { parent: 0 }), text('Invalid', { parent: 0, live: 'alert' })]))).toBeNull();
+    expect(answerReadyCue(result, result)).toBeNull();
+    // Near miss: a control state change is progress, not newly answer-ready content.
+    expect(answerReadyCue(before, snap([region('main'), btn(1, 'Search', { parent: 0, states: ['disabled'] })]))).toBeNull();
   });
 
   it('shortens a long run of new items and points at read()', () => {

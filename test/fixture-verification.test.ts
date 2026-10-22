@@ -28,6 +28,8 @@ import { LIVE_V1_ROWS } from '../bench/agent/live-v1.js';
 import { createMcpProxy } from '../bench/agent/mcp-proxy.js';
 import { decodePng, encodePng, fitWithin, grayThumb, resizeImage, thumbDiff } from '../bench/agent/png.js';
 import { classifyClickError } from '../src/browser.js';
+import { answerReadyCue } from '../src/diff.js';
+import type { Snapshot } from '../src/capture/index.js';
 import { fixture, idOf } from './helpers.js';
 
 const crc32 = (buf: Uint8Array): number => {
@@ -35,6 +37,14 @@ const crc32 = (buf: Uint8Array): number => {
   for (const b of buf) { c ^= b; for (let k = 0; k < 8; k++) c = (c >>> 1) ^ (0xedb88320 & -(c & 1)); }
   return ~c >>> 0;
 };
+
+it('marks a loaded answer view but not an unchanged or merely pending fixture observation', () => {
+  const before: Snapshot = { url: 'https://fixture.test/search', title: 'Search', nodes: [], truncated: false };
+  const loaded: Snapshot = { ...before, url: 'https://fixture.test/results', title: 'Results' };
+  expect(answerReadyCue(before, loaded)).toBe('page loaded: Results');
+  // Near miss: no structural change means there is no result-ready cue to repeat.
+  expect(answerReadyCue(before, before)).toBeNull();
+});
 
 it('matches a quoted fixture answer but still rejects a quoted near miss', () => {
   const cart = TASKS.find((entry) => entry.id === 'cookie-cart')!;

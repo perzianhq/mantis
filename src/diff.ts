@@ -68,6 +68,34 @@ export function headerLines(before: Pick<Snapshot, 'url' | 'title'>, after: Pick
   return out;
 }
 
+/**
+ * One short line when an action reached finished content rather than an in-progress state: a different
+ * page, a status message that just appeared, or a new heading inside the main region. Derived only from
+ * what changed in the observed structure, so unchanged, pending (loading) and error states stay silent.
+ */
+export function answerReadyCue(before: Snapshot, after: Snapshot): string | null {
+  const flat = (s: string): string => s.trim().replace(/\s+/g, ' ');
+  const title = clip(flat(after.title), 80) || 'current page';
+  if (after.url !== before.url || after.title !== before.title) return `page loaded: ${title}`;
+
+  const pending = /^(loading|please wait|working|searching|saving|processing|submitting|updating)\b|(…|\.\.\.)$/i;
+  const key = (n: RawNode): string => `${n.kind}|${n.role}|${n.name}`;
+  const seen = new Set(before.nodes.filter(isTextual).map(key));
+  const fresh = (n: RawNode): boolean => !!n.name.trim() && !pending.test(n.name.trim()) && !seen.has(key(n));
+  const mains = (snap: Snapshot): Set<number> => new Set(snap.nodes.flatMap((n, i) => (n.kind === 'region' && n.role === 'main' ? [i] : [])));
+  const insideMain = (index: number, roots: Set<number>): boolean => {
+    for (let at = index; at >= 0; at = after.nodes[at].parent) if (roots.has(at)) return true;
+    return false;
+  };
+  const status = after.nodes.find((n) => n.live === 'status' && isTextual(n) && fresh(n));
+  if (status) return `status: ${clip(flat(status.name), 80)}`;
+  const afterMain = mains(after);
+  const heading = after.nodes.find((n, i) => n.kind === 'heading' && fresh(n) && insideMain(i, afterMain));
+  if (heading) return `new content: ${clip(flat(heading.name), 80)}`;
+  if (afterMain.size > 0 && mains(before).size === 0 && after.nodes.some(isTextual)) return `page ready: ${title}`;
+  return null;
+}
+
 // ---- line formats (kept in step with translate.ts) -------------------------
 
 /** Same format as the full view; hrefs kept (a new link is something to follow) unless the name is a guess. */
