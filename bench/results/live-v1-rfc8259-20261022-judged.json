@@ -1,0 +1,201 @@
+{
+  "source": "live-v1-rfc8259-20261022",
+  "judgeProvider": "codex",
+  "judgeModel": "gpt-6.1-sol",
+  "judgeModels": [
+    "gpt-6.1-sol"
+  ],
+  "siteBrokenTasks": [],
+  "runs": [
+    {
+      "task": "livev1-standards-rfc-8259",
+      "approach": "mantis",
+      "run": 1,
+      "finalUrl": "https://www.rfc-editor.org/info/rfc8259/",
+      "toolCalls": 6,
+      "totalInputTokens": 36079,
+      "wallS": 75.448,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 3,
+      "finalFrame": "F3",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "livev1-standards-rfc-8259",
+      "approach": "tree",
+      "run": 1,
+      "finalUrl": "https://www.rfc-editor.org/info/rfc8259/",
+      "toolCalls": 7,
+      "totalInputTokens": 91223,
+      "wallS": 73.852,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 3,
+      "finalFrame": "F3",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "livev1-standards-rfc-8259",
+      "approach": "screenshot",
+      "run": 1,
+      "finalUrl": "https://www.rfc-editor.org/rfc/rfc8259.html",
+      "toolCalls": 9,
+      "totalInputTokens": 23511,
+      "wallS": 72.866,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 5,
+      "finalFrame": "F5",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "livev1-standards-rfc-8259",
+      "approach": "mantis",
+      "run": 2,
+      "finalUrl": "https://www.rfc-editor.org/info/rfc8259/",
+      "toolCalls": 5,
+      "totalInputTokens": 26992,
+      "wallS": 64.378,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 3,
+      "finalFrame": "F3",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "livev1-standards-rfc-8259",
+      "approach": "tree",
+      "run": 2,
+      "finalUrl": "https://www.rfc-editor.org/info/rfc8259/",
+      "toolCalls": 7,
+      "totalInputTokens": 91142,
+      "wallS": 73.523,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 3,
+      "finalFrame": "F3",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "livev1-standards-rfc-8259",
+      "approach": "screenshot",
+      "run": 2,
+      "finalUrl": "https://www.rfc-editor.org/rfc/rfc8259.html",
+      "toolCalls": 9,
+      "totalInputTokens": 23676,
+      "wallS": 78.131,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 5,
+      "finalFrame": "F5",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "livev1-standards-rfc-8259",
+      "approach": "mantis",
+      "run": 3,
+      "finalUrl": "https://www.rfc-editor.org/info/rfc8259/",
+      "toolCalls": 6,
+      "totalInputTokens": 44795,
+      "wallS": 75.349,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 4,
+      "finalFrame": "F4",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "livev1-standards-rfc-8259",
+      "approach": "tree",
+      "run": 3,
+      "finalUrl": "https://www.rfc-editor.org/rfc/rfc8259.html",
+      "toolCalls": 5,
+      "totalInputTokens": 56430,
+      "wallS": 65.036,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 2,
+      "finalFrame": "F2",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "livev1-standards-rfc-8259",
+      "approach": "screenshot",
+      "run": 3,
+      "finalUrl": "https://www.rfc-editor.org/info/rfc8259/",
+      "toolCalls": 10,
+      "totalInputTokens": 27764,
+      "wallS": 85.714,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 5,
+      "finalFrame": "F5",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    }
+  ],
+  "skipped": []
+}

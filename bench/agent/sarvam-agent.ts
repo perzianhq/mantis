@@ -161,6 +161,7 @@ export async function runSarvamAgent(options: SarvamAgentOptions): Promise<Sarva
   };
   const models = new Set<string>(); const diagnostics: string[] = [];
   let truncatedPrefix = '';
+  let consecutiveLengthWithoutTools = 0;
   for (let turn = 1; turn <= options.maxSteps; turn++) {
     if (aborted()) return result(abortMessage(), true, turn - 1, true);
     const resolved = resolveSarvamModel(options.model);
@@ -183,6 +184,15 @@ export async function runSarvamAgent(options: SarvamAgentOptions): Promise<Sarva
     addTiming(reply.timing);
     trace({ type: 'sarvam.completion', turn, model: reply.model, finishReason: reply.finishReason ?? null, content: reply.content ?? '', toolCalls: reply.toolCalls ?? [],
       attempts: reply.attempts ?? 1, rateLimits: reply.rateLimits ?? 0, promptTokens: reply.usage.promptTokens, completionTokens: reply.usage.completionTokens });
+    const lengthWithoutTools = reply.finishReason === 'length' && !reply.toolCalls?.length;
+    if (lengthWithoutTools) {
+      consecutiveLengthWithoutTools++;
+      if (consecutiveLengthWithoutTools >= 2) {
+        return result('Sarvam completion token limit (length).', true, turn, true);
+      }
+    } else {
+      consecutiveLengthWithoutTools = 0;
+    }
     if (reply.finishReason === 'length') truncatedPrefix += reply.content ?? '';
     if (reply.finishReason === 'length' && turn === options.maxSteps) {
       return result('Sarvam completion token limit (length).', true, turn, true);

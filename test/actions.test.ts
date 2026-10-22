@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { resolve } from 'node:path';
 import { MantisBrowser } from '../src/index.js';
 import { fixture, idOf } from './helpers.js';
 
@@ -155,6 +156,26 @@ describe('select', () => {
     expect(view).toContain('value "Spain"');
     expect(await b.select(id, 'Mars')).toBe(`error: no option "Mars" in #${id} combobox "Country"; options: France | Spain`);
   });
+
+  it('opens a custom combobox and only accepts an unambiguous text match', async () => {
+    const url =
+      'data:text/html,' +
+      encodeURIComponent(
+        '<label for=city>City</label><input id=city role=combobox aria-controls=cities aria-expanded=false>' +
+        '<ul id=cities role=listbox hidden><li role=option>North Harbor</li><li role=option>North Point</li><li role=option>Cedar Ridge</li></ul><p id=result>None</p>' +
+        '<script>const input=document.querySelector("#city"),list=document.querySelector("#cities");input.addEventListener("focus",()=>{list.hidden=false});list.addEventListener("click",e=>{const item=e.target.closest("[role=option]");if(item){input.value=item.textContent;list.hidden=true;document.querySelector("#result").textContent="Selected: "+item.textContent}})</script>',
+      );
+    const view = await b.open(url);
+    const city = idOf(view, 'combobox "City"');
+    const selected = await b.select(city, 'cedar ridge');
+    expect(selected).toContain(`selected "Cedar Ridge" in #${city} combobox "City"`);
+    expect(selected).toContain('Selected: Cedar Ridge');
+
+    // Near miss: a non-unique substring must report candidates instead of clicking the first one.
+    expect(await b.select(city, 'north')).toBe(
+      `error: ambiguous option "north" in #${city} combobox "City"; candidates: North Harbor | North Point`,
+    );
+  });
 });
 
 describe('fill', () => {
@@ -222,5 +243,83 @@ describe('fill', () => {
     expect(await b.fill([{ id: 9999, value: 'x' }])).toBe('error: nothing filled; #9999: no element #9999 on this page; call read() to see current numbers');
     const terms = idOf(view, 'checkbox');
     expect(await b.fill([{ id: terms, value: 'maybe' }])).toContain('use true or false');
+  });
+});
+
+describe('agent tool capabilities', () => {
+  it('waits for text to appear or disappear and for a disabled numbered control to enable', async () => {
+    const view = await b.open(fixture('tool-capabilities.html'));
+    const later = idOf(view, 'button "Later control"');
+    const page = await (b as unknown as { activePage: () => Promise<{ evaluate: <T>(fn: () => T) => Promise<T> }> }).activePage();
+    await page.evaluate(() => {
+      setTimeout(() => { document.getElementById('message')!.textContent = 'Ready marker'; }, 80);
+    });
+    expect(await b.waitFor({ text: 'Ready marker', timeoutSeconds: 1 })).toContain('waited for text "Ready marker" to appears');
+    await page.evaluate(() => {
+      setTimeout(() => { document.getElementById('message')!.remove(); }, 80);
+      setTimeout(() => { (document.getElementById('later') as HTMLButtonElement).disabled = false; }, 160);
+    });
+    expect(await b.waitFor({ text: 'Ready marker', state: 'disappears', timeoutSeconds: 1 })).toContain('waited for text "Ready marker" to disappears');
+    expect(await b.waitFor({ id: later, state: 'enabled', timeoutSeconds: 1 })).toContain(`waited for #${later} to become enabled`);
+  });
+
+  it('returns a current observation when a wait times out (near miss)', async () => {
+    await b.open(fixture('tool-capabilities.html'));
+    const result = await b.waitFor({ text: 'Never present', timeoutSeconds: 0.1 });
+    expect(result).toContain('timed out after 0.1s waiting for text "Never present" to appears');
+    expect(result).toContain('current observation:');
+    expect(result).toContain('Initial message');
+  });
+
+  it('hovers a numbered control and rejects an unknown number', async () => {
+    const view = await b.open(fixture('tool-capabilities.html'));
+    const reveal = idOf(view, 'button "Reveal detail"');
+    expect(await b.hover(reveal)).toContain('Hover detail');
+    expect(await b.hover(9999)).toBe('error: no element #9999 on this page; call read() to see current numbers');
+  });
+
+  it('uploads a local file and rejects a missing local path', async () => {
+    const view = await b.open(fixture('tool-capabilities.html'));
+    const input = idOf(view, 'Choose document');
+    const sample = resolve(import.meta.dirname, 'fixtures', 'upload-sample.txt');
+    expect(await b.upload(input, [sample])).toMatch(/^uploaded 1 file to #\d+/);
+    const page = await (b as unknown as { activePage: () => Promise<{ evaluate: <T>(fn: () => T) => Promise<T> }> }).activePage();
+    expect(await page.evaluate(() => (document.getElementById('document') as HTMLInputElement).files?.[0]?.name)).toBe('upload-sample.txt');
+    expect(await b.upload(input, [resolve(import.meta.dirname, 'fixtures', 'missing-upload.txt')])).toContain('file does not exist:');
+  });
+
+  it('opens a file chooser from a button, and rejects a control that opens none (near miss)', async () => {
+    const view = await b.open(fixture('tool-capabilities.html'));
+    const chooser = idOf(view, 'button "Open chooser"');
+    const plain = idOf(view, 'button "Reveal detail"');
+    const sample = resolve(import.meta.dirname, 'fixtures', 'upload-sample.txt');
+    expect(await b.upload(chooser, [sample])).toMatch(/^uploaded 1 file to #[0-9]+/);
+    expect(await b.upload(plain, [sample])).toContain('did not open a file chooser');
+  });
+
+  it('rejects ambiguous or empty wait requests', async () => {
+    const view = await b.open(fixture('tool-capabilities.html'));
+    const later = idOf(view, 'button "Later control"');
+    expect(await b.waitFor({ text: 'x', id: later })).toContain('either text or id');
+    expect(await b.waitFor({ text: '  ' })).toContain('cannot be empty');
+    expect(await b.waitFor({ id: later, state: 'enabled', timeoutSeconds: 0.1 })).toContain('timed out after 0.1s');
+  });
+
+  it('lists tabs, switches the active page, closes a tab, and rejects an unknown tab', async () => {
+    const tabs = new MantisBrowser();
+    try {
+      await tabs.open('data:text/html,' + encodeURIComponent('<title>First tab</title><p>First content</p>'));
+      const first = await (tabs as unknown as { activePage: () => Promise<{ context: () => { newPage: () => Promise<{ setContent: (html: string) => Promise<void> }> } }> }).activePage();
+      const second = await first.context().newPage();
+      await second.setContent('<title>Second tab</title><p>Second content</p>');
+      const listed = await tabs.tabs();
+      expect(listed).toMatch(/#1 "First tab"/);
+      expect(listed).toMatch(/#2 "Second tab"/);
+      expect(await tabs.tabs('switch', 1)).toContain('First content');
+      expect(await tabs.tabs('close', 2)).toBe('closed tab #2');
+      expect(await tabs.tabs('switch', 9)).toBe('error: no tab #9; call tabs() to list open tabs');
+    } finally {
+      await tabs.close();
+    }
   });
 });

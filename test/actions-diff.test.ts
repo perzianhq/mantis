@@ -90,6 +90,7 @@ describe('action diffs: same page', () => {
     const view = await b.open(fixture('delayed.html'));
     const res = await b.click(idOf(view, 'button "Load report"'));
     expect(diffOf(res)).toEqual([
+      'new content: Quarterly report',
       '+ [main] ## Quarterly report',
       expect.stringMatching(/^\+ #\d+ link "Download report"/),
     ]);
@@ -119,15 +120,16 @@ describe('action diffs: new document', () => {
     expect(lines[0]).toMatch(/^clicked #\d+ link "Go to login"/);
     expect(lines[1]).toMatch(/^url: \/.*nav\.html → \/.*login\.html$/);
     expect(lines[2]).toBe('title: "Nav" → "Login — Acme"');
-    expect(lines[3]).toMatch(/^Page: Login — Acme {2}\(file:/);
+    expect(lines[3]).toBe('page loaded: Login — Acme');
+    expect(lines[4]).toMatch(/^Page: Login — Acme {2}\(file:/);
     // same text as read() gives
-    expect(lines.slice(3).join('\n')).toBe(await b.read());
+    expect(lines.slice(4).join('\n')).toBe(await b.read());
     expect(res).not.toMatch(/^[+~-] /m);
   });
 
   it('back also returns the full view of the page we return to', async () => {
     const res = await b.back();
-    expect(res).toMatch(/^went back\nurl: \/.*login\.html → \/.*nav\.html\ntitle: "Login — Acme" → "Nav"\nPage: Nav/);
+    expect(res).toMatch(/^went back\nurl: \/.*login\.html → \/.*nav\.html\ntitle: "Login — Acme" → "Nav"\npage loaded: Nav\nPage: Nav/);
     expect(res).toContain('link "Go to login"');
   });
 });

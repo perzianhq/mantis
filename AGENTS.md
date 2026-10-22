@@ -6,8 +6,9 @@ For all coding agents (Claude Code loads this via CLAUDE.md).
 - Keep replies short and to the point: lead with the result in 1–3 lines. Use tables only when they replace more text. Skip background and caveats unless they change a decision.
 
 ## Working
-- Parallelize independent light tasks: reads, searches, edits, builds, small tests. Sequence dependent steps.
+- Run things in parallel whenever you can: reads, searches, edits, builds, tests, Codex jobs, regrades, doc updates, and any other work that doesn't depend on another step's result. Only sequence genuinely dependent steps (and Sarvam jobs, which share one RPM budget).
 - Codex jobs: use `scripts/codex-job.sh` with a short label; from Claude Code, use Bash with `run_in_background` to show in background tasks. Don't poll; read only `.codex-jobs/<label>.out.md` after completion.
+- Whenever you launch a run (eval, regression), redirect its output to a file and open a terminal tab (`run_in_terminal`, no `tab_id`) with the one-row live status, checked every second from local logs only (no API calls), redrawn only when a count changes: `powershell -File scripts/run-status.ps1 -Dir <agent-logs dir> -Total <runs> -Out <output file>`. It shows e.g. `done 36/270  running 10  |  mantis 13/13 | tree 12/12 | screenshot 11/11` (agent-reported success per approach, not the judge score). Stop the tab when the run ends.
 - Run heavy jobs (agent evals, full suites, many browsers) one at a time to avoid RAM contention.
 - Fix bugs that evals expose in general, never around the case that exposed them. No site names, URLs, site class names or task text in `src/`. Reproduce the pattern in a synthetic fixture, then test it with a passing case and a near miss.
 
@@ -44,4 +45,4 @@ See [setup](docs/SETUP.md#build-and-test) for build/test; [benchmarks](bench/REA
 - Every agent task needs a grader test in `test/fixture-verification.test.ts` with a passing case and a near-miss failing case.
 
 ## Git
-- Commit or push only when the user asks. Don't commit `bench/results/agent-debug.*` or `codex-smoke.*`.
+- Keep the git repo up to date: commit and push to the relevant branch (the current feature branch, not `main` by default) whenever a substantial, verified edit is worth keeping track of (build and relevant tests green); don't wait to be asked. Otherwise commit or push only when the user asks. Don't commit `bench/results/agent-debug.*`, `codex-smoke.*`, `current.yml` or `chart-device.png`.

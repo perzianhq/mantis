@@ -1,7 +1,7 @@
 # Live-site candidate pool (provisional)
 
-This is a **planning pool**, not a frozen benchmark or task file. Do not run or
-report it. Every row needs live preflight before it can become a frozen task.
+This is the original **planning pool**, not a frozen benchmark or task file; the frozen
+cohort is [live-v1](../live-v1.md) ([manifest](live-v1.json)). Do not run or report this pool. Every row needs live preflight before it can become a frozen task.
 The target is 30 read-only slots across 18 public sites: 20 deterministic
 answer-key tasks and 10 evidence-judged tasks.
 

@@ -83,10 +83,17 @@ export function walker(includeSrOnly = false): WalkResult {
   // Numbers in a child frame start at its base (10001, 20001, ...) so they never clash with the page's.
   const win = window as unknown as { __mantis?: Registry; __mantisBase?: number };
   const reg: Registry = (win.__mantis ??= { ids: new WeakMap(), next: (win.__mantisBase ?? 0) + 1, byId: new Map() });
+  // A frame owns [base + 1, base + 10_000). The registry persists across captures, so the
+  // per-walk node budget alone cannot prevent a long-lived page from crossing into another frame.
+  const rangeStart = (win.__mantisBase ?? 0) + 1;
+  const rangeEnd = rangeStart + 9_999;
   /** Elements given a click-type listener by page script (recorded by Mantis's init script, if loaded). */
   const clickListeners = (window as unknown as { __mantisClick?: WeakSet<Element> }).__mantisClick;
 
   const MAX_NODES = 3000;
+  // The walk itself stops at a multiple of the cap so a huge page stays cheap; the nodes kept in the
+  // end are chosen by closeness to the viewport (see the budgeting step after the walk).
+  const WALK_LIMIT = MAX_NODES * 4;
   const SKIP = new Set([
     'script', 'style', 'noscript', 'template', 'head', 'svg', 'canvas',
     'object', 'embed', 'link', 'meta', 'title', 'audio', 'video', 'datalist',
@@ -114,8 +121,26 @@ export function walker(includeSrOnly = false): WalkResult {
     ':not(span,b,i,em,strong,small,sub,sup,br,code,abbr,mark,u,s,time,cite,q,wbr,font,img,bdi,del,ins,var,kbd,samp),' +
     '[role],[onclick],[tabindex],[contenteditable]';
 
-  const nodes: RawNode[] = [];
+  let nodes: RawNode[] = [];
   let truncated = false;
+
+  /** Allocate only inside this document's frame range. */
+  function idFor(el: Element): number | undefined {
+    const known = reg.ids.get(el);
+    if (known !== undefined) {
+      if (known >= rangeStart && known < rangeEnd) return known;
+      truncated = true;
+      return undefined;
+    }
+    if (reg.next < rangeStart || reg.next >= rangeEnd) {
+      truncated = true;
+      return undefined;
+    }
+    const id = reg.next++;
+    reg.ids.set(el, id);
+    reg.byId.set(id, new WeakRef(el));
+    return id;
+  }
 
   const vw = document.documentElement.clientWidth || window.innerWidth;
   // In quirks mode (no doctype) clientHeight is the whole document, which would make everything "in view".
@@ -852,19 +877,11 @@ export function walker(includeSrOnly = false): WalkResult {
       const root = node.getRootNode();
       return root instanceof ShadowRoot ? root : document;
     };
-    const idOf = (node: Element): number => {
-      let id = reg.ids.get(node);
-      if (id === undefined) {
-        id = reg.next++;
-        reg.ids.set(node, id);
-        reg.byId.set(id, new WeakRef(node));
-      }
-      return id;
-    };
     const describe = (node: Element): { id: number; name: string } | undefined => {
       const role = interactiveRole(node, explicitRole(node), getComputedStyle(node));
       if (!role || !node.getClientRects().length) return undefined;
-      return { id: idOf(node), name: cap(accName(node, role) || collapse(node.textContent || '') || role, 60) };
+      const id = idFor(node);
+      return id === undefined ? undefined : { id, name: cap(accName(node, role) || collapse(node.textContent || '') || role, 60) };
     };
     for (let node: Element | null = parent(el); node; node = parent(node)) {
       if (node instanceof HTMLDetailsElement && !node.open) {
@@ -976,12 +993,8 @@ export function walker(includeSrOnly = false): WalkResult {
 
     if (t === 'a' || t === 'area') node.href = hrefOf(el);
 
-    let id = reg.ids.get(el);
-    if (id === undefined) {
-      id = reg.next++;
-      reg.ids.set(el, id);
-      reg.byId.set(id, new WeakRef(el));
-    }
+    const id = idFor(el);
+    if (id === undefined) return;
     node.id = id;
     if (el === deepActive && (field || (el as HTMLElement).isContentEditable)) node.focused = true;
     stamp(node, r);
@@ -1032,12 +1045,8 @@ export function walker(includeSrOnly = false): WalkResult {
     if (cs.display === 'none' || cs.visibility !== 'visible' || parseFloat(cs.opacity) === 0) return;
     const r = el.getBoundingClientRect();
     if (r.width < 80 || r.height < 40 || !inDoc(r)) return;
-    let id = reg.ids.get(el);
-    if (id === undefined) {
-      id = reg.next++;
-      reg.ids.set(el, id);
-      reg.byId.set(id, new WeakRef(el));
-    }
+    const id = idFor(el);
+    if (id === undefined) return;
     const label = collapse(el.getAttribute('aria-label') || el.getAttribute('title') || '');
     const name = `${label ? ` "${label}"` : ''} ${Math.round(r.width)}×${Math.round(r.height)}: chart or drawing; data({id: ${id}})`;
     nodes.push(stamp({ kind: 'text', id, role: 'canvas', name, states: [], parent, depth, inViewport: inView(r), covered: false }, r));
@@ -1050,12 +1059,8 @@ export function walker(includeSrOnly = false): WalkResult {
     if (cs.display === 'none' || cs.visibility !== 'visible' || parseFloat(cs.opacity) === 0) return;
     const r = el.getBoundingClientRect();
     if (r.width < 20 || r.height < 20 || !inDoc(r)) return;
-    let id = reg.ids.get(el);
-    if (id === undefined) {
-      id = reg.next++;
-      reg.ids.set(el, id);
-      reg.byId.set(id, new WeakRef(el));
-    }
+    const id = idFor(el);
+    if (id === undefined) return;
     let name = collapse(el.getAttribute('title') || el.getAttribute('aria-label') || el.getAttribute('name') || '');
     if (!name) { try { name = new URL((el as HTMLIFrameElement).src).hostname; } catch { /* srcdoc / about:blank */ } }
     nodes.push(stamp({ kind: 'region', role: 'iframe', name: cap(name, 60), frame: id, states: [], parent, depth, inViewport: inView(r), covered: false }, r));
@@ -1101,7 +1106,7 @@ export function walker(includeSrOnly = false): WalkResult {
     const found = Array.from(root.querySelectorAll(sel));
     if (root.matches(sel)) found.unshift(root);
     for (const c of found) {
-      if (nodes.length >= MAX_NODES) { truncated = true; return; }
+      if (nodes.length >= WALK_LIMIT) { truncated = true; return; }
       if (c.closest('[aria-hidden="true"],[inert]')) continue;
       const cs = getComputedStyle(c);
       if (cs.visibility !== 'visible' || cs.pointerEvents === 'none' || cs.display === 'none' || (c !== root && parseFloat(cs.opacity) === 0)) continue;
@@ -1187,7 +1192,7 @@ export function walker(includeSrOnly = false): WalkResult {
   }
 
   function visit(el: Element, parent: number, depth: number, box: DOMRect, inheritedSr = false, inheritedOpen?: { id: number; name: string }): void {
-    if (nodes.length >= MAX_NODES) { truncated = true; return; }
+    if (nodes.length >= WALK_LIMIT) { truncated = true; return; }
     if (el.localName === 'canvas') { canvasMark(el, parent, depth); return; }
     if (SKIP.has(el.localName)) return;
     if (el.localName === 'iframe' || el.localName === 'frame') { frameMark(el, parent, depth); return; }
@@ -1387,6 +1392,59 @@ export function walker(includeSrOnly = false): WalkResult {
     hintSeen.set(h.hint, at);
     h.node.name = total > 1 && !/ \d+( of \d+)?$/.test(h.hint) ? `${h.hint} ${at} of ${total}` : h.hint;
     h.node.inferred = true;
+  }
+
+  // Do not let document order decide which third of a long page is useful.  We still walk the
+  // page to find content around the current scroll position, then retain the viewport, its near
+  // neighbours and landmark roots before older far-offscreen material.  Ancestors come along so
+  // the compacted result remains a valid tree.
+  if (nodes.length > MAX_NODES) {
+    truncated = true;
+    const viewportTop = window.scrollY;
+    const viewportBottom = viewportTop + vh;
+    const landmark = new Set(['header', 'nav', 'main', 'aside', 'footer', 'search', 'dialog', 'alertdialog']);
+    const priority = (n: RawNode): number => {
+      let score = n.kind === 'region' && landmark.has(n.role) ? 1000 : 0;
+      const box = n.box;
+      if (!box) return score;
+      const top = box[1];
+      const bottom = top + box[3];
+      if (bottom > viewportTop && top < viewportBottom) return score + 900;
+      const distance = bottom <= viewportTop ? viewportTop - bottom : top - viewportBottom;
+      if (distance <= vh) return score + 600;
+      if (distance <= 2 * vh) return score + 300;
+      return score;
+    };
+    const distanceOf = (n: RawNode): number => {
+      const box = n.box;
+      if (!box) return Infinity;
+      const top = box[1];
+      const bottom = top + box[3];
+      if (bottom > viewportTop && top < viewportBottom) return 0;
+      return bottom <= viewportTop ? viewportTop - bottom : top - viewportBottom;
+    };
+    // Within a band, the node closest to the viewport wins; document order only breaks exact ties.
+    const ranked = nodes.map((n, index) => ({ index, score: priority(n), distance: distanceOf(n) }))
+      .sort((a, b) => b.score - a.score || a.distance - b.distance || a.index - b.index);
+    const kept = new Set<number>();
+    const add = (index: number): void => {
+      const chain: number[] = [];
+      for (let at = index; at >= 0 && !kept.has(at); at = nodes[at].parent) chain.push(at);
+      if (kept.size + chain.length > MAX_NODES) return;
+      chain.reverse().forEach((at) => kept.add(at));
+    };
+    for (const candidate of ranked) {
+      if (kept.size >= MAX_NODES) break;
+      add(candidate.index);
+    }
+    const newIndex = new Map<number, number>();
+    const compact: RawNode[] = [];
+    nodes.forEach((n, index) => {
+      if (!kept.has(index)) return;
+      newIndex.set(index, compact.length);
+      compact.push({ ...n, parent: n.parent >= 0 ? newIndex.get(n.parent) ?? -1 : -1 });
+    });
+    nodes = compact;
   }
 
   // Visible text is kept even away from controls (prices, status lines, table cells): dropping it

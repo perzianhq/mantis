@@ -1,0 +1,271 @@
+{
+  "schemaVersion": 1,
+  "suite": "live-v1",
+  "mode": "network",
+  "taskHash": "6ff478db4dd5c50cdd175e9da85b4e9d2d904019244ff12c7e1729cb9c773644",
+  "note": "Public GET probes only; review redirects and content changes before promoting a candidate.",
+  "candidates": [
+    {
+      "taskId": "livev1-standards-rfc-8259",
+      "canonicalUrl": "https://www.rfc-editor.org/rfc/rfc8259.html",
+      "sourceFingerprint": "86b1a243ca7dfc6c651a36bee42b81ab2f9255e334d7b50126556cf354c9486a",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://www.rfc-editor.org/rfc/rfc8259.html"
+    },
+    {
+      "taskId": "livev1-standards-wcag-22",
+      "canonicalUrl": "https://www.w3.org/TR/WCAG22/",
+      "sourceFingerprint": "e6860d1415aeea9f754afb1b099a33db9126438cf2206b15d92a8d15685aa506",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://www.w3.org/TR/WCAG22/"
+    },
+    {
+      "taskId": "livev1-standards-rfc-9110",
+      "canonicalUrl": "https://www.rfc-editor.org/rfc/rfc9110.html",
+      "sourceFingerprint": "786829066405e487261fc30568f480122ca8045e3b9518a6781069daf14f19f6",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://www.rfc-editor.org/rfc/rfc9110.html"
+    },
+    {
+      "taskId": "livev1-standards-openapi-31",
+      "canonicalUrl": "https://spec.openapis.org/oas/v3.1.0.html",
+      "sourceFingerprint": "2a45098f3c454fca5a5df070d1343b9e9384a63ac52c0ba10417c2f7fac94ce9",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://spec.openapis.org/oas/v3.1.0.html"
+    },
+    {
+      "taskId": "livev1-standards-css-color-4",
+      "canonicalUrl": "https://www.w3.org/TR/css-color-4/",
+      "sourceFingerprint": "45be8085722d42c4727cd4f2d93472e2313deb43c911a85faa0943ef510bb52a",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://www.w3.org/TR/css-color-4/"
+    },
+    {
+      "taskId": "livev1-docs-python-json",
+      "canonicalUrl": "https://docs.python.org/3/library/json.html",
+      "sourceFingerprint": "fd60cd33811df9f44360bdd8c38ccea2ebfb3ab24ae96c229561f0ed22e27fe6",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://docs.python.org/3/library/json.html"
+    },
+    {
+      "taskId": "livev1-docs-mdn-http-overview",
+      "canonicalUrl": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Overview",
+      "sourceFingerprint": "1d0e2f7383e3b89ac7f7dbf4bcd8eee7107d9f3b3d951d930141b08ce969c07a",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Overview"
+    },
+    {
+      "taskId": "livev1-docs-node-url",
+      "canonicalUrl": "https://nodejs.org/api/url.html",
+      "sourceFingerprint": "0f634b204c6a8df846beb4bb6db4f86b2a1634355d54ed91597273e7ea18de38",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://nodejs.org/api/url.html"
+    },
+    {
+      "taskId": "livev1-docs-django-overview",
+      "canonicalUrl": "https://docs.djangoproject.com/en/6.1/intro/overview/",
+      "sourceFingerprint": "e1417eeac1170d8211e3e41a42696ae0b41dd5575f13df8f4acccf9e01d9546f",
+      "status": "blocked",
+      "detail": "request error: fetch failed"
+    },
+    {
+      "taskId": "livev1-docs-postgresql-types",
+      "canonicalUrl": "https://www.postgresql.org/docs/current/datatype.html",
+      "sourceFingerprint": "10cbe70ff4e52e69bd2c5cadd48d9dac1a1f162818e4cd113018a0cbdce8abcd",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://www.postgresql.org/docs/current/datatype.html"
+    },
+    {
+      "taskId": "livev1-civic-loc-about",
+      "canonicalUrl": "https://www.loc.gov/about/",
+      "sourceFingerprint": "32bbb1c915c260e6aea327811a97c8b742c31299903d8903169340c2a01f9cd1",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://www.loc.gov/about/"
+    },
+    {
+      "taskId": "livev1-civic-nasa-missions",
+      "canonicalUrl": "https://www.nasa.gov/missions/",
+      "sourceFingerprint": "b82f7f91bf2261cb9610b858d13886cba2ba6bb50104873b18d72845f6870246",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://www.nasa.gov/missions/"
+    },
+    {
+      "taskId": "livev1-civic-census-about",
+      "canonicalUrl": "https://www.census.gov/about.html",
+      "sourceFingerprint": "dd6b2f267160a654b29199b347d5286e09df965b4bf22b24ed6ab5651bf3ad2f",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://www.census.gov/about.html"
+    },
+    {
+      "taskId": "livev1-civic-nist-about",
+      "canonicalUrl": "https://www.nist.gov/about-nist",
+      "sourceFingerprint": "fe4bd379bfa929fcfeb039370bb9925a4752e9523f922eea6f3bcb75c52ab993",
+      "status": "unverified-offline"
+    },
+    {
+      "taskId": "livev1-civic-archives-about",
+      "canonicalUrl": "https://www.archives.gov/about",
+      "sourceFingerprint": "954a57e409c33e51231ef4c0ecb226dde915a3d86c7efae8742c893f74252867",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://www.archives.gov/about"
+    },
+    {
+      "taskId": "livev1-data-world-bank-population",
+      "canonicalUrl": "https://data.worldbank.org/indicator/SP.POP.TOTL",
+      "sourceFingerprint": "30a1a319b27e428467723f55336bb9adf20973ace1eae28d3fcbe07e92a6f51c",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://data.worldbank.org/indicator/SP.POP.TOTL"
+    },
+    {
+      "taskId": "livev1-data-ourworldindata-co2",
+      "canonicalUrl": "https://ourworldindata.org/co2-emissions",
+      "sourceFingerprint": "5b259b02bd978124f0ddac9e2d6d33c0a90fb5ad81c65ca8aede9c8b30ed6f26",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://ourworldindata.org/co2-emissions"
+    },
+    {
+      "taskId": "livev1-data-data-gov-climate",
+      "canonicalUrl": "https://data.gov/climate/1/",
+      "sourceFingerprint": "7fbc24aed8dee60d4c5f3349cfad4d00c05583f1f6427bcfc8ef2963f4303f36",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://data.gov/climate/1/"
+    },
+    {
+      "taskId": "livev1-data-eurostat-database",
+      "canonicalUrl": "https://ec.europa.eu/eurostat/web/main/data/database",
+      "sourceFingerprint": "81c140f1e437bbe22ab28cb96fbce3fa6816f828dc43280081efe0054c4d6033",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://ec.europa.eu/eurostat/web/main/data/database"
+    },
+    {
+      "taskId": "livev1-data-oecd-data-explorer",
+      "canonicalUrl": "https://data-explorer.oecd.org/",
+      "sourceFingerprint": "383213ae46cdcc708e18eb487e84d41a255c05a9436c81b052f66c18f8cf056f",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://data-explorer.oecd.org/"
+    },
+    {
+      "taskId": "livev1-navigation-wikipedia-ada",
+      "canonicalUrl": "https://en.wikipedia.org/wiki/Ada_Lovelace",
+      "sourceFingerprint": "34dc88ccf03aa5f552afff81ac30f12df0256659f34127b75d7a7977a1d840dd",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://en.wikipedia.org/wiki/Ada_Lovelace"
+    },
+    {
+      "taskId": "livev1-navigation-merriam-serendipity",
+      "canonicalUrl": "https://www.merriam-webster.com/dictionary/serendipity",
+      "sourceFingerprint": "649fd30e59c531297dcf95bfc8339ef92f67b82cfb67de841a5d700f25febb8b",
+      "status": "blocked",
+      "detail": "HTTP 403",
+      "httpStatus": 403,
+      "finalUrl": "https://www.merriam-webster.com/dictionary/serendipity"
+    },
+    {
+      "taskId": "livev1-navigation-smithsonian-aircraft",
+      "canonicalUrl": "https://airandspace.si.edu/collection-objects/wright-1903-flyer/nasm_A19610048000",
+      "sourceFingerprint": "541d1e433dad148a4fe05f21887cf0431e698497369f97fe583ab6d0bfe310fe",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://airandspace.si.edu/collection-objects/wright-1903-flyer/nasm_A19610048000"
+    },
+    {
+      "taskId": "livev1-navigation-gutenberg-search",
+      "canonicalUrl": "https://www.gutenberg.org/ebooks/search/?query=Frankenstein",
+      "sourceFingerprint": "0735277ff76e7687152801eee7da5e4fe42849c2625670341cfc86a2420d79b0",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://www.gutenberg.org/ebooks/search/?query=Frankenstein"
+    },
+    {
+      "taskId": "livev1-navigation-met-collection",
+      "canonicalUrl": "https://www.metmuseum.org/art/collection/search?q=Starry%20Night",
+      "sourceFingerprint": "0418d5843d5662fe0d1a80a3ca2eef01c65868544c84f34345edd6e4deed575f",
+      "status": "blocked",
+      "detail": "HTTP 429",
+      "httpStatus": 429,
+      "finalUrl": "https://www.metmuseum.org/art/collection/search?q=Starry%20Night"
+    },
+    {
+      "taskId": "livev1-interactive-openlibrary-subject",
+      "canonicalUrl": "https://openlibrary.org/search?q=machine+learning",
+      "sourceFingerprint": "4e3818e9fca7e6c7ad949bb243db4ffd4d9bd34f79a7b80835d9275939df4d55",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://openlibrary.org/search?q=machine+learning"
+    },
+    {
+      "taskId": "livev1-interactive-github-issues",
+      "canonicalUrl": "https://github.com/microsoft/vscode/issues",
+      "sourceFingerprint": "253bf747fe0b0bfddb255271c004f83868e99aa95fd3ed45bf7ec4d761d583b5",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://github.com/microsoft/vscode/issues"
+    },
+    {
+      "taskId": "livev1-interactive-openstreetmap-eiffel",
+      "canonicalUrl": "https://www.openstreetmap.org/search?query=Eiffel%20Tower",
+      "sourceFingerprint": "ed4fa36185daf582f7f4ddecae64db1de70fca71911c31a203d583f3c02dcecb",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://www.openstreetmap.org/search?query=Eiffel%20Tower"
+    },
+    {
+      "taskId": "livev1-interactive-tmdb-search",
+      "canonicalUrl": "https://www.themoviedb.org/search?query=Spirited%20Away",
+      "sourceFingerprint": "456f59e0948b37731c4589007974cd556fb403d7ed3071d1fadd89b5fed421d8",
+      "status": "unverified-offline"
+    },
+    {
+      "taskId": "livev1-interactive-arxiv-search",
+      "canonicalUrl": "https://arxiv.org/search/?query=attention+is+all+you+need&searchtype=all",
+      "sourceFingerprint": "6f37b0e32ad4dfb428b68214cd8163022fd3f6cd9bcf25d418efa24577203655",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://arxiv.org/search/?query=attention+is+all+you+need&searchtype=all"
+    }
+  ]
+}

@@ -29,7 +29,8 @@ network_config=()
 if [ "${CODEX_JOB_NETWORK_ACCESS:-0}" = "1" ]; then
   network_config=(-c "sandbox_workspace_write.network_access=true")
 fi
-codex exec --skip-git-repo-check -m "$model" -c "model_reasoning_effort=$effort" "${network_config[@]}" -s "$sandbox" -C "$root" \
+# shellcheck disable=SC2086
+codex exec ${CODEX_JOB_EXTRA:-} --skip-git-repo-check -m "$model" -c "model_reasoning_effort=$effort" "${network_config[@]}" -s "$sandbox" -C "$root" \
   -o "$dir/$label.out.md" - < "$brief" > "$dir/$label.log" 2>&1
 code=$?
 write_status "$([ "$code" -eq 0 ] && echo done || echo failed)" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$code"

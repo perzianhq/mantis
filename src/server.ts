@@ -5,6 +5,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import { MantisBrowser } from './browser.js';
+import { noHuman } from './fallback/captcha.js';
 
 const reply = (text: string) => ({
   content: [{ type: 'text' as const, text }],
@@ -15,6 +16,7 @@ const reply = (text: string) => ({
 export function createServer(browser: MantisBrowser = new MantisBrowser()): McpServer {
   const server = new McpServer({ name: 'mantis', version: '0.1.1' });
   const id = z.number().int();
+  const humanAvailable = !noHuman();
 
   server.registerTool(
     'open',
@@ -30,7 +32,7 @@ export function createServer(browser: MantisBrowser = new MantisBrowser()): McpS
         'Before finishing, re-read and visibly verify every task constraint (filters, sort, size, quantity, date range). ' +
         'If #number is stale, read() and retry; if on the wrong page, back() and keep searching.',
       inputSchema: {
-        region: z.string().optional().describe('Label substring, e.g. "nav"'),
+        region: z.string().optional().describe('Label substring, e.g. "nav"; if none matches, text inside a region also works'),
         full: z.boolean().optional().describe('No trimming'),
         fresh: z.boolean().optional().describe('Expand seen regions too (this call only)'),
       },
@@ -70,7 +72,7 @@ export function createServer(browser: MantisBrowser = new MantisBrowser()): McpS
   );
   server.registerTool(
     'select',
-    { description: 'Choose option (label or value) in dropdown #id.', inputSchema: { id, option: z.string() } },
+    { description: 'Choose option text in select or combobox #id.', inputSchema: { id, option: z.string() } },
     async ({ id, option }) => reply(await browser.select(id, option)),
   );
   server.registerTool(
@@ -103,6 +105,48 @@ export function createServer(browser: MantisBrowser = new MantisBrowser()): McpS
     { description: 'Back one page in history.', inputSchema: {} },
     async () => reply(await browser.back()),
   );
+  server.registerTool(
+    'wait_for',
+    {
+      description: 'Wait up to 10s for text or #id state, then show changes.',
+      inputSchema: {
+        text: z.string().optional(),
+        id: id.optional(),
+        state: z.enum(['appears', 'disappears', 'present', 'enabled']).optional(),
+        timeout_seconds: z.number().positive().max(10).optional(),
+      },
+    },
+    async ({ text, id, state, timeout_seconds }) => reply(await browser.waitFor({ text, id, state, timeoutSeconds: timeout_seconds })),
+  );
+  server.registerTool(
+    'hover',
+    { description: 'Hover element #id and show changes.', inputSchema: { id } },
+    async ({ id }) => reply(await browser.hover(id)),
+  );
+  server.registerTool(
+    'upload',
+    {
+      description: 'Set local file path(s) on #id.',
+      inputSchema: {
+        id,
+        path: z.string().optional(),
+        paths: z.array(z.string()).min(1).optional(),
+        files: z.array(z.string()).min(1).optional(),
+      },
+    },
+    async ({ id, path, paths, files }) => {
+      const supplied = [path === undefined ? undefined : [path], paths, files].filter((value): value is string[] => value !== undefined);
+      return reply(supplied.length === 1 ? await browser.upload(id, supplied[0]!) : 'error: give exactly one of path, paths, or files');
+    },
+  );
+  server.registerTool(
+    'tabs',
+    {
+      description: 'List tabs, or switch/close tab #id.',
+      inputSchema: { action: z.enum(['list', 'switch', 'close']).optional(), id: id.optional() },
+    },
+    async ({ action, id }) => reply(await browser.tabs(action, id)),
+  );
 
   // ---- fallback ladder: only when read() is not enough. Try in this order. ----
   const visual = {
@@ -112,7 +156,7 @@ export function createServer(browser: MantisBrowser = new MantisBrowser()): McpS
   server.registerTool(
     'media',
     {
-      description: 'Only if read is insufficient: media → data (prefer) → ocr → look (last resort) → ask_human. Numbered images/canvases/charts.',
+      description: `Only if read is insufficient: media → data (prefer) → ocr → look (last resort)${humanAvailable ? ' → ask_human' : ''}. Numbered images/canvases/charts.`,
       inputSchema: {},
     },
     async () => reply(await browser.media()),
@@ -152,19 +196,21 @@ export function createServer(browser: MantisBrowser = new MantisBrowser()): McpS
       };
     },
   );
-  server.registerTool(
-    'ask_human',
-    {
-      description:
-        'Human handoff for CAPTCHA, 2FA, payment or login; never solves CAPTCHAs. Waits for a page change, then returns the page.',
-      inputSchema: {
-        reason: z.string().describe('What the human must do'),
-        until: z.string().optional().describe('url_change | selector_gone:<css> | selector_present:<css>; default: URL or content change'),
-        timeout_seconds: z.number().positive().optional().describe('Default 300'),
+  if (humanAvailable) {
+    server.registerTool(
+      'ask_human',
+      {
+        description:
+          'Human handoff for CAPTCHA, 2FA, payment or login; never solves CAPTCHAs. Waits for a page change, then returns the page.',
+        inputSchema: {
+          reason: z.string().describe('What the human must do'),
+          until: z.string().optional().describe('url_change | selector_gone:<css> | selector_present:<css>; default: URL or content change'),
+          timeout_seconds: z.number().positive().optional().describe('Default 300'),
+        },
       },
-    },
-    async ({ reason, until, timeout_seconds }) => reply(await browser.askHuman(reason, until, timeout_seconds)),
-  );
+      async ({ reason, until, timeout_seconds }) => reply(await browser.askHuman(reason, until, timeout_seconds)),
+    );
+  }
   return server;
 }
 

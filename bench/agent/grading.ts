@@ -45,7 +45,9 @@ const numericPattern = (raw: string | number): string => {
 };
 
 const textPattern = (value: string | number, bounded: boolean): string => {
-  const body = esc(String(value).trim()).replace(/\\ /g, '\\s+');
+  // Page text may use non-breaking spaces in headings. Treat every whitespace
+  // run in a text contract as equivalent while preserving word boundaries.
+  const body = esc(String(value).replace(/\s+/g, ' ').trim()).replace(/ /g, '\\s+');
   return bounded ? `(?<![\\p{L}\\p{N}])${body}(?![\\p{L}\\p{N}])` : body;
 };
 
@@ -88,7 +90,14 @@ const sameClause = (source: string, a: RegExpMatchArray, b: RegExpMatchArray): b
   return !/(?:,|\band)\s+(?=[A-Z][\p{L}\p{N}_ -]{1,32}\b(?:is|has|was|costs?|:))/u.test(between);
 };
 
-export function matchesAnswerRequirement(source: string, requirement: AnswerRequirement): boolean {
+export function matchesAnswerRequirement(rawSource: string, rawRequirement: AnswerRequirement): boolean {
+  // Compatibility-normalise so typography (CO₂ vs CO2, ligatures, full-width digits) never decides a match.
+  const source = rawSource.normalize('NFKC');
+  const requirement: AnswerRequirement = {
+    ...rawRequirement,
+    value: typeof rawRequirement.value === 'string' ? rawRequirement.value.normalize('NFKC') : rawRequirement.value,
+    ...(rawRequirement.with ? { with: { ...rawRequirement.with, value: typeof rawRequirement.with.value === 'string' ? rawRequirement.with.value.normalize('NFKC') : rawRequirement.with.value } } : {}),
+  };
   const primary = matches(source, requirement).filter((match) => !isNegated(source, match.index!, match.index! + match[0].length) && !isConflicted(source, match, requirement.type));
   if (!primary.length) return false;
   if (!requirement.with) return true;

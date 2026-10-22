@@ -1,17 +1,18 @@
-# Local v2 coverage contract (plan)
+# Local v2 coverage contract
 
-**Status:** the 32-case development split and 16 isolated held-out cases are implemented,
-with executable oracles and near-miss tests. [`local-v2.json`](local-v2.json) freezes the
-complete selector and run configuration; `AGENT_SUITE=local-v2` selects its 48 cases. Its
-first scored result is not yet published. `local-v1.json` remains the
+**Status:** implemented and scored. The 32-case development split and 16 isolated held-out cases have
+executable oracles and near-miss tests. [`local-v2.json`](local-v2.json) freezes the
+complete selector and run configuration; `AGENT_SUITE=local-v2` selects its 48 cases. The scorecard is
+[published](../RESULTS.md#local-v2-full-scorecard-historical) and extended by
+[`local-v21.json`](local-v21.json) (54 cases). `local-v1.json` remains the
 immutable 25-case baseline and is reported separately. Do not edit v1 fixtures, tasks,
 graders, seed, or result to satisfy this contract.
 
 ## Scope and score unit
 
-V2 will contain **48 scored local cases**: eight domains times six cases.  A case is a
+V2 contains **48 scored local cases**: eight domains times six cases.  A case is a
 seeded fixture workflow with one explicit completion condition, a deterministic oracle,
-and one independently testable near miss.  Case IDs below are reserved planning names,
+and one independently testable near miss.  Case IDs below are the reserved planning names,
 not task definitions.
 
 | Domain | Three behavior families, each with two required structural cases | Required capability |

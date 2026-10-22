@@ -22,13 +22,14 @@ Frozen `local-v2.1` scorecard: 54 code-graded fixture tasks, `deepseek-v4.1-flas
 |---|---:|---:|---:|
 | Correct | **159/162** | 157/162 | 150/162 |
 | Median input tokens | **15.7k** | 26.8k | 31.6k |
-| Median execution excl. limiter/retry wait | **13.1s** | 15.9s | 22.9s |
+| Median active model-request time | **11.1s** | 13.1s | 20.4s |
+| Median agent execution excl. limiter/retry wait | **13.1s** | 15.9s | 22.9s |
 | Median end-to-end wall time | **63.8s** | 89.3s | 122.9s |
 | Median cost estimate | **₹0.099** | ₹0.143 | ₹0.242 |
 
 Mantis scored 98.1%, versus 96.9% for the tree and 92.6% for screenshots, with 41.6% fewer median input tokens than the tree and 50.4% fewer than screenshots. Execution excludes locally measured limiter/retry wait; wall time includes it. Method, audit caveats, and historical baselines: [bench/RESULTS.md](bench/RESULTS.md).
 
-Next: freeze the separate live-site set. See the [evaluation plan](docs/PLAN.md#evaluation-plan).
+Frozen live-site set `live-v1` (30 real-site tasks, same model, three runs per approach, judged by a different model): Mantis 88/90, tree 90/90, screenshots 89/90. Mantis is slightly behind on success here (two misses: Census About and Our World in Data CO₂), and it used far fewer input tokens than the tree on the v1.5 set (about 63% fewer). Two tasks were swapped after seeing results: IMDb to TMDB (IMDb's human-verification gate blocked Mantis and screenshots' plain headless launch but not the tree baseline, whose Playwright MCP hides the automation signal by default) and USGS to NIST (USGS served bot-check pages); see [bench/RESULTS.md](bench/RESULTS.md). Sarvam only, not a Luna/Haiku claim; the catalog was revised after seeing results, as disclosed there. See the [evaluation plan](docs/PLAN.md#evaluation-plan).
 
 ## Learn more
 

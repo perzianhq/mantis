@@ -106,7 +106,14 @@ it('drives the remaining reading and workflow cases through real browser happy a
 it('shows visible evidence after reading actions complete', async () => {
   const landmark = await openPage('v2-reading-landmark-jump');
   try {
-    await landmark.page.click('#current'); await landmark.page.click('#open');
+    await landmark.page.click('#current');
+    // The region scrolls smoothly; let it come to rest before the next click so the check below is not racing the animation.
+    await landmark.page.evaluate(() => new Promise<void>((done) => {
+      const region = document.querySelector('.reading-region')!; let last = -1, still = 0;
+      const tick = (): void => { still = region.scrollTop === last ? still + 1 : 0; last = region.scrollTop; if (still >= 5) done(); else requestAnimationFrame(tick); };
+      tick();
+    }));
+    await landmark.page.click('#open');
     expect(await landmark.page.locator('#open-status').textContent()).toBe(`Target entry opened: ${entry('v2-reading-landmark-jump').expected.answer.split(': ').at(-1)}`);
     expect(await landmark.page.locator('#open-status').evaluate((node: HTMLElement) => {
       const rect = node.getBoundingClientRect(); const parent = node.closest('.reading-region')!.getBoundingClientRect();

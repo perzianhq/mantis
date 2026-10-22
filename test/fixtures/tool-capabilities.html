@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Tool capabilities</title>
+  <style>
+    #tip { display: none; }
+    #reveal:hover + #tip { display: block; }
+  </style>
+</head>
+<body>
+  <main>
+    <button id="reveal">Reveal detail</button><span id="tip">Hover detail</span>
+    <button id="later" disabled>Later control</button>
+    <label for="document">Choose document</label><input id="document" type="file">
+    <button id="chooser" onclick="document.getElementById('document').click()">Open chooser</button>
+    <p id="message">Initial message</p>
+  </main>
+</body>
+</html>

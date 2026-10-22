@@ -24,6 +24,10 @@ describe('final-page screenshot evidence', () => {
     expect(deterministicGradeForRun(row, 'success', true, '18', [])).toBeNull();
     expect(deterministicGradeForRun(row, 'success', true, '18', [{ id: 'F1', image: 'f.png', final: true, url: 'https://example.test/done', text: 'CAPTCHA: verify you are human' }])).toBeNull();
   });
+  it('does not mistake a legitimate RFC 403 Forbidden reference for an access block', () => {
+    const row = { task_id: 'synthetic', website: 'https://example.test/', task: 'Find HTTP Semantics', level: 'easy', deterministic: { kind: 'fact' as const, answerIncludes: [{ type: 'text' as const, value: 'HTTP Semantics' }], final: { url: { origin: 'https://example.test', path: '/rfc' }, textIncludes: [{ type: 'text' as const, value: 'HTTP Semantics' }] } } };
+    expect(deterministicGradeForRun(row, 'success', true, 'HTTP Semantics', [{ id: 'F1', image: 'f.png', final: true, url: 'https://example.test/rfc', text: 'HTTP Semantics\n15.5.4 403 Forbidden' }])?.pass).toBe(true);
+  });
   it('prefers the saved live capture and keeps the identifying filename out of the judge prompt', async () => {
     const folder = dir();
     const saved = path.join(folder, 'task--mantis--1.final.png');

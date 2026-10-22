@@ -42,12 +42,16 @@ async function signature(page: Page): Promise<Set<string>> {
 }
 
 async function selectorVisible(page: Page, selector: string): Promise<boolean> {
-  return page.evaluate((sel) => {
-    const el = document.querySelector(sel);
-    if (!el) return false;
-    const cs = getComputedStyle(el);
-    return cs.display !== 'none' && cs.visibility !== 'hidden';
-  }, selector);
+  for (const frame of page.frames()) {
+    const visible = await frame.evaluate((sel) => {
+      const el = document.querySelector(sel);
+      if (!el) return false;
+      const cs = getComputedStyle(el);
+      return cs.display !== 'none' && cs.visibility !== 'hidden';
+    }, selector).catch(() => false);
+    if (visible) return true;
+  }
+  return false;
 }
 
 export interface WaitOptions {

@@ -179,7 +179,7 @@ it('scroll with id and direction reports the end of the list and does not scroll
 it('scroll with id and direction falls back to the page scroll when #id is not in a scrollable list', async () => {
   const view = await browser.open(fixture('hidden/generic-browser-inner-scroll.html'));
   const out = await browser.scroll('down', idOf(view, 'link "Short A"'));
-  expect(out).toContain('not inside a scrollable list');
+  expect(out).toContain('not inside a scrollable container');
   expect(out).toMatch(/scrolled down; now at \d+% of page/);
 });
 
