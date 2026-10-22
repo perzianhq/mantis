@@ -137,6 +137,8 @@ describe('live-long fixture regression coverage', () => {
         await page.goto(`${base}/live-long/${entry.name}/off/${detail}`);
         await page.reload();
         if (entry.name === 'access') {
+          expect(await page.locator('#status-panel').isVisible()).toBe(true);
+          await page.locator('#access-tab').click();
           await page.locator('#role').selectOption({ label: 'Viewer' });
           expect(await page.locator('#staff-title').innerText()).not.toBe('');
         } else {
