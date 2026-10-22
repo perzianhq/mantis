@@ -24,7 +24,7 @@ const call = async (name: string, args: Record<string, unknown> = {}) => {
 
 it('exposes the core tools and the fallback ladder', async () => {
   const { tools } = await client.listTools();
-  expect(tools.map((t) => t.name).sort()).toEqual(['ask_human', 'back', 'click', 'data', 'fill', 'find', 'forget', 'look', 'media', 'ocr', 'open', 'press', 'read', 'scroll', 'select', 'type']);
+  expect(tools.map((t) => t.name).sort()).toEqual(['ask_human', 'back', 'click', 'data', 'fill', 'find', 'forget', 'hover', 'look', 'media', 'ocr', 'open', 'press', 'read', 'scroll', 'select', 'tabs', 'type', 'upload', 'wait_for']);
 });
 
 it('guides bottom-loaded feed search through End and the returned region', async () => {

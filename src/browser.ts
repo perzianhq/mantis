@@ -1,3 +1,5 @@
+import { existsSync, statSync } from 'node:fs';
+import { resolve as resolvePath } from 'node:path';
 import { chromium } from 'playwright';
 import type { Browser, BrowserContext, ElementHandle, Frame, Page } from 'playwright';
 import { capture, resolve } from './capture/index.js';
@@ -676,6 +678,149 @@ export class MantisBrowser {
       await page.goBack({ waitUntil: 'domcontentloaded', timeout: 15_000 }).catch(() => null);
       return page.url() !== from ? 'went back' : 'cannot go back: no earlier page';
     }, { quiet: true });
+  }
+
+  /** Wait briefly for text to appear/disappear, or for an issued control to become present/enabled. */
+  async waitFor(condition: { text?: string; id?: number; state?: 'appears' | 'disappears' | 'present' | 'enabled'; timeoutSeconds?: number }): Promise<string> {
+    const { text, id } = condition;
+    const state = condition.state ?? (text !== undefined ? 'appears' : 'present');
+    const timeoutSeconds = Math.min(10, Math.max(0.1, condition.timeoutSeconds ?? 10));
+    if ((text === undefined) === (id === undefined)) return 'error: give either text or id, not both';
+    if (text !== undefined && !['appears', 'disappears'].includes(state)) return 'error: text waits use state "appears" or "disappears"';
+    if (id !== undefined && !['present', 'enabled'].includes(state)) return 'error: element waits use state "present" or "enabled"';
+    if (text !== undefined && !text.trim()) return 'error: text to wait for cannot be empty';
+    if (id !== undefined && !this.known.has(id)) return `error: no element #${id} on this page; call read() to see current numbers`;
+
+    const description = text !== undefined
+      ? `text "${text}" to ${state}`
+      : `#${id} to become ${state}`;
+    let timedOut = false;
+    const result = await this.act(async (page) => {
+      const ready = async (): Promise<boolean> => {
+        if (text !== undefined) {
+          const shown = await page.evaluate((needle) => (document.body?.innerText ?? '').toLocaleLowerCase().includes(needle), text.toLocaleLowerCase());
+          return state === 'appears' ? shown : !shown;
+        }
+        const found = await resolve(page, id!);
+        if (!found.ok) return false;
+        try {
+          if (state === 'present') return true;
+          return await found.el.evaluate((node) => {
+            const disabled = node instanceof HTMLButtonElement || node instanceof HTMLInputElement || node instanceof HTMLSelectElement || node instanceof HTMLTextAreaElement
+              ? node.disabled
+              : false;
+            return !disabled && node.getAttribute('aria-disabled') !== 'true';
+          });
+        } finally {
+          await found.el.dispose();
+        }
+      };
+      const deadline = Date.now() + timeoutSeconds * 1000;
+      while (!(await ready())) {
+        const remaining = deadline - Date.now();
+        if (remaining <= 0) {
+          timedOut = true;
+          return `timed out after ${timeoutSeconds}s waiting for ${description}`;
+        }
+        await sleep(Math.min(100, remaining));
+      }
+      return `waited for ${description}`;
+    });
+    // A diff alone is not useful when nothing changed. Include the live numbered view on timeout.
+    return timedOut && !result.startsWith('error:') ? `${result}\ncurrent observation:\n${await this.read()}` : result;
+  }
+
+  /** Hover a numbered control, for menus and tooltips that only appear under the pointer. */
+  async hover(id: number): Promise<string> {
+    return this.act(async (page) => {
+      const { el, label } = await this.target(page, id);
+      try {
+        await el.hover({ timeout: this.actionTimeout });
+        return `hovered ${label}`;
+      } catch (e) {
+        throw new ActionError(this.explain(e, label));
+      } finally {
+        await el.dispose();
+      }
+    });
+  }
+
+  /** Set local files on a file input, its label, or a control which opens a file chooser. */
+  async upload(id: number, paths: string[]): Promise<string> {
+    return this.act(async (page) => {
+      if (!paths.length) throw new ActionError('give at least one local file path');
+      const files = paths.map((path) => resolvePath(path));
+      for (const file of files) {
+        if (!existsSync(file)) throw new ActionError(`file does not exist: ${file}`);
+        if (!statSync(file).isFile()) throw new ActionError(`path is not a file: ${file}`);
+      }
+      const { el, label } = await this.target(page, id);
+      try {
+        const handle = await el.evaluateHandle((node) => {
+          const fileInput = (candidate: Element | null): HTMLInputElement | null =>
+            candidate instanceof HTMLInputElement && candidate.type === 'file' ? candidate : null;
+          const root = node.getRootNode() as Document | ShadowRoot;
+          return fileInput(node) ??
+            (node instanceof HTMLLabelElement ? fileInput(node.control) : null) ??
+            (node instanceof HTMLLabelElement && node.htmlFor ? fileInput(root.querySelector(`#${CSS.escape(node.htmlFor)}`)) : null) ??
+            fileInput(node.querySelector('input[type="file"]'));
+        });
+        const input = handle.asElement();
+        if (input) {
+          try {
+            await input.setInputFiles(files, { timeout: this.actionTimeout });
+          } finally {
+            await input.dispose();
+          }
+        } else {
+          await handle.dispose();
+          const chooser = page.waitForEvent('filechooser', { timeout: this.actionTimeout }).catch(() => null);
+          await el.click({ timeout: this.actionTimeout, noWaitAfter: true }).catch((e) => { throw new ActionError(this.explain(e, label)); });
+          const opened = await chooser;
+          if (!opened) throw new ActionError(`${label} did not open a file chooser`);
+          await opened.setFiles(files);
+        }
+        return `uploaded ${files.length} file${files.length === 1 ? '' : 's'} to ${label}`;
+      } finally {
+        await el.dispose();
+      }
+    });
+  }
+
+  /** List tabs, switch the active tab, or close one. */
+  async tabs(action: 'list' | 'switch' | 'close' = 'list', id?: number): Promise<string> {
+    return this.guard(async () => {
+      await this.launch();
+      const pages = this.context!.pages();
+      const tab = id === undefined ? undefined : pages[id - 1];
+      if (action !== 'list' && (!Number.isInteger(id) || !tab)) throw new ActionError(`no tab #${id}; call tabs() to list open tabs`);
+      if (action === 'list') {
+        const active = await this.activePage();
+        const lines = await Promise.all(pages.map(async (page, index) => {
+          const title = await page.title().catch(() => '');
+          return `${page === active ? '*' : ' '} #${index + 1} "${title || 'untitled'}" ${page.url()}`;
+        }));
+        return `tabs:\n${lines.join('\n')}`;
+      }
+      if (action === 'switch') {
+        this.page = tab!;
+        await tab!.bringToFront().catch(() => undefined);
+        this.last = null;
+        this.labels.clear();
+        this.known.clear();
+        return `switched to tab #${id}\n${await this.view(tab!)}`;
+      }
+      const wasActive = this.page === tab;
+      await tab!.close();
+      const remaining = this.context!.pages();
+      this.last = null;
+      this.labels.clear();
+      this.known.clear();
+      if (!wasActive) return `closed tab #${id}`;
+      if (!remaining.length) return `closed tab #${id}`;
+      this.page = remaining.at(-1)!;
+      return `closed tab #${id}; now active\n${await this.view(this.page)}`;
+    });
   }
 
   // ---- fallback ladder: data -> ocr -> look -> ask_human -------------------
