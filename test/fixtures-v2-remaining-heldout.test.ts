@@ -68,7 +68,7 @@ async function nearMiss(id: string): Promise<void> {
     case 'v2-extra-form-custom-toggle': await page.click('#pager'); return;
     case 'v2-extra-overlay-focus-trap': await page.click('#open'); await page.click('#cancel'); return;
     case 'v2-extra-overlay-recovery': await page.click('#open'); return;
-    case 'v2-extra-spa-stale-target': await page.click('#reports'); await page.click('#download'); return;
+    case 'v2-extra-spa-stale-target': await page.evaluate(() => { (document.querySelector('#reports') as HTMLElement).click(); (document.querySelector('#download') as HTMLElement).click(); }); return;
     case 'v2-extra-spa-error-boundary': await page.click('#start'); return;
   }
 }
