@@ -3,23 +3,24 @@
 All benchmark numbers in one place. How to re-run them: [README.md](README.md).
 Mantis is compared with the accessibility tree (Playwright MCP 0.0.83) and with screenshots (our own minimal tool).
 Suites are reported separately; the sections below run from current scorecards to historical pilots.
-The frozen live-site cohort ([live-v1](live-v1.md), v1.2) has a first scored Sarvam result below; Luna/Haiku confirmation is pending.
+The frozen live-site cohort ([live-v1](live-v1.md), v1.3 keys) has a scored Sarvam result below; Luna/Haiku confirmation is pending.
 
-## Live-v1.2 real sites, Sarvam (current)
+## Live-v1.3 real sites, Sarvam (current)
 
-Frozen `live-v1` v1.2: 30 public-site tasks x 3 approaches x 3 runs = 270 runs. Agent `deepseek-v4.1-flash` through Sarvam; 10 scheduled cases. 20 tasks are graded by deterministic validators on captured final state; the rest are judged blind by Codex `gpt-6.1-sol`. No check/judge disagreements. Result: `live-v1-deepseek-v1_2-20261022-judged`.
+Frozen `live-v1` with v1.3 keys: 29 scored public-site tasks x 3 approaches x 3 runs = 261 runs (the GNU GPL-3 task is excluded: the host timed out for all nine runs, so it was unwinnable here). Agent `deepseek-v4.1-flash` through Sarvam; 10 scheduled cases. 20 tasks are graded by deterministic validators on captured final state; the rest are judged blind by Codex `gpt-6.1-sol` (0 judge errors). Result: `live-v1-deepseek-v1_2-20261022-judged`.
 
 | Per-run | Mantis | Accessibility tree | Screenshots |
 |---|---:|---:|---:|
-| Success / failure / blocked | 71 / 16 / 3 | 78 / 11 / 1 | 75 / 15 / 0 |
-| Success rate, all 30 tasks | 78.9% | **86.7%** | 83.3% |
-| Success rate excl. the GNU GPL task (failed 9/9 for every approach) | 81.6% | **89.7%** | 86.2% |
-| Avg tool calls | **6.5** | 7.3 | 12.7 |
-| Avg input tokens | **51.0k** | 137.6k | 57.6k |
+| Success / failure / blocked | 76 / 8 / 3 | 83 / 3 / 1 | 83 / 4 / 0 |
+| Success rate (87 runs) | 87.4% | **95.4%** | **95.4%** |
+| Deterministic-graded tasks | 48 / 53 | 50 / 53 | 53 / 54 |
+| Judge-graded tasks | 28 / 31 | 33 / 33 | 30 / 33 |
+| Avg tool calls | **6.2** | 6.9 | 12.3 |
+| Avg input tokens | **51.0k** | 139.4k | 55.5k |
 
-- Mantis is behind tree here by 8 points on success but uses 63% fewer input tokens and fewer calls. This is a Sarvam result only, not a Luna/Haiku claim.
-- Where Mantis loses to the others: IMDb search (blocked 3/3; the agent loops on a custom "human verification" gate that Mantis did not flag, fix in progress), Met collection search, PostgreSQL data types, Census about. Mantis wins Our World in Data CO2 (1/3 vs 0/3, 0/3).
-- Near-universal site failures (Django overview, USGS about) are kept in the score; only the all-approach-zero GPL task is excluded in the second row.
+- Mantis is 8 points behind tree and screenshots on success but uses 63% fewer input tokens than tree and about half the calls of screenshots. This is a Sarvam result only, not a Luna/Haiku claim.
+- Mantis misses: IMDb search (3 blocked/failed; the agent looped on a custom verification gate, since fixed generically and not yet re-run live), USGS about (CAPTCHA/403 on all approaches), Met collection search (2; token exhaustion after detours), and one each on MDN, Census about and Our World in Data CO2.
+- **Disclosure:** Sol failure reviews found no Mantis tool defect apart from the IMDb gate. After seeing v1.2 results, the Django, USGS and OWID task wording and keys were revised (v1.3) to accept equivalent official pages, and GPL-3 was excluded. v1.2 numbers (all 30 tasks, 90 runs each) were Mantis 71, tree 78, screenshots 75 successes.
 - Reproduce: `JUDGE_IN=live-v1-deepseek-v1_2-20261022 npm run bench:judge` (raw run JSON/markdown stay local).
 
 ## Local-v2.1 full scorecard (local fixtures)
