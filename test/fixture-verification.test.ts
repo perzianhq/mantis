@@ -1246,9 +1246,9 @@ it('live-long-fixtures: requires an interaction-specific hazard event instead of
     const receipt = expected.receipt ?? expected.workspace?.receipt;
     return `Receipt ${receipt} total 101.29 and EUR 870.00`;
   };
-  const event = (entry: (typeof LIVE_LONG_FIXTURE_CASES)[number], kind: FixtureObservation['kind'], targetValue: ReturnType<typeof target>, operationId?: string): FixtureObservation => ({
+  const event = (entry: (typeof LIVE_LONG_FIXTURE_CASES)[number], kind: FixtureObservation['kind'], targetValue: ReturnType<typeof target>, operationId?: string, url = entry.startPath): FixtureObservation => ({
     arrival: 0, path: entry.startPath, kind, documentId: 'hazard', target: targetValue, controls: {}, text: targetValue.text,
-    long: { url: entry.startPath, revision: (entry.expected as { revision: number }).revision, operationId, ledger: entry.expected },
+    long: { url, revision: (entry.expected as { revision: number }).revision, operationId, ledger: entry.expected },
   });
   const cases: Array<{ id: string; target: ReturnType<typeof target>; operationId?: string }> = [
     { id: 'llf-basket-off', target: target('', 'Add p01', 'Add p01') },
@@ -1265,7 +1265,7 @@ it('live-long-fixtures: requires an interaction-specific hazard event instead of
     const completed = event(entry, 'settled', target(), `complete-${entry.name}`);
     const kind: FixtureObservation['kind'] = entry.name === 'casework' ? 'popstate' : 'click';
     const proof = entry.name === 'casework'
-      ? [event(entry, 'settled', target(), 'casework-summary'), event(entry, 'popstate', target(), 'casework-summary'), event(entry, 'settled', target(), 'casework-summary')]
+      ? [event(entry, 'settled', target(), 'casework-summary', `${entry.startPath.replace(/queue$/, 'summary')}`), event(entry, 'popstate', target(), 'casework-queue', entry.startPath), event(entry, 'settled', target(), 'casework-summary', entry.startPath.replace(/queue$/, 'summary'))]
       : [event(entry, kind, hazard.target, hazard.operationId)];
     expect(gradeLiveLongFixtureCase(entry.id, answerFor(entry), [...proof, completed]).pass).toBe(true);
     // Near miss: durable ledger state and incidental load text alone do not establish the hazard interaction.
@@ -1280,14 +1280,18 @@ it('live-long-fixtures: requires an interaction-specific hazard event instead of
   const casework = LIVE_LONG_FIXTURE_CASES.find((candidate) => candidate.id === 'llf-casework-off')!;
   const done = event(casework, 'settled', target(), 'complete-casework');
   const grade = (events: FixtureObservation[]) => gradeLiveLongFixtureCase(casework.id, answerFor(casework), [...events, done]);
-  const summary = () => event(casework, 'settled', target(), 'casework-summary');
-  const back = () => event(casework, 'popstate', target(), 'casework-summary');
+  const summaryUrl = casework.startPath.replace(/queue$/, 'summary');
+  const summary = () => event(casework, 'settled', target(), 'casework-summary', summaryUrl);
+  const back = () => event(casework, 'popstate', target(), 'casework-queue', casework.startPath);
+  // Fragment navigation (the header's Help link) also fires popstate, but the route stays on the summary.
+  const hashNav = () => event(casework, 'popstate', target(), 'casework-summary', `${summaryUrl}#help`);
   expect(grade([summary(), back(), summary()]).pass).toBe(true);
   // Near misses: a Back from an earlier view (before any summary visit), no reopened summary, and a summary visit with no Back.
   const earlyBack = grade([event(casework, 'popstate', target(), 'casework-detail'), summary()]);
   expect(earlyBack.pass).toBe(false);
   expect(earlyBack.details).toContain('missing hazard-trigger evidence');
   expect(grade([summary(), back()]).pass).toBe(false);
+  expect(grade([summary(), hashNav(), summary()]).pass).toBe(false);
   expect(grade([summary()]).pass).toBe(false);
 
   // Dispatch: viewing the settled outbound page is not the dispatch interaction.
@@ -1296,4 +1300,9 @@ it('live-long-fixtures: requires an interaction-specific hazard event instead of
   expect(outboundOnly.pass).toBe(false);
   expect(outboundOnly.details).toContain('missing hazard-trigger evidence');
   expect(gradeLiveLongFixtureCase(dispatch.id, answerFor(dispatch), [event(dispatch, 'click', target('dispatch', 'Dispatch staged orders'), 'dispatch-outbound'), event(dispatch, 'settled', target(), 'dispatch-receipt')]).pass).toBe(true);
+  // Near miss: a click on the outbound section that merely contains the button label is not the dispatch click.
+  const sectionClick = { ...target('', 'q03, q11, q19, q27 Dispatch staged orders', 'Outbound'), tag: 'section' };
+  const containerOnly = gradeLiveLongFixtureCase(dispatch.id, answerFor(dispatch), [event(dispatch, 'click', sectionClick, 'dispatch-outbound'), event(dispatch, 'settled', target(), 'dispatch-receipt')]);
+  expect(containerOnly.pass).toBe(false);
+  expect(containerOnly.details).toContain('missing hazard-trigger evidence');
 });

@@ -54,14 +54,22 @@ const targetText = (event: FixtureObservation): string => [
   event.target.id, event.target.name, event.target.ariaLabel, event.target.text,
 ].filter(Boolean).join(' ');
 
+/** A click only counts when it landed on an actual control, never on a container that merely contains the label. */
+const isControlClick = (event: FixtureObservation): boolean =>
+  event.kind === 'click' && /^(?:button|a|input|select|textarea)$/i.test(event.target.tag);
 const clickOn = (pattern: RegExp) => (events: FixtureObservation[]): boolean =>
-  events.some((event) => event.kind === 'click' && pattern.test(targetText(event)));
+  events.some((event) => isControlClick(event) && pattern.test(targetText(event)));
 const operationIs = (event: FixtureObservation, operationId: string): boolean => event.long?.operationId === operationId;
-/** Summary visit, then a real history traversal, then the summary reached again (the brief's order). */
+const routeOf = (event: FixtureObservation): string => event.long?.url?.split(/[?#]/, 1)[0] ?? '';
+/**
+ * Summary visit, then a real backward traversal off the summary route (fragment navigation keeps the route,
+ * and a traversal before any summary visit leaves from elsewhere), then the summary reached again.
+ */
 const caseworkTraversal = (events: FixtureObservation[]): boolean => {
   const firstSummary = events.findIndex((event) => operationIs(event, 'casework-summary'));
   if (firstSummary < 0) return false;
-  const traversal = events.findIndex((event, index) => index > firstSummary && event.kind === 'popstate');
+  const traversal = events.findIndex((event, index) => index > firstSummary && event.kind === 'popstate'
+    && /^\/live-long\/casework\//.test(routeOf(event)) && !/\/summary$/.test(routeOf(event)));
   return traversal > 0 && events.some((event, index) => index > traversal && operationIs(event, 'casework-summary'));
 };
 
@@ -69,13 +77,13 @@ const caseworkTraversal = (events: FixtureObservation[]): boolean => {
 const HAZARD_TRIGGER_EVIDENCE: Record<string, (events: FixtureObservation[]) => boolean> = {
   basket: clickOn(/\badd\b/i),
   access: clickOn(/\bstage\b/i),
-  suppliers: (events) => events.some((event) => event.kind === 'click' && (event.target.id === 'next' || /^next offers$/i.test(event.target.text))),
+  suppliers: (events) => events.some((event) => isControlClick(event) && (event.target.id === 'next' || /^next offers$/i.test(event.target.text))),
   retention: clickOn(/\barchive\b/i),
   workspace: clickOn(/\bremove\b/i),
   casework: caseworkTraversal,
   budgets: (events) => events.some((event) => event.kind === 'click' && /^(engineering|sales|operations)$/i.test(event.target.text)),
   // The late revision only exists after the dispatch click; merely viewing the outbound page proves nothing.
-  dispatch: (events) => events.some((event) => event.kind === 'click' && (event.target.id === 'dispatch' || /\bdispatch staged orders\b/i.test(targetText(event)))),
+  dispatch: (events) => events.some((event) => isControlClick(event) && (event.target.id === 'dispatch' || /^dispatch staged orders$/i.test(event.target.text))),
 };
 const hasHazardTriggerEvidence = (entry: LongCase, events: FixtureObservation[]): boolean => {
   const trigger = HAZARD_TRIGGER_EVIDENCE[entry.name];
