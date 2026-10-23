@@ -1264,7 +1264,10 @@ it('live-long-fixtures: requires an interaction-specific hazard event instead of
     const entry = LIVE_LONG_FIXTURE_CASES.find((candidate) => candidate.id === hazard.id)!;
     const completed = event(entry, 'settled', target(), `complete-${entry.name}`);
     const kind: FixtureObservation['kind'] = entry.name === 'casework' ? 'popstate' : 'click';
-    expect(gradeLiveLongFixtureCase(entry.id, answerFor(entry), [event(entry, kind, hazard.target, hazard.operationId), completed]).pass).toBe(true);
+    const proof = entry.name === 'casework'
+      ? [event(entry, 'settled', target(), 'casework-summary'), event(entry, 'popstate', target(), 'casework-summary'), event(entry, 'settled', target(), 'casework-summary')]
+      : [event(entry, kind, hazard.target, hazard.operationId)];
+    expect(gradeLiveLongFixtureCase(entry.id, answerFor(entry), [...proof, completed]).pass).toBe(true);
     // Near miss: durable ledger state and incidental load text alone do not establish the hazard interaction.
     const missing = gradeLiveLongFixtureCase(entry.id, answerFor(entry), [event(entry, 'load', hazard.target, hazard.operationId), completed]);
     expect(missing.pass).toBe(false);
@@ -1272,4 +1275,25 @@ it('live-long-fixtures: requires an interaction-specific hazard event instead of
   }
   const caseworkTask = LIVE_LONG_FIXTURE_TASKS.find((task) => task.id === 'llf-casework-off')!;
   expect(caseworkTask.prompt('http://x')).toMatch(/Back.*queue page 2/i);
+
+  // Casework: the traversal must come after a summary visit, and the summary must be reached again afterwards.
+  const casework = LIVE_LONG_FIXTURE_CASES.find((candidate) => candidate.id === 'llf-casework-off')!;
+  const done = event(casework, 'settled', target(), 'complete-casework');
+  const grade = (events: FixtureObservation[]) => gradeLiveLongFixtureCase(casework.id, answerFor(casework), [...events, done]);
+  const summary = () => event(casework, 'settled', target(), 'casework-summary');
+  const back = () => event(casework, 'popstate', target(), 'casework-summary');
+  expect(grade([summary(), back(), summary()]).pass).toBe(true);
+  // Near misses: a Back from an earlier view (before any summary visit), no reopened summary, and a summary visit with no Back.
+  const earlyBack = grade([event(casework, 'popstate', target(), 'casework-detail'), summary()]);
+  expect(earlyBack.pass).toBe(false);
+  expect(earlyBack.details).toContain('missing hazard-trigger evidence');
+  expect(grade([summary(), back()]).pass).toBe(false);
+  expect(grade([summary()]).pass).toBe(false);
+
+  // Dispatch: viewing the settled outbound page is not the dispatch interaction.
+  const dispatch = LIVE_LONG_FIXTURE_CASES.find((candidate) => candidate.id === 'llf-dispatch-off')!;
+  const outboundOnly = gradeLiveLongFixtureCase(dispatch.id, answerFor(dispatch), [event(dispatch, 'settled', target(), 'dispatch-outbound'), event(dispatch, 'settled', target(), 'dispatch-receipt')]);
+  expect(outboundOnly.pass).toBe(false);
+  expect(outboundOnly.details).toContain('missing hazard-trigger evidence');
+  expect(gradeLiveLongFixtureCase(dispatch.id, answerFor(dispatch), [event(dispatch, 'click', target('dispatch', 'Dispatch staged orders'), 'dispatch-outbound'), event(dispatch, 'settled', target(), 'dispatch-receipt')]).pass).toBe(true);
 });

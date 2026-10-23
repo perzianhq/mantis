@@ -54,21 +54,32 @@ const targetText = (event: FixtureObservation): string => [
   event.target.id, event.target.name, event.target.ariaLabel, event.target.text,
 ].filter(Boolean).join(' ');
 
-/** Each workflow's event must prove the interaction that exercises its hazard, never just describe it. */
-const HAZARD_TRIGGER_EVIDENCE: Record<string, (event: FixtureObservation) => boolean> = {
-  basket: (event) => event.kind === 'click' && /\badd\b/i.test(targetText(event)),
-  access: (event) => event.kind === 'click' && /\bstage\b/i.test(targetText(event)),
-  suppliers: (event) => event.kind === 'click' && (event.target.id === 'next' || /^next offers$/i.test(event.target.text)),
-  retention: (event) => event.kind === 'click' && /\barchive\b/i.test(targetText(event)),
-  workspace: (event) => event.kind === 'click' && /\bremove\b/i.test(targetText(event)),
-  casework: (event) => event.kind === 'popstate' && event.long?.operationId?.startsWith('casework-') === true,
-  budgets: (event) => event.kind === 'click' && /^(engineering|sales|operations)$/i.test(event.target.text),
-  dispatch: (event) => (event.kind === 'click' && event.target.id === 'dispatch')
-    || (event.kind === 'settled' && event.long?.operationId === 'dispatch-outbound'),
+const clickOn = (pattern: RegExp) => (events: FixtureObservation[]): boolean =>
+  events.some((event) => event.kind === 'click' && pattern.test(targetText(event)));
+const operationIs = (event: FixtureObservation, operationId: string): boolean => event.long?.operationId === operationId;
+/** Summary visit, then a real history traversal, then the summary reached again (the brief's order). */
+const caseworkTraversal = (events: FixtureObservation[]): boolean => {
+  const firstSummary = events.findIndex((event) => operationIs(event, 'casework-summary'));
+  if (firstSummary < 0) return false;
+  const traversal = events.findIndex((event, index) => index > firstSummary && event.kind === 'popstate');
+  return traversal > 0 && events.some((event, index) => index > traversal && operationIs(event, 'casework-summary'));
+};
+
+/** Each workflow's events must prove the interaction that exercises its hazard, never just describe it. */
+const HAZARD_TRIGGER_EVIDENCE: Record<string, (events: FixtureObservation[]) => boolean> = {
+  basket: clickOn(/\badd\b/i),
+  access: clickOn(/\bstage\b/i),
+  suppliers: (events) => events.some((event) => event.kind === 'click' && (event.target.id === 'next' || /^next offers$/i.test(event.target.text))),
+  retention: clickOn(/\barchive\b/i),
+  workspace: clickOn(/\bremove\b/i),
+  casework: caseworkTraversal,
+  budgets: (events) => events.some((event) => event.kind === 'click' && /^(engineering|sales|operations)$/i.test(event.target.text)),
+  // The late revision only exists after the dispatch click; merely viewing the outbound page proves nothing.
+  dispatch: (events) => events.some((event) => event.kind === 'click' && (event.target.id === 'dispatch' || /\bdispatch staged orders\b/i.test(targetText(event)))),
 };
 const hasHazardTriggerEvidence = (entry: LongCase, events: FixtureObservation[]): boolean => {
   const trigger = HAZARD_TRIGGER_EVIDENCE[entry.name];
-  return !!trigger && events.some(trigger);
+  return !!trigger && trigger(events);
 };
 /** The state checker is authoritative and also requires evidence that the fixture hazard was exercised. */
 export function checkLiveLongFixtureCase(id: string, events: FixtureObservation[]): { ok: boolean; details?: string } {
