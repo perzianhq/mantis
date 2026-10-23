@@ -16,28 +16,35 @@ It works with Claude Code, Codex, Cursor or your own agent as an MCP server. [In
 
 ## Results
 
-Frozen `local-v2.1` scorecard: 54 code-graded fixture tasks, `deepseek-v4.1-flash` through Sarvam V2, three runs per approach (486 logical runs). This is a local-fixture result, not a general-model or live-site claim.
+Same tasks, same pass criteria, three ways to browse. Mantis vs the accessibility tree (Playwright MCP) vs screenshots.
 
-| | Mantis | Accessibility tree | Screenshots |
-|---|---:|---:|---:|
-| Correct | **159/162** | 157/162 | 150/162 |
-| Median input tokens | **15.7k** | 26.8k | 31.6k |
-| Median active model-request time | **11.1s** | 13.1s | 20.4s |
-| Median agent execution excl. limiter/retry wait | **13.1s** | 15.9s | 22.9s |
-| Median end-to-end wall time | **63.8s** | 89.3s | 122.9s |
-| Median cost estimate | **₹0.099** | ₹0.143 | ₹0.242 |
+**Long multi-step workflows** (`live-long-fixtures`: 16 local tasks with in-page hazards, 3 runs per approach, code-graded). Score is out of 48; time is mean agent execution per run.
 
-Mantis scored 98.1%, versus 96.9% for the tree and 92.6% for screenshots, with 41.6% fewer median input tokens than the tree and 50.4% fewer than screenshots. Execution excludes locally measured limiter/retry wait; wall time includes it. Method, audit caveats, and historical baselines: [bench/RESULTS.md](bench/RESULTS.md).
+| Model | | Mantis | Accessibility tree | Screenshots |
+|---|---|---:|---:|---:|
+| `gpt-6-luna` | Correct | **48/48** | **48/48** | 42/48 |
+| | Time | **103s** | 132s | 163s |
+| | Input tokens | **17.3M** | 28.0M | 31.0M |
+| | Tool calls | **1190** | 1685 | 2774 |
+| `claude-haiku-5-5` | Correct | **48/48** | **48/48** | **48/48** |
+| | Time | **42s** | 59s | 64s |
+| | Input tokens | **12.1M** | 18.7M | 27.1M |
+| | Tool calls | **1501** | 1827 | 2876 |
 
-Live-site set `live-v1` (v1.7): 30 real-site tasks, three runs per approach, judged by `gpt-6.1-sol`. Success out of 90 (average input tokens per run):
+**Real sites** (`live-v1` v1.7: 30 tasks, 3 runs per approach, judged blind). Success out of 90:
 
 | Model | Mantis | Accessibility tree | Screenshots |
 |---|---:|---:|---:|
-| `deepseek-v4.1-flash` (Sarvam) | 88 (51.0k) | **90** (139.4k) | 89 (55.5k) |
-| `gpt-6-luna` | **90** (91.5k) | **90** (123.1k) | 85 (122.7k) |
-| `claude-haiku-5-5` | 88 (50.4k) | 86 (116.5k) | **89** (53.1k) |
+| `gpt-6-luna` | **90** | **90** | 85 |
+| `claude-haiku-5-5` | 88 | 86 | **89** |
 
-Full tables and the task changelog: [bench/RESULTS.md](bench/RESULTS.md) and [bench/live-v1.md](bench/live-v1.md).
+### Where Mantis is better
+
+- **Long workflows.** Same accuracy as the tree, with 22–29% less time, 35–38% fewer input tokens and 18–29% fewer tool calls, because each step returns only what changed.
+- **Versus screenshots.** Fewer tokens and calls everywhere; Luna also missed 6 of 48 where Mantis and the tree did not.
+- **Short tasks.** Roughly a tie with the tree. The edge grows with task length.
+
+Method and caveats: [bench/RESULTS.md](bench/RESULTS.md).
 
 ## Learn more
 

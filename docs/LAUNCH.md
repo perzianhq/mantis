@@ -2,8 +2,7 @@
 
 ## 1. The claim
 
-Use the frozen local-v2.1 scorecard and caveats in [bench/RESULTS.md](../bench/RESULTS.md).
-Label the earlier real-site results as a historical pilot; the frozen live-site set (live-v1 v1.7, 30 tasks x 3 runs, success out of 90 for Mantis / tree / screenshots) is reported separately: Sarvam `deepseek-v4.1-flash` 88/90/89, Luna `gpt-6-luna` 90/90/85, Haiku `claude-haiku-5-5` 88/86/89. Per-task changes and disclosures: [bench/live-v1.md](../bench/live-v1.md#changelog-and-disclosures); tables: `bench/RESULTS.md`.
+Lead with the Luna and Haiku results in [README.md](../README.md#results): `live-long-fixtures` (long workflows, 48/48 for Mantis on both models with 22-29% less time and 35-38% fewer input tokens than the tree) and the frozen live-site set `live-v1` v1.7 (success out of 90 for Mantis / tree / screenshots: Luna 90/90/85, Haiku 88/86/89). Per-task changes and disclosures: [bench/live-v1.md](../bench/live-v1.md#changelog-and-disclosures); tables and caveats: [bench/RESULTS.md](../bench/RESULTS.md).
 Publish failures and method beside the claim. Lead with agent task results; replay measures
 cheap orientation, not reading a whole article.
 

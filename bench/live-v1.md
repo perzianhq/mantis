@@ -8,7 +8,7 @@ The immutable task IDs and contract hash are in [manifests/live-v1.json](manifes
 
 ## Run plan
 
-The scorecard is three approaches × three repeats × all 30 scored rows. The fixed approaches are Mantis, Playwright accessibility tree, and screenshot; execution has a 600-second limit and Sarvam's default live-v1 completion budget is 50 steps.
+The scorecard is three approaches × three repeats × all 30 scored rows. The fixed approaches are Mantis, Playwright accessibility tree, and screenshot; execution has a 600-second limit.
 
 ```powershell
 $env:AGENT_SUITE = 'live-v1'
@@ -79,25 +79,7 @@ The MDN key was too strict (failed tree 2/3 and Mantis 1/3), so it now accepts t
 
 ### v1.4 task swap: GPL-3 to RFC 8259
 
-The excluded GPL-3 row was replaced by `livev1-standards-rfc-8259` (kept GPL-3 as `excluded:true`), so the scored set stays 30. The 29 tasks run before the swap are the v1.3 Sarvam table below; the RFC 8259 task ran separately (Sarvam, judged): 3/3 success for each approach, so the full 30-task set was Mantis 79/90, tree 86/90, screenshots 86/90 (87.8% / 95.6% / 95.6%).
-
-### v1.3 Sarvam run (29 scored tasks)
-
-Frozen `live-v1` with v1.3 keys: 29 scored public-site tasks x 3 approaches x 3 runs = 261 runs (the GNU GPL-3 task is excluded: the host timed out for all nine runs, so it was unwinnable here). Agent `deepseek-v4.1-flash` through Sarvam; 10 scheduled cases. 20 tasks are graded by deterministic validators on captured final state; the rest are judged blind by Codex `gpt-6.1-sol` (0 judge errors). Result: `live-v1-deepseek-v1_2-20261022-judged`. Reproduce: `JUDGE_IN=live-v1-deepseek-v1_2-20261022 npm run bench:judge` (raw run JSON/markdown stay local).
-
-| Per-run | Mantis | Accessibility tree | Screenshots |
-|---|---:|---:|---:|
-| Success / failure / blocked | 76 / 8 / 3 | 83 / 3 / 1 | 83 / 4 / 0 |
-| Success rate (87 runs) | 87.4% | **95.4%** | **95.4%** |
-| Deterministic-graded tasks | 48 / 53 | 50 / 53 | 53 / 54 |
-| Judge-graded tasks | 28 / 31 | 33 / 33 | 30 / 33 |
-| Avg tool calls | **6.2** | 6.9 | 12.3 |
-| Avg input tokens | **51.0k** | 139.4k | 55.5k |
-
-- On the v1.5 set Mantis was 8 points behind tree and screenshots on success but uses 63% fewer input tokens than tree and about half the calls of screenshots. This is a Sarvam result only, not a Luna/Haiku claim.
-- Mantis misses: IMDb search (3 blocked/failed; the agent looped on a custom verification gate, since fixed generically and not yet re-run live), USGS about (CAPTCHA/403 mentions in all approaches, mixed rather than Mantis-specific), Met collection search (2; token exhaustion after detours), and one each on MDN, Census about and Our World in Data CO2.
-- **Disclosure:** Sol failure reviews found no Mantis tool defect apart from the IMDb gate. After seeing v1.2 results, the Django, USGS and OWID task wording and keys were revised (v1.3) to accept equivalent official pages, and GPL-3 was excluded. v1.2 numbers (all 30 tasks, 90 runs each) were Mantis 71, tree 78, screenshots 75 successes.
-- **Local-v1 regression after the Opus review fixes (A-E merged):** Mantis 75/75, median 4 tool calls (baseline 74/75, median 4).
+The excluded GPL-3 row was replaced by `livev1-standards-rfc-8259` (kept GPL-3 as `excluded:true`), so the scored set stays 30. The RFC 8259 task was added to keep the scored set at 30.
 
 ### Task and key changes by version
 

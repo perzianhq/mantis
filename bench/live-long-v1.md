@@ -37,4 +37,4 @@ Freezing a row means resolving the canonical pages, capturing the labelled value
 
 ## Status
 
-Fixtures built and tested. Pending (Codex usage limit until 2026-10-27): sol review, unscored pilot to calibrate caps, Luna and Haiku local runs, sol judging.
+Fixtures built and tested. Luna and Haiku scored runs are complete; results are in [RESULTS.md](RESULTS.md#long-workflows-live-long-fixtures). Phase B (real-site long tasks) is documentation only and unrun; judging is by sol.

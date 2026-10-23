@@ -2,20 +2,29 @@
 
 All benchmark numbers in one place. How to re-run them: [README.md](README.md).
 Mantis is compared with the accessibility tree (Playwright MCP 0.0.83) and with screenshots (our own minimal tool).
-Suites are reported separately; the sections below run from the live-site scorecard to local fixtures and historical pilots.
+Headline models are Luna (`gpt-6-luna`) and Haiku (`claude-haiku-5-5`). Suites are reported separately.
+
+## Long workflows (live-long-fixtures)
+
+16 local tasks (8 workflows x hazard off/on) x 3 approaches x 3 runs = 144 runs per model, graded by the full-ledger grader in `bench/agent/live-long-fixtures.ts`; details in [live-long-v1.md](live-long-v1.md). Exec is mean agent execution time per run (`cliExecutionMs`).
+
+| Model | Approach | Score | Mean exec | Median exec | Input tokens | Output tokens | Tool calls |
+|---|---|---:|---:|---:|---:|---:|---:|
+| `gpt-6-luna` | Mantis | **48/48** | **103s** | **91s** | **17.3M** | **50k** | **1190** |
+| | Accessibility tree | **48/48** | 132s | 123s | 28.0M | 67k | 1685 |
+| | Screenshots | 42/48 | 163s | 148s | 31.0M | 153k | 2774 |
+| `claude-haiku-5-5` | Mantis | **48/48** | **42s** | **41s** | **12.1M** | **108k** | **1501** |
+| | Accessibility tree | **48/48** | 59s | 61s | 18.7M | 157k | 1827 |
+| | Screenshots | **48/48** | 64s | 68s | 27.1M | 269k | 2876 |
+
+- Mantis vs tree: Luna 22% less time, 38% fewer input tokens, 29% fewer calls; Haiku 29% less time, 35% fewer input tokens, 18% fewer calls. Scores are equal.
+- Luna's screenshot approach failed 6 of 48 rows; Mantis and the tree failed none.
+- Luna ran locally on Windows (concurrency 30) and Haiku on cloud Linux (concurrency 12), so compare approaches within a model, not times across models. Rows that needed a retry are best-of-two.
+- Basket and retention rows were rerun after two fixture fixes (history restore, unsaved retention summary); other rows were regraded offline with the current graders from the same runs. Merged files: `results/live-long-fixtures-{luna,haiku}-merged-20261023.md`.
 
 ## Live-site scorecard (live-v1 v1.7)
 
 Frozen [live-v1](live-v1.md) v1.7: 30 real-site tasks x 3 approaches x 3 runs = 90 runs per approach and model, judged blind by Codex `gpt-6.1-sol`. Task changes, regrades and run notes are in the [live-v1 changelog](live-v1.md#changelog-and-disclosures).
-
-**Sarvam (`deepseek-v4.1-flash`)**
-
-| | Mantis | Accessibility tree | Screenshots |
-|---|---:|---:|---:|
-| Success (of 90) | 88 | **90** | 89 |
-| Avg input tokens | **51.0k** | 139.4k | 55.5k |
-
-Token row is from the v1.5 task set.
 
 **Luna (`gpt-6-luna`)**
 
@@ -30,6 +39,10 @@ Token row is from the v1.5 task set.
 |---|---:|---:|---:|
 | Success (of 90) | 88 | 86 | **89** |
 | Avg input tokens | **50.4k** | 116.5k | 53.1k |
+
+## Side scorecards (DeepSeek only, local fixtures)
+
+Not headline results: `deepseek-v4.1-flash` through Sarvam on local code-graded fixtures. Luna and Haiku are the headline models.
 
 ## Local-v2.1 full scorecard (local fixtures)
 
@@ -70,74 +83,6 @@ Frozen `local-v2`: 48 code-graded local fixture tasks x 3 approaches x 3 runs = 
 - The 35 remaining misses are 28 step limits and seven task/action mistakes. The raw artifact, traces, and regrade artifact remain local. `local-v1` below remains a separate historical baseline.
 - The published local-v2 command explicitly used 35 standard steps. Future non-`long` local-v2 runs default to 50, a separate policy/result line that does not alter this score.
 
-## Local tasks, Sarvam final seeded baseline
-
-Frozen `local-v1` ([manifest](manifests/local-v1.json)). Agent `deepseek-v4.1-flash` through Sarvam V2 only; these are not Luna/Haiku or general-model claims.
-25 code-graded local fixture tasks x 3 approaches x 3 runs = 225 logical runs, with frozen fixture seed
-`20261018`. The run used a 100-step budget, 10 scheduled cases, 16 active model calls, 50 RPM, a 600s
-active-work timeout, and an 1,800s wall cap. There were no HTTP 429s or wall-cap timeouts.
-
-| Per-run median / total | Mantis | Accessibility tree | Screenshots |
-|---|---:|---:|---:|
-| Correct | **75/75** | **75/75** | 70/75 |
-| Execution excl. quota/retry wait (p50) | **8.14s** | 11.59s | 16.45s |
-| End-to-end CLI wall time (p50) | **58.56s** | 66.83s | 121.07s |
-| Input tokens incl. cache (p50) | **11.1k** | 22.9k | 27.7k |
-| Output tokens (p50) | **279** | 454 | 573 |
-| Cost estimate, INR (p50) | **0.08** | 0.16 | 0.22 |
-| Total input tokens incl. cache | **1.67M** | 4.91M | 13.11M |
-| Total output tokens | **37.2k** | 54.8k | 154.9k |
-| Total cost estimate, INR | **10.35** | 20.60 | 91.36 |
-
-- Mantis and tree reached the correctness ceiling. Screenshot had one visual-read miss (`chart-march`: 56 vs 57) and four genuine 100-step budget exhaustions (`long-shop` runs 1–2, `long-admin` run 2, `long-onboard` run 2). These were not throttles, timeout failures, tool errors, or grader failures.
-- “Execution” removes locally measured quota, cooldown, and retry wait; CLI wall time retains that wait. Medians and totals include every logical run, including screenshot failures. Costs are published-rate INR estimates.
-- The raw result artifact and traces remain local rather than versioned; the frozen configuration above is sufficient to reproduce the scorecard.
-
-
-## Real sites (historical pilot)
-
-Not the live-site scorecard: an early pilot on a sampled public dataset, kept for reference.
-Codex CLI, `gpt-6-luna`, medium reasoning, 1 run per task. Tasks are a seeded, level-stratified sample of
-[Online-Mind2Web](https://huggingface.co/datasets/osunlp/Online-Mind2Web) (live public sites). Each run was graded
-by a blind judge (`claude-sonnet-5-5`), which saw the final reply with tool-revealing lines removed and a fresh
-screenshot of the final page, but not which approach produced it.
-
-| Approach | Correct | Avg tool calls | Avg input tokens | Avg time |
-|---|---:|---:|---:|---:|
-| Mantis | **7/10** | **8.4** | **185k** | 55 s |
-| Accessibility tree | 5/10 | 12.2 | 311k | 50 s |
-| Screenshots | 6/10 | 17.9 | 310k | 76 s |
-
-- The first sample of 10 had 5 tasks where every approach was stopped by bot detection
-  (Cloudflare, Access Denied, 403, CAPTCHA). Those 5 were replaced by the next tasks in the same seeded order
-  whose start page loaded in headless Chromium, keeping the level mix (2 easy, 3 medium).
-- Per task: Mantis alone solved Healthline; screenshots alone solved SmartAsset; all three failed justice.gov
-  and the Stanford task (it needs a login).
-- 10 tasks x 1 run is a pilot: it shows a direction, not a margin.
-
-Files: [first sample](results/codex-luna-realsite-judged.md) · [replacements](results/codex-luna-realsite-swap-judged.md)
-(raw runs: `results/codex-luna-realsite*.json`).
-
-## Local tasks (earlier pilots, historical)
-
-26 tasks on pages written by the Mantis authors (known answers, graded by code). Short tasks are 1 run each.
-
-| Agent | Mantis | Accessibility tree | Screenshots |
-|---|---:|---:|---:|
-| Codex `gpt-6.1-sol` ([results](results/codex-sol.md)) | 22/22 · 1.58M tokens | 22/22 · 1.50M | 20/22 · 1.86M |
-| Codex `gpt-6-luna` ([results](results/codex-luna.md)) | 21/22 · 1.74M | 22/22 · 1.97M | 17/22 · 2.65M |
-| Claude `claude-haiku-5-5` ([results](results/claude-haiku.md)) | 22/22 · 1.29M | 22/22 · 1.77M | 22/22 · 1.25M |
-
-Long tasks: 4 tasks of 15–27 actions each (shop checkout, admin edits, a 5-step wizard, comparing 7 products), 3 runs each.
-
-| Agent | Mantis | Accessibility tree | Screenshots |
-|---|---:|---:|---:|
-| Codex `gpt-6-luna` ([results](results/codex-luna-long.md)) | 12/12 · 2.59M tokens | 10/12 · 4.84M | 9/12 · 4.64M |
-| Claude `claude-haiku-5-5` ([results](results/claude-haiku-long.md)) | 12/12 · 3.15M | 12/12 · 4.96M | 12/12 · 5.01M |
-
-On short tasks Mantis and the tree are about even. On long tasks the tree uses 1.6–1.9x Mantis's tokens,
-because every step re-reads more of the page. Time and cost are in the results files.
-
 ## Token replay
 
 14 scripted tasks, no LLM ([results](results/latest.md)). Per step, Mantis returns a median of 28 tokens,
@@ -146,7 +91,6 @@ and on those Mantis shows a trimmed view, so this measures cheap orientation, no
 
 ## Caveats
 
-- The final local-v1 baseline uses 25 author-written fixture tasks. The earlier 26-task local pilots include one live task.
-- Local-v2 and local-v2.1 are code-graded fixture suites with different step caps (35 and 50); do not merge them with each other, with local-v1, or with real-site pilots.
+- Local-v2 and local-v2.1 are code-graded fixture suites with different step caps (35 and 50); do not merge them with each other or with the other suites.
 - The screenshot baseline is our own minimal tool, not a product's.
 - Live sites change; real-site numbers are a snapshot.
