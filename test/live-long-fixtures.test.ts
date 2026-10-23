@@ -239,6 +239,55 @@ describe('live-long fixture regression coverage', () => {
     });
     expect(receipt.verification.ok).toBe(true);
   }, 120_000);
+
+  it('restores basket history views and keeps the cart intact when returning to the catalogue', async () => {
+    const basket = LIVE_LONG_FIXTURE_CASES.find((entry) => entry.id === 'llf-basket-off')!;
+    await replay(basket, 'basket-history-catalogue', basket.walkthrough.slice(0, 3), async (page) => {
+      await page.locator('#basket').click();
+      expect(await page.locator('#cart').isVisible()).toBe(true);
+      const beforeHistory = await page.evaluate(() => (window as typeof window & { __fixtureLong: () => unknown }).__fixtureLong());
+      await page.goBack();
+      expect(await page.locator('#catalog').isVisible()).toBe(true);
+      expect(await page.locator('#cart').isVisible()).toBe(false);
+      await page.goForward();
+      expect(await page.locator('#cart').isVisible()).toBe(true);
+      expect(await page.locator('#lines').innerText()).toContain('p01');
+      await page.locator('#cart-catalog').click();
+      expect(await page.locator('#catalog').isVisible()).toBe(true);
+      expect(await page.locator('#cart').isVisible()).toBe(false);
+      const afterCatalogue = await page.evaluate(() => (window as typeof window & { __fixtureLong: () => unknown }).__fixtureLong());
+      expect(afterCatalogue).toEqual(beforeHistory);
+    });
+  }, 120_000);
+
+  it('does not mutate the basket ledger when browser history restores the catalogue', async () => {
+    const basket = LIVE_LONG_FIXTURE_CASES.find((entry) => entry.id === 'llf-basket-off')!;
+    await replay(basket, 'basket-history-ledger', basket.walkthrough.slice(0, 3), async (page) => {
+      await page.locator('#basket').click();
+      const beforeBack = await page.evaluate(() => (window as typeof window & { __fixtureLong: () => unknown }).__fixtureLong());
+      await page.goBack();
+      const afterBack = await page.evaluate(() => (window as typeof window & { __fixtureLong: () => unknown }).__fixtureLong());
+      expect(afterBack).toEqual(beforeBack);
+      await page.goForward();
+      expect(await page.locator('#lines').innerText()).toContain('p01');
+    });
+  }, 120_000);
+
+  it('shows a saved retention receipt only after the summary commit', async () => {
+    const retention = LIVE_LONG_FIXTURE_CASES.find((entry) => entry.id === 'llf-retention-off')!;
+    const completed = await replay(retention, 'retention-summary-saved', retention.walkthrough, async (page) => {
+      expect(await page.locator('#summary').innerText()).toContain('Retention summary saved');
+      expect(await page.locator('#summary').innerText()).toContain(receiptOf(retention));
+    });
+    expect(completed.verification.ok).toBe(true);
+
+    const incomplete = await replay(retention, 'retention-summary-unsaved', [{ op: 'goto', target: '/live-long/retention/off/summary' }], async (page) => {
+      const summary = await page.locator('#summary').innerText();
+      expect(summary).toContain('Retention summary not saved');
+      expect(summary).not.toContain('Receipt');
+    });
+    expect(incomplete.verification.ok).toBe(false);
+  }, 120_000);
 });
 
 describe.each(LIVE_LONG_FIXTURE_CASES.map((entry) => [entry.id, entry] as const))('%s', (_id, entry) => {

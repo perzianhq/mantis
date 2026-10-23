@@ -1206,3 +1206,23 @@ it('live-long-fixtures: no ledger, no pass, even with the right receipt in the a
     expect(grade.pass).toBe(false);
   }
 });
+
+it('live-long-fixtures: reports differing ledger fields without changing the verdict', () => {
+  const entry = LIVE_LONG_FIXTURE_CASES.find((candidate) => candidate.id === 'llf-basket-off')!;
+  const expected = entry.expected as { revision: number; receipt: string; cart: string[][]; coupon: string };
+  const event = (ledger: object): FixtureObservation => ({
+    arrival: 0, path: '/live-long/basket/off/done', kind: 'settled', documentId: 'doc', target: { tag: '', id: '', name: '', type: '', ariaLabel: '', text: '', href: '', value: '', checked: false }, controls: {}, text: '',
+    long: { url: '/live-long/basket/off/done', revision: (ledger as { revision: number }).revision, ledger },
+  });
+  const answer = `Receipt ${expected.receipt} total 101.29`;
+  expect(gradeLiveLongFixtureCase(entry.id, answer, [event(expected)]).pass).toBe(true);
+
+  const nearMiss = { ...expected, cart: [['p01', '1']], coupon: 'OTHER' };
+  const failed = gradeLiveLongFixtureCase(entry.id, answer, [event(nearMiss)]);
+  expect(failed.pass).toBe(false);
+  expect(failed.details).toContain('full terminal ledger differs from expected state: cart, coupon');
+
+  const missingCommit = gradeLiveLongFixtureCase(entry.id, answer, [event({ ...expected, completed: false, receipt: '', revision: expected.revision - 1 })]);
+  expect(missingCommit.pass).toBe(false);
+  expect(missingCommit.details).toContain('workflow is incomplete or still pending (edits complete; final commit missing)');
+});
