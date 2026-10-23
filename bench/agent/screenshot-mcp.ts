@@ -40,11 +40,11 @@ async function act(fn: (p: Page) => Promise<string>) {
   }
 }
 
-function coordinate(input: Coordinate | undefined, label = 'coordinate'): Coordinate | string {
+function coordinate(input: readonly number[] | undefined, label = 'coordinate'): Coordinate | string {
   if (!input) return `${label} is required`;
   const [x, y] = input;
   if (!Number.isFinite(x) || !Number.isFinite(y) || x < 0 || y < 0 || x > VIEWPORT.width || y > VIEWPORT.height) return `${label} must be two viewport pixels within ${VIEWPORT.width}x${VIEWPORT.height}`;
-  return input;
+  return [x, y];
 }
 
 /** Native select popups are OS UI, unreliable in headless screenshots and hit testing. The in-page menu below is visible and coordinate-clickable while the real select remains focused for Arrow keys and Enter. A source string avoids tsx's helper injection into Playwright-evaluated functions. */
@@ -93,7 +93,7 @@ server.registerTool('back', { description: 'Go back one page.', inputSchema: {} 
 server.registerTool('computer', {
   description: `Anthropic-style coordinate computer tool for a ${VIEWPORT.width}x${VIEWPORT.height} viewport. screenshot returns the viewport; zoom crops region [x0,y0,x1,y1]. Click coordinates are [x,y], click text is optional ctrl/alt/shift/meta modifiers. key accepts portable xdotool-style names and space-separated presses. scroll_amount is wheel ticks; one tick is ${COMPUTER_SCROLL_TICK_PIXELS} CSS pixels. ${NATIVE_SELECT_KEYBOARD_GUIDANCE}`,
   inputSchema: {
-    action: z.enum(COMPUTER_ACTIONS), coordinate: z.tuple([z.number(), z.number()]).optional().describe('Viewport [x, y].'), start_coordinate: z.tuple([z.number(), z.number()]).optional().describe('Drag start viewport [x, y].'), region: z.tuple([z.number(), z.number(), z.number(), z.number()]).optional().describe('Zoom [x0, y0, x1, y1].'), text: z.string().optional(), duration: z.number().positive().max(10).optional().describe('Seconds, maximum 10.'), scroll_direction: z.enum(['up', 'down', 'left', 'right']).optional(), scroll_amount: z.number().positive().max(100).optional().describe(`Wheel ticks; one tick is ${COMPUTER_SCROLL_TICK_PIXELS} CSS pixels.`),
+    action: z.enum(COMPUTER_ACTIONS), coordinate: z.array(z.number()).length(2).optional().describe('Viewport [x, y].'), start_coordinate: z.array(z.number()).length(2).optional().describe('Drag start viewport [x, y].'), region: z.array(z.number()).length(4).optional().describe('Zoom [x0, y0, x1, y1].'), text: z.string().optional(), duration: z.number().positive().max(10).optional().describe('Seconds, maximum 10.'), scroll_direction: z.enum(['up', 'down', 'left', 'right']).optional(), scroll_amount: z.number().positive().max(100).optional().describe(`Wheel ticks; one tick is ${COMPUTER_SCROLL_TICK_PIXELS} CSS pixels.`),
   },
 }, async (input) => {
   const action = input.action as ComputerAction;

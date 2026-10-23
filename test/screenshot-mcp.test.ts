@@ -76,3 +76,14 @@ it('renders a visible native-select overlay whose coordinate click changes the s
     expect(await state()).toEqual({ value: 'one', events: [], overlay: false });
   });
 }, 30_000);
+
+it('keeps the computer tool schema free of tuple prefixItems that Codex drops; wrong-length arrays are rejected', async () => {
+  await withClient(async (client, call) => {
+    const { tools } = await client.listTools();
+    const schema = JSON.stringify(tools.find((tool) => tool.name === 'computer')?.inputSchema);
+    expect(schema).not.toContain('prefixItems');
+    expect(schema).toContain('"minItems":2');
+    const bad = await call('computer', { action: 'left_click', coordinate: [10, 20, 30] });
+    expect(bad.isError).toBe(true);
+  });
+}, 30_000);
