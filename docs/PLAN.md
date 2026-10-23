@@ -22,7 +22,7 @@ Stack: TypeScript (ESM, Node ≥20), Playwright, `@modelcontextprotocol/sdk`, zo
 ## Evaluation plan
 
 ```text
-frozen local-v1 → local-v2 full scorecard → local-v2.1 reliability scorecard → frozen live-site set (live-v1, in progress) → publish
+frozen local-v1 → local-v2 full scorecard → local-v2.1 reliability scorecard → frozen live-site set (live-v1, complete) → publish
 ```
 
 | Phase | Run | Gate |
@@ -30,7 +30,7 @@ frozen local-v1 → local-v2 full scorecard → local-v2.1 reliability scorecard
 | Local-v1 — complete | Frozen 25-task seeded local baseline, 3 approaches × 3 repeats = 225 logical runs. | Preserve the [manifest](../bench/manifests/local-v1.json) and [final scorecard](../bench/RESULTS.md#local-tasks-sarvam-final-seeded-baseline). |
 | Local-v2 full — complete | Frozen 48-case local scorecard: 3 approaches × 3 repeats = 432 rows, DeepSeek through Sarvam. | Preserve the versioned offline regrade and its 35-step policy. See [results](../bench/RESULTS.md#local-v2-full-scorecard-historical). |
 | Local-v2.1 — complete | Frozen 54-case reliability scorecard: local-v2 plus six distinct perception/action contracts; 3 approaches × 3 repeats = 486 rows at a 50-completion non-`long` cap. | Publish separately; never replace local-v2. See [results](../bench/RESULTS.md#local-v21-full-scorecard-current). |
-| Frozen live sites — in progress | Separate read-only public-site set: [live-v1](../bench/live-v1.md), 30 tasks, three approaches × three repeats. | A first run exists but is not yet a valid scorecard: contracts are still being fixed and the blind judge has not run. Preflight stays offline/unverified until a browser review; deterministic validators where complete, blind judge for the rest. |
+| Frozen live sites — complete | Separate read-only public-site set: [live-v1](../bench/live-v1.md) v1.7, 30 tasks, three approaches × three repeats, for Luna and Haiku. | Scored with deterministic validators where complete and the blind judge for the rest. See [results](../bench/RESULTS.md#live-site-scorecard-live-v1-v17). |
 | Publish | Matched runs for Mantis, tree, and screenshot. | Per-task score, seed/trace, calls, latency, tokens, cost, and failures. |
 
 Keep model, browser, retry policy, timeout, and token budget matched across approaches. Publish each suite separately; never combine local-v1, local-v2, local-v2.1, and live-site scores. Run the live-site set only at milestones or after browser/tooling changes. No self-hosted-app stage is planned.
@@ -40,7 +40,43 @@ Keep model, browser, retry policy, timeout, and token budget matched across appr
 1. Preserve local-v1 fixtures, tasks, graders, seed, and results; the final 225-run baseline is complete.
 2. Preserve the completed 48-case local-v2 scorecard and its regrade; do not replace individual rows.
 3. Preserve the completed 54-case local-v2.1 scorecard; do not replace individual rows.
-4. Make live-v1 valid (fix contracts, rerun, blind-judge), then publish it separately; see [live-v1](../bench/live-v1.md). The gated Online-Mind2Web path ([real-site tasks](../bench/README.md#real-site-tasks-blind-judge)) is a historical pilot.
+4. Preserve the completed live-v1 v1.7 scorecard; see [live-v1](../bench/live-v1.md). Launch steps are below. The gated Online-Mind2Web path ([real-site tasks](../bench/README.md#real-site-tasks-blind-judge)) is a historical pilot.
+
+## Next steps: open-source launch (v0.1.4, public beta)
+
+Verdict (Opus review, 2026-10-24): good enough to launch as a v0.x beta. Accuracy matches the tree on real sites (Luna 89 vs 90, Haiku 87 vs 86 of 90) and long workflows (48/48 both), with 35–38% fewer input tokens on long tasks. No large live-site expansion before launch; scope the claim as "read/navigate on public sites, 2 models".
+
+### Must do before launch
+1. **Release 0.1.4.** npm `mantis-browser@0.1.3` (published 2026-10-19) predates about 20 `src/` commits behind the headline numbers. Bump `package.json` and `server.json` (still 0.1.2) to 0.1.4, tag it from the benchmarked commit, and cite that commit in [RESULTS.md](../bench/RESULTS.md).
+2. **Honest claims.** Fix stale numbers in [LAUNCH.md](LAUNCH.md) (90/88 should be 89/87). Limit "~30% fewer" to long tasks. State that the screenshot baseline is our own tool. Publish the swapped-out live-v1 tasks (IMDb, USGS, GPL-3) next to the scores. Freeze the 30 tasks: no more swaps.
+3. **Judge check.** The calibration gate (100 packets, 30 tasks, 95% agreement, at most 2% false successes) is not met; a human spot-checks about 30 sol verdicts.
+4. **Install on fresh Windows, Mac and Linux.** Risk: `npx playwright install chromium` fetches a different Chromium build than the package needs, so the first launch fails. Add a `mantis install` command or a clear error. OCR data downloads on first use; document it.
+5. **Security.**
+   - Add `SECURITY.md` and a README section.
+   - Page text reaches the agent with no "untrusted" marker and `src/` has no prompt-injection handling: decide what to mark or document.
+   - Check whether `upload` restricts local paths.
+   - `ask_human` needs a display; document it.
+6. **CI.** Only publish workflows exist. Add build and test on Ubuntu, Windows and macOS.
+7. **Repo hygiene.**
+   - Tracked `AGENTS.md`, `CLAUDE.md` and `scripts/codex-*` expose internal policy and local paths: untrack or sanitise.
+   - Docs link to the gitignored `.codex-jobs/`.
+   - Delete about 145 untracked scratch files at the repo root (`.tmp-*`) and decide which `bench/results/` leftovers to commit or ignore.
+
+### Within about 2 weeks after launch
+- 12 interactive live tasks (search plus filter, forms without submit, new tab, iframe, upload on a demo site, login with a test account), Luna and Haiku, 3 runs each, Mantis vs tree.
+- Re-run tree and screenshots on the frozen commit (also fixes the Haiku token comparability caveat).
+- Replace the fragile `data-gov-climate` task in a v1.8.
+
+### After launch
+- CONTRIBUTING, CHANGELOG, issue templates (bug report; "task where Mantis loses").
+- Add `upload` to the tool table in [SETUP.md](SETUP.md).
+- README GIF and video from the [LAUNCH.md](LAUNCH.md) gate.
+
+### Biggest risks
+- Installs that fail on day one.
+- Show HN finding a prompt-injection hole, or calling post-result task swaps cherry-picking.
+
+Not verified in the review: whether the repo is public, npm Trusted Publishing setup, a fresh install, whether tests pass now, and `upload` path limits.
 
 ## Deferred work
 
