@@ -46,13 +46,14 @@ const supplierReceiptState = (state: any) => ({
 const chrome = (title: string, body: string, script: string) => page(title,
   `<header><nav aria-label="Main"><a href="#top"><b>Record Desk</b></a> · <a href="#records">Records</a> · <a href="#reports">Reports</a> · <a href="#help">Help</a></nav></header><main>${body}</main><footer><hr><small>© 2026 Record Desk · Privacy · Terms · Accessibility</small></footer>`, script);
 
-/** A full-ledger terminal check: receipt text is evidence, never the grade. */
-const terminalCheck = (expected: unknown, terminalPath: string, confirmation: string) => (events: FixtureObservation[]) => {
+/** A full-ledger terminal check: the latest settled ledger decides. The last view may be any page of this workflow
+ *  (agents legitimately navigate to verify after completing), and receipt text is evidence, never the grade. */
+const terminalCheck = (expected: unknown, terminalPath: string, _confirmation: string) => (events: FixtureObservation[]) => {
   const event = longTerminalObservation(events);
   const long = event?.long;
   if (!event || !long) return { ok: false, details: 'missing terminal long-ledger observation' };
-  if (long.url?.split(/[?#]/, 1)[0] !== terminalPath) return { ok: false, details: `terminal path was ${long.url ?? 'missing'}` };
-  if (!event.text.toLowerCase().includes(confirmation.toLowerCase())) return { ok: false, details: 'terminal confirmation is not visible' };
+  const workflowPrefix = terminalPath.slice(0, terminalPath.lastIndexOf('/') + 1);
+  if (!long.url?.split(/[?#]/, 1)[0]?.startsWith(workflowPrefix)) return { ok: false, details: `observation was outside this workflow: ${long.url ?? 'missing'}` };
   const ledger = long.ledger as { completed?: boolean; pending?: number; revision?: number } | undefined;
   if (!ledger?.completed || ledger.pending !== 0) return { ok: false, details: 'workflow is incomplete or still pending' };
   if (long.revision !== ledger.revision) return { ok: false, details: 'terminal revision does not match the ledger revision' };

@@ -148,15 +148,14 @@ const NEAR: Record<string, unknown> = {
   budgets: { ...BUDGET_FINAL, departments: [['Engineering', 120000, 'Kai', true], ['Sales', 80000, 'Lin', false], ['Operations', 60000, 'Ada', true]] },
   dispatch: { ...dispatchLedger(5), orders: dispatchLedger(5).orders.map((o: any) => o[0] === 'q19' ? ['q19', 0, '', '', false] : o[0] === 'q20' ? ['q20', 3, 'Post', 'Ground', true] : o) },
 };
-const finalView: Record<string, string> = { workspace: 'done', casework: 'summary', budgets: 'published', dispatch: 'receipt' };
 const checker = (name: string, variant: 'off' | 'on', expected: unknown) => (events: FixtureObservation[]) => {
   const terminal = longTerminalObservation(events);
   if (!terminal?.long?.ledger) return { ok: false, details: 'no terminal long ledger' };
-  const path = `/live-long/${name}/${variant}/${finalView[name]}`;
+  // The latest settled ledger decides; the last view may be any page of this workflow and variant, since agents
+  // legitimately navigate to verify after completing. Receipt text is evidence, never the grade.
+  const prefix = `/live-long/${name}/${variant}/`;
   const routePath = (value: string | undefined) => value?.split(/[?#]/, 1)[0];
-  if (routePath(terminal.path) !== path || routePath(terminal.long.url) !== path) return { ok: false, details: `terminal route is ${terminal.path}` };
-  if (!terminal.text.includes('Receipt') && name !== 'workspace') return { ok: false, details: 'confirmation is not visible' };
-  if (name === 'workspace' && !terminal.text.includes('Workspace created')) return { ok: false, details: 'workspace confirmation is not visible' };
+  if (!routePath(terminal.path)?.startsWith(prefix) || !routePath(terminal.long.url)?.startsWith(prefix)) return { ok: false, details: `observation was outside this workflow: ${terminal.path}` };
   const ledger = terminal.long.ledger as any;
   if (!ledger.completed || ledger.pending !== 0) return { ok: false, details: 'workflow is not settled' };
   if (terminal.long.revision !== ledger.revision) return { ok: false, details: 'terminal revision does not match the ledger revision' };

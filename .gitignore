@@ -11,3 +11,6 @@ bench/results/agent-logs/
 .playwright-mcp/
 bench/agent/realsite-tasks.json
 .codex-jobs/
+
+# Large live-long result JSONs are pretty-printed (100+ MB, over the GitHub limit); commit the .json.gz copies instead
+bench/results/live-long-fixtures-*.json

@@ -168,6 +168,18 @@ describe('live-long fixture regression coverage', () => {
     }
   }, 120_000);
 
+  it('grades the latest settled ledger when the last view is another page of the workflow, rejecting wrong state', async () => {
+    for (const id of ['llf-access-on', 'llf-dispatch-off', 'llf-casework-off', 'llf-retention-off']) {
+      const entry = LIVE_LONG_FIXTURE_CASES.find((candidate) => candidate.id === id)!;
+      const { verification } = await replay(entry, `${id}-post-completion-nav`);
+      const prefix = `/live-long/${entry.name}/${entry.variant}/`;
+      const moved = withLast(verification.provenance.events, (event) => ({ ...event, path: `${prefix}list`, text: 'Staff list', long: { ...event.long!, url: `${prefix}list` } }));
+      expect(entry.check(moved)).toBe(true);
+      const wrongLedger = withLast(moved, (event) => ({ ...event, long: { ...event.long!, ledger: { ...(event.long!.ledger as object), pending: 1 } } }));
+      expect(entry.check(wrongLedger)).not.toBe(true);
+    }
+  }, 180_000);
+
   it('preserves completed access and retention ledgers across a direct summary reload, while incomplete work remains failing', async () => {
     for (const id of ['llf-access-off', 'llf-retention-off']) {
       const entry = LIVE_LONG_FIXTURE_CASES.find((candidate) => candidate.id === id)!;
