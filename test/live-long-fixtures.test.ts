@@ -301,6 +301,11 @@ describe('live-long fixture regression coverage', () => {
     });
     expect(viaHelp.verification.ok).toBe(true);
 
+    const helpFromSummary = await replay(casework, 'casework-help-from-summary', [...edits, { op: 'click', target: '#summary' }, help, { op: 'click', target: '#summary' }, { op: 'click', target: '#back-history' }, { op: 'click', target: '#summary' }], async (page) => {
+      expect(await page.locator('main').innerText()).toContain(receiptOf(casework));
+    });
+    expect(helpFromSummary.verification.ok).toBe(true);
+
     // Summary -> Help -> Next -> Help -> Next -> Summary, then summary-to-summary go(-5) and a forward go(4) into the queue: no Back off the summary.
     const forwardOnly = await replay(casework, 'casework-help-forward-only', [...edits, { op: 'click', target: '#summary' }, help, { op: 'click', target: '#next' }, help, { op: 'click', target: '#next' }, { op: 'click', target: '#summary' }], async (page) => {
       await page.evaluate(() => history.go(-5)); await page.waitForTimeout(300);
