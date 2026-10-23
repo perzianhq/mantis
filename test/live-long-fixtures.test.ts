@@ -292,6 +292,25 @@ describe('live-long fixture regression coverage', () => {
     expect(bypass.verification.ok).toBe(false);
   }, 120_000);
 
+  it('casework counts a Back to a fragment-link history entry, and fragment entries cannot fake an ordering', async () => {
+    const casework = LIVE_LONG_FIXTURE_CASES.find((entry) => entry.id === 'llf-casework-off')!;
+    const edits = casework.walkthrough.slice(0, -3);
+    const help = { op: 'click' as const, target: 'a[href="#help"]' };
+    const viaHelp = await replay(casework, 'casework-help-back', [...edits, help, { op: 'click', target: '#summary' }, { op: 'click', target: '#back-history' }, { op: 'click', target: '#summary' }], async (page) => {
+      expect(await page.locator('main').innerText()).toContain(receiptOf(casework));
+    });
+    expect(viaHelp.verification.ok).toBe(true);
+
+    // Summary -> Help -> Next -> Help -> Next -> Summary, then summary-to-summary go(-5) and a forward go(4) into the queue: no Back off the summary.
+    const forwardOnly = await replay(casework, 'casework-help-forward-only', [...edits, { op: 'click', target: '#summary' }, help, { op: 'click', target: '#next' }, help, { op: 'click', target: '#next' }, { op: 'click', target: '#summary' }], async (page) => {
+      await page.evaluate(() => history.go(-5)); await page.waitForTimeout(300);
+      await page.evaluate(() => history.go(4)); await page.waitForTimeout(300);
+      if (await page.locator('#summary').count()) await page.locator('#summary').click();
+      expect(await page.locator('main').innerText()).not.toContain(receiptOf(casework));
+    });
+    expect(forwardOnly.verification.ok).toBe(false);
+  }, 120_000);
+
   it('shows a saved retention receipt only after the summary commit', async () => {
     const retention = LIVE_LONG_FIXTURE_CASES.find((entry) => entry.id === 'llf-retention-off')!;
     const completed = await replay(retention, 'retention-summary-saved', retention.walkthrough, async (page) => {
