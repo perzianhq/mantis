@@ -140,5 +140,4 @@ Measured results and their limits: [bench/RESULTS.md](../bench/RESULTS.md).
   are read inline under `[iframe "title"]` with their own number range (`#10001…`).
 
 The goal for each change: preserve useful information, use fewer tokens, add meaning, and avoid slowing actions.
-Local-v1, local-v2 (48 cases) and local-v2.1 (54 cases) are complete and frozen; the separate live-site set is
-in progress. See the [evaluation plan](PLAN.md#evaluation-plan).
+Local-v1, local-v2 (48 cases), local-v2.1 (54 cases), and the separate live-site set [live-v1 v1.7](../bench/RESULTS.md#live-site-scorecard-live-v1-v17) are complete and frozen. See the [evaluation plan](PLAN.md#evaluation-plan).
