@@ -45,6 +45,10 @@ Review changed redirects, access blocks, and page text before changing a catalog
 
 Final scores are in [RESULTS.md](RESULTS.md#live-site-scorecard-live-v1-v17). Everything below was changed or disclosed after seeing results; it is kept here so the headline tables stay short. Entries run newest first.
 
+### Mantis re-run after `src/` gap fixes (20261023)
+
+Mantis was re-run on all 30 tasks x 3 runs for Luna and Haiku (tree and screenshot numbers unchanged). Haiku had 6 MCP connection-failure rows, re-run alone (`...-rec-20261024`, 6/6 success) and merged. Remaining failures: Luna `rfc-8259` run 2, Haiku `node-url` run 1 and `data-gov-climate` runs 1-2, all agent behaviour or site drift, no Mantis defect (sol-reviewed). `livev1-data-data-gov-climate` is fragile (the site's climate page drifts); it stays scored.
+
 ### v1.7 grader fixes (after seeing Luna results)
 
 - `matchesAnswerRequirement` now strips markdown backticks and `**` before matching (source, requirement and `with.value`). A correct answer written as `` `application/json` `` previously failed a literal match; a pickle near-miss still fails.

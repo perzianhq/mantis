@@ -1,0 +1,144 @@
+{
+  "source": "live-v1-haiku-mantis-gapfix-rec-20261024",
+  "judgeProvider": "codex",
+  "judgeModel": "gpt-6.1-sol",
+  "judgeModels": [
+    "gpt-6.1-sol"
+  ],
+  "siteBrokenTasks": [],
+  "runs": [
+    {
+      "task": "livev1-standards-css-color-4",
+      "approach": "mantis",
+      "run": 1,
+      "finalUrl": "https://www.w3.org/TR/css-color-4/",
+      "toolCalls": 6,
+      "totalInputTokens": 93544,
+      "wallS": 44.611,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 5,
+      "finalFrame": "F5",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "livev1-docs-node-url",
+      "approach": "mantis",
+      "run": 3,
+      "finalUrl": "https://nodejs.org/docs/latest/api/url.html",
+      "toolCalls": 7,
+      "totalInputTokens": 120579,
+      "wallS": 28.729,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 4,
+      "finalFrame": "F4",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "livev1-civic-archives-about",
+      "approach": "mantis",
+      "run": 3,
+      "finalUrl": "https://www.archives.gov/about",
+      "toolCalls": 2,
+      "totalInputTokens": 42213,
+      "wallS": 22.171,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 2,
+      "finalFrame": "F2",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "livev1-navigation-wikipedia-ada",
+      "approach": "mantis",
+      "run": 3,
+      "finalUrl": "https://en.wikipedia.org/wiki/Ada_Lovelace",
+      "toolCalls": 2,
+      "totalInputTokens": 44012,
+      "wallS": 16.097,
+      "verdict": "success",
+      "reason": "F2 shows the Ada Lovelace article visible at https://en.wikipedia.org/wiki/Ada_Lovelace, matching the reported final URL.",
+      "evidence": [
+        "F2"
+      ],
+      "frameCount": 2,
+      "finalFrame": "F2",
+      "judgeVerdict": "success",
+      "checks": null,
+      "deterministic": null,
+      "grading": "judge",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "livev1-navigation-met-collection",
+      "approach": "mantis",
+      "run": 1,
+      "finalUrl": "https://www.metmuseum.org/art/collection/search/436535",
+      "toolCalls": 6,
+      "totalInputTokens": 114060,
+      "wallS": 26.268,
+      "verdict": "success",
+      "reason": "The agent used The Met collection search and left the matching object page for Vincent van Gogh’s Wheat Field with Cypresses visibly open.",
+      "evidence": [
+        "F3",
+        "F5"
+      ],
+      "frameCount": 5,
+      "finalFrame": "F5",
+      "judgeVerdict": "success",
+      "checks": null,
+      "deterministic": null,
+      "grading": "judge",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "livev1-navigation-met-collection",
+      "approach": "mantis",
+      "run": 2,
+      "finalUrl": "https://www.metmuseum.org/art/collection/search/436535",
+      "toolCalls": 9,
+      "totalInputTokens": 158442,
+      "wallS": 49.803,
+      "verdict": "success",
+      "reason": "The Met collection search shows the matching result, and the final frame leaves Vincent van Gogh’s Wheat Field with Cypresses object page visibly open.",
+      "evidence": [
+        "F3",
+        "F5",
+        "F6"
+      ],
+      "frameCount": 6,
+      "finalFrame": "F6",
+      "judgeVerdict": "success",
+      "checks": null,
+      "deterministic": null,
+      "grading": "judge",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    }
+  ],
+  "skipped": []
+}

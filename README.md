@@ -35,8 +35,10 @@ Same tasks, same pass criteria, three ways to browse. Mantis vs the accessibilit
 
 | Model | Mantis | Accessibility tree | Screenshots |
 |---|---:|---:|---:|
-| `gpt-6-luna` | **90** | **90** | 85 |
-| `claude-haiku-5-5` | 88 | 86 | **89** |
+| `gpt-6-luna` | 89 | **90** | 85 |
+| `claude-haiku-5-5` | 87 | 86 | **89** |
+
+**Net:** accuracy is on par with the tree (within 1 run of 90 on real sites, equal on long workflows), at roughly 30% fewer tokens and calls on long tasks.
 
 ### Where Mantis is better
 

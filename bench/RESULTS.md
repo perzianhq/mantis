@@ -20,6 +20,7 @@ Headline models are Luna (`gpt-6-luna`) and Haiku (`claude-haiku-5-5`). Suites a
 - Mantis vs tree: Luna 22% less time, 38% fewer input tokens, 29% fewer calls; Haiku 29% less time, 35% fewer input tokens, 18% fewer calls. Scores are equal.
 - Luna's screenshot approach failed 6 of 48 rows; Mantis and the tree failed none.
 - Luna ran locally on Windows (concurrency 30) and Haiku on cloud Linux (concurrency 12), so compare approaches within a model, not times across models. Rows that needed a retry are best-of-two.
+- A later Mantis-only full run (20261023, final fixtures and graders) scored 48/48 for both models (`results/live-long-fixtures-{luna,haiku}-mantis-final-20261023.md`); the table keeps the same-condition three-way run so approaches stay comparable.
 - Basket and retention rows were rerun after two fixture fixes (history restore, unsaved retention summary); other rows were regraded offline with the current graders from the same runs. Merged files: `results/live-long-fixtures-{luna,haiku}-merged-20261023.md`.
 
 ## Live-site scorecard (live-v1 v1.7)
@@ -30,15 +31,17 @@ Frozen [live-v1](live-v1.md) v1.7: 30 real-site tasks x 3 approaches x 3 runs = 
 
 | | Mantis | Accessibility tree | Screenshots |
 |---|---:|---:|---:|
-| Success (of 90) | **90** | **90** | 85 |
-| Avg input tokens | **91.5k** | 123.1k | 122.7k |
+| Success (of 90) | 89 | **90** | 85 |
+| Avg input tokens | **88.1k** | 123.1k | 122.7k |
 
 **Haiku (`claude-haiku-5-5`)**
 
 | | Mantis | Accessibility tree | Screenshots |
 |---|---:|---:|---:|
-| Success (of 90) | 88 | 86 | **89** |
-| Avg input tokens | **50.4k** | 116.5k | 53.1k |
+| Success (of 90) | 87 | 86 | **89** |
+| Avg input tokens | 77.6k | 116.5k | **53.1k** |
+
+Mantis rows are a re-run after `src/` gap fixes (20261023); Haiku includes 6 connection-failure rows re-run alone (6/6 success). Failures: Luna 1 (`rfc-8259`), Haiku 3 (`node-url`, `data-gov-climate` x2), all agent behaviour or site drift; see the [live-v1 changelog](live-v1.md#changelog-and-disclosures).
 
 ## Side scorecards (DeepSeek only, local fixtures)
 
