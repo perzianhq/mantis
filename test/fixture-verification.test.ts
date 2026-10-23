@@ -1207,22 +1207,34 @@ it('live-long-fixtures: no ledger, no pass, even with the right receipt in the a
   }
 });
 
-it('live-long-fixtures: reports differing ledger fields without changing the verdict', () => {
+it('live-long-fixtures: accepts harmless inspection after completion but rejects a later mutation, pending work, or skipped hazard evidence', () => {
   const entry = LIVE_LONG_FIXTURE_CASES.find((candidate) => candidate.id === 'llf-basket-off')!;
   const expected = entry.expected as { revision: number; receipt: string; cart: string[][]; coupon: string };
-  const event = (ledger: object): FixtureObservation => ({
-    arrival: 0, path: '/live-long/basket/off/done', kind: 'settled', documentId: 'doc', target: { tag: '', id: '', name: '', type: '', ariaLabel: '', text: '', href: '', value: '', checked: false }, controls: {}, text: '',
-    long: { url: '/live-long/basket/off/done', revision: (ledger as { revision: number }).revision, ledger },
+  const event = (ledger: object, options: { path?: string; kind?: FixtureObservation['kind']; target?: string; arrival?: number } = {}): FixtureObservation => ({
+    arrival: options.arrival ?? 0, path: options.path ?? '/live-long/basket/off/done', kind: options.kind ?? 'settled', documentId: 'doc', target: { tag: 'button', id: '', name: '', type: '', ariaLabel: options.target ?? '', text: options.target ?? '', href: '', value: '', checked: false }, controls: {}, text: '',
+    long: { url: options.path ?? '/live-long/basket/off/done', revision: (ledger as { revision: number }).revision, ledger },
   });
   const answer = `Receipt ${expected.receipt} total 101.29`;
-  expect(gradeLiveLongFixtureCase(entry.id, answer, [event(expected)]).pass).toBe(true);
+  const hazard = event(expected, { kind: 'click', target: 'Add p01', arrival: 0 });
+  const completed = event(expected, { arrival: 1 });
+  // Inspecting a completed workflow can change the route but not its ledger.
+  const inspected = event(expected, { path: '/live-long/basket/off/catalog', arrival: 2 });
+  expect(gradeLiveLongFixtureCase(entry.id, answer, [hazard, completed, inspected]).pass).toBe(true);
 
   const nearMiss = { ...expected, cart: [['p01', '1']], coupon: 'OTHER' };
-  const failed = gradeLiveLongFixtureCase(entry.id, answer, [event(nearMiss)]);
+  const failed = gradeLiveLongFixtureCase(entry.id, answer, [hazard, event(nearMiss, { arrival: 1 })]);
   expect(failed.pass).toBe(false);
   expect(failed.details).toContain('full terminal ledger differs from expected state: cart, coupon');
 
-  const missingCommit = gradeLiveLongFixtureCase(entry.id, answer, [event({ ...expected, completed: false, receipt: '', revision: expected.revision - 1 })]);
+  const missingCommit = gradeLiveLongFixtureCase(entry.id, answer, [hazard, event({ ...expected, completed: false, receipt: '', revision: expected.revision - 1 }, { arrival: 1 })]);
   expect(missingCommit.pass).toBe(false);
   expect(missingCommit.details).toContain('workflow is incomplete or still pending (edits complete; final commit missing)');
+
+  const pending = gradeLiveLongFixtureCase(entry.id, answer, [hazard, event({ ...expected, pending: 1 }, { arrival: 1 })]);
+  expect(pending.pass).toBe(false);
+  expect(pending.details).toContain('workflow is incomplete or still pending');
+
+  const skippedHazard = gradeLiveLongFixtureCase(entry.id, answer, [completed, inspected]);
+  expect(skippedHazard.pass).toBe(false);
+  expect(skippedHazard.details).toContain('missing hazard-trigger evidence (add a product)');
 });

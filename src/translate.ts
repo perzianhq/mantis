@@ -2,6 +2,8 @@ import type { RawNode, Snapshot } from './capture/index.js';
 
 /** Soft cap on the text view; past this, offscreen content is dropped progressively. */
 export const BUDGET_CHARS = 6000;
+/** A full read is untrimmed, but delivered as bounded excerpts so one call cannot swamp the agent. */
+export const FULL_BUDGET_CHARS = 12000;
 
 /** Prose budget: paragraphs shown in the default view before "…N more paragraphs" (unless the whole page fits). */
 const PROSE_MAX = 8;
@@ -10,8 +12,10 @@ const PROSE_CHARS = 120;
 export interface ReadOptions {
   /** Only this region (case-insensitive substring of its label/name, e.g. "nav", "sidebar"). */
   region?: string;
-  /** No trimming: every paragraph, every link, every href, no run collapsing, no budget. */
+  /** No trimming within the returned excerpt: every paragraph, link, href, and row item. */
   full?: boolean;
+  /** Character offset for the next bounded full excerpt. */
+  offset?: number;
   /** Bypass site memory for this call: show every region in full even if it was seen before. */
   fresh?: boolean;
 }
@@ -615,7 +619,7 @@ export function translate(snap: Snapshot, budget: number = BUDGET_CHARS, opts: R
     head.push(picked.note ?? `(region "${opts.region}" only)`);
   }
   const full = opts.full === true;
-  if (full) budget = Infinity;
+  if (full) budget = FULL_BUDGET_CHARS;
 
   const dupNames = new Map<string, number>();
   for (const n of nodes) {
@@ -635,6 +639,21 @@ export function translate(snap: Snapshot, budget: number = BUDGET_CHARS, opts: R
   }
 
   let result = renderBody(nodes, levels[0], ctx);
+  if (full) {
+    const body = result.lines.join('\n');
+    const offset = Number.isSafeInteger(opts.offset) && opts.offset! > 0 ? Math.min(opts.offset!, body.length) : 0;
+    // Reserve enough room to explain how to request the next excerpt. The source body is never
+    // structurally trimmed in full mode; a caller can page through every character by offset.
+    const reserve = 180;
+    const available = Math.max(256, budget - head.join('\n').length - tail.join('\n').length - reserve);
+    const excerpt = body.slice(offset, offset + available);
+    const next = offset + excerpt.length;
+    const note = next < body.length
+      ? `(full excerpt ${offset + 1}-${next} of ${body.length} characters; call read({full:true, offset:${next}}) for more)`
+      : '';
+    if (hook) hook.shown(infos, []);
+    return [...head, ...(excerpt ? [excerpt] : ['(no visible content)']), ...tail, ...(note ? [note] : [])].join('\n');
+  }
   const fits = (r: { lines: string[] }): boolean => [...head, ...r.lines, ...tail].join('\n').length <= budget;
   for (let i = 1; !fits(result) && i < levels.length; i++) result = renderBody(nodes, levels[i], ctx);
 
@@ -670,7 +689,7 @@ export function translate(snap: Snapshot, budget: number = BUDGET_CHARS, opts: R
  * case-insensitive. Exact name matches first, controls before text, then page order; each hit says
  * which region it is in.
  */
-export function findInSnapshot(snap: Snapshot, query: string, max = 20): string {
+export function findInSnapshot(snap: Snapshot, query: string, max = 20, contextChars = 360): string {
   const q = query.toLowerCase().replace(/\s+/g, ' ').trim();
   if (!q) return 'error: give the text to find';
   const nodes = deriveRegions(snap);
@@ -690,15 +709,42 @@ export function findInSnapshot(snap: Snapshot, query: string, max = 20): string 
   };
   const snippet = (s: string): string => {
     const at = s.toLowerCase().indexOf(q);
-    if (s.length <= 120 || at < 60) return clip(s, 120);
-    return '…' + clip(s.slice(at - 40), 119);
+    if (s.length <= 160) return s;
+    const start = Math.max(0, at - 55);
+    const end = Math.min(s.length, at + q.length + 90);
+    return `${start ? '…' : ''}${s.slice(start, end)}${end < s.length ? '…' : ''}`;
+  };
+  const contextLimit = Math.max(80, Math.min(800, Math.floor(contextChars)));
+  const context = (hit: number): string | undefined => {
+    const node = nodes[hit];
+    const nearby = node.row === undefined
+      ? nodes.map((_, i) => i).filter((i) => nodes[i].parent === node.parent && Math.abs(i - hit) <= 3)
+      : nodes.map((n, i) => ({ n, i })).filter(({ n }) => n.row === node.row).map(({ i }) => i);
+    const part = (n: RawNode): string =>
+      n.kind === 'interactive' ? interactiveLine(n, { maxName: 60 })
+        : n.kind === 'heading' ? `${'#'.repeat(Math.min(n.level ?? 1, 4))} ${quote(clip(n.name, 80))}`
+          : `"${quote(snippet(n.name))}"`;
+    const parts: string[] = [];
+    let used = 0;
+    for (const i of nearby) {
+      if (i === hit || nodes[i].kind === 'region') continue;
+      const value = part(nodes[i]);
+      if (used + value.length + (parts.length ? 3 : 0) > contextLimit) {
+        if (parts.length) parts.push('…');
+        break;
+      }
+      parts.push(value);
+      used += value.length + (parts.length ? 3 : 0);
+    }
+    return parts.length ? `  context: ${parts.join(' · ')}` : undefined;
   };
   const lines = hits.slice(0, max).map(({ n, i }) => {
     const body =
       n.kind === 'interactive' ? interactiveLine(n, { maxName: 80 })
         : n.kind === 'heading' ? `${'#'.repeat(Math.min(n.level ?? 1, 4))} ${quote(clip(n.name, 120))}`
           : `"${quote(snippet(n.name))}"`;
-    return `${body}${n.inViewport ? '' : ' (offscreen)'}${where(i)}`;
+    const local = context(i);
+    return `${body}${n.inViewport ? '' : ' (offscreen)'}${where(i)}${local ? `\n${local}` : ''}`;
   });
   const head = `found ${hits.length} match${hits.length === 1 ? '' : 'es'} for "${quote(query)}"${hits.length > max ? ` (first ${max} shown)` : ''}`;
   return [head, ...lines].join('\n');

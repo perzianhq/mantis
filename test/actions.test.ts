@@ -237,6 +237,21 @@ describe('fill', () => {
     expect(after).not.toMatch(/checkbox "Terms" \(checked\)/);
   });
 
+  it('stops and reports partial completion when an earlier field rerenders a remaining field', async () => {
+    const page = 'data:text/html,' + encodeURIComponent(
+      '<title>Dependent form</title><label for=first>First</label><input id=first oninput="document.getElementById(\'second\').outerHTML=\'<label for=second>Second</label><input id=second>\'">' +
+      '<label for=second>Second</label><input id=second>',
+    );
+    const view = await b.open(page);
+    const first = idOf(view, 'textbox "First"');
+    const second = idOf(view, 'textbox "Second"');
+    const result = await b.fill([{ id: first, value: 'one' }, { id: second, value: 'two' }]);
+    expect(result).toContain(`error: filled #${first}; #${second}: no longer exists after an earlier field changed the page`);
+    const values = await (await (b as any).activePage()).evaluate(() => Array.from(document.querySelectorAll('input')).map((node: HTMLInputElement) => node.value));
+    // Near miss: a replacement field is not silently filled after its identity was invalidated.
+    expect(values).toEqual(['one', '']);
+  });
+
   it('errors on no fields, an unknown id, and a non-boolean for a checkbox', async () => {
     const view = await b.open(form());
     expect(await b.fill([])).toBe('error: no fields given');
@@ -255,6 +270,7 @@ describe('agent tool capabilities', () => {
       setTimeout(() => { document.getElementById('message')!.textContent = 'Ready marker'; }, 80);
     });
     expect(await b.waitFor({ text: 'Ready marker', timeoutSeconds: 1 })).toContain('waited for text "Ready marker" to appears');
+    expect(await b.waitFor({ text: 'Ready marker', state: 'present', timeoutSeconds: 1 })).toContain('waited for text "Ready marker" to present');
     await page.evaluate(() => {
       setTimeout(() => { document.getElementById('message')!.remove(); }, 80);
       setTimeout(() => { (document.getElementById('later') as HTMLButtonElement).disabled = false; }, 160);
@@ -303,6 +319,7 @@ describe('agent tool capabilities', () => {
     expect(await b.waitFor({ text: 'x', id: later })).toContain('either text or id');
     expect(await b.waitFor({ text: '  ' })).toContain('cannot be empty');
     expect(await b.waitFor({ id: later, state: 'enabled', timeoutSeconds: 0.1 })).toContain('timed out after 0.1s');
+    expect(await b.waitFor({ text: 'Initial message', state: 'enabled' as any })).toContain('text waits use state "present", "appears", or "disappears"');
   });
 
   it('lists tabs, switches the active page, closes a tab, and rejects an unknown tab', async () => {

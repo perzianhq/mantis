@@ -266,6 +266,32 @@ function collect(before: Snapshot, after: Snapshot): Parts {
   const A = index(before);
   const B = index(after);
 
+  /**
+   * Controls in a repeated row are often recreated together, so their numbers alone cannot
+   * say which replacement belongs to which entity. Keep a short visible row label beside a
+   * newly-issued control, but only when that label distinguishes this row from its siblings.
+   * Identical labels deliberately remain ambiguous rather than borrowing position as identity.
+   */
+  const rowLabel = (i: number): string | undefined => {
+    const n = B.nodes[i];
+    if (n.row === undefined) return undefined;
+    const labelFor = (row: number): string => B.nodes
+      .filter((m) => m.row === row && isTextual(m) && !!m.name.trim())
+      .map((m) => textNorm(m.name))
+      .filter((name, at, all) => at === all.indexOf(name) && norm(name) !== norm(n.name))
+      .slice(0, 2)
+      .join(' · ');
+    const label = labelFor(n.row);
+    if (!label) return undefined;
+    const peerRows = new Set(
+      B.nodes
+        .filter((m) => m.rowGroup === n.rowGroup && m.kind === 'interactive' && m.role === n.role && norm(m.name) === norm(n.name) && m.row !== undefined)
+        .map((m) => m.row!),
+    );
+    const sameLabel = [...peerRows].filter((row) => labelFor(row) === label).length;
+    return sameLabel === 1 ? clip(quote(label), 80) : undefined;
+  };
+
   // ---- added ----
   const groups: Group[] = [];
   const groupOf = new Map<string, Group>();
@@ -361,7 +387,8 @@ function collect(before: Snapshot, after: Snapshot): Parts {
     const nextIsAddedControl =
       next && next.kind === 'interactive' && next.parent === n.parent && isAdded(i + 1);
     if (n.kind === 'interactive') {
-      g.items.push(interactiveLine(n));
+      const label = rowLabel(i);
+      g.items.push(`${label ? `[row "${label}"] ` : ''}${interactiveLine(n)}`);
       g.interactive++;
     } else if (n.kind === 'heading') {
       if (parent && n.parent === i - 1 && norm(n.name) === norm(parent.name)) return; // repeats the region title

@@ -27,12 +27,13 @@ it('exposes the core tools and the fallback ladder', async () => {
   expect(tools.map((t) => t.name).sort()).toEqual(['ask_human', 'back', 'click', 'data', 'fill', 'find', 'forget', 'hover', 'look', 'media', 'ocr', 'open', 'press', 'read', 'scroll', 'select', 'tabs', 'type', 'upload', 'wait_for']);
 });
 
-it('guides bottom-loaded feed search through End and the returned region', async () => {
+it('guides bottom-loaded feed search and focused local context', async () => {
   const { tools } = await client.listTools();
   const description = (name: string) => tools.find((tool) => tool.name === name)!.description!;
   expect(description('press')).toContain('For bottom-loaded feeds, try End (Control+End if no movement) to load more');
   expect(description('press')).toContain('repeat only while new items appear');
-  expect(description('find')).toContain('For adjacent paragraph context, read the returned region');
+  expect(description('find')).toContain('actionable row neighbours, and bounded local context');
+  expect(description('find')).toContain('Use context_chars to expand just that local context');
   expect(description('find')).toContain('a matched heading is not a region label');
 });
 
@@ -41,13 +42,15 @@ it('retains read verification, memory expansion and recovery contracts in compac
   const description = (name: string) => tools.find((tool) => tool.name === name)!.description!;
   const read = description('read');
   expect(read).toContain('act by #number');
-  expect(read).toContain('Re-read after changes');
   expect(read).toContain('~"x" names are guesses');
-  expect(read).toContain('"Same as before" retains #numbers; region/full/fresh expands it');
-  expect(read).toContain('Before finishing, re-read and visibly verify every task constraint (filters, sort, size, quantity, date range)');
+  expect(read).toContain('"Same as before" retains #numbers; region/full/fresh expands it; full is paged with offset');
+  expect(read).toContain('Verify the entity identity before editing');
+  expect(read).toContain('After an action confirms completion, stop and report it');
   expect(read).toContain('If #number is stale, read() and retry; if on the wrong page, back() and keep searching');
   expect(description('find')).toContain('Case-insensitive whole-page text search, including trimmed content');
-  expect(description('find')).toContain('returns #numbers and region');
+  expect(description('fill')).toContain('Prefer one mixed call for related text, dropdown, and checkbox fields');
+  expect(description('fill')).toContain('On failure or rerender it stops and reports partial completion');
+  expect(description('wait_for')).toContain('text states are present (or appears) / disappears');
   expect(description('forget')).toContain('Clear region memory; next read shows everything');
   expect(description('scroll')).toContain('Scroll up/down/left/right (default down)');
   expect(description('scroll')).toContain('id alone brings #id into view; id + direction scrolls its containing list/panel/table');
@@ -81,7 +84,8 @@ it('a heading hit supplies a real region for adjacent paragraph context, not a h
   await call('open', { url: 'data:text/html,' + encodeURIComponent(html) });
   const found = await call('find', { text: 'Entry Beta' });
   expect(found.text).toContain('## Entry Beta');
-  expect(found.text).not.toContain('Target note: indigo.');
+  expect(found.text).toContain('Target note: indigo.');
+  expect(found.text).not.toContain('Unrelated note: teal.');
   const region = found.text.match(/in \[([^\]]+)\]/)![1];
   const context = await call('read', { region });
   expect(context.isError).toBe(false);

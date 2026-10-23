@@ -51,6 +51,7 @@ import type { SarvamAgentResult } from './sarvam-agent.js';
 import { sarvamExecutionExcludingWaits } from './timing.js';
 import { ActiveWorkTimeout } from './active-timeout.js';
 import type { ActiveTimeoutTelemetry, SarvamWaitKind, TimeoutKind } from './active-timeout.js';
+import { recoveryCounts } from './recovery-report.js';
 import { rowKey, selectExactRows } from './row-selector.js';
 import { COMPLETION_GUIDANCE, EXPLICIT_ACTION_GUIDANCE } from './guidance.js';
 
@@ -356,6 +357,8 @@ interface AttemptResult {
   grading: { version: 1; hash: string; requirements: import('./grading.js').AnswerRequirement[] } | null;
   diagnostics: string[];
   harnessFailure: boolean;
+  /** Limits actually applied to this attempt, retained independently of settings text. */
+  budget: { maxSteps: number | null; timeoutMs: number };
 }
 
 interface RunResult {
@@ -374,6 +377,11 @@ interface RunResult {
   timings: { mcpStartupMs: number; cliStartupMs: number | null; cliExecutionMs: number | null; cliWallMs: number | null; verificationMs: number; cleanupMs: number; /** Harness frame capture (steps + final); not part of any CLI timing. */ captureMs: number; sarvamLimiterQueueMs?: number; sarvamCooldownMs?: number; sarvamRetryBackoffMs?: number; sarvamActiveRequestMs?: number; sarvamExecutionMs?: number | null; sarvamActiveWorkMs?: number; sarvamQuotaWaitMs?: number; sarvamWallCapMs?: number; sarvamTimeoutKind?: TimeoutKind | null };
   resolvedModels: string[];
   attempts: AttemptResult[];
+  /** Attempt 1, before a connection rerun can select a later attempt. */
+  firstPass: { status: AttemptStatus; ok: boolean; valid: boolean };
+  /** Best retained attempt; mergers may preserve this field when selecting rows. */
+  recovery: { status: AttemptStatus; ok: boolean; valid: boolean };
+  budget: { maxSteps: number | null; timeoutMs: number };
 }
 
 async function runOnce(task: AgentTask, approach: Approach, base: string, run: number, attempt: number, fixtures: Awaited<ReturnType<typeof startFixtures>>, logDir: string): Promise<AttemptResult> {
@@ -672,6 +680,7 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
     exitCode: processResult.exitCode, signal: processResult.signal, timedOut: processResult.timedOut, fixtureCheck, fixtureEvidence,
     grading: task.judged ? null : { version: 1, hash: createHash('sha256').update(JSON.stringify(answerGrade!.requirements)).digest('hex'), requirements: answerGrade!.requirements },
     diagnostics, harnessFailure: isHarnessFailure({ status, error, diagnostics }),
+    budget: { maxSteps: PROVIDER === 'sarvam' ? sarvamMaxStepsForTask(task) : null, timeoutMs: TIMEOUT_MS },
   };
 }
 
@@ -704,6 +713,7 @@ function report(results: RunResult[], approaches: Approach[], tasks: AgentTask[]
   L.push(`| | ${approaches.map((a) => APPROACHES[a].label).join(' | ')} |`);
   L.push(`|---|${approaches.map(() => '---:').join('|')}|`);
   const by = (a: Approach): RunResult[] => results.filter((r) => r.approach === a);
+  const outcomes = (a: Approach) => recoveryCounts(by(a));
   const sumNumber = (rs: RunResult[], k: 'toolCalls' | 'toolErrors' | 'observationChars' | 'observationImages' | 'mcpStartupMs' | 'verificationMs' | 'cleanupMs' | 'captureMs'): number => rs.reduce((s, r) => {
     if (k === 'toolCalls' || k === 'toolErrors' || k === 'observationChars' || k === 'observationImages') return s + r[k];
     return s + (r.timings[k] ?? 0);
@@ -716,7 +726,10 @@ function report(results: RunResult[], approaches: Approach[], tasks: AgentTask[]
     const vals = rs.map((r) => r.timings[k]);
     return vals.length === 0 || vals.some((x) => x === null) ? null : vals.reduce<number>((s, x) => s + (x ?? 0), 0);
   };
-  L.push(`| Correct | ${approaches.map((a) => `${by(a).filter((r) => r.ok).length} / ${by(a).filter((r) => r.valid).length}`).join(' | ')} |`);
+  L.push(`| First-pass correct (attempt 1) | ${approaches.map((a) => { const c = outcomes(a); return `${c.firstPassSuccesses} / ${c.firstPassValid}`; }).join(' | ')} |`);
+  L.push(`| After reruns / merged correct | ${approaches.map((a) => { const c = outcomes(a); return `${c.recoveredSuccesses} / ${c.recoveredValid}`; }).join(' | ')} |`);
+  L.push(`| Rows with unknown usage | ${approaches.map((a) => `${outcomes(a).unknownUsageRows} rows have unknown usage`).join(' | ')} |`);
+  L.push(`| Correct (legacy terminal row) | ${approaches.map((a) => `${by(a).filter((r) => r.ok).length} / ${by(a).filter((r) => r.valid).length}`).join(' | ')} |`);
   L.push(`| Connection-failure attempts | ${approaches.map((a) => by(a).reduce((n, r) => n + r.attempts.filter((attempt) => attempt.status === 'connection_failure').length, 0)).join(' | ')} |`);
   L.push(`| Logical runs ending in connection failure | ${approaches.map((a) => by(a).filter((r) => r.status === 'connection_failure').length).join(' | ')} |`);
   L.push(`| Other attempted failures | ${approaches.map((a) => by(a).filter((r) => r.valid && !r.ok).length).join(' | ')} |`);
@@ -751,15 +764,26 @@ function report(results: RunResult[], approaches: Approach[], tasks: AgentTask[]
   L.push(`| Cost estimate (USD; including retries) | ${approaches.map((a) => { const n = sumNullable(by(a), 'costUsd'); return n === null ? 'unknown' : n.toFixed(2); }).join(' | ')} |`);
   if (PROVIDER === 'sarvam') L.push(`| Cost estimate (INR; including retries) | ${approaches.map((a) => { const n = sumNullable(by(a), 'costInr'); return n === null ? 'unknown' : n.toFixed(2); }).join(' | ')} |`);
   L.push('');
+  L.push(`- Effective budgets: ${PROVIDER === 'sarvam' ? 'per-row max steps are retained below (including suite-specific caps)' : 'no provider max-step loop'}; timeout ${TIMEOUT_S}s per attempt${PROVIDER === 'sarvam' ? `; wall cap ${WALL_TIMEOUT_S}s` : ''}.`);
+  L.push('');
   L.push('## Per run');
   L.push('');
-  L.push(`| Task | Approach | Run | Status | Attempts | Tool calls | Tool errors |${PROVIDER === 'sarvam' ? ' API attempts | 429s |' : ''} Obs. chars | Obs. images | Normal in | Cache write | Cache read | Output | MCP startup (s) | CLI startup (s) | CLI execution (s) | CLI wall (s) | Verify (s) | Cleanup (s) | Answer / error |`);
-  L.push(`|---|---|---:|---|---:|---:|---:|${PROVIDER === 'sarvam' ? '---:|---:|' : ''}---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|`);
+  L.push(`| Task | Approach | Run | Status | First pass | Recovery | Attempts | Max steps | Timeout (s) | Tool calls | Tool errors |${PROVIDER === 'sarvam' ? ' API attempts | 429s |' : ''} Obs. chars | Obs. images | Normal in | Cache write | Cache read | Output | MCP startup (s) | CLI startup (s) | CLI execution (s) | CLI wall (s) | Verify (s) | Cleanup (s) | Answer / error |`);
+  L.push(`|---|---|---:|---|---|---|---:|---:|---:|---:|---:|${PROVIDER === 'sarvam' ? '---:|---:|' : ''}---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|`);
   for (const t of tasks) {
     for (const r of results.filter((x) => x.task === t.id)) {
       const note = (r.error || r.answer).replace(/\|/g, '\\|').replace(/\s+/g, ' ');
-      L.push(`| \`${r.task}\` | ${APPROACHES[r.approach].label} | ${r.run} | ${r.status} | ${r.attempts.length} | ${r.toolCalls} | ${r.toolErrors} |${PROVIDER === 'sarvam' ? ` ${r.attempts.reduce((n, a) => n + a.apiAttempts, 0)} | ${r.attempts.reduce((n, a) => n + a.rateLimits, 0)} |` : ''} ${fmt(r.observationChars)} | ${r.observationImages} | ${fmtMaybe(r.inputTokens)} | ${fmtMaybe(r.cacheWriteTokens)} | ${fmtMaybe(r.cacheReadTokens)} | ${fmtMaybe(r.outputTokens)} | ${(r.timings.mcpStartupMs / 1000).toFixed(1)} | ${r.timings.cliStartupMs === null ? 'unknown' : (r.timings.cliStartupMs / 1000).toFixed(1)} | ${r.timings.cliExecutionMs === null ? 'unknown' : (r.timings.cliExecutionMs / 1000).toFixed(1)} | ${r.timings.cliWallMs === null ? 'unknown' : (r.timings.cliWallMs / 1000).toFixed(1)} | ${(r.timings.verificationMs / 1000).toFixed(2)} | ${(r.timings.cleanupMs / 1000).toFixed(2)} | ${note} |`);
+      L.push(`| \`${r.task}\` | ${APPROACHES[r.approach].label} | ${r.run} | ${r.status} | ${r.firstPass.status} | ${r.recovery.status} | ${r.attempts.length} | ${r.budget.maxSteps ?? 'n/a'} | ${(r.budget.timeoutMs / 1000).toFixed(0)} | ${r.toolCalls} | ${r.toolErrors} |${PROVIDER === 'sarvam' ? ` ${r.attempts.reduce((n, a) => n + a.apiAttempts, 0)} | ${r.attempts.reduce((n, a) => n + a.rateLimits, 0)} |` : ''} ${fmt(r.observationChars)} | ${r.observationImages} | ${fmtMaybe(r.inputTokens)} | ${fmtMaybe(r.cacheWriteTokens)} | ${fmtMaybe(r.cacheReadTokens)} | ${fmtMaybe(r.outputTokens)} | ${(r.timings.mcpStartupMs / 1000).toFixed(1)} | ${r.timings.cliStartupMs === null ? 'unknown' : (r.timings.cliStartupMs / 1000).toFixed(1)} | ${r.timings.cliExecutionMs === null ? 'unknown' : (r.timings.cliExecutionMs / 1000).toFixed(1)} | ${r.timings.cliWallMs === null ? 'unknown' : (r.timings.cliWallMs / 1000).toFixed(1)} | ${(r.timings.verificationMs / 1000).toFixed(2)} | ${(r.timings.cleanupMs / 1000).toFixed(2)} | ${note} |`);
     }
+  }
+  L.push('');
+  L.push('## Per attempt cost and execution');
+  L.push('');
+  L.push('| Task | Approach | Run | Attempt | Status | Max steps | Timeout (s) | Tool calls | Total input tokens | CLI execution (s) | Cost USD | Cost INR | Usage |');
+  L.push('|---|---|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|---|');
+  for (const r of results) for (const attempt of r.attempts) {
+    const costUsd = attempt.usage.costUsd;
+    L.push(`| \`${r.task}\` | ${APPROACHES[r.approach].label} | ${r.run} | ${attempt.attempt} | ${attempt.status} | ${attempt.budget.maxSteps ?? 'n/a'} | ${(attempt.budget.timeoutMs / 1000).toFixed(0)} | ${attempt.toolCalls} | ${fmtMaybe(attempt.totalInputTokens)} | ${attempt.timings.cliExecutionMs === null ? 'unknown' : (attempt.timings.cliExecutionMs / 1000).toFixed(1)} | ${fmtMaybe(costUsd)} | ${fmtMaybe(attempt.costInr)} | ${attempt.usageComplete && attempt.totalInputTokens !== null ? 'known' : 'unknown'} |`);
   }
   return L.join('\n') + '\n';
 }
@@ -819,7 +843,7 @@ if (!existsSync(jsonPath) && RESUME) throw new Error(`AGENT_RESUME=1 requested, 
 const settings = {
   provider: PROVIDER, suite: SUITE, fixtureSeed: FIXTURE_VARIANT?.seed ?? null,
   ...(isVersionedLocalSuite ? { suiteVersion: SUITE === LOCAL_V21_SUITE ? 2 : 1, suiteManifest } : isLiveV1Suite || isLiveLongSuite ? { suiteVersion: 1, suiteManifest } : {}),
-  tasks: tasks.map((t) => t.id), approaches, runs: RUNS, rows: exactRows.rows, model: MODEL, reasoning: PROVIDER === 'codex' ? REASONING : PROVIDER === 'sarvam' ? `max-steps:${SARVAM_MAX_STEPS}${isVersionedLocalSuite ? `;v2-standard:${V2_STANDARD_MAX_STEPS};v2-circuit:${V2_CIRCUIT_BREAKER_FAILURES}` : ''}` : 'not-applicable', timeoutMs: TIMEOUT_MS, ...(PROVIDER === 'sarvam' ? { wallTimeoutMs: WALL_TIMEOUT_MS } : {}), concurrency: CONCURRENCY, sarvamMaxTokens: SARVAM_MAX_TOKENS,
+  tasks: tasks.map((t) => t.id), approaches, runs: RUNS, rows: exactRows.rows, model: MODEL, reasoning: PROVIDER === 'codex' ? REASONING : PROVIDER === 'sarvam' ? `max-steps:${SARVAM_MAX_STEPS}${isVersionedLocalSuite ? `;v2-standard:${V2_STANDARD_MAX_STEPS};v2-circuit:${V2_CIRCUIT_BREAKER_FAILURES}` : ''}` : 'not-applicable', maxSteps: PROVIDER === 'sarvam' ? SARVAM_MAX_STEPS : null, timeoutMs: TIMEOUT_MS, ...(PROVIDER === 'sarvam' ? { wallTimeoutMs: WALL_TIMEOUT_MS } : {}), concurrency: CONCURRENCY, sarvamMaxTokens: SARVAM_MAX_TOKENS,
   toolRestrictions: {
     builtins: PROVIDER === 'codex'
       ? ['shell', 'apps', 'plugins', 'multi_agent', 'goals', 'sleep_tool', 'skill_search', 'view_image', 'browser_use', 'computer_use', 'in_app_browser', 'web_search']
@@ -936,6 +960,9 @@ try {
             return { sarvamLimiterQueueMs: sum('sarvamLimiterQueueMs'), sarvamCooldownMs: sum('sarvamCooldownMs'), sarvamRetryBackoffMs: sum('sarvamRetryBackoffMs'), sarvamActiveRequestMs: sum('sarvamActiveRequestMs'), sarvamExecutionMs: execution };
           })() : {}),
         }, attempts,
+        firstPass: { status: attempts[0]!.status, ok: attempts[0]!.status === 'success', valid: attempts[0]!.status !== 'connection_failure' },
+        recovery: { status: finalAttempt.status, ok: attempts.some((item) => item.status === 'success'), valid: attempts.some((item) => item.status !== 'connection_failure') },
+        budget: finalAttempt.budget,
         resolvedModels: [...new Set(attempts.flatMap((x) => x.resolvedModels))],
       };
       results.push(r);

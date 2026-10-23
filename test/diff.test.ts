@@ -37,6 +37,29 @@ describe('diffSnapshots (pure)', () => {
     );
   });
 
+  it('keeps a unique repeated-row label next to regenerated controls, but does not invent one for duplicate labels', () => {
+    const before = snap([
+      region('main'),
+      text('Maple', { parent: 0, row: 1, rowGroup: 9 }), btn(1, 'Edit', { parent: 0, row: 1, rowGroup: 9 }),
+      text('Willow', { parent: 0, row: 2, rowGroup: 9 }), btn(2, 'Edit', { parent: 0, row: 2, rowGroup: 9 }),
+    ]);
+    const after = snap([
+      region('main'),
+      text('Willow', { parent: 0, row: 11, rowGroup: 9 }), btn(3, 'Edit', { parent: 0, row: 11, rowGroup: 9 }),
+      text('Maple', { parent: 0, row: 12, rowGroup: 9 }), btn(4, 'Edit', { parent: 0, row: 12, rowGroup: 9 }),
+    ]);
+    expect(diffSnapshots(before, after)).toContain('+ [main] [row "Willow"] #3 button "Edit"');
+    expect(diffSnapshots(before, after)).toContain('+ [row "Maple"] #4 button "Edit"');
+
+    const duplicate = snap([
+      region('main'),
+      text('Untitled', { parent: 0, row: 21, rowGroup: 9 }), btn(5, 'Edit', { parent: 0, row: 21, rowGroup: 9 }),
+      text('Untitled', { parent: 0, row: 22, rowGroup: 9 }), btn(6, 'Edit', { parent: 0, row: 22, rowGroup: 9 }),
+    ]);
+    // Near miss: equal visible labels provide no safe identity, so position is not fabricated.
+    expect(diffSnapshots(before, duplicate)).not.toContain('[row "Untitled"]');
+  });
+
   it('puts the contents of a new dialog under its header and flags that it covers the page', () => {
     const before = snap([region('main'), btn(1, 'Open', { parent: 0 })]);
     const after = snap([

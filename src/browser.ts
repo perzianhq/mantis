@@ -437,7 +437,7 @@ export class MantisBrowser {
   }
 
   /**
-   * The numbered view of the page. `region` narrows to one region; `full` turns trimming off;
+   * The numbered view of the page. `region` narrows to one region; `full` turns trimming off within a bounded excerpt;
    * `fresh` shows regions in full that site memory would otherwise summarise (as `full` and `region` also do).
    */
   async read(opts: ReadOptions = {}): Promise<string> {
@@ -445,13 +445,13 @@ export class MantisBrowser {
   }
 
   /** Search the whole page, including parts read() trimmed or summarised, for controls and text. */
-  async find(query: string): Promise<string> {
+  async find(query: string, contextChars?: number): Promise<string> {
     return this.guard(async () => {
       const page = await this.activePage();
       const observed = await this.observe(page);
       const { snap } = observed;
       this.remember(snap, observed.doc);
-      const text = findInSnapshot(snap, query);
+      const text = findInSnapshot(snap, query, 20, contextChars);
       const captcha = await detectCaptcha(page);
       return captcha ? `${text}\n${captcha}` : text;
     });
@@ -696,6 +696,16 @@ export class MantisBrowser {
         let el: ElementHandle<Element> | undefined;
         let name = '';
         try {
+          // A prior field can synchronously replace a dependent control. Unlike a one-field
+          // action, silently rematching it risks applying the remaining value to a different
+          // entity; preserve the completed prefix and let the caller re-read and decide.
+          if (done.length) {
+            const live = await resolve(page, id);
+            if (!live.ok) {
+              throw new ActionError(`no longer exists after an earlier field changed the page; call read() to verify the remaining fields`);
+            }
+            await live.el.dispose();
+          }
           const t = await this.target(page, id);
           el = t.el;
           const secret = t.label.includes('(password)');
@@ -846,14 +856,14 @@ export class MantisBrowser {
     }, { quiet: true });
   }
 
-  /** Wait briefly for text to appear/disappear, or for an issued control to become present/enabled. */
+  /** Wait briefly for text to appear/present/disappear, or for an issued control to become present/enabled. */
   async waitFor(condition: { text?: string; id?: number; state?: 'appears' | 'disappears' | 'present' | 'enabled'; timeoutSeconds?: number }): Promise<string> {
     const { text, id } = condition;
     const state = condition.state ?? (text !== undefined ? 'appears' : 'present');
     const timeoutSeconds = Math.min(10, Math.max(0.1, condition.timeoutSeconds ?? 10));
     if ((text === undefined) === (id === undefined)) return 'error: give either text or id, not both';
-    if (text !== undefined && !['appears', 'disappears'].includes(state)) return 'error: text waits use state "appears" or "disappears"';
-    if (id !== undefined && !['present', 'enabled'].includes(state)) return 'error: element waits use state "present" or "enabled"';
+    if (text !== undefined && !['appears', 'present', 'disappears'].includes(state)) return 'error: text waits use state "present", "appears", or "disappears"; use "present" for text already visible';
+    if (id !== undefined && !['present', 'enabled'].includes(state)) return 'error: element waits use state "present" or "enabled"; use text with "present" for visible text';
     if (text !== undefined && !text.trim()) return 'error: text to wait for cannot be empty';
     if (id !== undefined && !this.known.has(id)) return `error: no element #${id} on this page; call read() to see current numbers`;
 
@@ -865,7 +875,7 @@ export class MantisBrowser {
       const ready = async (): Promise<boolean> => {
         if (text !== undefined) {
           const shown = await page.evaluate((needle) => (document.body?.innerText ?? '').toLocaleLowerCase().includes(needle), text.toLocaleLowerCase());
-          return state === 'appears' ? shown : !shown;
+          return state === 'disappears' ? !shown : shown;
         }
         const found = await resolve(page, id!);
         if (!found.ok) return false;

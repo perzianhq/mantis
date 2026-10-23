@@ -27,27 +27,28 @@ export function createServer(browser: MantisBrowser = new MantisBrowser()): McpS
     'read',
     {
       description:
-        'Numbered text; act by #number. Re-read after changes. ~"x" names are guesses. ' +
-        '"Same as before" retains #numbers; region/full/fresh expands it. ' +
-        'Before finishing, re-read and visibly verify every task constraint (filters, sort, size, quantity, date range). ' +
+        'Numbered text; act by #number. ~"x" names are guesses. ' +
+        '"Same as before" retains #numbers; region/full/fresh expands it; full is paged with offset. ' +
+        'Verify the entity identity before editing. Before finishing, re-read and visibly verify every task constraint (filters, sort, size, quantity, date range). After an action confirms completion, stop and report it rather than re-inspecting. ' +
         'If #number is stale, read() and retry; if on the wrong page, back() and keep searching.',
       inputSchema: {
         region: z.string().optional().describe('Label substring, e.g. "nav"; if none matches, text inside a region also works'),
-        full: z.boolean().optional().describe('No trimming'),
+        full: z.boolean().optional().describe('Untrimmed bounded excerpt; use offset for the next excerpt'),
+        offset: z.number().int().nonnegative().optional().describe('Character offset for the next full excerpt'),
         fresh: z.boolean().optional().describe('Expand seen regions too (this call only)'),
       },
     },
-    async ({ region, full, fresh }) => reply(await browser.read({ region, full, fresh })),
+    async ({ region, full, offset, fresh }) => reply(await browser.read({ region, full, offset, fresh })),
   );
   server.registerTool(
     'find',
     {
       description:
-        'Case-insensitive whole-page text search, including trimmed content; returns #numbers and region. ' +
-        'For adjacent paragraph context, read the returned region; a matched heading is not a region label.',
-      inputSchema: { text: z.string() },
+        'Case-insensitive whole-page text search, including trimmed content; returns #numbers, actionable row neighbours, and bounded local context. ' +
+        'Use context_chars to expand just that local context; a matched heading is not a region label.',
+      inputSchema: { text: z.string(), context_chars: z.number().int().min(80).max(800).optional() },
     },
-    async ({ text }) => reply(await browser.find(text)),
+    async ({ text, context_chars }) => reply(await browser.find(text, context_chars)),
   );
   server.registerTool(
     'forget',
@@ -78,7 +79,7 @@ export function createServer(browser: MantisBrowser = new MantisBrowser()): McpS
   server.registerTool(
     'fill',
     {
-      description: 'Fill several fields at once: text, dropdown option, or true/false for checkboxes.',
+      description: 'Prefer one mixed call for related text, dropdown, and checkbox fields; unrelated fields stay unchanged. Verify entity identity before editing. On failure or rerender it stops and reports partial completion; after confirmed completion, report it rather than re-inspecting.',
       inputSchema: { fields: z.array(z.object({ id, value: z.union([z.string(), z.boolean()]) })) },
     },
     async ({ fields }) => reply(await browser.fill(fields)),
@@ -108,7 +109,7 @@ export function createServer(browser: MantisBrowser = new MantisBrowser()): McpS
   server.registerTool(
     'wait_for',
     {
-      description: 'Wait up to 10s for text or #id state, then show changes.',
+      description: 'Wait up to 10s: text states are present (or appears) / disappears; #id states are present / enabled. On timeout, inspect the returned current observation.',
       inputSchema: {
         text: z.string().optional(),
         id: id.optional(),

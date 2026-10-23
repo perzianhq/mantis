@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { RawNode, Snapshot } from '../src/capture/index.js';
-import { estimateTokens, translate } from '../src/translate.js';
+import { estimateTokens, findInSnapshot, translate } from '../src/translate.js';
 
 const link = (id: number, name: string, inViewport = true, parent = -1): RawNode => ({
   kind: 'interactive', id, role: 'link', name, states: [], parent, depth: 0, inViewport, covered: false,
@@ -72,6 +72,30 @@ describe('translate', () => {
     expect(shown.length).toBe(8);
     expect(shown.every((l) => l.length <= 122 && l.endsWith('…"'))).toBe(true);
     expect(out).toMatch(/\n…32 more paragraphs — find\("text"\) or read\(full=true\)$/);
+  });
+
+  it('pages an untrimmed full read instead of returning an unbounded document', () => {
+    const tail = 'END-OF-LONG-DOCUMENT';
+    const out = translate(snap([prose(`${'long text '.repeat(2_000)}${tail}`)]), undefined, { full: true });
+    expect(out.length).toBeLessThan(12_500);
+    expect(out).toContain('full excerpt');
+    expect(out).toContain('offset:');
+    // The next excerpt remains an explicit route to every omitted character.
+    const offset = Number(out.match(/offset:(\d+)/)?.[1]);
+    expect(translate(snap([prose(`${'long text '.repeat(2_000)}${tail}`)]), undefined, { full: true, offset })).toContain(tail);
+  });
+
+  it('find returns each match with only its own row controls and bounded local context', () => {
+    const nodes: RawNode[] = [
+      { ...text('North'), row: 1, rowGroup: 4 }, { ...text('Shared target'), row: 1, rowGroup: 4 }, { ...link(1, 'Edit'), role: 'button', row: 1, rowGroup: 4 },
+      { ...text('South'), row: 2, rowGroup: 4 }, { ...text('Shared target'), row: 2, rowGroup: 4 }, { ...link(2, 'Edit'), role: 'button', row: 2, rowGroup: 4 },
+    ];
+    const out = findInSnapshot(snap(nodes), 'shared target');
+    expect(out).toMatch(/"Shared target"\n  context: "North" · #1 button "Edit"/);
+    expect(out).toMatch(/"Shared target"\n  context: "South" · #2 button "Edit"/);
+    // Near miss: matching wording in another row is reported separately, not merged into one context.
+    expect(out).not.toContain('"North" · #2 button');
+    expect(out).not.toContain('"South" · #1 button');
   });
 
   it('matches quoted region labels after their role', () => {

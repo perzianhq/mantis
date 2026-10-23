@@ -39,9 +39,9 @@ const answerPattern = (entry: LongCase): RegExp => {
 export const LIVE_LONG_FIXTURE_TASKS: readonly AgentTask[] = Object.freeze(LIVE_LONG_FIXTURE_CASES.map((entry): AgentTask => ({
   id: entry.id, category: 'long', site: 'local',
   prompt: (base) => `${base}${entry.startPath}\n${BRIEFS[entry.name]}`,
-  expect: answerPattern(entry), check: entry.check,
+  expect: answerPattern(entry), check: (events) => checkLiveLongFixtureCase(entry.id, events),
 })));
-export const LIVE_LONG_FIXTURE_CHECKS: FixtureCheckEntry[] = LIVE_LONG_FIXTURE_CASES.map((entry) => ({ taskId: entry.id, check: entry.check }));
+export const LIVE_LONG_FIXTURE_CHECKS: FixtureCheckEntry[] = LIVE_LONG_FIXTURE_CASES.map((entry) => ({ taskId: entry.id, check: (events) => checkLiveLongFixtureCase(entry.id, events) }));
 export const LIVE_LONG_FIXTURE_MANIFEST = Object.freeze(LIVE_LONG_FIXTURE_CASES.map((entry) => ({
   id: entry.id, workflow: entry.name, hazard: entry.variant, seed: entry.seed, devSeed: entry.devSeed,
   referenceActions: entry.referenceActions, nearMiss: entry.nearMiss.name, hazardTrigger: entry.hazard.trigger,
@@ -49,13 +49,39 @@ export const LIVE_LONG_FIXTURE_MANIFEST = Object.freeze(LIVE_LONG_FIXTURE_CASES.
 export const liveLongFixtureRoute: DevelopmentFixtureRouter = (path) => longRecordsRoute(path) ?? longWorkflowsRoute(path);
 
 export interface LiveLongAnswerGrade { pass: boolean; requirements: []; failed: string[]; details?: string }
+/** The final ledger proves the result; this proves that the variant's exercised hazard was not skipped. */
+const HAZARD_TRIGGER_EVIDENCE: Record<string, RegExp> = {
+  basket: /\badd\b/i,
+  access: /\bstage\b/i,
+  suppliers: /\b(?:next|previous).*offer|offer.*\b(?:next|previous)/i,
+  retention: /\barchive\b/i,
+  workspace: /\bremove\b|\binvite\b/i,
+  casework: /\bback\b|\bforward\b|\bhistory\b/i,
+  budgets: /\bengineering\b|\bsales\b|\boperations\b|\bdepartment\b/i,
+  dispatch: /\bdispatch\b/i,
+};
+const hasHazardTriggerEvidence = (entry: LongCase, events: FixtureObservation[]): boolean => {
+  const trigger = HAZARD_TRIGGER_EVIDENCE[entry.name];
+  return !!trigger && events.some((event) => trigger.test([
+    event.target.id, event.target.name, event.target.ariaLabel, event.target.text, event.long?.operationId, event.long?.entityId,
+  ].filter(Boolean).join(' ')));
+};
+/** The state checker is authoritative and also requires evidence that the fixture hazard was exercised. */
+export function checkLiveLongFixtureCase(id: string, events: FixtureObservation[]): { ok: boolean; details?: string } {
+  const entry = LIVE_LONG_FIXTURE_CASES.find((candidate) => candidate.id === id);
+  if (!entry) return { ok: false, details: `unknown live-long fixture ${id}` };
+  const result = entry.check(events);
+  const ok = typeof result === 'boolean' ? result : result.ok;
+  const failures = !ok ? [(typeof result === 'object' && result.details) || 'terminal ledger does not match the expected state'] : [];
+  if (!hasHazardTriggerEvidence(entry, events)) failures.push(`missing hazard-trigger evidence (${entry.hazard.trigger})`);
+  return failures.length ? { ok: false, details: failures.join('; ') } : { ok: true };
+}
 export function gradeLiveLongFixtureCase(id: string, answer: string, events: FixtureObservation[]): LiveLongAnswerGrade {
   const entry = LIVE_LONG_FIXTURE_CASES.find((candidate) => candidate.id === id);
   if (!entry) return { pass: false, requirements: [], failed: [`unknown live-long fixture ${id}`] };
   const failed: string[] = [];
   if (!answerPattern(entry).test(answer)) failed.push('answer does not carry the displayed receipt');
-  const result = entry.check(events);
-  const ok = typeof result === 'boolean' ? result : result.ok;
-  if (!ok) failed.push((typeof result === 'object' && result.details) || 'terminal ledger does not match the expected state');
+  const check = checkLiveLongFixtureCase(id, events);
+  if (!check.ok) failed.push(check.details ?? 'terminal ledger does not match the expected state');
   return failed.length ? { pass: false, requirements: [], failed, details: failed.join('; ') } : { pass: true, requirements: [], failed: [] };
 }
