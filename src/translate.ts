@@ -648,10 +648,30 @@ export function translate(snap: Snapshot, budget: number = BUDGET_CHARS, opts: R
     const available = Math.max(256, budget - head.join('\n').length - tail.join('\n').length - reserve);
     const excerpt = body.slice(offset, offset + available);
     const next = offset + excerpt.length;
+    const continuation = opts.region
+      ? `read({region:${JSON.stringify(opts.region)}, full:true, offset:${next}})`
+      : `read({full:true, offset:${next}})`;
     const note = next < body.length
-      ? `(full excerpt ${offset + 1}-${next} of ${body.length} characters; call read({full:true, offset:${next}}) for more)`
+      ? `(full excerpt ${offset + 1}-${next} of ${body.length} characters; call ${continuation} for more)`
       : '';
-    if (hook) hook.shown(infos, []);
+    if (hook) {
+      const starts: number[] = [];
+      let at = 0;
+      for (const line of result.lines) {
+        starts.push(at);
+        at += line.length + 1;
+      }
+      const byIndex = new Map(infos.map((r) => [r.index, r]));
+      const shown = result.marks
+        .filter((m) => {
+          const start = starts[m.start];
+          const end = m.end < result.lines.length ? starts[m.end] - 1 : body.length;
+          return start !== undefined && offset <= start && next >= end;
+        })
+        .map((m) => byIndex.get(m.index))
+        .filter((r): r is RegionInfo => r !== undefined);
+      hook.shown(shown, []);
+    }
     return [...head, ...(excerpt ? [excerpt] : ['(no visible content)']), ...tail, ...(note ? [note] : [])].join('\n');
   }
   const fits = (r: { lines: string[] }): boolean => [...head, ...r.lines, ...tail].join('\n').length <= budget;
@@ -715,11 +735,17 @@ export function findInSnapshot(snap: Snapshot, query: string, max = 20, contextC
     return `${start ? '…' : ''}${s.slice(start, end)}${end < s.length ? '…' : ''}`;
   };
   const contextLimit = Math.max(80, Math.min(800, Math.floor(contextChars)));
+  const frameOf = (i: number): number => {
+    for (let p = nodes[i].parent; p >= 0; p = nodes[p].parent) {
+      if (nodes[p].kind === 'region' && nodes[p].role === 'iframe') return p;
+    }
+    return -1;
+  };
   const context = (hit: number): string | undefined => {
     const node = nodes[hit];
     const nearby = node.row === undefined
       ? nodes.map((_, i) => i).filter((i) => nodes[i].parent === node.parent && Math.abs(i - hit) <= 3)
-      : nodes.map((n, i) => ({ n, i })).filter(({ n }) => n.row === node.row).map(({ i }) => i);
+      : nodes.map((n, i) => ({ n, i })).filter(({ n, i }) => n.row === node.row && frameOf(i) === frameOf(hit)).map(({ i }) => i);
     const part = (n: RawNode): string =>
       n.kind === 'interactive' ? interactiveLine(n, { maxName: 60 })
         : n.kind === 'heading' ? `${'#'.repeat(Math.min(n.level ?? 1, 4))} ${quote(clip(n.name, 80))}`

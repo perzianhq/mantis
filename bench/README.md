@@ -1,5 +1,7 @@
 # Benchmarks
 
+> Casework contract note (2026-10-23): results recorded before this date used the prior prompt, which did not require a Back/Forward history traversal.
+
 Two benchmarks compare Mantis with the accessibility tree (Playwright MCP) and with screenshots.
 All numbers: [RESULTS.md](RESULTS.md).
 

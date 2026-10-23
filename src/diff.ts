@@ -13,6 +13,20 @@ const clip = (s: string, n: number): string => (s.length > n ? s.slice(0, n - 1)
 const textNorm = (s: string): string => s.replace(/\s+/g, ' ').trim();
 const isTextual = (n: RawNode): boolean => n.kind === 'text' || n.kind === 'heading' || n.kind === 'prose';
 
+/** Nearest iframe ancestor for each node; row numbers restart in every frame document. */
+function frameScopes(nodes: RawNode[]): number[] {
+  const scopes: (number | undefined)[] = Array(nodes.length);
+  const scopeOf = (i: number): number => {
+    const cached = scopes[i];
+    if (cached !== undefined) return cached;
+    scopes[i] = -1; // also breaks malformed parent cycles conservatively
+    const parent = nodes[i]?.parent ?? -1;
+    if (parent < 0 || parent >= nodes.length) return -1;
+    return scopes[i] = nodes[parent].kind === 'region' && nodes[parent].role === 'iframe' ? parent : scopeOf(parent);
+  };
+  return nodes.map((_, i) => scopeOf(i));
+}
+
 /** Prose can be much longer than ordinary text; keep a useful excerpt in a bounded action diff. */
 function textDiffLine(n: RawNode): string {
   return textLine(n.kind === 'prose' ? { ...n, name: clip(n.name, 160) } : n);
@@ -272,25 +286,52 @@ function collect(before: Snapshot, after: Snapshot): Parts {
    * newly-issued control, but only when that label distinguishes this row from its siblings.
    * Identical labels deliberately remain ambiguous rather than borrowing position as identity.
    */
-  const rowLabel = (i: number): string | undefined => {
-    const n = B.nodes[i];
-    if (n.row === undefined) return undefined;
-    const labelFor = (row: number): string => B.nodes
-      .filter((m) => m.row === row && isTextual(m) && !!m.name.trim())
-      .map((m) => textNorm(m.name))
-      .filter((name, at, all) => at === all.indexOf(name) && norm(name) !== norm(n.name))
-      .slice(0, 2)
-      .join(' · ');
-    const label = labelFor(n.row);
-    if (!label) return undefined;
-    const peerRows = new Set(
-      B.nodes
-        .filter((m) => m.rowGroup === n.rowGroup && m.kind === 'interactive' && m.role === n.role && norm(m.name) === norm(n.name) && m.row !== undefined)
-        .map((m) => m.row!),
-    );
-    const sameLabel = [...peerRows].filter((row) => labelFor(row) === label).length;
-    return sameLabel === 1 ? clip(quote(label), 80) : undefined;
-  };
+  const rowLabels = (() => {
+    const scopes = frameScopes(B.nodes);
+    const rowKey = (i: number): string | undefined => {
+      const row = B.nodes[i].row;
+      return row === undefined ? undefined : `${scopes[i]}\u0000${row}`;
+    };
+    const textByRow = new Map<string, { names: { text: string; key: string }[]; seen: Set<string> }>();
+    B.nodes.forEach((n, i) => {
+      const key = rowKey(i);
+      if (!key || !isTextual(n) || !n.name.trim()) return;
+      const text = textNorm(n.name);
+      const name = norm(text);
+      let row = textByRow.get(key);
+      if (!row) textByRow.set(key, (row = { names: [], seen: new Set() }));
+      // The first three distinct labels answer every "first two except this control name"
+      // query, so row label lookup stays constant time even on unusually wide rows.
+      if (row.names.length < 3 && !row.seen.has(name)) { row.seen.add(name); row.names.push({ text, key: name }); }
+    });
+    const labelFor = (key: string, controlName: string): string =>
+      (textByRow.get(key)?.names ?? []).filter((name) => name.key !== controlName).slice(0, 2).map((name) => name.text).join(' · ');
+    const labels = new Map<number, string>();
+    const counts = new Map<string, number>();
+    const seenRows = new Set<string>();
+    B.nodes.forEach((n, i) => {
+      const key = rowKey(i);
+      if (!key || n.kind !== 'interactive') return;
+      const name = norm(n.name);
+      const label = labelFor(key, name);
+      if (!label) return;
+      labels.set(i, label);
+      const peer = `${scopes[i]}\u0000${n.rowGroup ?? -1}\u0000${n.role}\u0000${name}`;
+      const occurrence = `${peer}\u0000${key}\u0000${label}`;
+      if (seenRows.has(occurrence)) return;
+      seenRows.add(occurrence);
+      counts.set(`${peer}\u0000${label}`, (counts.get(`${peer}\u0000${label}`) ?? 0) + 1);
+    });
+    const out = new Map<number, string>();
+    B.nodes.forEach((n, i) => {
+      const label = labels.get(i);
+      const key = rowKey(i);
+      if (!label || !key || n.kind !== 'interactive') return;
+      const peer = `${scopes[i]}\u0000${n.rowGroup ?? -1}\u0000${n.role}\u0000${norm(n.name)}`;
+      if (counts.get(`${peer}\u0000${label}`) === 1) out.set(i, clip(quote(label), 80));
+    });
+    return out;
+  })();
 
   // ---- added ----
   const groups: Group[] = [];
@@ -387,7 +428,7 @@ function collect(before: Snapshot, after: Snapshot): Parts {
     const nextIsAddedControl =
       next && next.kind === 'interactive' && next.parent === n.parent && isAdded(i + 1);
     if (n.kind === 'interactive') {
-      const label = rowLabel(i);
+      const label = rowLabels.get(i);
       g.items.push(`${label ? `[row "${label}"] ` : ''}${interactiveLine(n)}`);
       g.interactive++;
     } else if (n.kind === 'heading') {

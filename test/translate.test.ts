@@ -98,6 +98,66 @@ describe('translate', () => {
     expect(out).not.toContain('"South" · #1 button');
   });
 
+  it('keeps row context inside its iframe document', () => {
+    const nodes: RawNode[] = [
+      region('main', ''),
+      { ...text('Outer record'), parent: 0, depth: 1, row: 1, rowGroup: 4 },
+      { ...link(1, 'Edit'), role: 'button', parent: 0, depth: 1, row: 1, rowGroup: 4 },
+      { ...region('iframe', 'Embedded'), parent: 0, depth: 1 },
+      { ...text('Inner record'), parent: 3, depth: 2, row: 1, rowGroup: 4 },
+      { ...link(10_001, 'Edit'), role: 'button', parent: 3, depth: 2, row: 1, rowGroup: 4 },
+    ];
+    const out = findInSnapshot(snap(nodes), 'inner record');
+    expect(out).toContain('context: #10001 button "Edit"');
+    expect(out).not.toContain('#1 button "Edit"');
+
+    // Near miss: a normal page row still keeps its local control context.
+    const local = findInSnapshot(snap([
+      { ...text('Local record'), row: 1, rowGroup: 4 },
+      { ...link(2, 'Edit'), role: 'button', row: 1, rowGroup: 4 },
+    ]), 'local record');
+    expect(local).toContain('context: #2 button "Edit"');
+  });
+
+  it('keeps a full-read continuation in the selected region', () => {
+    const outside = `OUTSIDE-PAGE-TEXT ${'outside '.repeat(3_000)}`;
+    const selected = `TARGET-REGION-TEXT ${'selected '.repeat(3_000)}`;
+    const nodes: RawNode[] = [
+      region('section', 'Other'), { ...prose(outside), parent: 0, depth: 1 },
+      region('section', 'Selected'), { ...prose(selected), parent: 2, depth: 1 },
+    ];
+    const first = translate(snap(nodes), undefined, { region: 'Selected', full: true });
+    const offset = Number(first.match(/region:"Selected", full:true, offset:(\d+)/)?.[1]);
+    expect(offset).toBeGreaterThan(0);
+    const second = translate(snap(nodes), undefined, { region: 'Selected', full: true, offset });
+    expect(second).toContain('selected selected');
+    expect(second).not.toContain('OUTSIDE-PAGE-TEXT');
+
+    // Near miss: without a region, the same offset still pages the whole document.
+    const whole = translate(snap(nodes), undefined, { full: true });
+    const wholeOffset = Number(whole.match(/read\(\{full:true, offset:(\d+)\}\)/)?.[1]);
+    const wholeSecond = translate(snap(nodes), undefined, { full: true, offset: wholeOffset });
+    expect(wholeSecond).toContain('outside outside');
+    expect(wholeSecond).not.toContain('TARGET-REGION-TEXT');
+  });
+
+  it('marks only complete regions as shown during a paged full read', () => {
+    const seen = new Set<string>();
+    const hook = {
+      collapse: (regions: { name: string; role: string }[]) => regions.map((r) => seen.has(r.name) ? [`[${r.role} "${r.name}"] cached`] : null),
+      shown: (full: { name: string }[]) => full.forEach((r) => seen.add(r.name)),
+    };
+    const nodes: RawNode[] = [
+      region('section', 'Complete'), { ...text('Complete region text'), parent: 0, depth: 1 },
+      region('section', 'Later'), { ...prose(`LATER-REGION-TEXT ${'later '.repeat(3_000)}`), parent: 2, depth: 1 },
+    ];
+    translate(snap(nodes), undefined, { full: true }, hook);
+    expect(seen).toEqual(new Set(['Complete']));
+    const normal = translate(snap(nodes), undefined, {}, hook);
+    expect(normal).toContain('[section "Complete"] cached');
+    expect(normal).toContain('LATER-REGION-TEXT');
+  });
+
   it('matches quoted region labels after their role', () => {
     const nodes = [region('dialog', 'Preferences'), { ...link(1, 'Apply'), parent: 0, depth: 1 }];
     const unquoted = translate(snap(nodes), undefined, { region: 'dialog Preferences' });

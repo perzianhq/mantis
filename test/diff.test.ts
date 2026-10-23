@@ -60,6 +60,49 @@ describe('diffSnapshots (pure)', () => {
     expect(diffSnapshots(before, duplicate)).not.toContain('[row "Untitled"]');
   });
 
+  it('scopes repeated-row labels to the iframe that owns the row numbers', () => {
+    const before = snap([
+      region('main'),
+      text('Outer record', { parent: 0, row: 1, rowGroup: 4 }),
+      { ...region('iframe', 'Embedded'), parent: 0, depth: 1 },
+      text('Inner record', { parent: 2, depth: 2, row: 1, rowGroup: 4 }),
+    ]);
+    const after = snap([
+      region('main'),
+      text('Outer record', { parent: 0, row: 1, rowGroup: 4 }),
+      btn(1, 'Edit', { parent: 0, row: 1, rowGroup: 4 }),
+      { ...region('iframe', 'Embedded'), parent: 0, depth: 1 },
+      text('Inner record', { parent: 3, depth: 2, row: 1, rowGroup: 4 }),
+      btn(10_001, 'Edit', { parent: 3, depth: 2, row: 1, rowGroup: 4 }),
+    ]);
+    const out = diffSnapshots(before, after);
+    expect(out).toContain('[row "Outer record"] #1 button "Edit"');
+    expect(out).toContain('[row "Inner record"] #10001 button "Edit"');
+    expect(out).not.toContain('[row "Outer record · Inner record"]');
+
+    // Near miss: rows outside a frame retain their useful local label.
+    const local = diffSnapshots(
+      snap([region('main'), text('Local record', { parent: 0, row: 1, rowGroup: 4 })]),
+      snap([region('main'), text('Local record', { parent: 0, row: 1, rowGroup: 4 }), btn(2, 'Edit', { parent: 0, row: 1, rowGroup: 4 })]),
+    );
+    expect(local).toContain('[row "Local record"] #2 button "Edit"');
+  });
+
+  it('indexes repeated-row labels before formatting a large replacement diff', () => {
+    const rows = 600;
+    const before = snap([region('main'), ...Array.from({ length: rows }, (_, i) => text(`Record ${i}`, { parent: 0, row: i, rowGroup: 8 }))]);
+    const after = snap([
+      region('main'),
+      ...Array.from({ length: rows }, (_, i) => [
+        text(`Record ${i}`, { parent: 0, row: i, rowGroup: 8 }),
+        btn(i + 1, 'Replace', { parent: 0, row: i, rowGroup: 8 }),
+      ]).flat(),
+    ]);
+    const start = performance.now();
+    diffSnapshots(before, after);
+    expect(performance.now() - start).toBeLessThan(500);
+  });
+
   it('puts the contents of a new dialog under its header and flags that it covers the page', () => {
     const before = snap([region('main'), btn(1, 'Open', { parent: 0 })]);
     const after = snap([

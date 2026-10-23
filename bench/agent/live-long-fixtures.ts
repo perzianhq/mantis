@@ -18,7 +18,7 @@ const BRIEFS: Record<string, string> = {
   suppliers: 'Procurement quote. Filter to category equipment and region EU. Add offers o01 to o06 to the comparison (they span two pages), open the comparison, choose o06 with quantity 10 and save the quote. Report the quote receipt number and the EUR total.',
   retention: 'Retention review. Archive version v2 of d02, v1 of d08 and v3 of d14. Restore v1 of d05. Place a legal hold on d03 and d11. Leave everything else unchanged, then view the summary. Report the receipt number.',
   workspace: 'Create a workspace. Company: Northwind Labs, size 51-200, country DE, VAT DE123456789. Admin: Ada Byron, ada@northwind.test, +49 30 1234567. Plan Growth, billed yearly, with a separate billing email billing@northwind.test. Invite exactly lin@northwind.test as admin, kai@northwind.test as member and taylor@northwind.test as member; remove the pre-filled draft invite. Accept the terms and create the workspace. Report the receipt number.',
-  casework: 'Casework triage. Filter the queue to team West. Update c04 to owner Ada and status waiting, c09 to Lin and resolved, c14 to Kai and waiting, c19 to Ada and resolved (c14 and c19 are on page 2). End on queue page 2 and open the Casework summary so it is saved. Report the receipt number.',
+  casework: 'Casework triage. Filter the queue to team West. Update c04 to owner Ada and status waiting, c09 to Lin and resolved, c14 to Kai and waiting, c19 to Ada and resolved (c14 and c19 are on page 2). After finishing the edits, go to the summary, use the page Back control (or browser Back) once, then return to queue page 2 and open the Casework summary again so it is saved. Report the receipt number.',
   budgets: 'Publish budgets. Engineering: limit 120000, owner Ada, carry-over on. Sales: limit 80000, owner Lin, carry-over off. Operations: limit 60000, owner Kai, carry-over on. Approval rules: Ben at threshold 30000 with two-factor, Mei at threshold 50000 with two-factor. Review and publish. Report the receipt number.',
   dispatch: 'Dispatch orders. Stage q03 quantity 2 with Post/Ground, q11 quantity 1 with Courier/Express, q19 quantity 3 with Post/Ground and q27 quantity 2 with Courier/Express. Open the outbound view and dispatch them. Report the receipt number.',
 };
@@ -50,21 +50,25 @@ export const liveLongFixtureRoute: DevelopmentFixtureRouter = (path) => longReco
 
 export interface LiveLongAnswerGrade { pass: boolean; requirements: []; failed: string[]; details?: string }
 /** The final ledger proves the result; this proves that the variant's exercised hazard was not skipped. */
-const HAZARD_TRIGGER_EVIDENCE: Record<string, RegExp> = {
-  basket: /\badd\b/i,
-  access: /\bstage\b/i,
-  suppliers: /\b(?:next|previous).*offer|offer.*\b(?:next|previous)/i,
-  retention: /\barchive\b/i,
-  workspace: /\bremove\b|\binvite\b/i,
-  casework: /\bback\b|\bforward\b|\bhistory\b/i,
-  budgets: /\bengineering\b|\bsales\b|\boperations\b|\bdepartment\b/i,
-  dispatch: /\bdispatch\b/i,
+const targetText = (event: FixtureObservation): string => [
+  event.target.id, event.target.name, event.target.ariaLabel, event.target.text,
+].filter(Boolean).join(' ');
+
+/** Each workflow's event must prove the interaction that exercises its hazard, never just describe it. */
+const HAZARD_TRIGGER_EVIDENCE: Record<string, (event: FixtureObservation) => boolean> = {
+  basket: (event) => event.kind === 'click' && /\badd\b/i.test(targetText(event)),
+  access: (event) => event.kind === 'click' && /\bstage\b/i.test(targetText(event)),
+  suppliers: (event) => event.kind === 'click' && (event.target.id === 'next' || /^next offers$/i.test(event.target.text)),
+  retention: (event) => event.kind === 'click' && /\barchive\b/i.test(targetText(event)),
+  workspace: (event) => event.kind === 'click' && /\bremove\b/i.test(targetText(event)),
+  casework: (event) => event.kind === 'popstate' && event.long?.operationId?.startsWith('casework-') === true,
+  budgets: (event) => event.kind === 'click' && /^(engineering|sales|operations)$/i.test(event.target.text),
+  dispatch: (event) => (event.kind === 'click' && event.target.id === 'dispatch')
+    || (event.kind === 'settled' && event.long?.operationId === 'dispatch-outbound'),
 };
 const hasHazardTriggerEvidence = (entry: LongCase, events: FixtureObservation[]): boolean => {
   const trigger = HAZARD_TRIGGER_EVIDENCE[entry.name];
-  return !!trigger && events.some((event) => trigger.test([
-    event.target.id, event.target.name, event.target.ariaLabel, event.target.text, event.long?.operationId, event.long?.entityId,
-  ].filter(Boolean).join(' ')));
+  return !!trigger && events.some(trigger);
 };
 /** The state checker is authoritative and also requires evidence that the fixture hazard was exercised. */
 export function checkLiveLongFixtureCase(id: string, events: FixtureObservation[]): { ok: boolean; details?: string } {

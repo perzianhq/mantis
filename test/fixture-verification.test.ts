@@ -11,7 +11,7 @@ import { extractGradedAnswer } from '../bench/agent/integrity.js';
 import { LONG_EXPECT } from '../bench/fixtures-long.js';
 import { V2_DEVELOPMENT_CASES, V2_DEVELOPMENT_CHECKS, gradeV2DevelopmentCase } from '../bench/fixtures-v2-development.js';
 import { v2DevelopmentRoute } from '../bench/fixtures-v2-development.js';
-import { LIVE_LONG_FIXTURE_CASES, gradeLiveLongFixtureCase } from '../bench/agent/live-long-fixtures.js';
+import { LIVE_LONG_FIXTURE_CASES, LIVE_LONG_FIXTURE_TASKS, gradeLiveLongFixtureCase } from '../bench/agent/live-long-fixtures.js';
 import { V21_RELIABILITY_CASES, gradeV21ReliabilityCase } from '../bench/fixtures-v21-reliability.js';
 import { spawn } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
@@ -1237,4 +1237,39 @@ it('live-long-fixtures: accepts harmless inspection after completion but rejects
   const skippedHazard = gradeLiveLongFixtureCase(entry.id, answer, [completed, inspected]);
   expect(skippedHazard.pass).toBe(false);
   expect(skippedHazard.details).toContain('missing hazard-trigger evidence (add a product)');
+});
+
+it('live-long-fixtures: requires an interaction-specific hazard event instead of matching loaded text', () => {
+  const target = (id = '', text = '', ariaLabel = '') => ({ tag: 'button', id, name: '', type: '', ariaLabel, text, href: '', value: '', checked: false });
+  const answerFor = (entry: (typeof LIVE_LONG_FIXTURE_CASES)[number]) => {
+    const expected = entry.expected as { receipt?: string; workspace?: { receipt?: string } };
+    const receipt = expected.receipt ?? expected.workspace?.receipt;
+    return `Receipt ${receipt} total 101.29 and EUR 870.00`;
+  };
+  const event = (entry: (typeof LIVE_LONG_FIXTURE_CASES)[number], kind: FixtureObservation['kind'], targetValue: ReturnType<typeof target>, operationId?: string): FixtureObservation => ({
+    arrival: 0, path: entry.startPath, kind, documentId: 'hazard', target: targetValue, controls: {}, text: targetValue.text,
+    long: { url: entry.startPath, revision: (entry.expected as { revision: number }).revision, operationId, ledger: entry.expected },
+  });
+  const cases: Array<{ id: string; target: ReturnType<typeof target>; operationId?: string }> = [
+    { id: 'llf-basket-off', target: target('', 'Add p01', 'Add p01') },
+    { id: 'llf-access-off', target: target('stage', 'Stage change') },
+    { id: 'llf-suppliers-off', target: target('next', 'Next offers') },
+    { id: 'llf-retention-off', target: target('', 'Archive') },
+    { id: 'llf-workspace-off', target: target('', 'Remove draft invite') },
+    { id: 'llf-casework-off', target: target(), operationId: 'casework-queue' },
+    { id: 'llf-budgets-off', target: target('', 'Engineering') },
+    { id: 'llf-dispatch-off', target: target('dispatch', 'Dispatch staged orders') },
+  ];
+  for (const hazard of cases) {
+    const entry = LIVE_LONG_FIXTURE_CASES.find((candidate) => candidate.id === hazard.id)!;
+    const completed = event(entry, 'settled', target(), `complete-${entry.name}`);
+    const kind: FixtureObservation['kind'] = entry.name === 'casework' ? 'popstate' : 'click';
+    expect(gradeLiveLongFixtureCase(entry.id, answerFor(entry), [event(entry, kind, hazard.target, hazard.operationId), completed]).pass).toBe(true);
+    // Near miss: durable ledger state and incidental load text alone do not establish the hazard interaction.
+    const missing = gradeLiveLongFixtureCase(entry.id, answerFor(entry), [event(entry, 'load', hazard.target, hazard.operationId), completed]);
+    expect(missing.pass).toBe(false);
+    expect(missing.details).toContain(`missing hazard-trigger evidence (${entry.hazard.trigger})`);
+  }
+  const caseworkTask = LIVE_LONG_FIXTURE_TASKS.find((task) => task.id === 'llf-casework-off')!;
+  expect(caseworkTask.prompt('http://x')).toMatch(/Back.*queue page 2/i);
 });

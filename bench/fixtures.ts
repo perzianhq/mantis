@@ -12,7 +12,7 @@ export interface FixtureObservation {
   /** Hidden fixture-owned terminal state, when a workflow opts in to expose it. */
   fixtureState?: unknown;
   path: string;
-  kind: 'load' | 'click' | 'input' | 'change' | 'submit' | 'scroll' | 'settled';
+  kind: 'load' | 'click' | 'input' | 'change' | 'submit' | 'scroll' | 'popstate' | 'settled';
   documentId: string;
   /** Page-side send order within one document; concurrent keepalive requests can arrive out of order. */
   seq?: number;
@@ -122,6 +122,9 @@ const observer = String.raw`<script>
       setTimeout(() => send('settled', event.target, summary, undefined, actionId), 0);
     }, true);
   }
+  // History traversal does not have a DOM target, but long-workflow hazards can
+  // require proving that a real Back/Forward navigation occurred.
+  addEventListener('popstate', () => send('popstate', document.body));
   if (window.__fixtureFrameObserver) addEventListener('message', () => setTimeout(() => send('settled', document.body), 0));
   // Explicit post-commit settlement for delayed updates: a long-workflow page calls this after each committed
   // revision (including late or intermediate ones) so the terminal state is observed after the work finishes.
