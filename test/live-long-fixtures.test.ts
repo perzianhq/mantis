@@ -273,6 +273,25 @@ describe('live-long fixture regression coverage', () => {
     });
   }, 120_000);
 
+  it('casework saves on a real Back-then-Forward re-entry, but not on summary-to-summary or forward-only history moves', async () => {
+    const casework = LIVE_LONG_FIXTURE_CASES.find((entry) => entry.id === 'llf-casework-off')!;
+    const edits = casework.walkthrough.slice(0, -3);
+    const forward = await replay(casework, 'casework-forward-reentry', [...edits, { op: 'click', target: '#summary' }, { op: 'click', target: '#back-history' }], async (page) => {
+      await page.goForward();
+      expect(await page.locator('main').innerText()).toContain(receiptOf(casework));
+    });
+    expect(forward.verification.ok).toBe(true);
+
+    // Summary -> Help -> Next -> Summary, then history.go(-3) to the first summary and Forward twice: no off-summary Back happened.
+    const bypass = await replay(casework, 'casework-summary-jump', [...edits, { op: 'click', target: '#summary' }, { op: 'click', target: 'a[href="#help"]' }, { op: 'click', target: '#next' }, { op: 'click', target: '#summary' }], async (page) => {
+      await page.evaluate(() => history.go(-3)); await page.waitForTimeout(300);
+      await page.goForward(); await page.goForward();
+      if (await page.locator('#summary').count()) await page.locator('#summary').click();
+      expect(await page.locator('main').innerText()).not.toContain(receiptOf(casework));
+    });
+    expect(bypass.verification.ok).toBe(false);
+  }, 120_000);
+
   it('shows a saved retention receipt only after the summary commit', async () => {
     const retention = LIVE_LONG_FIXTURE_CASES.find((entry) => entry.id === 'llf-retention-off')!;
     const completed = await replay(retention, 'retention-summary-saved', retention.walkthrough, async (page) => {
