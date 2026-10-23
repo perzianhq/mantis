@@ -39,9 +39,9 @@ Frozen [live-v1](live-v1.md) v1.7: 30 real-site tasks x 3 approaches x 3 runs = 
 | | Mantis | Accessibility tree | Screenshots |
 |---|---:|---:|---:|
 | Success (of 90) | 87 | 86 | **89** |
-| Avg input tokens | 77.6k | 116.5k | **53.1k** |
+| Avg input tokens (not comparable, see note) | 77.6k | 116.5k | 53.1k |
 
-Mantis rows are a re-run after `src/` gap fixes (20261023); Haiku includes 6 connection-failure rows re-run alone (6/6 success). Failures: Luna 1 (`rfc-8259`), Haiku 3 (`node-url`, `data-gov-climate` x2), all agent behaviour or site drift; see the [live-v1 changelog](live-v1.md#changelog-and-disclosures).
+Haiku input tokens are not comparable across columns: the tree and screenshot runs used Claude CLI 2.1.308 on cloud, the Mantis re-run used 2.1.161 locally, which sends more input per turn (median 14.5k vs 8.3k). The earlier local rerun of blocked rows inflated all three similarly (Mantis 50.4k to 83.7k, tree 116.5k to 216.8k, screenshots 53.1k to 79.6k, on a different task subset). Mantis page text per call is unchanged (10.2k vs 10.6k chars). Mantis rows are a re-run after `src/` gap fixes (20261023); Haiku includes 6 connection-failure rows re-run alone (6/6 success). Failures: Luna 1 (`rfc-8259`), Haiku 3 (`node-url`, `data-gov-climate` x2), all agent behaviour or site drift; see the [live-v1 changelog](live-v1.md#changelog-and-disclosures).
 
 ## Side scorecards (DeepSeek only, local fixtures)
 
