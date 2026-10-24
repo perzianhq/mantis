@@ -41,6 +41,14 @@ describe('generic perception', () => {
     expect(separated.map((n) => n.name)).toEqual([expect.stringMatching(/^button \d+$/), expect.stringMatching(/^button \d+$/)]);
     expect(separated[0]!.name).not.toBe(separated[1]!.name);
   });
+
+  it('names identical unlabeled fields by their own name/id, and keeps opaque ids positional', async () => {
+    await browser.open(fixture('percept-field-keys.html'));
+    const names = (await browser.snapshot()).nodes.filter((n) => n.kind === 'interactive').map((n) => n.name);
+    expect(names.slice(0, 4)).toEqual(['nickname', 'handle', 'bio', 'notes']);
+    expect(names.slice(4).some((n) => /3f2a9c1e/.test(n))).toBe(false);
+    expect(names.slice(4).every((n) => /^textbox/.test(n))).toBe(true);
+  });
 });
 
 describe('controls inside opacity:0 wrappers', () => {

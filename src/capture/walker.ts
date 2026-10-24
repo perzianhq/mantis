@@ -543,6 +543,13 @@ export function walker(includeSrOnly = false): WalkResult {
   const unnamed: { node: RawNode; el: Element; role: string }[] = [];
   /** Last resort for a control with no accessible name or icon evidence. */
   function contextualName(el: Element, role: string): string {
+    // A form field's own name/id tells identical-looking fields apart better than position or section.
+    if (/^(input|textarea|select)$/.test(el.localName)) {
+      for (const attr of ['name', 'id']) {
+        const key = (el.getAttribute(attr) || '').trim();
+        if (/^[A-Za-z][\w.:-]{1,39}$/.test(key) && !isMachineToken(key)) return key;
+      }
+    }
     const group = el.closest('article,section,form,dialog,[role=dialog],[role=group],[role=region],nav,[role=navigation],main,aside,header,footer,[role=main],[role=complementary],[role=banner],[role=contentinfo]');
     const heading = group?.querySelector('h1,h2,h3,h4,h5,h6,[role=heading]');
     const context = collapse((heading && !heading.contains(el) ? deepText(heading, 50) : '') ||
