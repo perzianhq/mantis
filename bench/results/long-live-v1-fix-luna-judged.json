@@ -1,0 +1,102 @@
+{
+  "source": "long-live-v1-fix-luna",
+  "judgeProvider": "codex",
+  "judgeModel": "gpt-6.1-sol",
+  "judgeModels": [
+    "gpt-6.1-sol"
+  ],
+  "siteBrokenTasks": [],
+  "runs": [
+    {
+      "task": "longlive-wiki-probes",
+      "approach": "mantis",
+      "run": 1,
+      "finalUrl": "https://en.wikipedia.org/w/index.php?title=Pioneer_10&oldid=1381047166",
+      "toolCalls": 36,
+      "totalInputTokens": 237290,
+      "wallS": 126.056,
+      "verdict": "failure",
+      "reason": "Deterministic grader failed: answer lacks \"Cassini-Huygens | 1997-10-15 | 1997-061A | 5712 kg\"; answer lacks \"Galileo | 1989-10-18 | 1989-084B | 2560 kg\"; answer lacks \"Juno | 2011-08-05 | 2011-040A | 3625 kg\".",
+      "frameCount": 11,
+      "finalFrame": "F11",
+      "checks": null,
+      "deterministic": {
+        "pass": false,
+        "failed": [
+          "answer lacks \"Cassini-Huygens | 1997-10-15 | 1997-061A | 5712 kg\"",
+          "answer lacks \"Galileo | 1989-10-18 | 1989-084B | 2560 kg\"",
+          "answer lacks \"Juno | 2011-08-05 | 2011-040A | 3625 kg\""
+        ]
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-wiki-probes",
+      "approach": "tree",
+      "run": 1,
+      "finalUrl": "https://en.wikipedia.org/w/index.php?title=Pioneer_10&oldid=1381047166",
+      "toolCalls": 28,
+      "totalInputTokens": 210195,
+      "wallS": 78.392,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 12,
+      "finalFrame": "F12",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-wiki-moons",
+      "approach": "mantis",
+      "run": 1,
+      "finalUrl": "https://en.wikipedia.org/w/index.php?title=Mimas&oldid=1377302334",
+      "toolCalls": 47,
+      "totalInputTokens": 809438,
+      "wallS": 311.521,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 12,
+      "finalFrame": "F12",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-wiki-moons",
+      "approach": "tree",
+      "run": 1,
+      "finalUrl": "https://en.wikipedia.org/w/index.php?title=Mimas&oldid=1377302334",
+      "toolCalls": 32,
+      "totalInputTokens": 626743,
+      "wallS": 157.459,
+      "verdict": "failure",
+      "reason": "Deterministic grader failed: answer lacks \"Io | 1824.2 km | 1.769 d | 1610-01-08\".",
+      "frameCount": 12,
+      "finalFrame": "F12",
+      "checks": null,
+      "deterministic": {
+        "pass": false,
+        "failed": [
+          "answer lacks \"Io | 1824.2 km | 1.769 d | 1610-01-08\""
+        ]
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    }
+  ],
+  "skipped": []
+}

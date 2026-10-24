@@ -1,0 +1,110 @@
+{
+  "source": "long-live-v1-rerun5-haiku",
+  "judgeProvider": "codex",
+  "judgeModel": "gpt-6.1-sol",
+  "judgeModels": [
+    "gpt-6.1-sol"
+  ],
+  "siteBrokenTasks": [],
+  "runs": [
+    {
+      "task": "longlive-gutenberg-gothic",
+      "approach": "tree",
+      "run": 2,
+      "finalUrl": "https://www.gutenberg.org/ebooks/84",
+      "toolCalls": 69,
+      "totalInputTokens": 2777410,
+      "wallS": 233.05,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 12,
+      "finalFrame": "F12",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-internet-window-frames-upload",
+      "approach": "tree",
+      "run": 2,
+      "finalUrl": "https://the-internet.herokuapp.com/upload",
+      "toolCalls": 24,
+      "totalInputTokens": 295925,
+      "wallS": 57.111,
+      "verdict": "failure",
+      "reason": "The agent admitted reading the frames through one accessibility-tree observation instead of reading each child frame separately, although the reported texts and final file selection were correct.",
+      "evidence": [
+        "F5",
+        "F9"
+      ],
+      "frameCount": 9,
+      "finalFrame": "F9",
+      "judgeVerdict": "failure",
+      "checks": null,
+      "deterministic": null,
+      "grading": "judge",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-selenium-window-frames-upload",
+      "approach": "tree",
+      "run": 1,
+      "finalUrl": "https://www.selenium.dev/selenium/web/web-form.html",
+      "toolCalls": 32,
+      "totalInputTokens": 440506,
+      "wallS": 73.544,
+      "verdict": "success",
+      "reason": "The captures and journal support both result headings and Success!, matching headings and iframe facts on both copies, revisits to the retained tabs, and a final README.md selection with zero submissions.",
+      "evidence": [
+        "F2",
+        "F4",
+        "F6",
+        "F8",
+        "F9",
+        "F10"
+      ],
+      "frameCount": 10,
+      "finalFrame": "F10",
+      "judgeVerdict": "success",
+      "checks": null,
+      "deterministic": null,
+      "grading": "judge",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-selenium-window-frames-upload",
+      "approach": "mantis",
+      "run": 3,
+      "finalUrl": "https://www.selenium.dev/selenium/web/web-form.html",
+      "toolCalls": 20,
+      "totalInputTokens": 276709,
+      "wallS": 50.283,
+      "verdict": "success",
+      "reason": "F2 and F8 confirm both result headings and Success!, F4/F6/F9 support both iframe copies and reported frame facts, and F10 confirms README.md selected, with revisits reported and zero journal submissions.",
+      "evidence": [
+        "F2",
+        "F4",
+        "F6",
+        "F8",
+        "F9",
+        "F10"
+      ],
+      "frameCount": 10,
+      "finalFrame": "F10",
+      "judgeVerdict": "success",
+      "checks": null,
+      "deterministic": null,
+      "grading": "judge",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    }
+  ],
+  "skipped": []
+}

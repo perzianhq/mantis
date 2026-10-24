@@ -1,0 +1,144 @@
+{
+  "source": "long-live-v1-chain-luna",
+  "judgeProvider": "codex",
+  "judgeModel": "gpt-6.1-sol",
+  "judgeModels": [
+    "gpt-6.1-sol"
+  ],
+  "siteBrokenTasks": [],
+  "runs": [
+    {
+      "task": "longlive-form-selenium-student",
+      "approach": "mantis",
+      "run": 1,
+      "finalUrl": "https://www.selenium.dev/selenium/web/formPage.html",
+      "toolCalls": 11,
+      "totalInputTokens": 156869,
+      "wallS": 26.505,
+      "verdict": "failure",
+      "reason": "Deterministic grader failed: final form lacks \"inputWithText\"=\"Ada Example\"; final form lacks \"withText\"=\"Synthetic profile. Leave unsubmitted.\".",
+      "frameCount": 1,
+      "finalFrame": "F1",
+      "checks": null,
+      "deterministic": {
+        "pass": false,
+        "failed": [
+          "final form lacks \"inputWithText\"=\"Ada Example\"",
+          "final form lacks \"withText\"=\"Synthetic profile. Leave unsubmitted.\""
+        ]
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-form-selenium-student",
+      "approach": "tree",
+      "run": 1,
+      "finalUrl": "https://www.selenium.dev/selenium/web/formPage.html",
+      "toolCalls": 11,
+      "totalInputTokens": 137475,
+      "wallS": 39.411,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 1,
+      "finalFrame": "F1",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-internet-window-frames-upload",
+      "approach": "mantis",
+      "run": 1,
+      "finalUrl": "https://the-internet.herokuapp.com/windows",
+      "toolCalls": 3,
+      "totalInputTokens": 82893,
+      "wallS": 91.838,
+      "verdict": "failure",
+      "reason": "The agent explicitly reported that it could not complete the task and did not select the required file.",
+      "frameCount": 0,
+      "finalFrame": null,
+      "judgeVerdict": "failure",
+      "checks": null,
+      "deterministic": null,
+      "grading": "judge",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-internet-window-frames-upload",
+      "approach": "tree",
+      "run": 1,
+      "finalUrl": null,
+      "toolCalls": 2,
+      "totalInputTokens": 81679,
+      "wallS": 114.206,
+      "verdict": "unsure",
+      "reason": "The empty reply, absent final URL, and missing captures and journal provide insufficient evidence to determine whether the task was completed.",
+      "frameCount": 0,
+      "finalFrame": null,
+      "judgeVerdict": "unsure",
+      "checks": null,
+      "deterministic": null,
+      "grading": "judge",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-selenium-window-frames-upload",
+      "approach": "mantis",
+      "run": 1,
+      "finalUrl": "https://www.selenium.dev/selenium/web/web-form.html",
+      "toolCalls": 15,
+      "totalInputTokens": 221912,
+      "wallS": 35.869,
+      "verdict": "failure",
+      "reason": "The report incorrectly identifies selectomatic as Eggs and Sausages and multi as Eggs and Lemons; both iframe copies show selectomatic One and multi Eggs and Sausages, although README.md was selected without submission.",
+      "evidence": [
+        "F4",
+        "F6",
+        "F9",
+        "F10"
+      ],
+      "frameCount": 10,
+      "finalFrame": "F10",
+      "judgeVerdict": "failure",
+      "checks": null,
+      "deterministic": null,
+      "grading": "judge",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-selenium-window-frames-upload",
+      "approach": "tree",
+      "run": 1,
+      "finalUrl": "https://www.selenium.dev/selenium/web/web-form.html",
+      "toolCalls": 25,
+      "totalInputTokens": 423563,
+      "wallS": 65.355,
+      "verdict": "failure",
+      "reason": "F10 shows no file selected and the journal records no uploads, while the final report also omits the required introductory text and selected options for both iframe copies.",
+      "evidence": [
+        "F4",
+        "F6",
+        "F10"
+      ],
+      "frameCount": 10,
+      "finalFrame": "F10",
+      "judgeVerdict": "failure",
+      "checks": null,
+      "deterministic": null,
+      "grading": "judge",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    }
+  ],
+  "skipped": []
+}

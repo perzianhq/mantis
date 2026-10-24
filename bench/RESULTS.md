@@ -25,6 +25,19 @@ Formerly named `live-long-fixtures` (the tasks run on local fixtures, not live s
 - A later Mantis-only full run (20261023, final fixtures and graders) scored 48/48 for both models (`results/live-long-fixtures-{luna,haiku}-mantis-final-20261023.md`); the table keeps the same-condition three-way run so approaches stay comparable.
 - Basket and retention rows were rerun after two fixture fixes (history restore, unsaved retention summary); other rows were regraded offline with the current graders from the same runs. Merged files: `results/live-long-fixtures-{luna,haiku}-merged-20261023.md`.
 
+## Long real-site tasks (long-live-v1)
+
+16 real-site tasks x {Mantis, tree} x 3 runs = 48 runs per approach and model, judged blind by Codex `gpt-6.1-sol`. Results merge the original run and targeted reruns; a rerun replaces a failing verdict only when it is judged a success.
+
+| Agent | Mantis | Tree (Playwright MCP) |
+|---|---:|---:|
+| Luna (`gpt-6-luna`, Codex, medium) | **47/48 (98%)** | 42/48 (88%) |
+| Haiku (`claude-haiku-5-5`) | **48/48 (100%)** | **48/48 (100%)** |
+
+- Remaining judged failures: Luna Mantis `wiki-moons` r3 stopped extracting early (Mantis returned the values when asked); Luna tree `gutenberg-gothic` r1–r3 shortened Author strings instead of copying them exactly; Luna tree `selenium-window-frames-upload` r1–r3 could not see iframe contents because the Playwright MCP snapshot keeps fallback text over merged children. Mantis nests iframe contents correctly; Haiku recovered via screenshots.
+- For the tree upload harness, the fixture is written to `<attempt dir>/tree-output`, because tree can upload only from its output directory or the repo.
+- No remaining failure is a Mantis defect. Scores remain as judged; no rows are excluded.
+
 ## Live-site scorecard (live-v1 v1.7)
 
 Frozen [live-v1](live-v1.md) v1.7: 30 real-site tasks x 3 approaches x 3 runs = 90 runs per approach and model, judged blind by Codex `gpt-6.1-sol`. Task changes, regrades and run notes are in the [live-v1 changelog](live-v1.md#changelog-and-disclosures).

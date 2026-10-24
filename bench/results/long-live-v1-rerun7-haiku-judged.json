@@ -1,0 +1,39 @@
+{
+  "source": "long-live-v1-rerun7-haiku",
+  "judgeProvider": "codex",
+  "judgeModel": "gpt-6.1-sol",
+  "judgeModels": [
+    "gpt-6.1-sol"
+  ],
+  "siteBrokenTasks": [],
+  "runs": [
+    {
+      "task": "longlive-internet-window-frames-upload",
+      "approach": "tree",
+      "run": 2,
+      "finalUrl": "https://the-internet.herokuapp.com/upload",
+      "toolCalls": 23,
+      "totalInputTokens": 291265,
+      "wallS": 59.391,
+      "verdict": "success",
+      "reason": "The captures support the New Window visit and recheck, all four correctly associated frame texts, and the final File Uploader with README.md selected, while the journal records zero submissions.",
+      "evidence": [
+        "F1",
+        "F2",
+        "F3",
+        "F5",
+        "F8",
+        "F9"
+      ],
+      "frameCount": 9,
+      "finalFrame": "F9",
+      "judgeVerdict": "success",
+      "checks": null,
+      "deterministic": null,
+      "grading": "judge",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    }
+  ],
+  "skipped": []
+}

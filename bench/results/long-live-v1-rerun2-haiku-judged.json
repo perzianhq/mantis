@@ -1,0 +1,180 @@
+{
+  "source": "long-live-v1-rerun2-haiku",
+  "judgeProvider": "codex",
+  "judgeModel": "gpt-6.1-sol",
+  "judgeModels": [
+    "gpt-6.1-sol"
+  ],
+  "siteBrokenTasks": [],
+  "runs": [
+    {
+      "task": "longlive-form-selenium-review",
+      "approach": "mantis",
+      "run": 1,
+      "finalUrl": "https://www.selenium.dev/selenium/web/web-form.html",
+      "toolCalls": 14,
+      "totalInputTokens": 149413,
+      "wallS": 32.31,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 1,
+      "finalFrame": "F1",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-form-selenium-review",
+      "approach": "mantis",
+      "run": 2,
+      "finalUrl": "https://www.selenium.dev/selenium/web/web-form.html",
+      "toolCalls": 15,
+      "totalInputTokens": 170732,
+      "wallS": 31.269,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 1,
+      "finalFrame": "F1",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-form-selenium-review",
+      "approach": "mantis",
+      "run": 3,
+      "finalUrl": "https://www.selenium.dev/selenium/web/web-form.html",
+      "toolCalls": 15,
+      "totalInputTokens": 224481,
+      "wallS": 41.087,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 1,
+      "finalFrame": "F1",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-sauce-cart-revise",
+      "approach": "mantis",
+      "run": 1,
+      "finalUrl": "https://www.saucedemo.com/cart.html",
+      "toolCalls": 28,
+      "totalInputTokens": 311242,
+      "wallS": 49.808,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 10,
+      "finalFrame": "F10",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-sauce-cart-revise",
+      "approach": "tree",
+      "run": 1,
+      "finalUrl": "https://www.saucedemo.com/cart.html",
+      "toolCalls": 26,
+      "totalInputTokens": 397997,
+      "wallS": 64.201,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 10,
+      "finalFrame": "F10",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-sauce-cart-revise",
+      "approach": "mantis",
+      "run": 2,
+      "finalUrl": "https://www.saucedemo.com/cart.html",
+      "toolCalls": 20,
+      "totalInputTokens": 346814,
+      "wallS": 47.334,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 10,
+      "finalFrame": "F10",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-sauce-cart-revise",
+      "approach": "mantis",
+      "run": 3,
+      "finalUrl": "https://www.saucedemo.com/cart.html",
+      "toolCalls": 18,
+      "totalInputTokens": 261478,
+      "wallS": 46.383,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 10,
+      "finalFrame": "F10",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-sauce-checkout-review",
+      "approach": "mantis",
+      "run": 2,
+      "finalUrl": "https://www.saucedemo.com/checkout-step-two.html",
+      "toolCalls": 28,
+      "totalInputTokens": 433457,
+      "wallS": 65.292,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 12,
+      "finalFrame": "F12",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    }
+  ],
+  "skipped": []
+}

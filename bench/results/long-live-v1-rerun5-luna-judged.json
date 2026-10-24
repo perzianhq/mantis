@@ -1,0 +1,379 @@
+{
+  "source": "long-live-v1-rerun5-luna",
+  "judgeProvider": "codex",
+  "judgeModel": "gpt-6.1-sol",
+  "judgeModels": [
+    "gpt-6.1-sol"
+  ],
+  "siteBrokenTasks": [],
+  "runs": [
+    {
+      "task": "longlive-wiki-moons",
+      "approach": "mantis",
+      "run": 1,
+      "finalUrl": "https://en.wikipedia.org/w/index.php?title=Mimas&oldid=1377302334",
+      "toolCalls": 59,
+      "totalInputTokens": 317195,
+      "wallS": 176.729,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 12,
+      "finalFrame": "F12",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-wiki-moons",
+      "approach": "mantis",
+      "run": 3,
+      "finalUrl": "https://en.wikipedia.org/w/index.php?title=Mimas&oldid=1377302334",
+      "toolCalls": 13,
+      "totalInputTokens": 216528,
+      "wallS": 76.864,
+      "verdict": "failure",
+      "reason": "Deterministic grader failed: answer lacks \"Io | 1824.2 km | 1.769 d | 1610-01-08\"; answer lacks \"Europa | 1560.8 km | 3.551181 d | 1610-01-08\"; answer lacks \"Ganymede | 2632.27 km | 7.15455296 d | 1610-01-07\"; answer lacks \"Callisto | 2410.3 km | 16.6890184 d | 1610-01-07\"; answer lacks \"Titan | 2574.765 km | 15.945448 d | 1655-03-25\"; answer lacks \"Triton | 1353.4 km | 5.87685407 d | 1846-10-10\"; answer lacks \"Enceladus | 252.04 km | 1.370218 d | 1789-08-28\"; answer lacks \"Mimas | 197.49 km | 0.942421959 d | 1789-09-17\"; answer lacks \"Triton: retrograde\"; answer lacks \"Order: Ganymede > Titan > Callisto > Io > Europa > Triton > Enceladus > Mimas\".",
+      "frameCount": 10,
+      "finalFrame": "F10",
+      "checks": null,
+      "deterministic": {
+        "pass": false,
+        "failed": [
+          "answer lacks \"Io | 1824.2 km | 1.769 d | 1610-01-08\"",
+          "answer lacks \"Europa | 1560.8 km | 3.551181 d | 1610-01-08\"",
+          "answer lacks \"Ganymede | 2632.27 km | 7.15455296 d | 1610-01-07\"",
+          "answer lacks \"Callisto | 2410.3 km | 16.6890184 d | 1610-01-07\"",
+          "answer lacks \"Titan | 2574.765 km | 15.945448 d | 1655-03-25\"",
+          "answer lacks \"Triton | 1353.4 km | 5.87685407 d | 1846-10-10\"",
+          "answer lacks \"Enceladus | 252.04 km | 1.370218 d | 1789-08-28\"",
+          "answer lacks \"Mimas | 197.49 km | 0.942421959 d | 1789-09-17\"",
+          "answer lacks \"Triton: retrograde\"",
+          "answer lacks \"Order: Ganymede > Titan > Callisto > Io > Europa > Triton > Enceladus > Mimas\""
+        ]
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-gutenberg-gothic",
+      "approach": "tree",
+      "run": 1,
+      "finalUrl": "https://www.gutenberg.org/ebooks/84",
+      "toolCalls": 59,
+      "totalInputTokens": 473798,
+      "wallS": 132.268,
+      "verdict": "failure",
+      "reason": "Deterministic grader failed: answer lacks \"84 | Frankenstein; or, The modern Prometheus | Shelley, Mary Wollstonecraft, 1797-1851 | 1993-10-01 | PR\"; answer lacks \"345 | Dracula | Stoker, Bram, 1847-1912 | 1995-10-01 | PR\"; answer lacks \"174 | The Picture of Dorian Gray | Wilde, Oscar, 1854-1900 | 1994-10-01 | PR\"; answer lacks \"43 | The strange case of Dr. Jekyll and Mr. Hyde | Stevenson, Robert Louis, 1850-1894 | 2008-06-27 | PR\"; answer lacks \"696 | The Castle of Otranto | Walpole, Horace, 1717-1797 | 1996-10-01 | PR\"; answer lacks \"3268 | The Mysteries of Udolpho | Radcliffe, Ann Ward, 1764-1823 | 2002-06-01 | PR\"; answer lacks \"601 | The Monk: A Romance | Lewis, M. G. (Matthew Gregory), 1775-1818 | 1996-07-01 | PR\"; answer lacks \"209 | The Turn of the Screw | James, Henry, 1843-1916 | 1995-02-01 | PS\".",
+      "frameCount": 12,
+      "finalFrame": "F12",
+      "checks": null,
+      "deterministic": {
+        "pass": false,
+        "failed": [
+          "answer lacks \"84 | Frankenstein; or, The modern Prometheus | Shelley, Mary Wollstonecraft, 1797-1851 | 1993-10-01 | PR\"",
+          "answer lacks \"345 | Dracula | Stoker, Bram, 1847-1912 | 1995-10-01 | PR\"",
+          "answer lacks \"174 | The Picture of Dorian Gray | Wilde, Oscar, 1854-1900 | 1994-10-01 | PR\"",
+          "answer lacks \"43 | The strange case of Dr. Jekyll and Mr. Hyde | Stevenson, Robert Louis, 1850-1894 | 2008-06-27 | PR\"",
+          "answer lacks \"696 | The Castle of Otranto | Walpole, Horace, 1717-1797 | 1996-10-01 | PR\"",
+          "answer lacks \"3268 | The Mysteries of Udolpho | Radcliffe, Ann Ward, 1764-1823 | 2002-06-01 | PR\"",
+          "answer lacks \"601 | The Monk: A Romance | Lewis, M. G. (Matthew Gregory), 1775-1818 | 1996-07-01 | PR\"",
+          "answer lacks \"209 | The Turn of the Screw | James, Henry, 1843-1916 | 1995-02-01 | PS\""
+        ]
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-gutenberg-gothic",
+      "approach": "tree",
+      "run": 2,
+      "finalUrl": "https://www.gutenberg.org/ebooks/84",
+      "toolCalls": 34,
+      "totalInputTokens": 192594,
+      "wallS": 76.557,
+      "verdict": "failure",
+      "reason": "Deterministic grader failed: answer lacks \"84 | Frankenstein; or, The modern Prometheus | Shelley, Mary Wollstonecraft, 1797-1851 | 1993-10-01 | PR\"; answer lacks \"345 | Dracula | Stoker, Bram, 1847-1912 | 1995-10-01 | PR\"; answer lacks \"174 | The Picture of Dorian Gray | Wilde, Oscar, 1854-1900 | 1994-10-01 | PR\"; answer lacks \"43 | The strange case of Dr. Jekyll and Mr. Hyde | Stevenson, Robert Louis, 1850-1894 | 2008-06-27 | PR\"; answer lacks \"696 | The Castle of Otranto | Walpole, Horace, 1717-1797 | 1996-10-01 | PR\"; answer lacks \"3268 | The Mysteries of Udolpho | Radcliffe, Ann Ward, 1764-1823 | 2002-06-01 | PR\"; answer lacks \"601 | The Monk: A Romance | Lewis, M. G. (Matthew Gregory), 1775-1818 | 1996-07-01 | PR\"; answer lacks \"209 | The Turn of the Screw | James, Henry, 1843-1916 | 1995-02-01 | PS\".",
+      "frameCount": 12,
+      "finalFrame": "F12",
+      "checks": null,
+      "deterministic": {
+        "pass": false,
+        "failed": [
+          "answer lacks \"84 | Frankenstein; or, The modern Prometheus | Shelley, Mary Wollstonecraft, 1797-1851 | 1993-10-01 | PR\"",
+          "answer lacks \"345 | Dracula | Stoker, Bram, 1847-1912 | 1995-10-01 | PR\"",
+          "answer lacks \"174 | The Picture of Dorian Gray | Wilde, Oscar, 1854-1900 | 1994-10-01 | PR\"",
+          "answer lacks \"43 | The strange case of Dr. Jekyll and Mr. Hyde | Stevenson, Robert Louis, 1850-1894 | 2008-06-27 | PR\"",
+          "answer lacks \"696 | The Castle of Otranto | Walpole, Horace, 1717-1797 | 1996-10-01 | PR\"",
+          "answer lacks \"3268 | The Mysteries of Udolpho | Radcliffe, Ann Ward, 1764-1823 | 2002-06-01 | PR\"",
+          "answer lacks \"601 | The Monk: A Romance | Lewis, M. G. (Matthew Gregory), 1775-1818 | 1996-07-01 | PR\"",
+          "answer lacks \"209 | The Turn of the Screw | James, Henry, 1843-1916 | 1995-02-01 | PS\""
+        ]
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-gutenberg-gothic",
+      "approach": "tree",
+      "run": 3,
+      "finalUrl": "https://www.gutenberg.org/ebooks/84",
+      "toolCalls": 39,
+      "totalInputTokens": 1313537,
+      "wallS": 137.753,
+      "verdict": "failure",
+      "reason": "Deterministic grader failed: answer lacks \"84 | Frankenstein; or, The modern Prometheus | Shelley, Mary Wollstonecraft, 1797-1851 | 1993-10-01 | PR\"; answer lacks \"345 | Dracula | Stoker, Bram, 1847-1912 | 1995-10-01 | PR\"; answer lacks \"174 | The Picture of Dorian Gray | Wilde, Oscar, 1854-1900 | 1994-10-01 | PR\"; answer lacks \"43 | The strange case of Dr. Jekyll and Mr. Hyde | Stevenson, Robert Louis, 1850-1894 | 2008-06-27 | PR\"; answer lacks \"696 | The Castle of Otranto | Walpole, Horace, 1717-1797 | 1996-10-01 | PR\"; answer lacks \"3268 | The Mysteries of Udolpho | Radcliffe, Ann Ward, 1764-1823 | 2002-06-01 | PR\"; answer lacks \"601 | The Monk: A Romance | Lewis, M. G. (Matthew Gregory), 1775-1818 | 1996-07-01 | PR\"; answer lacks \"209 | The Turn of the Screw | James, Henry, 1843-1916 | 1995-02-01 | PS\".",
+      "frameCount": 12,
+      "finalFrame": "F12",
+      "checks": null,
+      "deterministic": {
+        "pass": false,
+        "failed": [
+          "answer lacks \"84 | Frankenstein; or, The modern Prometheus | Shelley, Mary Wollstonecraft, 1797-1851 | 1993-10-01 | PR\"",
+          "answer lacks \"345 | Dracula | Stoker, Bram, 1847-1912 | 1995-10-01 | PR\"",
+          "answer lacks \"174 | The Picture of Dorian Gray | Wilde, Oscar, 1854-1900 | 1994-10-01 | PR\"",
+          "answer lacks \"43 | The strange case of Dr. Jekyll and Mr. Hyde | Stevenson, Robert Louis, 1850-1894 | 2008-06-27 | PR\"",
+          "answer lacks \"696 | The Castle of Otranto | Walpole, Horace, 1717-1797 | 1996-10-01 | PR\"",
+          "answer lacks \"3268 | The Mysteries of Udolpho | Radcliffe, Ann Ward, 1764-1823 | 2002-06-01 | PR\"",
+          "answer lacks \"601 | The Monk: A Romance | Lewis, M. G. (Matthew Gregory), 1775-1818 | 1996-07-01 | PR\"",
+          "answer lacks \"209 | The Turn of the Screw | James, Henry, 1843-1916 | 1995-02-01 | PS\""
+        ]
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-gutenberg-dickens-search",
+      "approach": "mantis",
+      "run": 3,
+      "finalUrl": "https://www.gutenberg.org/ebooks/results/?author=Charles+Dickens&title=&subject=&locc=PR&lang=en&category=&filetype=&submit_search=Search&pageno=2",
+      "toolCalls": 17,
+      "totalInputTokens": 347595,
+      "wallS": 79.47,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 10,
+      "finalFrame": "F10",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-met-monet-search",
+      "approach": "mantis",
+      "run": 1,
+      "finalUrl": "https://www.metmuseum.org/art/collection/search?q=Monet&showOnly=withImage&sortBy=Title&offset=42",
+      "toolCalls": 26,
+      "totalInputTokens": 650515,
+      "wallS": 111.192,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 12,
+      "finalFrame": "F12",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-met-monet-search",
+      "approach": "mantis",
+      "run": 2,
+      "finalUrl": "https://www.metmuseum.org/art/collection/search?q=Monet&showOnly=withImage&sortBy=Title&offset=42",
+      "toolCalls": 22,
+      "totalInputTokens": 528261,
+      "wallS": 93.043,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 12,
+      "finalFrame": "F12",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-met-rembrandt-search",
+      "approach": "tree",
+      "run": 1,
+      "finalUrl": "https://www.metmuseum.org/art/collection/search?q=Rembrandt&searchField=All&showOnly=withImage&sortBy=Title&offset=42",
+      "toolCalls": 26,
+      "totalInputTokens": 943992,
+      "wallS": 153.434,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 12,
+      "finalFrame": "F12",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-internet-window-frames-upload",
+      "approach": "tree",
+      "run": 1,
+      "finalUrl": "https://the-internet.herokuapp.com/upload",
+      "toolCalls": 26,
+      "totalInputTokens": 344829,
+      "wallS": 75.178,
+      "verdict": "failure",
+      "reason": "F7 shows no file selected, the report confirms README.md was not selected, and the last capture F8 shows New Window rather than the required final upload page.",
+      "evidence": [
+        "F7",
+        "F8"
+      ],
+      "frameCount": 8,
+      "finalFrame": null,
+      "judgeVerdict": "failure",
+      "checks": null,
+      "deterministic": null,
+      "grading": "judge",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-internet-window-frames-upload",
+      "approach": "tree",
+      "run": 2,
+      "finalUrl": "https://the-internet.herokuapp.com/upload",
+      "toolCalls": 22,
+      "totalInputTokens": 380007,
+      "wallS": 71.678,
+      "verdict": "failure",
+      "reason": "F7 shows no file selected, and the agent explicitly reports that README.md was not selected, so the required final upload state was not achieved.",
+      "evidence": [
+        "F7",
+        "F8"
+      ],
+      "frameCount": 8,
+      "finalFrame": null,
+      "judgeVerdict": "failure",
+      "checks": null,
+      "deterministic": null,
+      "grading": "judge",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-internet-window-frames-upload",
+      "approach": "tree",
+      "run": 3,
+      "finalUrl": "https://the-internet.herokuapp.com/upload",
+      "toolCalls": 18,
+      "totalInputTokens": 315283,
+      "wallS": 62.648,
+      "verdict": "failure",
+      "reason": "F7 shows “No file chosen,” and the final report confirms README.md was not selected, so the required final state was not achieved.",
+      "evidence": [
+        "F7"
+      ],
+      "frameCount": 7,
+      "finalFrame": null,
+      "judgeVerdict": "failure",
+      "checks": null,
+      "deterministic": null,
+      "grading": "judge",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-selenium-window-frames-upload",
+      "approach": "tree",
+      "run": 1,
+      "finalUrl": "https://www.selenium.dev/selenium/web/web-form.html",
+      "toolCalls": 27,
+      "totalInputTokens": 425676,
+      "wallS": 62.121,
+      "verdict": "failure",
+      "reason": "F10 shows no file selected and the journal records no uploads; the final report also omits the required selectomatic and multi selected options for both iframe copies.",
+      "evidence": [
+        "F4",
+        "F6",
+        "F10"
+      ],
+      "frameCount": 10,
+      "finalFrame": "F10",
+      "judgeVerdict": "failure",
+      "checks": null,
+      "deterministic": null,
+      "grading": "judge",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-selenium-window-frames-upload",
+      "approach": "tree",
+      "run": 2,
+      "finalUrl": "https://www.selenium.dev/selenium/web/web-form.html",
+      "toolCalls": 25,
+      "totalInputTokens": 324035,
+      "wallS": 53.597,
+      "verdict": "failure",
+      "reason": "The final File input is empty rather than showing README.md (F10), and the report explicitly omits the required introductory text and selected options for both iframe copies (F4, F6).",
+      "evidence": [
+        "F4",
+        "F6",
+        "F10"
+      ],
+      "frameCount": 10,
+      "finalFrame": "F10",
+      "judgeVerdict": "failure",
+      "checks": null,
+      "deterministic": null,
+      "grading": "judge",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-selenium-window-frames-upload",
+      "approach": "tree",
+      "run": 3,
+      "finalUrl": "https://www.selenium.dev/selenium/web/web-form.html",
+      "toolCalls": 25,
+      "totalInputTokens": 445813,
+      "wallS": 57.028,
+      "verdict": "failure",
+      "reason": "F7 shows no file selected, and the agent confirms README.md was never selected and omits the required introductory text and selected options for both iframe copies shown in F4 and F6.",
+      "evidence": [
+        "F4",
+        "F6",
+        "F7"
+      ],
+      "frameCount": 9,
+      "finalFrame": null,
+      "judgeVerdict": "failure",
+      "checks": null,
+      "deterministic": null,
+      "grading": "judge",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    }
+  ],
+  "skipped": []
+}

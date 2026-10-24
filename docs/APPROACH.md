@@ -122,6 +122,12 @@ Measured results and their limits: [bench/RESULTS.md](../bench/RESULTS.md).
 
 - **Capture and actions.** An in-page walker records role, name, state, box, visibility and coverage.
   Playwright resolves numbered elements and supplies actionability checks and auto-wait.
+- **Controls and action feedback.** `select` and `fill` list the options of multi-select controls;
+  readable `name` or `id` values name otherwise-unlabelled inputs, textareas and selects. Repeated
+  date-attribute and selectable-grid cells get action ids. File inputs show selected basenames, and
+  `upload` reports selection rather than submission. A click blocked by a combobox suggestion popup
+  reports: “press Escape, select a suggestion, or click elsewhere”. `page` re-reads the view when only
+  the URL changed.
 - **Stable ids.** A `WeakMap<Element, number>` on `window` keeps each element's number while it lives;
   numbers are never reused within a page load.
 - **Text format and budget.** `#N role "name" (states)`; regions in `[brackets]`, headings without ids.

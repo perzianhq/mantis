@@ -1,0 +1,96 @@
+{
+  "source": "long-live-v1-fix-haiku",
+  "judgeProvider": "codex",
+  "judgeModel": "gpt-6.1-sol",
+  "judgeModels": [
+    "gpt-6.1-sol"
+  ],
+  "siteBrokenTasks": [],
+  "runs": [
+    {
+      "task": "longlive-wiki-probes",
+      "approach": "mantis",
+      "run": 1,
+      "finalUrl": "https://en.wikipedia.org/w/index.php?title=Pioneer_10&oldid=1381047166",
+      "toolCalls": 41,
+      "totalInputTokens": 702360,
+      "wallS": 253.611,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 12,
+      "finalFrame": "F12",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-wiki-probes",
+      "approach": "tree",
+      "run": 1,
+      "finalUrl": "https://en.wikipedia.org/w/index.php?title=Pioneer_10&oldid=1381047166",
+      "toolCalls": 46,
+      "totalInputTokens": 1509577,
+      "wallS": 188.154,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 12,
+      "finalFrame": "F12",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-wiki-moons",
+      "approach": "mantis",
+      "run": 1,
+      "finalUrl": "https://en.wikipedia.org/w/index.php?title=Mimas&oldid=1377302334",
+      "toolCalls": 22,
+      "totalInputTokens": 549953,
+      "wallS": 114.236,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 12,
+      "finalFrame": "F12",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-wiki-moons",
+      "approach": "tree",
+      "run": 1,
+      "finalUrl": "https://en.wikipedia.org/w/index.php?title=Mimas&oldid=1377302334",
+      "toolCalls": 26,
+      "totalInputTokens": 491430,
+      "wallS": 116.75,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 12,
+      "finalFrame": "F12",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    }
+  ],
+  "skipped": []
+}

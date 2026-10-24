@@ -1,0 +1,314 @@
+{
+  "source": "long-live-v1-rerun3-luna",
+  "judgeProvider": "codex",
+  "judgeModel": "gpt-6.1-sol",
+  "judgeModels": [
+    "gpt-6.1-sol"
+  ],
+  "siteBrokenTasks": [],
+  "runs": [
+    {
+      "task": "longlive-wiki-probes",
+      "approach": "tree",
+      "run": 1,
+      "finalUrl": "https://en.wikipedia.org/w/index.php?title=Pioneer_10&oldid=1381047166",
+      "toolCalls": 28,
+      "totalInputTokens": 324529,
+      "wallS": 81.907,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 12,
+      "finalFrame": "F12",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-wiki-probes",
+      "approach": "tree",
+      "run": 2,
+      "finalUrl": "https://en.wikipedia.org/w/index.php?title=Pioneer_10&oldid=1381047166",
+      "toolCalls": 23,
+      "totalInputTokens": 273974,
+      "wallS": 71.276,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 12,
+      "finalFrame": "F12",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-wiki-probes",
+      "approach": "tree",
+      "run": 3,
+      "finalUrl": "https://en.wikipedia.org/w/index.php?title=Pioneer_10&oldid=1381047166",
+      "toolCalls": 28,
+      "totalInputTokens": 315372,
+      "wallS": 78.454,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 12,
+      "finalFrame": "F12",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-wiki-moons",
+      "approach": "tree",
+      "run": 3,
+      "finalUrl": "https://en.wikipedia.org/w/index.php?title=Mimas&oldid=1377302334",
+      "toolCalls": 62,
+      "totalInputTokens": 509902,
+      "wallS": 119.114,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 12,
+      "finalFrame": "F12",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-gutenberg-novels",
+      "approach": "tree",
+      "run": 1,
+      "finalUrl": "https://www.gutenberg.org/ebooks/105",
+      "toolCalls": 34,
+      "totalInputTokens": 385542,
+      "wallS": 60.978,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 12,
+      "finalFrame": "F12",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-gutenberg-novels",
+      "approach": "tree",
+      "run": 2,
+      "finalUrl": "https://www.gutenberg.org/ebooks/105",
+      "toolCalls": 33,
+      "totalInputTokens": 246547,
+      "wallS": 53.936,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 12,
+      "finalFrame": "F12",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-gutenberg-gothic",
+      "approach": "tree",
+      "run": 1,
+      "finalUrl": "https://www.gutenberg.org/ebooks/84",
+      "toolCalls": 34,
+      "totalInputTokens": 170957,
+      "wallS": 49.799,
+      "verdict": "failure",
+      "reason": "Deterministic grader failed: answer lacks \"84 | Frankenstein; or, The modern Prometheus | Shelley, Mary Wollstonecraft, 1797-1851 | 1993-10-01 | PR\"; answer lacks \"345 | Dracula | Stoker, Bram, 1847-1912 | 1995-10-01 | PR\"; answer lacks \"174 | The Picture of Dorian Gray | Wilde, Oscar, 1854-1900 | 1994-10-01 | PR\"; answer lacks \"43 | The strange case of Dr. Jekyll and Mr. Hyde | Stevenson, Robert Louis, 1850-1894 | 2008-06-27 | PR\"; answer lacks \"696 | The Castle of Otranto | Walpole, Horace, 1717-1797 | 1996-10-01 | PR\"; answer lacks \"3268 | The Mysteries of Udolpho | Radcliffe, Ann Ward, 1764-1823 | 2002-06-01 | PR\"; answer lacks \"601 | The Monk: A Romance | Lewis, M. G. (Matthew Gregory), 1775-1818 | 1996-07-01 | PR\"; answer lacks \"209 | The Turn of the Screw | James, Henry, 1843-1916 | 1995-02-01 | PS\".",
+      "frameCount": 12,
+      "finalFrame": "F12",
+      "checks": null,
+      "deterministic": {
+        "pass": false,
+        "failed": [
+          "answer lacks \"84 | Frankenstein; or, The modern Prometheus | Shelley, Mary Wollstonecraft, 1797-1851 | 1993-10-01 | PR\"",
+          "answer lacks \"345 | Dracula | Stoker, Bram, 1847-1912 | 1995-10-01 | PR\"",
+          "answer lacks \"174 | The Picture of Dorian Gray | Wilde, Oscar, 1854-1900 | 1994-10-01 | PR\"",
+          "answer lacks \"43 | The strange case of Dr. Jekyll and Mr. Hyde | Stevenson, Robert Louis, 1850-1894 | 2008-06-27 | PR\"",
+          "answer lacks \"696 | The Castle of Otranto | Walpole, Horace, 1717-1797 | 1996-10-01 | PR\"",
+          "answer lacks \"3268 | The Mysteries of Udolpho | Radcliffe, Ann Ward, 1764-1823 | 2002-06-01 | PR\"",
+          "answer lacks \"601 | The Monk: A Romance | Lewis, M. G. (Matthew Gregory), 1775-1818 | 1996-07-01 | PR\"",
+          "answer lacks \"209 | The Turn of the Screw | James, Henry, 1843-1916 | 1995-02-01 | PS\""
+        ]
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-gutenberg-gothic",
+      "approach": "tree",
+      "run": 2,
+      "finalUrl": "https://www.gutenberg.org/ebooks/84",
+      "toolCalls": 17,
+      "totalInputTokens": 172914,
+      "wallS": 40.572,
+      "verdict": "failure",
+      "reason": "Deterministic grader failed: answer lacks \"174 | The Picture of Dorian Gray | Wilde, Oscar, 1854-1900 | 1994-10-01 | PR\"; answer lacks \"43 | The strange case of Dr. Jekyll and Mr. Hyde | Stevenson, Robert Louis, 1850-1894 | 2008-06-27 | PR\"; answer lacks \"696 | The Castle of Otranto | Walpole, Horace, 1717-1797 | 1996-10-01 | PR\"; answer lacks \"209 | The Turn of the Screw | James, Henry, 1843-1916 | 1995-02-01 | PS\".",
+      "frameCount": 9,
+      "finalFrame": "F9",
+      "checks": null,
+      "deterministic": {
+        "pass": false,
+        "failed": [
+          "answer lacks \"174 | The Picture of Dorian Gray | Wilde, Oscar, 1854-1900 | 1994-10-01 | PR\"",
+          "answer lacks \"43 | The strange case of Dr. Jekyll and Mr. Hyde | Stevenson, Robert Louis, 1850-1894 | 2008-06-27 | PR\"",
+          "answer lacks \"696 | The Castle of Otranto | Walpole, Horace, 1717-1797 | 1996-10-01 | PR\"",
+          "answer lacks \"209 | The Turn of the Screw | James, Henry, 1843-1916 | 1995-02-01 | PS\""
+        ]
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-gutenberg-gothic",
+      "approach": "tree",
+      "run": 3,
+      "finalUrl": "https://www.gutenberg.org/ebooks/84",
+      "toolCalls": 46,
+      "totalInputTokens": 1841395,
+      "wallS": 129.589,
+      "verdict": "failure",
+      "reason": "Deterministic grader failed: answer lacks \"84 | Frankenstein; or, The modern Prometheus | Shelley, Mary Wollstonecraft, 1797-1851 | 1993-10-01 | PR\"; answer lacks \"345 | Dracula | Stoker, Bram, 1847-1912 | 1995-10-01 | PR\"; answer lacks \"174 | The Picture of Dorian Gray | Wilde, Oscar, 1854-1900 | 1994-10-01 | PR\"; answer lacks \"43 | The strange case of Dr. Jekyll and Mr. Hyde | Stevenson, Robert Louis, 1850-1894 | 2008-06-27 | PR\"; answer lacks \"696 | The Castle of Otranto | Walpole, Horace, 1717-1797 | 1996-10-01 | PR\"; answer lacks \"3268 | The Mysteries of Udolpho | Radcliffe, Ann Ward, 1764-1823 | 2002-06-01 | PR\"; answer lacks \"601 | The Monk: A Romance | Lewis, M. G. (Matthew Gregory), 1775-1818 | 1996-07-01 | PR\"; answer lacks \"209 | The Turn of the Screw | James, Henry, 1843-1916 | 1995-02-01 | PS\".",
+      "frameCount": 12,
+      "finalFrame": "F12",
+      "checks": null,
+      "deterministic": {
+        "pass": false,
+        "failed": [
+          "answer lacks \"84 | Frankenstein; or, The modern Prometheus | Shelley, Mary Wollstonecraft, 1797-1851 | 1993-10-01 | PR\"",
+          "answer lacks \"345 | Dracula | Stoker, Bram, 1847-1912 | 1995-10-01 | PR\"",
+          "answer lacks \"174 | The Picture of Dorian Gray | Wilde, Oscar, 1854-1900 | 1994-10-01 | PR\"",
+          "answer lacks \"43 | The strange case of Dr. Jekyll and Mr. Hyde | Stevenson, Robert Louis, 1850-1894 | 2008-06-27 | PR\"",
+          "answer lacks \"696 | The Castle of Otranto | Walpole, Horace, 1717-1797 | 1996-10-01 | PR\"",
+          "answer lacks \"3268 | The Mysteries of Udolpho | Radcliffe, Ann Ward, 1764-1823 | 2002-06-01 | PR\"",
+          "answer lacks \"601 | The Monk: A Romance | Lewis, M. G. (Matthew Gregory), 1775-1818 | 1996-07-01 | PR\"",
+          "answer lacks \"209 | The Turn of the Screw | James, Henry, 1843-1916 | 1995-02-01 | PS\""
+        ]
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-met-vangogh",
+      "approach": "tree",
+      "run": 1,
+      "finalUrl": "https://www.metmuseum.org/art/collection/search/436530",
+      "toolCalls": 17,
+      "totalInputTokens": 395864,
+      "wallS": 74.218,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 9,
+      "finalFrame": "F9",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-met-vangogh",
+      "approach": "tree",
+      "run": 2,
+      "finalUrl": "https://www.metmuseum.org/art/collection/search/436530",
+      "toolCalls": 20,
+      "totalInputTokens": 252265,
+      "wallS": 67.632,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 10,
+      "finalFrame": "F10",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-gutenberg-dickens-search",
+      "approach": "tree",
+      "run": 2,
+      "finalUrl": "https://www.gutenberg.org/ebooks/results/?author=Charles+Dickens&title=&subject=&locc=PR&lang=en&category=&filetype=&submit_search=Search&pageno=2",
+      "toolCalls": 21,
+      "totalInputTokens": 611281,
+      "wallS": 65.156,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 8,
+      "finalFrame": "F8",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-met-rembrandt-search",
+      "approach": "tree",
+      "run": 1,
+      "finalUrl": "https://www.metmuseum.org/art/collection/search?q=Rembrandt&sortBy=Title&showOnly=withImage",
+      "toolCalls": 15,
+      "totalInputTokens": 241719,
+      "wallS": 106.062,
+      "verdict": "failure",
+      "reason": "Deterministic grader failed: answer lacks \"437397 | Self-Portrait | 1660 | 14.40.618 | 80.3 x 67.3 cm\"; answer lacks \"437394 | Aristotle with a Bust of Homer | 1653 | 61.198 | 143.5 x 136.5 cm\"; answer lacks \"Taller: 437394\"; final URL does not match the required origin/path; final frame lacks \"43-84 of\".",
+      "frameCount": 6,
+      "finalFrame": "F6",
+      "checks": null,
+      "deterministic": {
+        "pass": false,
+        "failed": [
+          "answer lacks \"437397 | Self-Portrait | 1660 | 14.40.618 | 80.3 x 67.3 cm\"",
+          "answer lacks \"437394 | Aristotle with a Bust of Homer | 1653 | 61.198 | 143.5 x 136.5 cm\"",
+          "answer lacks \"Taller: 437394\"",
+          "final URL does not match the required origin/path",
+          "final frame lacks \"43-84 of\""
+        ]
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    }
+  ],
+  "skipped": []
+}

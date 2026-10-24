@@ -1,0 +1,164 @@
+{
+  "source": "long-live-v1-chain-haiku",
+  "judgeProvider": "codex",
+  "judgeModel": "gpt-6.1-sol",
+  "judgeModels": [
+    "gpt-6.1-sol"
+  ],
+  "siteBrokenTasks": [],
+  "runs": [
+    {
+      "task": "longlive-form-selenium-student",
+      "approach": "mantis",
+      "run": 1,
+      "finalUrl": "https://www.selenium.dev/selenium/web/formPage.html",
+      "toolCalls": 24,
+      "totalInputTokens": 296873,
+      "wallS": 84.825,
+      "verdict": "failure",
+      "reason": "Deterministic grader failed: answer lacks \"Prepared: Ada Example; Four; Eggs and Sausages; unsubmitted\"; final form lacks \"working\"=\"Reviewed profile\"; final form lacks \"inputWithText\"=\"Ada Example\"; final form lacks \"withText\"=\"Synthetic profile. Leave unsubmitted.\"; final form lacks \"emptyTextArea\"=\"12 Example Lane\".",
+      "frameCount": 1,
+      "finalFrame": "F1",
+      "checks": null,
+      "deterministic": {
+        "pass": false,
+        "failed": [
+          "answer lacks \"Prepared: Ada Example; Four; Eggs and Sausages; unsubmitted\"",
+          "final form lacks \"working\"=\"Reviewed profile\"",
+          "final form lacks \"inputWithText\"=\"Ada Example\"",
+          "final form lacks \"withText\"=\"Synthetic profile. Leave unsubmitted.\"",
+          "final form lacks \"emptyTextArea\"=\"12 Example Lane\""
+        ]
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-form-selenium-student",
+      "approach": "tree",
+      "run": 1,
+      "finalUrl": "https://www.selenium.dev/selenium/web/formPage.html",
+      "toolCalls": 19,
+      "totalInputTokens": 204606,
+      "wallS": 45.598,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 1,
+      "finalFrame": "F1",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-internet-window-frames-upload",
+      "approach": "mantis",
+      "run": 1,
+      "finalUrl": "https://the-internet.herokuapp.com/upload",
+      "toolCalls": 33,
+      "totalInputTokens": 424643,
+      "wallS": 296.981,
+      "verdict": "unsure",
+      "reason": "F2 and F9 show New Window and F10 confirms README.md selected with zero journal submissions, but F5 and the report do not establish separate reads of each leaf frame or explicit distinction of the top parent frameset.",
+      "evidence": [
+        "F2",
+        "F5",
+        "F9",
+        "F10"
+      ],
+      "frameCount": 10,
+      "finalFrame": "F10",
+      "judgeVerdict": "unsure",
+      "checks": null,
+      "deterministic": null,
+      "grading": "judge",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-internet-window-frames-upload",
+      "approach": "tree",
+      "run": 1,
+      "finalUrl": "https://the-internet.herokuapp.com/upload",
+      "toolCalls": 25,
+      "totalInputTokens": 351079,
+      "wallS": 237.275,
+      "verdict": "success",
+      "reason": "F1–F3 support the new-window handoff, F5 shows all four correctly reported frame positions, F9 supports the heading recheck, and F10 confirms README.md selected on File Uploader with zero journal submissions.",
+      "evidence": [
+        "F1",
+        "F2",
+        "F3",
+        "F5",
+        "F9",
+        "F10"
+      ],
+      "frameCount": 10,
+      "finalFrame": "F10",
+      "judgeVerdict": "success",
+      "checks": null,
+      "deterministic": null,
+      "grading": "judge",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-selenium-window-frames-upload",
+      "approach": "mantis",
+      "run": 1,
+      "finalUrl": "https://www.selenium.dev/selenium/web/web-form.html",
+      "toolCalls": 23,
+      "totalInputTokens": 338681,
+      "wallS": 51.004,
+      "verdict": "success",
+      "reason": "F2 shows Success! and both result headings, F4 and F6 show matching iframe headings and required frame facts, F8 and F9 support the reported tab rechecks, and F10 confirms README.md selected with journal submissions at zero.",
+      "evidence": [
+        "F2",
+        "F4",
+        "F6",
+        "F8",
+        "F9",
+        "F10"
+      ],
+      "frameCount": 10,
+      "finalFrame": "F10",
+      "judgeVerdict": "success",
+      "checks": null,
+      "deterministic": null,
+      "grading": "judge",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-selenium-window-frames-upload",
+      "approach": "tree",
+      "run": 1,
+      "finalUrl": "https://www.selenium.dev/selenium/web/web-form.html",
+      "toolCalls": 31,
+      "totalInputTokens": 407045,
+      "wallS": 75.436,
+      "verdict": "failure",
+      "reason": "The final report omits iframe1-name’s introductory text, selectomatic selection One, and multi selections Eggs and Sausages for both iframe copies, and does not compare them, although the required pages and final README.md selection were captured.",
+      "evidence": [
+        "F4",
+        "F6",
+        "F9",
+        "F10"
+      ],
+      "frameCount": 10,
+      "finalFrame": "F10",
+      "judgeVerdict": "failure",
+      "checks": null,
+      "deterministic": null,
+      "grading": "judge",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    }
+  ],
+  "skipped": []
+}

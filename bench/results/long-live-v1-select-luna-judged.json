@@ -1,0 +1,33 @@
+{
+  "source": "long-live-v1-select-luna",
+  "judgeProvider": "codex",
+  "judgeModel": "gpt-6.1-sol",
+  "judgeModels": [
+    "gpt-6.1-sol"
+  ],
+  "siteBrokenTasks": [],
+  "runs": [
+    {
+      "task": "longlive-form-selenium-select",
+      "approach": "mantis",
+      "run": 1,
+      "finalUrl": "https://www.selenium.dev/selenium/web/selectPage.html",
+      "toolCalls": 25,
+      "totalInputTokens": 118257,
+      "wallS": 34.025,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 1,
+      "finalFrame": "F1",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    }
+  ],
+  "skipped": []
+}
