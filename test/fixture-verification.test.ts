@@ -11,7 +11,7 @@ import { extractGradedAnswer } from '../bench/agent/integrity.js';
 import { LONG_EXPECT } from '../bench/fixtures-long.js';
 import { V2_DEVELOPMENT_CASES, V2_DEVELOPMENT_CHECKS, gradeV2DevelopmentCase } from '../bench/fixtures-v2-development.js';
 import { v2DevelopmentRoute } from '../bench/fixtures-v2-development.js';
-import { LIVE_LONG_FIXTURE_CASES, LIVE_LONG_FIXTURE_TASKS, gradeLiveLongFixtureCase } from '../bench/agent/live-long-fixtures.js';
+import { LONG_LOCAL_V1_CASES, LONG_LOCAL_V1_TASKS, gradeLongLocalV1Case } from '../bench/agent/long-local-v1.js';
 import { V21_RELIABILITY_CASES, gradeV21ReliabilityCase } from '../bench/fixtures-v21-reliability.js';
 import { spawn } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
@@ -1196,57 +1196,57 @@ it('grader: a settled beacon that reaches the server before its click is reorder
   expect(orderObservations(mixed).map((e) => e.documentId)).toEqual(['a', 'b', 'a']);
 });
 
-// Full replay passes, near-miss, rollback and late-revision cases live in test/live-long-fixtures.test.ts.
-it('live-long-fixtures: no ledger, no pass, even with the right receipt in the answer', () => {
-  expect(gradeLiveLongFixtureCase('llf-unknown-off', 'x', []).pass).toBe(false);
-  for (const entry of LIVE_LONG_FIXTURE_CASES) {
+// Full replay passes, near-miss, rollback and late-revision cases live in test/long-local-v1.test.ts.
+it('long-local-v1: no ledger, no pass, even with the right receipt in the answer', () => {
+  expect(gradeLongLocalV1Case('llf-unknown-off', 'x', []).pass).toBe(false);
+  for (const entry of LONG_LOCAL_V1_CASES) {
     const expected = entry.expected as { receipt?: string; workspace?: { receipt?: string } };
     const receipt = expected.receipt ?? expected.workspace?.receipt;
-    const grade = gradeLiveLongFixtureCase(entry.id, `Receipt ${receipt} total 101.29 and 870.00`, []);
+    const grade = gradeLongLocalV1Case(entry.id, `Receipt ${receipt} total 101.29 and 870.00`, []);
     expect(grade.pass).toBe(false);
   }
 });
 
-it('live-long-fixtures: accepts harmless inspection after completion but rejects a later mutation, pending work, or skipped hazard evidence', () => {
-  const entry = LIVE_LONG_FIXTURE_CASES.find((candidate) => candidate.id === 'llf-basket-off')!;
+it('long-local-v1: accepts harmless inspection after completion but rejects a later mutation, pending work, or skipped hazard evidence', () => {
+  const entry = LONG_LOCAL_V1_CASES.find((candidate) => candidate.id === 'llf-basket-off')!;
   const expected = entry.expected as { revision: number; receipt: string; cart: string[][]; coupon: string };
   const event = (ledger: object, options: { path?: string; kind?: FixtureObservation['kind']; target?: string; arrival?: number } = {}): FixtureObservation => ({
-    arrival: options.arrival ?? 0, path: options.path ?? '/live-long/basket/off/done', kind: options.kind ?? 'settled', documentId: 'doc', target: { tag: 'button', id: '', name: '', type: '', ariaLabel: options.target ?? '', text: options.target ?? '', href: '', value: '', checked: false }, controls: {}, text: '',
-    long: { url: options.path ?? '/live-long/basket/off/done', revision: (ledger as { revision: number }).revision, ledger },
+    arrival: options.arrival ?? 0, path: options.path ?? '/long-local/basket/off/done', kind: options.kind ?? 'settled', documentId: 'doc', target: { tag: 'button', id: '', name: '', type: '', ariaLabel: options.target ?? '', text: options.target ?? '', href: '', value: '', checked: false }, controls: {}, text: '',
+    long: { url: options.path ?? '/long-local/basket/off/done', revision: (ledger as { revision: number }).revision, ledger },
   });
   const answer = `Receipt ${expected.receipt} total 101.29`;
   const hazard = event(expected, { kind: 'click', target: 'Add p01', arrival: 0 });
   const completed = event(expected, { arrival: 1 });
   // Inspecting a completed workflow can change the route but not its ledger.
-  const inspected = event(expected, { path: '/live-long/basket/off/catalog', arrival: 2 });
-  expect(gradeLiveLongFixtureCase(entry.id, answer, [hazard, completed, inspected]).pass).toBe(true);
+  const inspected = event(expected, { path: '/long-local/basket/off/catalog', arrival: 2 });
+  expect(gradeLongLocalV1Case(entry.id, answer, [hazard, completed, inspected]).pass).toBe(true);
 
   const nearMiss = { ...expected, cart: [['p01', '1']], coupon: 'OTHER' };
-  const failed = gradeLiveLongFixtureCase(entry.id, answer, [hazard, event(nearMiss, { arrival: 1 })]);
+  const failed = gradeLongLocalV1Case(entry.id, answer, [hazard, event(nearMiss, { arrival: 1 })]);
   expect(failed.pass).toBe(false);
   expect(failed.details).toContain('full terminal ledger differs from expected state: cart, coupon');
 
-  const missingCommit = gradeLiveLongFixtureCase(entry.id, answer, [hazard, event({ ...expected, completed: false, receipt: '', revision: expected.revision - 1 }, { arrival: 1 })]);
+  const missingCommit = gradeLongLocalV1Case(entry.id, answer, [hazard, event({ ...expected, completed: false, receipt: '', revision: expected.revision - 1 }, { arrival: 1 })]);
   expect(missingCommit.pass).toBe(false);
   expect(missingCommit.details).toContain('workflow is incomplete or still pending (edits complete; final commit missing)');
 
-  const pending = gradeLiveLongFixtureCase(entry.id, answer, [hazard, event({ ...expected, pending: 1 }, { arrival: 1 })]);
+  const pending = gradeLongLocalV1Case(entry.id, answer, [hazard, event({ ...expected, pending: 1 }, { arrival: 1 })]);
   expect(pending.pass).toBe(false);
   expect(pending.details).toContain('workflow is incomplete or still pending');
 
-  const skippedHazard = gradeLiveLongFixtureCase(entry.id, answer, [completed, inspected]);
+  const skippedHazard = gradeLongLocalV1Case(entry.id, answer, [completed, inspected]);
   expect(skippedHazard.pass).toBe(false);
   expect(skippedHazard.details).toContain('missing hazard-trigger evidence (add a product)');
 });
 
-it('live-long-fixtures: requires an interaction-specific hazard event instead of matching loaded text', () => {
+it('long-local-v1: requires an interaction-specific hazard event instead of matching loaded text', () => {
   const target = (id = '', text = '', ariaLabel = '') => ({ tag: 'button', id, name: '', type: '', ariaLabel, text, href: '', value: '', checked: false });
-  const answerFor = (entry: (typeof LIVE_LONG_FIXTURE_CASES)[number]) => {
+  const answerFor = (entry: (typeof LONG_LOCAL_V1_CASES)[number]) => {
     const expected = entry.expected as { receipt?: string; workspace?: { receipt?: string } };
     const receipt = expected.receipt ?? expected.workspace?.receipt;
     return `Receipt ${receipt} total 101.29 and EUR 870.00`;
   };
-  const event = (entry: (typeof LIVE_LONG_FIXTURE_CASES)[number], kind: FixtureObservation['kind'], targetValue: ReturnType<typeof target>, operationId?: string, url = entry.startPath): FixtureObservation => ({
+  const event = (entry: (typeof LONG_LOCAL_V1_CASES)[number], kind: FixtureObservation['kind'], targetValue: ReturnType<typeof target>, operationId?: string, url = entry.startPath): FixtureObservation => ({
     arrival: 0, path: entry.startPath, kind, documentId: 'hazard', target: targetValue, controls: {}, text: targetValue.text,
     long: { url, revision: (entry.expected as { revision: number }).revision, operationId, ledger: entry.expected },
   });
@@ -1261,25 +1261,25 @@ it('live-long-fixtures: requires an interaction-specific hazard event instead of
     { id: 'llf-dispatch-off', target: target('dispatch', 'Dispatch staged orders') },
   ];
   for (const hazard of cases) {
-    const entry = LIVE_LONG_FIXTURE_CASES.find((candidate) => candidate.id === hazard.id)!;
+    const entry = LONG_LOCAL_V1_CASES.find((candidate) => candidate.id === hazard.id)!;
     const completed = event(entry, 'settled', target(), `complete-${entry.name}`);
     const kind: FixtureObservation['kind'] = entry.name === 'casework' ? 'popstate' : 'click';
     const proof = entry.name === 'casework'
       ? [event(entry, 'settled', target(), 'casework-summary', `${entry.startPath.replace(/queue$/, 'summary')}`), event(entry, 'popstate', target(), 'casework-queue', entry.startPath), event(entry, 'settled', target(), 'casework-summary', entry.startPath.replace(/queue$/, 'summary'))]
       : [event(entry, kind, hazard.target, hazard.operationId)];
-    expect(gradeLiveLongFixtureCase(entry.id, answerFor(entry), [...proof, completed]).pass).toBe(true);
+    expect(gradeLongLocalV1Case(entry.id, answerFor(entry), [...proof, completed]).pass).toBe(true);
     // Near miss: durable ledger state and incidental load text alone do not establish the hazard interaction.
-    const missing = gradeLiveLongFixtureCase(entry.id, answerFor(entry), [event(entry, 'load', hazard.target, hazard.operationId), completed]);
+    const missing = gradeLongLocalV1Case(entry.id, answerFor(entry), [event(entry, 'load', hazard.target, hazard.operationId), completed]);
     expect(missing.pass).toBe(false);
     expect(missing.details).toContain(`missing hazard-trigger evidence (${entry.hazard.trigger})`);
   }
-  const caseworkTask = LIVE_LONG_FIXTURE_TASKS.find((task) => task.id === 'llf-casework-off')!;
+  const caseworkTask = LONG_LOCAL_V1_TASKS.find((task) => task.id === 'llf-casework-off')!;
   expect(caseworkTask.prompt('http://x')).toMatch(/Back.*queue page 2/i);
 
   // Casework: the traversal must come after a summary visit, and the summary must be reached again afterwards.
-  const casework = LIVE_LONG_FIXTURE_CASES.find((candidate) => candidate.id === 'llf-casework-off')!;
+  const casework = LONG_LOCAL_V1_CASES.find((candidate) => candidate.id === 'llf-casework-off')!;
   const done = event(casework, 'settled', target(), 'complete-casework');
-  const grade = (events: FixtureObservation[]) => gradeLiveLongFixtureCase(casework.id, answerFor(casework), [...events, done]);
+  const grade = (events: FixtureObservation[]) => gradeLongLocalV1Case(casework.id, answerFor(casework), [...events, done]);
   const summaryUrl = casework.startPath.replace(/queue$/, 'summary');
   const summary = () => event(casework, 'settled', target(), 'casework-summary', summaryUrl);
   const back = () => event(casework, 'popstate', target(), 'casework-queue', casework.startPath);
@@ -1295,14 +1295,14 @@ it('live-long-fixtures: requires an interaction-specific hazard event instead of
   expect(grade([summary()]).pass).toBe(false);
 
   // Dispatch: viewing the settled outbound page is not the dispatch interaction.
-  const dispatch = LIVE_LONG_FIXTURE_CASES.find((candidate) => candidate.id === 'llf-dispatch-off')!;
-  const outboundOnly = gradeLiveLongFixtureCase(dispatch.id, answerFor(dispatch), [event(dispatch, 'settled', target(), 'dispatch-outbound'), event(dispatch, 'settled', target(), 'dispatch-receipt')]);
+  const dispatch = LONG_LOCAL_V1_CASES.find((candidate) => candidate.id === 'llf-dispatch-off')!;
+  const outboundOnly = gradeLongLocalV1Case(dispatch.id, answerFor(dispatch), [event(dispatch, 'settled', target(), 'dispatch-outbound'), event(dispatch, 'settled', target(), 'dispatch-receipt')]);
   expect(outboundOnly.pass).toBe(false);
   expect(outboundOnly.details).toContain('missing hazard-trigger evidence');
-  expect(gradeLiveLongFixtureCase(dispatch.id, answerFor(dispatch), [event(dispatch, 'click', target('dispatch', 'Dispatch staged orders'), 'dispatch-outbound'), event(dispatch, 'settled', target(), 'dispatch-receipt')]).pass).toBe(true);
+  expect(gradeLongLocalV1Case(dispatch.id, answerFor(dispatch), [event(dispatch, 'click', target('dispatch', 'Dispatch staged orders'), 'dispatch-outbound'), event(dispatch, 'settled', target(), 'dispatch-receipt')]).pass).toBe(true);
   // Near miss: a click on the outbound section that merely contains the button label is not the dispatch click.
   const sectionClick = { ...target('', 'q03, q11, q19, q27 Dispatch staged orders', 'Outbound'), tag: 'section' };
-  const containerOnly = gradeLiveLongFixtureCase(dispatch.id, answerFor(dispatch), [event(dispatch, 'click', sectionClick, 'dispatch-outbound'), event(dispatch, 'settled', target(), 'dispatch-receipt')]);
+  const containerOnly = gradeLongLocalV1Case(dispatch.id, answerFor(dispatch), [event(dispatch, 'click', sectionClick, 'dispatch-outbound'), event(dispatch, 'settled', target(), 'dispatch-receipt')]);
   expect(containerOnly.pass).toBe(false);
   expect(containerOnly.details).toContain('missing hazard-trigger evidence');
 });

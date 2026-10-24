@@ -24,3 +24,4 @@ bench/results/.haiku-remaining-rows.txt
 
 # Large live-long result JSONs are pretty-printed (100+ MB, over the GitHub limit); commit the .json.gz copies instead
 bench/results/live-long-fixtures-*.json
+bench/results/long-local-v1-*.json

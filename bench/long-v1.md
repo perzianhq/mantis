@@ -1,22 +1,22 @@
-# live-long
+# long
 
 Hard, long-horizon tasks. live-v1 is saturated (86-90 of 90 per approach), so these add task length and in-flight page hazards.
 
-## Phase A: live-long-fixtures (built)
+## Phase A: long-local-v1 (built)
 
-16 local tasks: 8 workflows (basket, access, suppliers, retention, workspace, casework, budgets, dispatch) x hazard off/on. Source: `bench/agent/live-long-fixtures.ts`; config: `bench/manifests/live-long-fixtures.json`.
+16 local tasks: 8 workflows (basket, access, suppliers, retention, workspace, casework, budgets, dispatch) x hazard off/on. Source: `bench/agent/long-local-v1.ts`; config: `bench/manifests/long-local-v1.json`.
 
 - Hazards fire only on semantic events (an add, a stage, a save), never on timers. Off uses seed 44117, on uses the paired seed 11903 (workflows 7319 / 19417).
 - The grader compares the full business ledger to an independently written expected state. It also requires the terminal URL, the visible confirmation, `completed=true`, `pending=0` and a matching final revision. A rollback after success fails. The answer must carry the displayed receipt (and the money total where asked).
-- Every case has a named near miss. Tests: `test/live-long-fixtures.test.ts` (reference walkthrough passes; near miss, rollback, late revision, pending, wrong URL and stop-one-step-early fail) and `test/fixture-verification.test.ts`.
+- Every case has a named near miss. Tests: `test/long-local-v1.test.ts` (reference walkthrough passes; near miss, rollback, late revision, pending, wrong URL and stop-one-step-early fail) and `test/fixture-verification.test.ts`.
 - Scored run: 8 workflows x 2 hazards x 3 approaches x 3 repeats = 144 runs per model; timeout 1200 s, max tool calls 100, max steps 150, concurrency 3. Pilot (unscored): timeout 1800 s, 160 tool calls, 200 steps, 1 run.
 - Telemetry per run: tool calls, steps, wall time (`bench/agent/long-telemetry.ts`). `AGENT_MAX_TOOL_CALLS` caps tool calls.
 
 ```
-AGENT_SUITE=live-long-fixtures AGENT_TASKS=all AGENT_RUNS=3 AGENT_CONCURRENCY=3
+AGENT_SUITE=long-local-v1 AGENT_TASKS=all AGENT_RUNS=3 AGENT_CONCURRENCY=3
 ```
 
-## Phase B: live-long-v1 (documentation only)
+## Phase B: long-live-v1 (documentation only)
 
 Real-site candidates. None is frozen: keys and walkthroughs are unverified and every row is excluded until verified.
 
@@ -37,4 +37,4 @@ Freezing a row means resolving the canonical pages, capturing the labelled value
 
 ## Status
 
-Fixtures built and tested. Luna and Haiku scored runs are complete; results are in [RESULTS.md](RESULTS.md#long-workflows-live-long-fixtures). Phase B (real-site long tasks) is documentation only and unrun; judging is by sol.
+Fixtures built and tested. Luna and Haiku scored runs are complete; results are in [RESULTS.md](RESULTS.md#long-workflows-long-local-v1). Phase B (real-site long tasks) is documentation only and unrun; judging is by sol.

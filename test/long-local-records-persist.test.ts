@@ -3,12 +3,12 @@ import { chromium } from 'playwright';
 import type { Browser, Page } from 'playwright';
 import { chromiumExecutable } from '../src/userAgent.js';
 import { startFixtures } from '../bench/fixtures.js';
-import { LIVE_LONG_FIXTURE_CHECKS, liveLongFixtureRoute } from '../bench/agent/live-long-fixtures.js';
+import { LONG_LOCAL_V1_CHECKS, longLocalV1Route } from '../bench/agent/long-local-v1.js';
 
 let browser: Browser; let fixtures: Awaited<ReturnType<typeof startFixtures>>;
 beforeAll(async () => {
   browser = await chromium.launch(chromiumExecutable());
-  fixtures = await startFixtures({ checks: LIVE_LONG_FIXTURE_CHECKS, developmentRoute: liveLongFixtureRoute });
+  fixtures = await startFixtures({ checks: LONG_LOCAL_V1_CHECKS, developmentRoute: longLocalV1Route });
 });
 afterAll(async () => { await browser?.close(); await fixtures?.close(); });
 
@@ -23,7 +23,7 @@ const mutationCount = (page: Page) => page.evaluate(() => (window as any).__fixt
 describe('basket persistence and in-place cart updates', () => {
   const open = async (page: Page, attempt: string, variant = 'off') => {
     const base = fixtures.baseFor(`llf-basket-${variant}`, attempt);
-    await page.goto(`${base}/live-long/basket/${variant}/catalog`);
+    await page.goto(`${base}/long-local/basket/${variant}/catalog`);
     return base;
   };
 
@@ -32,13 +32,13 @@ describe('basket persistence and in-place cart updates', () => {
       const base = await open(page, 'basket-persist-a');
       await page.locator('[data-add="p03"]').click();
       await page.locator('[data-add="p13"]').click();
-      await page.goto(`${base}/live-long/basket/off/catalog`);
+      await page.goto(`${base}/long-local/basket/off/catalog`);
       await page.locator('#basket').click();
       expect((await ledger(page)).cart).toEqual([['p03', 2], ['p13', 3]]);
       expect(await page.locator('[data-quantity="p13"]').count()).toBe(1);
       // near miss: a different attempt id starts from the initial cart
       const other = fixtures.baseFor('llf-basket-off', 'basket-persist-b');
-      await page.goto(`${other}/live-long/basket/off/catalog`);
+      await page.goto(`${other}/long-local/basket/off/catalog`);
       expect((await ledger(page)).cart).toEqual([['p03', 1], ['p13', 2]]);
     });
   }, 60_000);
@@ -50,7 +50,7 @@ describe('basket persistence and in-place cart updates', () => {
       await page.locator(`[data-add="${first}"]`).click();
       const rotated = await page.locator('#products button').first().getAttribute('data-add');
       expect(rotated).not.toBe(first);
-      await page.goto(`${base}/live-long/basket/on/catalog`);
+      await page.goto(`${base}/long-local/basket/on/catalog`);
       expect(await page.locator('#products button').first().getAttribute('data-add')).toBe(rotated);
       expect((await ledger(page)).cart).toEqual([[first, 1], ['p03', 1], ['p13', 2]].sort((a, b) => String(a[0]).localeCompare(String(b[0]))));
     });
@@ -85,7 +85,7 @@ describe('basket persistence and in-place cart updates', () => {
 describe('suppliers history and persistence', () => {
   const start = async (page: Page, attempt: string, path = 'offers') => {
     const base = fixtures.baseFor('llf-suppliers-off', attempt);
-    await page.goto(`${base}/live-long/suppliers/off/${path}`);
+    await page.goto(`${base}/long-local/suppliers/off/${path}`);
     return base;
   };
   const compare = async (page: Page) => {
@@ -109,7 +109,7 @@ describe('suppliers history and persistence', () => {
   it('direct-loading /comparison then Back leads to a visible offers view', async () => {
     await withPage(async (page) => {
       const base = await start(page, 'suppliers-back-b');
-      await page.goto(`${base}/live-long/suppliers/off/comparison`);
+      await page.goto(`${base}/long-local/suppliers/off/comparison`);
       expect(await shown(page, '#comparison')).toBe(true);
       await page.goBack();
       expect(page.url()).toMatch(/\/offers$/);

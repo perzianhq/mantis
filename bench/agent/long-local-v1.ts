@@ -1,16 +1,16 @@
 /**
- * live-long-fixtures: eight long workflows, each with the hazard off and on
+ * long-local-v1: eight long workflows, each with the hazard off and on
  * (16 tasks). The grader compares the full business ledger, not the answer.
  */
 import type { DevelopmentFixtureRouter, FixtureCheckEntry, FixtureObservation } from '../fixtures.js';
-import { LONG_RECORDS_CASES, longRecordsRoute } from '../fixtures-live-long-records.js';
-import { LONG_WORKFLOWS_CASES, longWorkflowsRoute } from '../fixtures-live-long-workflows.js';
+import { LONG_RECORDS_CASES, longRecordsRoute } from '../fixtures-long-local-records.js';
+import { LONG_WORKFLOWS_CASES, longWorkflowsRoute } from '../fixtures-long-local-workflows.js';
 import type { AgentTask } from './tasks.js';
 
-export const LIVE_LONG_FIXTURES_SUITE = 'live-long-fixtures' as const;
+export const LONG_LOCAL_V1_SUITE = 'long-local-v1' as const;
 
 type LongCase = (typeof LONG_RECORDS_CASES)[number];
-export const LIVE_LONG_FIXTURE_CASES: readonly LongCase[] = Object.freeze([...LONG_RECORDS_CASES, ...LONG_WORKFLOWS_CASES]);
+export const LONG_LOCAL_V1_CASES: readonly LongCase[] = Object.freeze([...LONG_RECORDS_CASES, ...LONG_WORKFLOWS_CASES]);
 
 const BRIEFS: Record<string, string> = {
   basket: 'Order for Grace Hopper. The final cart must hold exactly p01 x2, p13 x1, p25 x3 and p42 x1 (remove anything else). Apply coupon SPRING10. Ship to Grace Hopper, 12 Navy Way, Arlington, 22201 with standard delivery. Pay with the test card 4242 4242 4242 4242, expiry 12/30, CVC 123. Report the order receipt number and the total charged.',
@@ -36,19 +36,19 @@ const answerPattern = (entry: LongCase): RegExp => {
   return total ? new RegExp(`(?=[\\s\\S]*\\b${receiptRe}\\b)(?=[\\s\\S]*${total})`) : new RegExp(`\\b${receiptRe}\\b`);
 };
 
-export const LIVE_LONG_FIXTURE_TASKS: readonly AgentTask[] = Object.freeze(LIVE_LONG_FIXTURE_CASES.map((entry): AgentTask => ({
+export const LONG_LOCAL_V1_TASKS: readonly AgentTask[] = Object.freeze(LONG_LOCAL_V1_CASES.map((entry): AgentTask => ({
   id: entry.id, category: 'long', site: 'local',
   prompt: (base) => `${base}${entry.startPath}\n${BRIEFS[entry.name]}`,
-  expect: answerPattern(entry), check: (events) => checkLiveLongFixtureCase(entry.id, events),
+  expect: answerPattern(entry), check: (events) => checkLongLocalV1Case(entry.id, events),
 })));
-export const LIVE_LONG_FIXTURE_CHECKS: FixtureCheckEntry[] = LIVE_LONG_FIXTURE_CASES.map((entry) => ({ taskId: entry.id, check: (events) => checkLiveLongFixtureCase(entry.id, events) }));
-export const LIVE_LONG_FIXTURE_MANIFEST = Object.freeze(LIVE_LONG_FIXTURE_CASES.map((entry) => ({
+export const LONG_LOCAL_V1_CHECKS: FixtureCheckEntry[] = LONG_LOCAL_V1_CASES.map((entry) => ({ taskId: entry.id, check: (events) => checkLongLocalV1Case(entry.id, events) }));
+export const LONG_LOCAL_V1_MANIFEST = Object.freeze(LONG_LOCAL_V1_CASES.map((entry) => ({
   id: entry.id, workflow: entry.name, hazard: entry.variant, seed: entry.seed, devSeed: entry.devSeed,
   referenceActions: entry.referenceActions, nearMiss: entry.nearMiss.name, hazardTrigger: entry.hazard.trigger,
 })));
-export const liveLongFixtureRoute: DevelopmentFixtureRouter = (path) => longRecordsRoute(path) ?? longWorkflowsRoute(path);
+export const longLocalV1Route: DevelopmentFixtureRouter = (path) => longRecordsRoute(path) ?? longWorkflowsRoute(path);
 
-export interface LiveLongAnswerGrade { pass: boolean; requirements: []; failed: string[]; details?: string }
+export interface LongLocalAnswerGrade { pass: boolean; requirements: []; failed: string[]; details?: string }
 /** The final ledger proves the result; this proves that the variant's exercised hazard was not skipped. */
 const targetText = (event: FixtureObservation): string => [
   event.target.id, event.target.name, event.target.ariaLabel, event.target.text,
@@ -69,7 +69,7 @@ const caseworkTraversal = (events: FixtureObservation[]): boolean => {
   const firstSummary = events.findIndex((event) => operationIs(event, 'casework-summary'));
   if (firstSummary < 0) return false;
   const traversal = events.findIndex((event, index) => index > firstSummary && event.kind === 'popstate'
-    && /^\/live-long\/casework\//.test(routeOf(event)) && !/\/summary$/.test(routeOf(event)));
+    && /^\/long-local\/casework\//.test(routeOf(event)) && !/\/summary$/.test(routeOf(event)));
   return traversal > 0 && events.some((event, index) => index > traversal && operationIs(event, 'casework-summary'));
 };
 
@@ -90,21 +90,21 @@ const hasHazardTriggerEvidence = (entry: LongCase, events: FixtureObservation[])
   return !!trigger && trigger(events);
 };
 /** The state checker is authoritative and also requires evidence that the fixture hazard was exercised. */
-export function checkLiveLongFixtureCase(id: string, events: FixtureObservation[]): { ok: boolean; details?: string } {
-  const entry = LIVE_LONG_FIXTURE_CASES.find((candidate) => candidate.id === id);
-  if (!entry) return { ok: false, details: `unknown live-long fixture ${id}` };
+export function checkLongLocalV1Case(id: string, events: FixtureObservation[]): { ok: boolean; details?: string } {
+  const entry = LONG_LOCAL_V1_CASES.find((candidate) => candidate.id === id);
+  if (!entry) return { ok: false, details: `unknown long-local fixture ${id}` };
   const result = entry.check(events);
   const ok = typeof result === 'boolean' ? result : result.ok;
   const failures = !ok ? [(typeof result === 'object' && result.details) || 'terminal ledger does not match the expected state'] : [];
   if (!hasHazardTriggerEvidence(entry, events)) failures.push(`missing hazard-trigger evidence (${entry.hazard.trigger})`);
   return failures.length ? { ok: false, details: failures.join('; ') } : { ok: true };
 }
-export function gradeLiveLongFixtureCase(id: string, answer: string, events: FixtureObservation[]): LiveLongAnswerGrade {
-  const entry = LIVE_LONG_FIXTURE_CASES.find((candidate) => candidate.id === id);
-  if (!entry) return { pass: false, requirements: [], failed: [`unknown live-long fixture ${id}`] };
+export function gradeLongLocalV1Case(id: string, answer: string, events: FixtureObservation[]): LongLocalAnswerGrade {
+  const entry = LONG_LOCAL_V1_CASES.find((candidate) => candidate.id === id);
+  if (!entry) return { pass: false, requirements: [], failed: [`unknown long-local fixture ${id}`] };
   const failed: string[] = [];
   if (!answerPattern(entry).test(answer)) failed.push('answer does not carry the displayed receipt');
-  const check = checkLiveLongFixtureCase(id, events);
+  const check = checkLongLocalV1Case(id, events);
   if (!check.ok) failed.push(check.details ?? 'terminal ledger does not match the expected state');
   return failed.length ? { pass: false, requirements: [], failed, details: failed.join('; ') } : { pass: true, requirements: [], failed: [] };
 }

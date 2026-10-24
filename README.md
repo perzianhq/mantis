@@ -18,7 +18,7 @@ It works with Claude Code, Codex, Cursor or your own agent as an MCP server. [In
 
 Same tasks, same pass criteria, three ways to browse. Mantis vs the accessibility tree (Playwright MCP) vs screenshots.
 
-**Long multi-step workflows** (`live-long-fixtures`: 16 local tasks with in-page hazards, 3 runs per approach, code-graded). Score is out of 48; time is mean agent execution per run.
+**Long multi-step workflows** (`long-local-v1`: 16 local tasks with in-page hazards, 3 runs per approach, code-graded). Score is out of 48; time is mean agent execution per run.
 
 | Model | | Mantis | Accessibility tree | Screenshots |
 |---|---|---:|---:|---:|

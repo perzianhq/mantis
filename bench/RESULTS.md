@@ -4,9 +4,11 @@ All benchmark numbers in one place. How to re-run them: [README.md](README.md).
 Mantis is compared with the accessibility tree (Playwright MCP 0.0.83) and with screenshots (our own minimal tool).
 Headline models are Luna (`gpt-6-luna`) and Haiku (`claude-haiku-5-5`). Suites are reported separately.
 
-## Long workflows (live-long-fixtures)
+## Long workflows (long-local-v1)
 
-16 local tasks (8 workflows x hazard off/on) x 3 approaches x 3 runs = 144 runs per model, graded by the full-ledger grader in `bench/agent/live-long-fixtures.ts`; details in [live-long-v1.md](live-long-v1.md). Exec is mean agent execution time per run (`cliExecutionMs`).
+Formerly named `live-long-fixtures` (the tasks run on local fixtures, not live sites); result files from before the rename keep the old name.
+
+16 local tasks (8 workflows x hazard off/on) x 3 approaches x 3 runs = 144 runs per model, graded by the full-ledger grader in `bench/agent/long-local-v1.ts`; details in [long-v1.md](long-v1.md). Exec is mean agent execution time per run (`cliExecutionMs`).
 
 | Model | Approach | Score | Mean exec | Median exec | Input tokens | Output tokens | Tool calls |
 |---|---|---:|---:|---:|---:|---:|---:|

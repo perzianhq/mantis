@@ -1,9 +1,9 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "id": "live-long-fixtures",
+  "id": "long-local-v1",
   "kind": "long-local-fixture-evaluation-config",
   "status": "configured",
-  "sourceSelector": "bench/agent/live-long-fixtures.ts",
+  "sourceSelector": "bench/agent/long-local-v1.ts",
   "taskCount": 16,
   "workflows": [
     "basket",
@@ -174,5 +174,5 @@
       "hazardTrigger": "dispatch staged orders"
     }
   ],
-  "focusedCommand": "AGENT_SUITE=live-long-fixtures AGENT_TASKS=all AGENT_RUNS=3 AGENT_CONCURRENCY=3"
+  "focusedCommand": "AGENT_SUITE=long-local-v1 AGENT_TASKS=all AGENT_RUNS=3 AGENT_CONCURRENCY=3"
 }
