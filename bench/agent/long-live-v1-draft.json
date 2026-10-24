@@ -212,7 +212,7 @@
     "grading": "deterministic",
     "level": "hard",
     "website": "https://en.wikipedia.org/",
-    "confirmed_task": "Using Wikipedia's on-site search, inspect Io, Europa, Ganymede, Callisto, Titan, Triton, Enceladus and Mimas at these pinned revisions. Report infobox mean radius in km (central value only; omit uncertainty), sidereal orbital period in days (positive magnitude), and displayed discovery date as YYYY-MM-DD. Use the infobox discovery date even if the prose discusses alternatives. Return plain lines 'Name | radius km | period d | YYYY-MM-DD', using ungrouped numbers and all displayed significant digits. Add 'Triton: retrograde' and 'Order: ...' with all names in decreasing mean radius separated by ' > '. Finish on the pinned Mimas article. Revisions: Io: https://en.wikipedia.org/w/index.php?title=Io_(moon)&oldid=1380203631; Europa: https://en.wikipedia.org/w/index.php?title=Europa_(moon)&oldid=1381496497; Ganymede: https://en.wikipedia.org/w/index.php?title=Ganymede_(moon)&oldid=1381030833; Callisto: https://en.wikipedia.org/w/index.php?title=Callisto_(moon)&oldid=1380203801; Titan: https://en.wikipedia.org/w/index.php?title=Titan_(moon)&oldid=1381580514; Triton: https://en.wikipedia.org/w/index.php?title=Triton_(moon)&oldid=1381288517; Enceladus: https://en.wikipedia.org/w/index.php?title=Enceladus&oldid=1380664437; Mimas: https://en.wikipedia.org/w/index.php?title=Mimas&oldid=1377302334.",
+    "confirmed_task": "Using Wikipedia's on-site search, inspect Io, Europa, Ganymede, Callisto, Titan, Triton, Enceladus and Mimas at these pinned revisions. Report infobox mean radius in km (central value only; omit uncertainty), sidereal orbital period in days (positive magnitude), and displayed discovery date as YYYY-MM-DD. Use the infobox discovery date even if the prose discusses alternatives. Return one plain line per moon in the literal form 'Name | <radius> km | <period> d | YYYY-MM-DD' (keep the literal words km and d after the numbers), using ungrouped numbers and all displayed significant digits. Add 'Triton: retrograde' and 'Order: ...' with all names in decreasing mean radius separated by ' > '. Finish on the pinned Mimas article. Revisions: Io: https://en.wikipedia.org/w/index.php?title=Io_(moon)&oldid=1380203631; Europa: https://en.wikipedia.org/w/index.php?title=Europa_(moon)&oldid=1381496497; Ganymede: https://en.wikipedia.org/w/index.php?title=Ganymede_(moon)&oldid=1381030833; Callisto: https://en.wikipedia.org/w/index.php?title=Callisto_(moon)&oldid=1380203801; Titan: https://en.wikipedia.org/w/index.php?title=Titan_(moon)&oldid=1381580514; Triton: https://en.wikipedia.org/w/index.php?title=Triton_(moon)&oldid=1381288517; Enceladus: https://en.wikipedia.org/w/index.php?title=Enceladus&oldid=1380664437; Mimas: https://en.wikipedia.org/w/index.php?title=Mimas&oldid=1377302334.",
     "source": {
       "canonicalUrl": "https://en.wikipedia.org/w/index.php?title=Mimas&oldid=1377302334",
       "fingerprintBasis": "canonical-url-and-contract",
@@ -2773,7 +2773,7 @@
         ]
       },
       "history": {
-        "allowedSubmissions": 2,
+        "allowedSubmissions": 3,
         "requireJournal": true
       }
     },

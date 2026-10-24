@@ -1,0 +1,36 @@
+{
+  "id": "long-live-v1",
+  "selector": "long-live-v1",
+  "kind": "frozen-public-read-only-live-evaluation-config",
+  "status": "frozen",
+  "sourceSelector": "bench/agent/long-live-v1.ts",
+  "catalog": "bench/agent/long-live-v1-draft.json",
+  "taskCount": 16,
+  "documentedTaskCount": 16,
+  "taskHashAlgorithm": "sha256(canonical sorted task contracts)",
+  "taskHash": "b7023d5e4fbfb6b250d57b4ac094127427712c49c57bf30e92b0dfb71d5837d8",
+  "sourceFingerprintAlgorithm": "sha256(canonical URL + task-specific grading contract)",
+  "sourceFingerprintSetHash": "d18486ad3934005d7615ff68e40cd12b3ada8161a7470079ea1ea82a78d0b95e",
+  "tasks": [
+    "longlive-wiki-probes",
+    "longlive-wiki-moons",
+    "longlive-gutenberg-novels",
+    "longlive-gutenberg-gothic",
+    "longlive-met-vangogh",
+    "longlive-gutenberg-dickens-search",
+    "longlive-gutenberg-shakespeare-search",
+    "longlive-met-monet-search",
+    "longlive-met-rembrandt-search",
+    "longlive-form-selenium-student",
+    "longlive-form-selenium-review",
+    "longlive-form-selenium-select",
+    "longlive-sauce-cart-revise",
+    "longlive-sauce-checkout-review",
+    "longlive-internet-window-frames-upload",
+    "longlive-selenium-window-frames-upload"
+  ],
+  "limits": {
+    "maxToolCalls": 100,
+    "executionTimeoutSeconds": 1200
+  }
+}

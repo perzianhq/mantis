@@ -128,6 +128,11 @@ it('allowedSubmissions tolerates exactly the workflow-required submissions and f
   expect(grade([]).pass).toBe(true);
   expect(grade([submission]).pass).toBe(true);
   expect(grade([submission, { ...submission, url: 'https://fixture.test/checkout' }]).pass).toBe(false);
+  // A workflow with a sign-in plus two info-form passes needs three; a fourth still fails.
+  const three = { ...grader, history: { allowedSubmissions: 3, requireJournal: true as const } };
+  const gradeThree = (n: number) => evaluateDeterministicGrader(three, 'done', [{ final: true, url: 'https://fixture.test/form', text: 'Form', forms, journal: { complete: true, submissions: Array.from({ length: n }, () => submission), states: [] } }])!;
+  expect(gradeThree(3).pass).toBe(true);
+  expect(gradeThree(4).pass).toBe(false);
 });
 
 const crc32 = (buf: Uint8Array): number => {
