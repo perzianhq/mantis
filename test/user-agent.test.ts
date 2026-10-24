@@ -1,6 +1,6 @@
 import { afterEach, expect, it } from 'vitest';
 import { MantisBrowser } from '../src/index.js';
-import { stripHeadless } from '../src/userAgent.js';
+import { missingChromiumHint, stripHeadless } from '../src/userAgent.js';
 import { fixture } from './helpers.js';
 
 const uaOf = async (b: MantisBrowser): Promise<string> => {
@@ -26,4 +26,11 @@ it('MANTIS_USER_AGENT is used verbatim', async () => {
 it('stripHeadless only renames the product token', () => {
   expect(stripHeadless('Mozilla/5.0 (X) AppleWebKit/537.36 HeadlessChrome/141.0.0.0 Safari/537.36'))
     .toBe('Mozilla/5.0 (X) AppleWebKit/537.36 Chrome/141.0.0.0 Safari/537.36');
+});
+
+it('missingChromiumHint explains a missing download and ignores other launch errors', () => {
+  const missing = new Error("browserType.launch: Executable doesn't exist at /x/chrome");
+  expect(missingChromiumHint(missing)).toMatch(/npx playwright install chromium/);
+  expect(missingChromiumHint(missing)).toMatch(/MANTIS_CHROMIUM/);
+  expect(missingChromiumHint(new Error('Target page, context or browser has been closed'))).toBeUndefined();
 });

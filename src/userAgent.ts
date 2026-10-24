@@ -28,6 +28,13 @@ export function chromiumExecutable(): { executablePath?: string } {
   return process.env.MANTIS_CHROMIUM ? { executablePath: process.env.MANTIS_CHROMIUM } : {};
 }
 
+/** A launch failure caused by a missing Playwright Chromium download, as an actionable message; undefined for other errors. */
+export function missingChromiumHint(error: unknown): string | undefined {
+  const message = error instanceof Error ? error.message : String(error);
+  if (!/Executable doesn't exist/i.test(message)) return undefined;
+  return `Chromium is not installed for Playwright. Run \`npx playwright install chromium\` (on Linux add \`--with-deps\`), or set MANTIS_CHROMIUM to a Chromium executable.`;
+}
+
 let cached: Promise<string> | undefined;
 
 /** Same string as userAgentFor, for callers with no browser yet (bench runner, MCP server flags). Launches headless Chromium once. */

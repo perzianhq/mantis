@@ -26,12 +26,42 @@ import { deterministicGradeForRun, finalizeSiteBrokenVerdicts, parseJudgeOutput,
 import type { JudgedRun } from '../bench/agent/judge.js';
 import { evaluateDeterministicGrader, loadRealsiteRows, validateChecks, validateDeterministicGrader } from '../bench/agent/realsite.js';
 import { LIVE_V1_ROWS } from '../bench/agent/live-v1.js';
+import { LONG_LIVE_V1_ROWS } from '../bench/agent/long-live-v1.js';
 import { createMcpProxy } from '../bench/agent/mcp-proxy.js';
 import { decodePng, encodePng, fitWithin, grayThumb, resizeImage, thumbDiff } from '../bench/agent/png.js';
 import { classifyClickError } from '../src/browser.js';
 import { answerReadyCue } from '../src/diff.js';
 import type { Snapshot } from '../src/capture/index.js';
 import { fixture, idOf } from './helpers.js';
+
+it('long-live-v1 deterministic contracts accept reviewed keys and reject an associated tuple near miss', () => {
+  const mutate = (value: string): string => value.length > 1 ? `${value.slice(0, -1)}?` : `${value}?`;
+  for (const row of LONG_LIVE_V1_ROWS.filter((entry) => entry.grading === 'deterministic')) {
+    const grader = row.deterministic!;
+    const expected = row.keyNotes.expectedAnswer;
+    // Fact-extraction rows carry their reviewed answer in keyNotes. The three
+    // form rehearsal rows have no captured answer string/records yet, so their
+    // explicit deterministic contract is the only offline construction source.
+    const answer = typeof expected === 'string' && expected.trim()
+      ? expected
+      : grader.answerIncludes.map((predicate) => String(predicate.value)).join('\n');
+    const url = new URL(`${grader.final.url.origin}${grader.final.url.path}`);
+    for (const [name, value] of Object.entries(grader.final.url.query ?? {})) url.searchParams.set(name, value);
+    const text = grader.final.textIncludes.map((predicate) => String(predicate.value)).join('\n');
+    const frames = [{ final: true, url: url.href, text, forms: grader.final.formValues?.map((form) => ({ ...form })) }];
+    expect(evaluateDeterministicGrader(grader, answer, frames)?.pass, row.task_id).toBe(true);
+
+    const answerMutation = row.nearMiss.answerMutation;
+    const from = answerMutation && typeof answerMutation === 'object' && !Array.isArray(answerMutation) && typeof answerMutation.from === 'string'
+      ? answerMutation.from
+      : String(grader.answerIncludes[0]!.value);
+    const to = answerMutation && typeof answerMutation === 'object' && !Array.isArray(answerMutation) && typeof answerMutation.to === 'string'
+      ? answerMutation.to
+      : mutate(from);
+    const nearMissAnswer = answer.includes(from) ? answer.replace(from, to) : answer.replace(String(grader.answerIncludes[0]!.value), mutate(String(grader.answerIncludes[0]!.value)));
+    expect(evaluateDeterministicGrader(grader, nearMissAnswer, frames)?.pass, `${row.task_id}: ${row.nearMiss.description}`).toBe(false);
+  }
+});
 
 const crc32 = (buf: Uint8Array): number => {
   let c = ~0;

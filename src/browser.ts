@@ -13,7 +13,7 @@ import type { Target } from './fallback/media.js';
 import { detectCaptcha, noHuman } from './fallback/captcha.js';
 import { recognize, closeOcr } from './fallback/ocr.js';
 import { downscale, pngSize } from './fallback/look.js';
-import { chromiumExecutable, userAgentFor } from './userAgent.js';
+import { chromiumExecutable, missingChromiumHint, userAgentFor } from './userAgent.js';
 import { parseUntil, describeUntil, waitForHuman, DEFAULT_TIMEOUT_SECONDS } from './fallback/askHuman.js';
 
 /** Transpiler helper shim for pages (see launch()). */
@@ -360,7 +360,9 @@ export class MantisBrowser {
   async launch(): Promise<void> {
     if (this.browser) return;
     const headless = this.opts.headless ?? process.env.MANTIS_HEADLESS !== '0';
-    this.browser = await chromium.launch({ headless, ...chromiumExecutable() });
+    this.browser = await chromium.launch({ headless, ...chromiumExecutable() }).catch((e: unknown) => {
+      throw new Error(missingChromiumHint(e) ?? (e instanceof Error ? e.message : String(e)));
+    });
     // Headless Chromium announces itself as "HeadlessChrome", which some sites answer with a degraded page.
     const userAgent = headless || process.env.MANTIS_USER_AGENT ? await userAgentFor(this.browser) : undefined;
     this.context = await this.browser.newContext({ viewport: { width: 1280, height: 800 }, ...(userAgent ? { userAgent } : {}) });

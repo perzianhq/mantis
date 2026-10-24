@@ -16,7 +16,9 @@ Hard, long-horizon tasks. live-v1 is saturated (86-90 of 90 per approach), so th
 AGENT_SUITE=long-local-v1 AGENT_TASKS=all AGENT_RUNS=3 AGENT_CONCURRENCY=3
 ```
 
-## Phase B: long-live-v1 (documentation only)
+## Phase B: long-live-v1 (draft; not frozen)
+
+The reviewable draft is `bench/agent/long-live-v1-draft.json`; its loader is `bench/agent/long-live-v1.ts`. Excluded rows are retained but never scheduled. At freeze time, verify at least 12 scored rows, every scored key and its near miss, then run `assertLongLiveFreezable(rows)` and generate `bench/manifests/long-live-v1.json` with `buildLongLiveV1Manifest(rows)`. Do not hand-write manifest hashes.
 
 Real-site candidates. None is frozen: keys and walkthroughs are unverified and every row is excluded until verified.
 

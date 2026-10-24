@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { realpathSync } from 'node:fs';
+import { readFileSync, realpathSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
@@ -12,9 +12,18 @@ const reply = (text: string) => ({
   ...(text.startsWith('error:') ? { isError: true } : {}),
 });
 
+function packageVersion(): string {
+  try {
+    const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as { version?: string };
+    return pkg.version ?? '0.0.0';
+  } catch {
+    return '0.0.0';
+  }
+}
+
 /** Build the MCP server around a browser (launched lazily on first tool call). */
 export function createServer(browser: MantisBrowser = new MantisBrowser()): McpServer {
-  const server = new McpServer({ name: 'mantis', version: '0.1.1' });
+  const server = new McpServer({ name: 'mantis', version: packageVersion() });
   const id = z.number().int();
   const humanAvailable = !noHuman();
 

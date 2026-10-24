@@ -1,0 +1,2808 @@
+[
+  {
+    "task_id": "longlive-wiki-probes",
+    "family": "civic-reference",
+    "grading": "deterministic",
+    "level": "hard",
+    "website": "https://en.wikipedia.org/",
+    "confirmed_task": "Using Wikipedia's on-site search, visit Voyager 1, Voyager 2, Pioneer 10, Pioneer 11, New Horizons, Cassini-Huygens, Galileo (spacecraft) and Juno (spacecraft). Read the pinned revisions listed below using each article's permanent-link control if needed. Report each infobox launch date (UTC date only), COSPAR ID, rocket and launch mass in kg. For Galileo use the main spacecraft COSPAR ID and TOTAL launch mass, not the separate probe. Use the labelled launch mass even where other mass values are discussed. Return one plain line per entity: 'Name | YYYY-MM-DD | COSPAR ID | rocket | mass kg'. Use the short names below, ungrouped numbers and ASCII hyphens, including in Cassini-Huygens and Centaur D-1T. Add 'Lightest: <name>'. Finish on the pinned article of the lightest probe. Revisions: Voyager 1: https://en.wikipedia.org/w/index.php?title=Voyager_1&oldid=1380322223; Voyager 2: https://en.wikipedia.org/w/index.php?title=Voyager_2&oldid=1379941955; Pioneer 10: https://en.wikipedia.org/w/index.php?title=Pioneer_10&oldid=1381047166; Pioneer 11: https://en.wikipedia.org/w/index.php?title=Pioneer_11&oldid=1380900278; New Horizons: https://en.wikipedia.org/w/index.php?title=New_Horizons&oldid=1379942369; Cassini-Huygens: https://en.wikipedia.org/w/index.php?title=Cassini%E2%80%93Huygens&oldid=1379940444; Galileo: https://en.wikipedia.org/w/index.php?title=Galileo_(spacecraft)&oldid=1380930326; Juno: https://en.wikipedia.org/w/index.php?title=Juno_(spacecraft)&oldid=1379942933.",
+    "source": {
+      "canonicalUrl": "https://en.wikipedia.org/w/index.php?title=Pioneer_10&oldid=1381047166",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "reachable"
+    },
+    "taskType": "multi-entity-extraction",
+    "referenceActions": [
+      28,
+      38
+    ],
+    "mantisActions": [
+      20,
+      28
+    ],
+    "referenceWalkthrough": {
+      "status": "estimated-not-measured",
+      "method": "Browser structure/content probes, not a complete counted Playwright MCP tree walkthrough. Re-size or replace before freezing.",
+      "steps": [
+        "Search eight article names",
+        "Read each infobox and pinned revision",
+        "Compare masses",
+        "Return to pinned Pioneer 10"
+      ]
+    },
+    "limits": {
+      "maxToolCalls": 100,
+      "timeoutSeconds": 1200
+    },
+    "keyStatus": "verified",
+    "keyNotes": {
+      "capturedAt": "2026-10-24",
+      "expectedAnswer": "Voyager 1 | 1977-09-05 | 1977-084A | Titan IIIE | 815 kg\nVoyager 2 | 1977-08-20 | 1977-076A | Titan IIIE | 721.9 kg\nPioneer 10 | 1972-03-03 | 1972-012A | Atlas SLV-3C Centaur-D Star-37E | 258 kg\nPioneer 11 | 1973-04-06 | 1973-019A | Atlas SLV-3D Centaur-D1A Star-37E | 258.5 kg\nNew Horizons | 2006-01-19 | 2006-001A | Atlas V (551) AV-010 | 478 kg\nCassini-Huygens | 1997-10-15 | 1997-061A | Titan IV-B / Centaur D-1T (B-33) | 5712 kg\nGalileo | 1989-10-18 | 1989-084B | Space Shuttle Atlantis STS-34/IUS | 2560 kg\nJuno | 2011-08-05 | 2011-040A | Atlas V 551 (AV-029) | 3625 kg\nLightest: Pioneer 10",
+      "captureMethod": "Live Chromium infobox rows, permanent links and last-edited footers; terminal pinned URL also opened.",
+      "records": [
+        {
+          "name": "Voyager 1",
+          "title": "Voyager_1",
+          "revisionId": "1380322223",
+          "revisionDate": "2026-10-15T01:45:00Z",
+          "launchDate": "1977-09-05",
+          "cosparId": "1977-084A",
+          "rocket": "Titan IIIE",
+          "launchMassKg": "815",
+          "url": "https://en.wikipedia.org/w/index.php?title=Voyager_1&oldid=1380322223"
+        },
+        {
+          "name": "Voyager 2",
+          "title": "Voyager_2",
+          "revisionId": "1379941955",
+          "revisionDate": "2026-10-12T20:55:00Z",
+          "launchDate": "1977-08-20",
+          "cosparId": "1977-076A",
+          "rocket": "Titan IIIE",
+          "launchMassKg": "721.9",
+          "url": "https://en.wikipedia.org/w/index.php?title=Voyager_2&oldid=1379941955"
+        },
+        {
+          "name": "Pioneer 10",
+          "title": "Pioneer_10",
+          "revisionId": "1381047166",
+          "revisionDate": "2026-10-19T17:48:00Z",
+          "launchDate": "1972-03-03",
+          "cosparId": "1972-012A",
+          "rocket": "Atlas SLV-3C Centaur-D Star-37E",
+          "launchMassKg": "258",
+          "url": "https://en.wikipedia.org/w/index.php?title=Pioneer_10&oldid=1381047166"
+        },
+        {
+          "name": "Pioneer 11",
+          "title": "Pioneer_11",
+          "revisionId": "1380900278",
+          "revisionDate": "2026-10-18T17:01:00Z",
+          "launchDate": "1973-04-06",
+          "cosparId": "1973-019A",
+          "rocket": "Atlas SLV-3D Centaur-D1A Star-37E",
+          "launchMassKg": "258.5",
+          "url": "https://en.wikipedia.org/w/index.php?title=Pioneer_11&oldid=1380900278"
+        },
+        {
+          "name": "New Horizons",
+          "title": "New_Horizons",
+          "revisionId": "1379942369",
+          "revisionDate": "2026-10-12T20:59:00Z",
+          "launchDate": "2006-01-19",
+          "cosparId": "2006-001A",
+          "rocket": "Atlas V (551) AV-010",
+          "launchMassKg": "478",
+          "url": "https://en.wikipedia.org/w/index.php?title=New_Horizons&oldid=1379942369"
+        },
+        {
+          "name": "Cassini-Huygens",
+          "title": "Cassini%E2%80%93Huygens",
+          "revisionId": "1379940444",
+          "revisionDate": "2026-10-12T20:42:00Z",
+          "launchDate": "1997-10-15",
+          "cosparId": "1997-061A",
+          "rocket": "Titan IV-B / Centaur D-1T (B-33)",
+          "launchMassKg": "5712",
+          "url": "https://en.wikipedia.org/w/index.php?title=Cassini%E2%80%93Huygens&oldid=1379940444"
+        },
+        {
+          "name": "Galileo",
+          "title": "Galileo_(spacecraft)",
+          "revisionId": "1380930326",
+          "revisionDate": "2026-10-18T21:17:00Z",
+          "launchDate": "1989-10-18",
+          "cosparId": "1989-084B",
+          "rocket": "Space Shuttle Atlantis STS-34/IUS",
+          "launchMassKg": "2560",
+          "url": "https://en.wikipedia.org/w/index.php?title=Galileo_(spacecraft)&oldid=1380930326"
+        },
+        {
+          "name": "Juno",
+          "title": "Juno_(spacecraft)",
+          "revisionId": "1379942933",
+          "revisionDate": "2026-10-12T21:04:00Z",
+          "launchDate": "2011-08-05",
+          "cosparId": "2011-040A",
+          "rocket": "Atlas V 551 (AV-029)",
+          "launchMassKg": "3625",
+          "url": "https://en.wikipedia.org/w/index.php?title=Juno_(spacecraft)&oldid=1379942933"
+        }
+      ],
+      "definitions": "Launch mass, not dry mass. Galileo main 1989-084B, total 2560 kg. Voyager 2 labels launch mass 721.9 kg in the observed revision; key follows the article, not external corrections."
+    },
+    "botRisk": "low-medium: no gate seen; intermittent page timeouts; possible throttling.",
+    "deterministic": {
+      "kind": "fact",
+      "answerIncludes": [
+        {
+          "type": "text",
+          "value": "Voyager 1 | 1977-09-05 | 1977-084A | Titan IIIE | 815 kg"
+        },
+        {
+          "type": "text",
+          "value": "Voyager 2 | 1977-08-20 | 1977-076A | Titan IIIE | 721.9 kg"
+        },
+        {
+          "type": "text",
+          "value": "Pioneer 10 | 1972-03-03 | 1972-012A | Atlas SLV-3C Centaur-D Star-37E | 258 kg"
+        },
+        {
+          "type": "text",
+          "value": "Pioneer 11 | 1973-04-06 | 1973-019A | Atlas SLV-3D Centaur-D1A Star-37E | 258.5 kg"
+        },
+        {
+          "type": "text",
+          "value": "New Horizons | 2006-01-19 | 2006-001A | Atlas V (551) AV-010 | 478 kg"
+        },
+        {
+          "type": "text",
+          "value": "Cassini-Huygens | 1997-10-15 | 1997-061A | Titan IV-B / Centaur D-1T (B-33) | 5712 kg"
+        },
+        {
+          "type": "text",
+          "value": "Galileo | 1989-10-18 | 1989-084B | Space Shuttle Atlantis STS-34/IUS | 2560 kg"
+        },
+        {
+          "type": "text",
+          "value": "Juno | 2011-08-05 | 2011-040A | Atlas V 551 (AV-029) | 3625 kg"
+        },
+        {
+          "type": "text",
+          "value": "Lightest: Pioneer 10"
+        }
+      ],
+      "final": {
+        "url": {
+          "origin": "https://en.wikipedia.org",
+          "path": "/w/index.php",
+          "query": {
+            "title": "Pioneer_10",
+            "oldid": "1381047166"
+          }
+        },
+        "textIncludes": [
+          {
+            "type": "entity",
+            "value": "Pioneer 10"
+          },
+          {
+            "type": "entity",
+            "value": "1972-012A"
+          },
+          {
+            "type": "entity",
+            "value": "Launch mass"
+          }
+        ]
+      }
+    },
+    "nearMiss": {
+      "description": "Use Voyager 1 dry mass for launch mass.",
+      "replace": {
+        "from": "Titan IIIE | 815 kg",
+        "to": "Titan IIIE | 721.9 kg"
+      },
+      "expected": "reject"
+    }
+  },
+  {
+    "task_id": "longlive-wiki-moons",
+    "family": "civic-reference",
+    "grading": "deterministic",
+    "level": "hard",
+    "website": "https://en.wikipedia.org/",
+    "confirmed_task": "Using Wikipedia's on-site search, inspect Io, Europa, Ganymede, Callisto, Titan, Triton, Enceladus and Mimas at these pinned revisions. Report infobox mean radius in km (central value only; omit uncertainty), sidereal orbital period in days (positive magnitude), and displayed discovery date as YYYY-MM-DD. Use the infobox discovery date even if the prose discusses alternatives. Return plain lines 'Name | radius km | period d | YYYY-MM-DD', using ungrouped numbers and all displayed significant digits. Add 'Triton: retrograde' and 'Order: ...' with all names in decreasing mean radius separated by ' > '. Finish on the pinned Mimas article. Revisions: Io: https://en.wikipedia.org/w/index.php?title=Io_(moon)&oldid=1380203631; Europa: https://en.wikipedia.org/w/index.php?title=Europa_(moon)&oldid=1381496497; Ganymede: https://en.wikipedia.org/w/index.php?title=Ganymede_(moon)&oldid=1381030833; Callisto: https://en.wikipedia.org/w/index.php?title=Callisto_(moon)&oldid=1380203801; Titan: https://en.wikipedia.org/w/index.php?title=Titan_(moon)&oldid=1381580514; Triton: https://en.wikipedia.org/w/index.php?title=Triton_(moon)&oldid=1381288517; Enceladus: https://en.wikipedia.org/w/index.php?title=Enceladus&oldid=1380664437; Mimas: https://en.wikipedia.org/w/index.php?title=Mimas&oldid=1377302334.",
+    "source": {
+      "canonicalUrl": "https://en.wikipedia.org/w/index.php?title=Mimas&oldid=1377302334",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "reachable"
+    },
+    "taskType": "multi-entity-extraction",
+    "referenceActions": [
+      28,
+      38
+    ],
+    "mantisActions": [
+      20,
+      28
+    ],
+    "referenceWalkthrough": {
+      "status": "estimated-not-measured",
+      "method": "Browser structure/content probes, not a complete counted Playwright MCP tree walkthrough. Re-size or replace before freezing.",
+      "steps": [
+        "Search eight moon names",
+        "Read pinned discovery, physical and orbital fields",
+        "Compare radii and order eight moons",
+        "Return to pinned Mimas"
+      ]
+    },
+    "limits": {
+      "maxToolCalls": 100,
+      "timeoutSeconds": 1200
+    },
+    "keyStatus": "verified",
+    "keyNotes": {
+      "capturedAt": "2026-10-24",
+      "expectedAnswer": "Io | 1824.2 km | 1.769 d | 1610-01-08\nEuropa | 1560.8 km | 3.551181 d | 1610-01-08\nGanymede | 2632.27 km | 7.15455296 d | 1610-01-07\nCallisto | 2410.3 km | 16.6890184 d | 1610-01-07\nTitan | 2574.765 km | 15.945448 d | 1655-03-25\nTriton | 1353.4 km | 5.87685407 d | 1846-10-10\nEnceladus | 252.04 km | 1.370218 d | 1789-08-28\nMimas | 197.49 km | 0.942421959 d | 1789-09-17\nTriton: retrograde\nOrder: Ganymede > Titan > Callisto > Io > Europa > Triton > Enceladus > Mimas",
+      "captureMethod": "All eight live Chromium infoboxes, permanent links and last-edited footers; pinned Mimas terminal URL opened.",
+      "records": [
+        {
+          "name": "Io",
+          "title": "Io_(moon)",
+          "revisionId": "1380203631",
+          "revisionDate": "2026-10-14T11:17:00Z",
+          "meanRadiusKm": "1824.2",
+          "siderealPeriodDays": "1.769",
+          "discoveryDate": "1610-01-08",
+          "url": "https://en.wikipedia.org/w/index.php?title=Io_(moon)&oldid=1380203631"
+        },
+        {
+          "name": "Europa",
+          "title": "Europa_(moon)",
+          "revisionId": "1381496497",
+          "revisionDate": "2026-10-22T22:19:00Z",
+          "meanRadiusKm": "1560.8",
+          "siderealPeriodDays": "3.551181",
+          "discoveryDate": "1610-01-08",
+          "url": "https://en.wikipedia.org/w/index.php?title=Europa_(moon)&oldid=1381496497"
+        },
+        {
+          "name": "Ganymede",
+          "title": "Ganymede_(moon)",
+          "revisionId": "1381030833",
+          "revisionDate": "2026-10-19T15:36:00Z",
+          "meanRadiusKm": "2632.27",
+          "siderealPeriodDays": "7.15455296",
+          "discoveryDate": "1610-01-07",
+          "url": "https://en.wikipedia.org/w/index.php?title=Ganymede_(moon)&oldid=1381030833"
+        },
+        {
+          "name": "Callisto",
+          "title": "Callisto_(moon)",
+          "revisionId": "1380203801",
+          "revisionDate": "2026-10-14T11:19:00Z",
+          "meanRadiusKm": "2410.3",
+          "siderealPeriodDays": "16.6890184",
+          "discoveryDate": "1610-01-07",
+          "url": "https://en.wikipedia.org/w/index.php?title=Callisto_(moon)&oldid=1380203801"
+        },
+        {
+          "name": "Titan",
+          "title": "Titan_(moon)",
+          "revisionId": "1381580514",
+          "revisionDate": "2026-10-23T13:29:00Z",
+          "meanRadiusKm": "2574.765",
+          "siderealPeriodDays": "15.945448",
+          "discoveryDate": "1655-03-25",
+          "url": "https://en.wikipedia.org/w/index.php?title=Titan_(moon)&oldid=1381580514"
+        },
+        {
+          "name": "Triton",
+          "title": "Triton_(moon)",
+          "revisionId": "1381288517",
+          "revisionDate": "2026-10-21T09:57:00Z",
+          "meanRadiusKm": "1353.4",
+          "siderealPeriodDays": "5.87685407",
+          "discoveryDate": "1846-10-10",
+          "url": "https://en.wikipedia.org/w/index.php?title=Triton_(moon)&oldid=1381288517"
+        },
+        {
+          "name": "Enceladus",
+          "title": "Enceladus",
+          "revisionId": "1380664437",
+          "revisionDate": "2026-10-17T03:52:00Z",
+          "meanRadiusKm": "252.04",
+          "siderealPeriodDays": "1.370218",
+          "discoveryDate": "1789-08-28",
+          "url": "https://en.wikipedia.org/w/index.php?title=Enceladus&oldid=1380664437"
+        },
+        {
+          "name": "Mimas",
+          "title": "Mimas",
+          "revisionId": "1377302334",
+          "revisionDate": "2026-09-28T20:07:00Z",
+          "meanRadiusKm": "197.49",
+          "siderealPeriodDays": "0.942421959",
+          "discoveryDate": "1789-09-17",
+          "url": "https://en.wikipedia.org/w/index.php?title=Mimas&oldid=1377302334"
+        }
+      ],
+      "definitions": "Central mean radius, sidereal period magnitude, infobox discovery date. Observed Io radius=1824.2 km and Mimas=197.49 km."
+    },
+    "botRisk": "low-medium: no gate seen; revision pinning essential because infobox values change.",
+    "deterministic": {
+      "kind": "fact",
+      "answerIncludes": [
+        {
+          "type": "text",
+          "value": "Io | 1824.2 km | 1.769 d | 1610-01-08"
+        },
+        {
+          "type": "text",
+          "value": "Europa | 1560.8 km | 3.551181 d | 1610-01-08"
+        },
+        {
+          "type": "text",
+          "value": "Ganymede | 2632.27 km | 7.15455296 d | 1610-01-07"
+        },
+        {
+          "type": "text",
+          "value": "Callisto | 2410.3 km | 16.6890184 d | 1610-01-07"
+        },
+        {
+          "type": "text",
+          "value": "Titan | 2574.765 km | 15.945448 d | 1655-03-25"
+        },
+        {
+          "type": "text",
+          "value": "Triton | 1353.4 km | 5.87685407 d | 1846-10-10"
+        },
+        {
+          "type": "text",
+          "value": "Enceladus | 252.04 km | 1.370218 d | 1789-08-28"
+        },
+        {
+          "type": "text",
+          "value": "Mimas | 197.49 km | 0.942421959 d | 1789-09-17"
+        },
+        {
+          "type": "text",
+          "value": "Triton: retrograde"
+        },
+        {
+          "type": "text",
+          "value": "Order: Ganymede > Titan > Callisto > Io > Europa > Triton > Enceladus > Mimas"
+        }
+      ],
+      "final": {
+        "url": {
+          "origin": "https://en.wikipedia.org",
+          "path": "/w/index.php",
+          "query": {
+            "title": "Mimas",
+            "oldid": "1377302334"
+          }
+        },
+        "textIncludes": [
+          {
+            "type": "entity",
+            "value": "Mimas"
+          },
+          {
+            "type": "entity",
+            "value": "Mean radius"
+          },
+          {
+            "type": "entity",
+            "value": "197.49"
+          }
+        ]
+      }
+    },
+    "nearMiss": {
+      "description": "Transpose Io and Europa periods.",
+      "replace": {
+        "from": "Io | 1824.2 km | 1.769 d",
+        "to": "Io | 1824.2 km | 3.551181 d"
+      },
+      "expected": "reject"
+    }
+  },
+  {
+    "task_id": "longlive-gutenberg-novels",
+    "family": "site-navigation",
+    "grading": "deterministic",
+    "level": "medium",
+    "website": "https://www.gutenberg.org/ebooks/",
+    "confirmed_task": "Use Project Gutenberg's catalogue search to inspect these eight English Text records: Pride and Prejudice (#1342), Sense and Sensibility (#161), Emma (#158), Mansfield Park (#141), Persuasion (#105), Northanger Abbey (#121), Jane Eyre: An Autobiography (#1260), Wuthering Heights (#768). Report title, eBook number, Release Date (not original publication date or Last Update), and LoC class CODE. Use these explicit records rather than choosing another edition. Return plain lines 'eBook number | displayed title | YYYY-MM-DD | LoC code'. Add 'Earliest: #<number> <title>' for the earliest Gutenberg release, breaking ties by eBook number. Finish on that catalogue record with About this eBook visible.",
+    "source": {
+      "canonicalUrl": "https://www.gutenberg.org/ebooks/105",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "reachable"
+    },
+    "taskType": "multi-entity-extraction",
+    "referenceActions": [
+      24,
+      34
+    ],
+    "mantisActions": [
+      17,
+      25
+    ],
+    "referenceWalkthrough": {
+      "status": "estimated-not-measured",
+      "method": "Browser structure/content probes, not a complete counted Playwright MCP tree walkthrough. Re-size or replace before freezing.",
+      "steps": [
+        "Search eight supplied title/ID pairs",
+        "Read eight catalogue metadata tables",
+        "Compare release dates",
+        "Return to #105 metadata"
+      ]
+    },
+    "limits": {
+      "maxToolCalls": 100,
+      "timeoutSeconds": 1200
+    },
+    "keyStatus": "verified",
+    "keyNotes": {
+      "capturedAt": "2026-10-24",
+      "expectedAnswer": "1342 | Pride and Prejudice | 1998-06-01 | PR\n161 | Sense and Sensibility | 1994-09-01 | PR\n158 | Emma | 1994-08-01 | PR\n141 | Mansfield Park | 1994-06-01 | PR\n105 | Persuasion | 1994-02-01 | PR\n121 | Northanger Abbey | 1994-04-01 | PR\n1260 | Jane Eyre: An Autobiography | 1998-03-01 | PR\n768 | Wuthering Heights | 1996-12-01 | PR\nEarliest: #105 Persuasion",
+      "captureMethod": "Eight live Chromium About this eBook tables. No public revision IDs; Last Update recorded separately.",
+      "records": [
+        {
+          "id": 1342,
+          "title": "Pride and Prejudice",
+          "author": "Austen, Jane, 1775-1817",
+          "releaseDate": "1998-06-01",
+          "locClass": "PR",
+          "lastUpdate": "2026-09-29",
+          "language": "English",
+          "category": "Text",
+          "revisionId": null,
+          "url": "https://www.gutenberg.org/ebooks/1342"
+        },
+        {
+          "id": 161,
+          "title": "Sense and Sensibility",
+          "author": "Austen, Jane, 1775-1817",
+          "releaseDate": "1994-09-01",
+          "locClass": "PR",
+          "lastUpdate": "2026-10-18",
+          "language": "English",
+          "category": "Text",
+          "revisionId": null,
+          "url": "https://www.gutenberg.org/ebooks/161"
+        },
+        {
+          "id": 158,
+          "title": "Emma",
+          "author": "Austen, Jane, 1775-1817",
+          "releaseDate": "1994-08-01",
+          "locClass": "PR",
+          "lastUpdate": "2026-10-04",
+          "language": "English",
+          "category": "Text",
+          "revisionId": null,
+          "url": "https://www.gutenberg.org/ebooks/158"
+        },
+        {
+          "id": 141,
+          "title": "Mansfield Park",
+          "author": "Austen, Jane, 1775-1817",
+          "releaseDate": "1994-06-01",
+          "locClass": "PR",
+          "lastUpdate": "2026-01-30",
+          "language": "English",
+          "category": "Text",
+          "revisionId": null,
+          "url": "https://www.gutenberg.org/ebooks/141"
+        },
+        {
+          "id": 105,
+          "title": "Persuasion",
+          "author": "Austen, Jane, 1775-1817",
+          "releaseDate": "1994-02-01",
+          "locClass": "PR",
+          "lastUpdate": "2023-09-10",
+          "language": "English",
+          "category": "Text",
+          "revisionId": null,
+          "url": "https://www.gutenberg.org/ebooks/105"
+        },
+        {
+          "id": 121,
+          "title": "Northanger Abbey",
+          "author": "Austen, Jane, 1775-1817",
+          "releaseDate": "1994-04-01",
+          "locClass": "PR",
+          "lastUpdate": "2025-10-07",
+          "language": "English",
+          "category": "Text",
+          "revisionId": null,
+          "url": "https://www.gutenberg.org/ebooks/121"
+        },
+        {
+          "id": 1260,
+          "title": "Jane Eyre: An Autobiography",
+          "author": "Brontë, Charlotte, 1816-1855",
+          "releaseDate": "1998-03-01",
+          "locClass": "PR",
+          "lastUpdate": "2025-09-27",
+          "language": "English",
+          "category": "Text",
+          "revisionId": null,
+          "url": "https://www.gutenberg.org/ebooks/1260"
+        },
+        {
+          "id": 768,
+          "title": "Wuthering Heights",
+          "author": "Brontë, Emily, 1818-1848",
+          "releaseDate": "1996-12-01",
+          "locClass": "PR",
+          "lastUpdate": "2026-05-06",
+          "language": "English",
+          "category": "Text",
+          "revisionId": null,
+          "url": "https://www.gutenberg.org/ebooks/768"
+        }
+      ],
+      "selectionChange": "Explicit IDs replace unbounded lowest-numbered-edition rule; global minimality was not established."
+    },
+    "botRisk": "low-medium: catalogue reachable; intermittent navigation timeouts; metadata may update.",
+    "deterministic": {
+      "kind": "fact",
+      "answerIncludes": [
+        {
+          "type": "text",
+          "value": "1342 | Pride and Prejudice | 1998-06-01 | PR"
+        },
+        {
+          "type": "text",
+          "value": "161 | Sense and Sensibility | 1994-09-01 | PR"
+        },
+        {
+          "type": "text",
+          "value": "158 | Emma | 1994-08-01 | PR"
+        },
+        {
+          "type": "text",
+          "value": "141 | Mansfield Park | 1994-06-01 | PR"
+        },
+        {
+          "type": "text",
+          "value": "105 | Persuasion | 1994-02-01 | PR"
+        },
+        {
+          "type": "text",
+          "value": "121 | Northanger Abbey | 1994-04-01 | PR"
+        },
+        {
+          "type": "text",
+          "value": "1260 | Jane Eyre: An Autobiography | 1998-03-01 | PR"
+        },
+        {
+          "type": "text",
+          "value": "768 | Wuthering Heights | 1996-12-01 | PR"
+        },
+        {
+          "type": "text",
+          "value": "Earliest: #105 Persuasion"
+        }
+      ],
+      "final": {
+        "url": {
+          "origin": "https://www.gutenberg.org",
+          "path": "/ebooks/105"
+        },
+        "textIncludes": [
+          {
+            "type": "entity",
+            "value": "Persuasion"
+          },
+          {
+            "type": "entity",
+            "value": "About this eBook"
+          },
+          {
+            "type": "entity",
+            "value": "Release Date"
+          },
+          {
+            "type": "entity",
+            "value": "Feb 1, 1994"
+          }
+        ]
+      }
+    },
+    "nearMiss": {
+      "description": "Use Persuasion original publication year instead of Gutenberg release date.",
+      "replace": {
+        "from": "105 | Persuasion | 1994-02-01",
+        "to": "105 | Persuasion | 1817-12-01"
+      },
+      "expected": "reject"
+    }
+  },
+  {
+    "task_id": "longlive-gutenberg-gothic",
+    "family": "site-navigation",
+    "grading": "deterministic",
+    "level": "hard",
+    "website": "https://www.gutenberg.org/ebooks/",
+    "confirmed_task": "Audit these eight Project Gutenberg English Text records using catalogue search: Frankenstein; or, The modern Prometheus (#84), Dracula (#345), The Picture of Dorian Gray (#174), The strange case of Dr. Jekyll and Mr. Hyde (#43), The Castle of Otranto (#696), The Mysteries of Udolpho (#3268), The Monk: A Romance (#601), The Turn of the Screw (#209). Copy each displayed title and credited Author exactly, plus Release Date as YYYY-MM-DD and LoC class CODE. Use these explicit eBook numbers; ignore editors, illustrators, improved editions and original publication dates. Return plain lines 'eBook number | displayed title | credited Author | YYYY-MM-DD | LoC code'. Finish on #84 with About this eBook visible.",
+    "source": {
+      "canonicalUrl": "https://www.gutenberg.org/ebooks/84",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "reachable"
+    },
+    "taskType": "multi-entity-extraction",
+    "referenceActions": [
+      26,
+      36
+    ],
+    "mantisActions": [
+      18,
+      27
+    ],
+    "referenceWalkthrough": {
+      "status": "estimated-not-measured",
+      "method": "Browser structure/content probes, not a complete counted Playwright MCP tree walkthrough. Re-size or replace before freezing.",
+      "steps": [
+        "Search eight title/ID pairs",
+        "Read eight About this eBook tables",
+        "Distinguish Author and Release Date from other credits/dates",
+        "Return to #84"
+      ]
+    },
+    "limits": {
+      "maxToolCalls": 100,
+      "timeoutSeconds": 1200
+    },
+    "keyStatus": "verified",
+    "keyNotes": {
+      "capturedAt": "2026-10-24",
+      "expectedAnswer": "84 | Frankenstein; or, The modern Prometheus | Shelley, Mary Wollstonecraft, 1797-1851 | 1993-10-01 | PR\n345 | Dracula | Stoker, Bram, 1847-1912 | 1995-10-01 | PR\n174 | The Picture of Dorian Gray | Wilde, Oscar, 1854-1900 | 1994-10-01 | PR\n43 | The strange case of Dr. Jekyll and Mr. Hyde | Stevenson, Robert Louis, 1850-1894 | 2008-06-27 | PR\n696 | The Castle of Otranto | Walpole, Horace, 1717-1797 | 1996-10-01 | PR\n3268 | The Mysteries of Udolpho | Radcliffe, Ann Ward, 1764-1823 | 2002-06-01 | PR\n601 | The Monk: A Romance | Lewis, M. G. (Matthew Gregory), 1775-1818 | 1996-07-01 | PR\n209 | The Turn of the Screw | James, Henry, 1843-1916 | 1995-02-01 | PS",
+      "captureMethod": "Live Chromium tables for #84/#696/#3268/#209; live web metadata tables for #345/#174/#43/#601 after Chromium timeouts. No exposed revision IDs.",
+      "records": [
+        {
+          "id": 84,
+          "title": "Frankenstein; or, The modern Prometheus",
+          "author": "Shelley, Mary Wollstonecraft, 1797-1851",
+          "releaseDate": "1993-10-01",
+          "locClass": "PR",
+          "lastUpdate": "2026-02-10",
+          "language": "English",
+          "category": "Text",
+          "revisionId": null,
+          "url": "https://www.gutenberg.org/ebooks/84"
+        },
+        {
+          "id": 345,
+          "title": "Dracula",
+          "author": "Stoker, Bram, 1847-1912",
+          "releaseDate": "1995-10-01",
+          "locClass": "PR",
+          "lastUpdate": "2025-09-24",
+          "language": "English",
+          "category": "Text",
+          "revisionId": null,
+          "url": "https://www.gutenberg.org/ebooks/345"
+        },
+        {
+          "id": 174,
+          "title": "The Picture of Dorian Gray",
+          "author": "Wilde, Oscar, 1854-1900",
+          "releaseDate": "1994-10-01",
+          "locClass": "PR",
+          "lastUpdate": "2025-09-17",
+          "language": "English",
+          "category": "Text",
+          "revisionId": null,
+          "url": "https://www.gutenberg.org/ebooks/174"
+        },
+        {
+          "id": 43,
+          "title": "The strange case of Dr. Jekyll and Mr. Hyde",
+          "author": "Stevenson, Robert Louis, 1850-1894",
+          "releaseDate": "2008-06-27",
+          "locClass": "PR",
+          "lastUpdate": "2026-05-12",
+          "language": "English",
+          "category": "Text",
+          "revisionId": null,
+          "url": "https://www.gutenberg.org/ebooks/43"
+        },
+        {
+          "id": 696,
+          "title": "The Castle of Otranto",
+          "author": "Walpole, Horace, 1717-1797",
+          "releaseDate": "1996-10-01",
+          "locClass": "PR",
+          "lastUpdate": "2021-04-09",
+          "language": "English",
+          "category": "Text",
+          "revisionId": null,
+          "url": "https://www.gutenberg.org/ebooks/696"
+        },
+        {
+          "id": 3268,
+          "title": "The Mysteries of Udolpho",
+          "author": "Radcliffe, Ann Ward, 1764-1823",
+          "releaseDate": "2002-06-01",
+          "locClass": "PR",
+          "lastUpdate": "2022-12-01",
+          "language": "English",
+          "category": "Text",
+          "revisionId": null,
+          "url": "https://www.gutenberg.org/ebooks/3268"
+        },
+        {
+          "id": 601,
+          "title": "The Monk: A Romance",
+          "author": "Lewis, M. G. (Matthew Gregory), 1775-1818",
+          "releaseDate": "1996-07-01",
+          "locClass": "PR",
+          "lastUpdate": "2026-08-05",
+          "language": "English",
+          "category": "Text",
+          "revisionId": null,
+          "url": "https://www.gutenberg.org/ebooks/601"
+        },
+        {
+          "id": 209,
+          "title": "The Turn of the Screw",
+          "author": "James, Henry, 1843-1916",
+          "releaseDate": "1995-02-01",
+          "locClass": "PS",
+          "lastUpdate": "2026-07-25",
+          "language": "English",
+          "category": "Text",
+          "revisionId": null,
+          "url": "https://www.gutenberg.org/ebooks/209"
+        }
+      ],
+      "definitions": "#43 Release Date is 2008-06-27; #209 LoC class is PS. Author means catalogue inverted-name string.",
+      "selectionChange": "Explicit IDs replace unverified global lowest-numbered-record selection."
+    },
+    "botRisk": "low-medium: all keys read live; several Chromium timeouts, with metadata retrieved via web access.",
+    "deterministic": {
+      "kind": "fact",
+      "answerIncludes": [
+        {
+          "type": "text",
+          "value": "84 | Frankenstein; or, The modern Prometheus | Shelley, Mary Wollstonecraft, 1797-1851 | 1993-10-01 | PR"
+        },
+        {
+          "type": "text",
+          "value": "345 | Dracula | Stoker, Bram, 1847-1912 | 1995-10-01 | PR"
+        },
+        {
+          "type": "text",
+          "value": "174 | The Picture of Dorian Gray | Wilde, Oscar, 1854-1900 | 1994-10-01 | PR"
+        },
+        {
+          "type": "text",
+          "value": "43 | The strange case of Dr. Jekyll and Mr. Hyde | Stevenson, Robert Louis, 1850-1894 | 2008-06-27 | PR"
+        },
+        {
+          "type": "text",
+          "value": "696 | The Castle of Otranto | Walpole, Horace, 1717-1797 | 1996-10-01 | PR"
+        },
+        {
+          "type": "text",
+          "value": "3268 | The Mysteries of Udolpho | Radcliffe, Ann Ward, 1764-1823 | 2002-06-01 | PR"
+        },
+        {
+          "type": "text",
+          "value": "601 | The Monk: A Romance | Lewis, M. G. (Matthew Gregory), 1775-1818 | 1996-07-01 | PR"
+        },
+        {
+          "type": "text",
+          "value": "209 | The Turn of the Screw | James, Henry, 1843-1916 | 1995-02-01 | PS"
+        }
+      ],
+      "final": {
+        "url": {
+          "origin": "https://www.gutenberg.org",
+          "path": "/ebooks/84"
+        },
+        "textIncludes": [
+          {
+            "type": "entity",
+            "value": "Frankenstein"
+          },
+          {
+            "type": "entity",
+            "value": "About this eBook"
+          },
+          {
+            "type": "entity",
+            "value": "Oct 1, 1993"
+          }
+        ]
+      }
+    },
+    "nearMiss": {
+      "description": "Give Henry James's #209 class PR instead of PS.",
+      "replace": {
+        "from": "1995-02-01 | PS",
+        "to": "1995-02-01 | PR"
+      },
+      "expected": "reject"
+    }
+  },
+  {
+    "task_id": "longlive-met-vangogh",
+    "family": "interactive-exploration",
+    "grading": "deterministic",
+    "level": "medium",
+    "website": "https://www.metmuseum.org/art/collection",
+    "confirmed_task": "Use The Met collection search to inspect object IDs 436528, 436532, 436535, 436524, 436525, 436526, 436527, 436530. Build an eight-object checklist of displayed title, displayed Date, Medium, Object Number, and unframed centimetre dimensions in displayed height x width order. Distinguish numeric collection ID from Object Number. Return plain lines 'ID | title | date | medium | object number | height x width cm', copying title/date/medium and normalizing multiplication signs to ASCII x. Finish on 436530 with Artwork Details / Overview visible.",
+    "source": {
+      "canonicalUrl": "https://www.metmuseum.org/art/collection/search/436530",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "reachable"
+    },
+    "taskType": "multi-entity-extraction",
+    "referenceActions": [
+      24,
+      34
+    ],
+    "mantisActions": [
+      17,
+      25
+    ],
+    "referenceWalkthrough": {
+      "status": "estimated-not-measured",
+      "method": "Browser structure/content probes, not a complete counted Playwright MCP tree walkthrough. Re-size or replace before freezing.",
+      "steps": [
+        "Search eight collection IDs",
+        "Open each Overview panel",
+        "Copy labelled metadata and dimensions",
+        "Return to 436530 Overview"
+      ]
+    },
+    "limits": {
+      "maxToolCalls": 100,
+      "timeoutSeconds": 1200
+    },
+    "keyStatus": "verified",
+    "keyNotes": {
+      "capturedAt": "2026-10-24",
+      "expectedAnswer": "436528 | Irises | 1890 | Oil on canvas | 58.187 | 73.7 x 92.1 cm\n436532 | Self-Portrait with a Straw Hat (obverse: The Potato Peeler) | 1887 | Oil on canvas | 67.187.70a | 40.6 x 31.8 cm\n436535 | Wheat Field with Cypresses | 1889 | Oil on canvas | 1993.132 | 73.2 x 93.4 cm\n436524 | Sunflowers | 1887 | Oil on canvas | 49.41 | 43.2 x 61 cm\n436525 | Bouquet of Flowers in a Vase | 1890 | Oil on canvas | 1993.400.4 | 65.1 x 54 cm\n436526 | First Steps, after Millet | 1890 | Oil on canvas | 64.165.2 | 72.4 x 91.1 cm\n436527 | The Flowering Orchard | 1888 | Oil on canvas | 56.13 | 72.4 x 53.3 cm\n436530 | Oleanders | 1888 | Oil on canvas | 62.24 | 60.3 x 73.7 cm",
+      "captureMethod": "All eight live Chromium Artwork Details / Overview panels. No displayed record revision ID or last-modified date; capture date is provenance date.",
+      "records": [
+        {
+          "id": 436528,
+          "title": "Irises",
+          "date": "1890",
+          "objectNumber": "58.187",
+          "heightCm": "73.7",
+          "widthCm": "92.1",
+          "medium": "Oil on canvas",
+          "revisionId": null,
+          "lastUpdate": null,
+          "url": "https://www.metmuseum.org/art/collection/search/436528"
+        },
+        {
+          "id": 436532,
+          "title": "Self-Portrait with a Straw Hat (obverse: The Potato Peeler)",
+          "date": "1887",
+          "objectNumber": "67.187.70a",
+          "heightCm": "40.6",
+          "widthCm": "31.8",
+          "medium": "Oil on canvas",
+          "revisionId": null,
+          "lastUpdate": null,
+          "url": "https://www.metmuseum.org/art/collection/search/436532"
+        },
+        {
+          "id": 436535,
+          "title": "Wheat Field with Cypresses",
+          "date": "1889",
+          "objectNumber": "1993.132",
+          "heightCm": "73.2",
+          "widthCm": "93.4",
+          "medium": "Oil on canvas",
+          "revisionId": null,
+          "lastUpdate": null,
+          "url": "https://www.metmuseum.org/art/collection/search/436535"
+        },
+        {
+          "id": 436524,
+          "title": "Sunflowers",
+          "date": "1887",
+          "objectNumber": "49.41",
+          "heightCm": "43.2",
+          "widthCm": "61",
+          "medium": "Oil on canvas",
+          "revisionId": null,
+          "lastUpdate": null,
+          "url": "https://www.metmuseum.org/art/collection/search/436524"
+        },
+        {
+          "id": 436525,
+          "title": "Bouquet of Flowers in a Vase",
+          "date": "1890",
+          "objectNumber": "1993.400.4",
+          "heightCm": "65.1",
+          "widthCm": "54",
+          "medium": "Oil on canvas",
+          "revisionId": null,
+          "lastUpdate": null,
+          "url": "https://www.metmuseum.org/art/collection/search/436525"
+        },
+        {
+          "id": 436526,
+          "title": "First Steps, after Millet",
+          "date": "1890",
+          "objectNumber": "64.165.2",
+          "heightCm": "72.4",
+          "widthCm": "91.1",
+          "medium": "Oil on canvas",
+          "revisionId": null,
+          "lastUpdate": null,
+          "url": "https://www.metmuseum.org/art/collection/search/436526"
+        },
+        {
+          "id": 436527,
+          "title": "The Flowering Orchard",
+          "date": "1888",
+          "objectNumber": "56.13",
+          "heightCm": "72.4",
+          "widthCm": "53.3",
+          "medium": "Oil on canvas",
+          "revisionId": null,
+          "lastUpdate": null,
+          "url": "https://www.metmuseum.org/art/collection/search/436527"
+        },
+        {
+          "id": 436530,
+          "title": "Oleanders",
+          "date": "1888",
+          "objectNumber": "62.24",
+          "heightCm": "60.3",
+          "widthCm": "73.7",
+          "medium": "Oil on canvas",
+          "revisionId": null,
+          "lastUpdate": null,
+          "url": "https://www.metmuseum.org/art/collection/search/436530"
+        }
+      ],
+      "definitions": "Unframed first dimensions. For 436532 use Overview title 'obverse', not audio caption 'verso'."
+    },
+    "botRisk": "medium: reachable without a gate locally today; historical live-v1 cloud bot checks; no bypass.",
+    "deterministic": {
+      "kind": "fact",
+      "answerIncludes": [
+        {
+          "type": "text",
+          "value": "436528 | Irises | 1890 | Oil on canvas | 58.187 | 73.7 x 92.1 cm"
+        },
+        {
+          "type": "text",
+          "value": "436532 | Self-Portrait with a Straw Hat (obverse: The Potato Peeler) | 1887 | Oil on canvas | 67.187.70a | 40.6 x 31.8 cm"
+        },
+        {
+          "type": "text",
+          "value": "436535 | Wheat Field with Cypresses | 1889 | Oil on canvas | 1993.132 | 73.2 x 93.4 cm"
+        },
+        {
+          "type": "text",
+          "value": "436524 | Sunflowers | 1887 | Oil on canvas | 49.41 | 43.2 x 61 cm"
+        },
+        {
+          "type": "text",
+          "value": "436525 | Bouquet of Flowers in a Vase | 1890 | Oil on canvas | 1993.400.4 | 65.1 x 54 cm"
+        },
+        {
+          "type": "text",
+          "value": "436526 | First Steps, after Millet | 1890 | Oil on canvas | 64.165.2 | 72.4 x 91.1 cm"
+        },
+        {
+          "type": "text",
+          "value": "436527 | The Flowering Orchard | 1888 | Oil on canvas | 56.13 | 72.4 x 53.3 cm"
+        },
+        {
+          "type": "text",
+          "value": "436530 | Oleanders | 1888 | Oil on canvas | 62.24 | 60.3 x 73.7 cm"
+        }
+      ],
+      "final": {
+        "url": {
+          "origin": "https://www.metmuseum.org",
+          "path": "/art/collection/search/436530"
+        },
+        "textIncludes": [
+          {
+            "type": "entity",
+            "value": "Oleanders"
+          },
+          {
+            "type": "entity",
+            "value": "Artwork Details"
+          },
+          {
+            "type": "entity",
+            "value": "62.24"
+          }
+        ]
+      }
+    },
+    "nearMiss": {
+      "description": "Swap Irises and Oleanders Object Numbers.",
+      "replace": {
+        "from": "Oil on canvas | 58.187 | 73.7",
+        "to": "Oil on canvas | 62.24 | 73.7"
+      },
+      "expected": "reject"
+    }
+  },
+  {
+    "task_id": "longlive-gutenberg-dickens-search",
+    "family": "site-navigation",
+    "grading": "deterministic",
+    "level": "medium",
+    "website": "https://www.gutenberg.org/ebooks/",
+    "confirmed_task": "Use Project Gutenberg Advanced Search: Author 'Charles Dickens', Language English, Subject Areas / LoC Class PR; leave other filters at Any/empty. Search, inspect the first results page, follow its next-page control and inspect page two. Compare the English Text catalogue records A Tale of Two Cities (#98) and Great Expectations (#1400); after inspecting page two, locate EACH explicit ID through a separate Quick search for its eBook number, then open the result with that exact ID. Retain the original advanced-search page-two URL for the final return; do not navigate directly to the catalogue URLs or take whichever edition ranks first. For each report displayed title, Release Date and LoC class code in a plain line 'eBook number | title | YYYY-MM-DD | LoC code'. Add 'Earlier: #<number>' for the earlier Gutenberg release, breaking a same-day tie by lower eBook number. Return to the SECOND advanced-search result page with the original author, English and PR selections retained. Do not report download counts or rankings.",
+    "source": {
+      "canonicalUrl": "https://www.gutenberg.org/ebooks/results/",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "reachable"
+    },
+    "taskType": "search-facets-pagination-compare",
+    "referenceActions": [
+      21,
+      21
+    ],
+    "mantisActions": [
+      16,
+      24
+    ],
+    "referenceWalkthrough": {
+      "status": "measured-live-playwright",
+      "method": "2026-10-24 live Chromium, tree-style navigate/click/type/select/read equivalents counted individually, not outer JavaScript calls. 21 calls; no artificial per-click reads. Navigation failures/preflight probes excluded. Comparison records located with quick search, then explicit result links; final URL restored from observed page-two link. The revised prompt requires each numbered Quick search explicitly; opening records directly from the retained results would use fewer calls and is outside this revised route.",
+      "steps": [
+        "1 navigate Advanced Search; 2 read controls; 3 author Charles Dickens; 4 English; 5 PR; 6 Search; 7 read page one; 8 next; 9 read page two",
+        "10 quick-search 98; 11 Go; 12 read results; 13 open #98; 14 read metadata",
+        "15 quick-search 1400; 16 Go; 17 read results; 18 open #1400; 19 read metadata; 20 return retained page-two URL; 21 read final state"
+      ]
+    },
+    "limits": {
+      "maxToolCalls": 100,
+      "timeoutSeconds": 1200
+    },
+    "keyStatus": "verified",
+    "keyNotes": {
+      "capturedAt": "2026-10-24",
+      "expectedAnswer": "98 | A Tale of Two Cities | 1994-01-01 | PR\n1400 | Great Expectations | 1998-07-01 | PR\nEarlier: #98",
+      "captureMethod": "2026-10-24 live Chromium walked full Advanced Search / next / both quick searches and catalogue records / retained page-two URL. Metadata: #98 Jan 1, 1994; #1400 Jul 1, 1998; both English, Category Text, LoC PR. Final author Charles Dickens, locc PR, lang en, pageno 2 read together. Live totals intentionally not frozen. Live page-one near miss captured with otherwise correct answer and rejected by evaluateDeterministicGrader; live page-two capture accepted. Wrong comparison answer tested independently against the good terminal frame.",
+      "records": [
+        {
+          "id": 98,
+          "title": "A Tale of Two Cities",
+          "author": "Dickens, Charles, 1812-1870",
+          "releaseDate": "1994-01-01",
+          "locClass": "PR",
+          "lastUpdate": "2026-02-26",
+          "language": "English",
+          "category": "Text",
+          "revisionId": null,
+          "url": "https://www.gutenberg.org/ebooks/98"
+        },
+        {
+          "id": 1400,
+          "title": "Great Expectations",
+          "author": "Dickens, Charles, 1812-1870",
+          "releaseDate": "1998-07-01",
+          "locClass": "PR",
+          "lastUpdate": "2024-12-17",
+          "language": "English",
+          "category": "Text",
+          "revisionId": null,
+          "url": "https://www.gutenberg.org/ebooks/1400"
+        }
+      ],
+      "partialKeyVerifiedAt": "2026-10-24",
+      "contractLimitation": "Page-two gap closed today: URL guards author, English, PR, blank extra filters and pageno=2; live page-one state rejected. Live result totals/ranking intentionally not frozen. The prescribed Quick searches are explicit in the revised prompt.",
+      "missing": []
+    },
+    "botRisk": "low-medium: catalogue and facet controls reachable; advanced-search POST/navigation was intermittent; no gate seen.",
+    "deterministic": {
+      "kind": "fact",
+      "answerIncludes": [
+        {
+          "type": "text",
+          "value": "98 | A Tale of Two Cities | 1994-01-01 | PR"
+        },
+        {
+          "type": "text",
+          "value": "1400 | Great Expectations | 1998-07-01 | PR"
+        },
+        {
+          "type": "text",
+          "value": "Earlier: #98"
+        }
+      ],
+      "final": {
+        "url": {
+          "origin": "https://www.gutenberg.org",
+          "path": "/ebooks/results/",
+          "query": {
+            "author": "Charles Dickens",
+            "locc": "PR",
+            "lang": "en",
+            "pageno": "2",
+            "title": "",
+            "subject": "",
+            "category": "",
+            "filetype": ""
+          }
+        },
+        "textIncludes": [
+          {
+            "type": "entity",
+            "value": "Author = Dickens"
+          },
+          {
+            "type": "entity",
+            "value": "LoC Class = PR"
+          },
+          {
+            "type": "entity",
+            "value": "Language = English"
+          }
+        ]
+      }
+    },
+    "nearMiss": {
+      "description": "Correct comparison and filters but finish on advanced-search page one; independently, swap the release dates.",
+      "finalStateMutation": {
+        "urlFrom": "pageno=2",
+        "urlTo": "pageno=1"
+      },
+      "answerMutation": {
+        "from": "1994-01-01",
+        "to": "1998-07-01"
+      },
+      "expected": "reject"
+    }
+  },
+  {
+    "task_id": "longlive-gutenberg-shakespeare-search",
+    "family": "site-navigation",
+    "grading": "deterministic",
+    "level": "medium",
+    "website": "https://www.gutenberg.org/ebooks/",
+    "confirmed_task": "Use Project Gutenberg Advanced Search: Author 'William Shakespeare', Language English, Subject Areas / LoC Class PR; leave other filters at Any/empty. Search, inspect the first results page, follow its next-page control and inspect page two. Compare the English Text catalogue records Hamlet (#1524) and Macbeth (#1533); after inspecting page two, locate EACH explicit ID through a separate Quick search for its eBook number, then open the result with that exact ID. Retain the original advanced-search page-two URL for the final return; do not navigate directly to the catalogue URLs or take whichever edition ranks first. For each report displayed title, Release Date and LoC class code in a plain line 'eBook number | title | YYYY-MM-DD | LoC code'. Add 'Earlier: #<number>' for the earlier Gutenberg release, breaking a same-day tie by lower eBook number. Return to the SECOND advanced-search result page with the original author, English and PR selections retained. Do not report download counts or rankings.",
+    "source": {
+      "canonicalUrl": "https://www.gutenberg.org/ebooks/results/",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "reachable"
+    },
+    "taskType": "search-facets-pagination-compare",
+    "referenceActions": [
+      21,
+      21
+    ],
+    "mantisActions": [
+      16,
+      24
+    ],
+    "referenceWalkthrough": {
+      "status": "measured-live-playwright",
+      "method": "2026-10-24 full live Chromium route, 21 individual navigate/read/type/select/click equivalents. Two click calls completed navigation but reached their load wait timeout; no repeat action charged. Browser DOM and catalogue tables subsequently read after domcontentloaded. Same full route as Dickens, including quick searches and exact-ID result links. The revised prompt requires each numbered Quick search explicitly; opening records directly from the retained results would use fewer calls and is outside this revised route.",
+      "steps": [
+        "navigate Advanced Search",
+        "read controls",
+        "type William Shakespeare",
+        "select English",
+        "select PR",
+        "click Search",
+        "read https://www.gutenberg.org/ebooks/results/",
+        "click next",
+        "read https://www.gutenberg.org/ebooks/results/?author=William+Shakespeare&title=&subject=&locc=PR&lang=en&category=&filetype=&submit_search=Search&pageno=2",
+        "type quick search 1524",
+        "click Go",
+        "read https://www.gutenberg.org/ebooks/search/?query=1524",
+        "click record 1524",
+        "read https://www.gutenberg.org/ebooks/1524",
+        "type 1533",
+        "Go",
+        "read https://www.gutenberg.org/ebooks/search/?query=1533",
+        "open #1533",
+        "read https://www.gutenberg.org/ebooks/1533",
+        "navigate https://www.gutenberg.org/ebooks/results/?author=William+Shakespeare&title=&subject=&locc=PR&lang=en&category=&filetype=&submit_search=Search&pageno=2",
+        "read final"
+      ]
+    },
+    "limits": {
+      "maxToolCalls": 100,
+      "timeoutSeconds": 1200
+    },
+    "keyStatus": "verified",
+    "keyNotes": {
+      "capturedAt": "2026-10-24",
+      "expectedAnswer": "1524 | Hamlet | 1998-11-01 | PR\n1533 | Macbeth | 1998-11-01 | PR\nEarlier: #1524",
+      "captureMethod": "2026-10-24 live Advanced Search William Shakespeare / English / PR; first page, next control, both exact records via quick searches, restored page-two URL. #1524 Hamlet and #1533 Macbeth both Release Date Nov 1, 1998, English, Category Text, LoC PR; tie goes to #1524. Final pageno=2 and original filters captured together. Live page-one near miss captured with otherwise correct answer and rejected by evaluateDeterministicGrader; live page-two capture accepted. Wrong comparison answer tested independently against the good terminal frame.",
+      "records": [
+        {
+          "id": 1524,
+          "title": "Hamlet",
+          "author": "Shakespeare, William, 1564-1616",
+          "releaseDate": "1998-11-01",
+          "locClass": "PR",
+          "lastUpdate": "2025-09-19",
+          "language": "English",
+          "category": "Text",
+          "revisionId": null,
+          "url": "https://www.gutenberg.org/ebooks/1524"
+        },
+        {
+          "id": 1533,
+          "title": "Macbeth",
+          "author": "Shakespeare, William, 1564-1616",
+          "releaseDate": "1998-11-01",
+          "locClass": "PR",
+          "lastUpdate": "2025-09-19",
+          "language": "English",
+          "category": "Text",
+          "revisionId": null,
+          "url": "https://www.gutenberg.org/ebooks/1533"
+        }
+      ],
+      "partialKeyVerifiedAt": "2026-10-24",
+      "contractLimitation": "Page-two gap closed today: URL guards author, English, PR, blank extra filters and pageno=2; live page-one state rejected. Live result totals/ranking intentionally not frozen. The prescribed Quick searches are explicit in the revised prompt.",
+      "missing": []
+    },
+    "botRisk": "low-medium: catalogue and facet controls reachable; advanced-search POST/navigation was intermittent; no gate seen.",
+    "deterministic": {
+      "kind": "fact",
+      "answerIncludes": [
+        {
+          "type": "text",
+          "value": "1524 | Hamlet | 1998-11-01 | PR"
+        },
+        {
+          "type": "text",
+          "value": "1533 | Macbeth | 1998-11-01 | PR"
+        },
+        {
+          "type": "text",
+          "value": "Earlier: #1524"
+        }
+      ],
+      "final": {
+        "url": {
+          "origin": "https://www.gutenberg.org",
+          "path": "/ebooks/results/",
+          "query": {
+            "author": "William Shakespeare",
+            "locc": "PR",
+            "lang": "en",
+            "pageno": "2",
+            "title": "",
+            "subject": "",
+            "category": "",
+            "filetype": ""
+          }
+        },
+        "textIncludes": [
+          {
+            "type": "entity",
+            "value": "Author = Shakespeare"
+          },
+          {
+            "type": "entity",
+            "value": "LoC Class = PR"
+          },
+          {
+            "type": "entity",
+            "value": "Language = English"
+          }
+        ]
+      }
+    },
+    "nearMiss": {
+      "description": "Correct tied dates and answer but stop on page one; independently choose #1533 instead of #1524 for the release-date tie.",
+      "finalStateMutation": {
+        "urlFrom": "pageno=2",
+        "urlTo": "pageno=1"
+      },
+      "answerMutation": {
+        "from": "Earlier: #1524",
+        "to": "Earlier: #1533"
+      },
+      "expected": "reject"
+    }
+  },
+  {
+    "task_id": "longlive-met-monet-search",
+    "family": "interactive-exploration",
+    "grading": "deterministic",
+    "level": "hard",
+    "website": "https://www.metmuseum.org/art/collection",
+    "confirmed_task": "Search The Met collection for 'Monet' in All Fields. Enable Has image, keep other quick filters off, sort Title (a-z), inspect the first results page, then use pagination to inspect page two. Compare the fixed objects 437127 (Bridge over a Pond of Water Lilies) and 437133 (Garden at Sainte-Adresse); locate EACH through its own collection Title-field search for the given full title, opening the result with the specified ID. Restore the retained original page-two search before the second title search and again for the final step. Do not navigate directly to the object URLs. Read each Artwork Details / Overview and report a plain line 'ID | title | displayed date | object number | height x width cm', using unframed dimensions, displayed order and ASCII x. Add 'Taller: <ID>' for the greater displayed height. Return to page TWO of the original 'Monet' search, with Has image checked and Title (a-z) selected. Wait until the rendered results range begins 43-84; a checked control with stale page-one results is incomplete. Do not use live counts, gallery locations, rankings or prices as answer facts.",
+    "source": {
+      "canonicalUrl": "https://www.metmuseum.org/art/collection/search?q=Monet",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "reachable"
+    },
+    "taskType": "search-facets-pagination-compare",
+    "referenceActions": [
+      26,
+      26
+    ],
+    "mantisActions": [
+      20,
+      30
+    ],
+    "referenceWalkthrough": {
+      "status": "measured-live-playwright",
+      "method": "2026-10-24 live Chromium; 26 individual navigate/read/type/check/select/click equivalents in the successful route. Diagnostic wrong-field searches and stale hydration retries excluded. Re-scoped to two explicit Title-field searches: direct object URL navigation would undershoot the 20-call floor. Readiness waits stay within operations. Page-two URL captured only after offset=42 and 43-84 render agree.",
+      "steps": [
+        "navigate https://www.metmuseum.org/art/collection",
+        "read https://www.metmuseum.org/art/collection",
+        "type Monet",
+        "click Search Submit",
+        "read https://www.metmuseum.org/art/collection/search?q=Monet",
+        "check Has image",
+        "select Title (a-z)",
+        "read https://www.metmuseum.org/art/collection/search?q=Monet",
+        "click page 2",
+        "read page2",
+        "select Title search field",
+        "type Bridge over a Pond of Water Lilies",
+        "Search Submit",
+        "read https://www.metmuseum.org/art/collection/search?q=Bridge+over+a+Pond+of+Water+Lilies&showOnly=withImage&sortBy=Title&searchField=Title",
+        "open 437127",
+        "read https://www.metmuseum.org/art/collection/search/437127",
+        "navigate https://www.metmuseum.org/art/collection/search?q=Monet&showOnly=withImage&sortBy=Title&offset=42",
+        "read https://www.metmuseum.org/art/collection/search?q=Monet&showOnly=withImage&sortBy=Title&offset=42",
+        "select Title search field",
+        "type Garden at Sainte-Adresse",
+        "Search Submit",
+        "read https://www.metmuseum.org/art/collection/search?q=Garden+at+Sainte-Adresse&showOnly=withImage&sortBy=Title&searchField=Title",
+        "open 437133",
+        "read https://www.metmuseum.org/art/collection/search/437133",
+        "navigate https://www.metmuseum.org/art/collection/search?q=Monet&showOnly=withImage&sortBy=Title&offset=42",
+        "read final state"
+      ]
+    },
+    "limits": {
+      "maxToolCalls": 100,
+      "timeoutSeconds": 1200
+    },
+    "keyStatus": "verified",
+    "keyNotes": {
+      "capturedAt": "2026-10-24",
+      "expectedAnswer": "437127 | Bridge over a Pond of Water Lilies | 1899 | 29.100.113 | 92.7 x 73.7 cm\n437133 | Garden at Sainte-Adresse | 1867 | 67.241 | 98.1 x 129.9 cm\nTaller: 437133",
+      "captureMethod": "2026-10-24 full live original Monet / All Fields search, Has image, Title (a-z), page one then page two; separate Title-field searches opened exact 437127 and 437133 and both Artwork Details Overviews read. Retained page-two URL restored. Full final capture contains q=Monet, showOnly=withImage, sortBy=Title, offset=42, All Fields, Has image checked, every other quick filter unchecked, Title (a-z), and 43-84 of ... results for Monet. Canonical comparison unchanged; Garden is taller (98.1 > 92.7). Live page-one near miss captured with otherwise correct answer and rejected by evaluateDeterministicGrader; live page-two capture accepted. Wrong comparison answer tested independently against the good terminal frame.",
+      "records": [
+        {
+          "id": 437127,
+          "title": "Bridge over a Pond of Water Lilies",
+          "date": "1899",
+          "objectNumber": "29.100.113",
+          "heightCm": "92.7",
+          "widthCm": "73.7",
+          "medium": "Oil on canvas",
+          "revisionId": null,
+          "lastUpdate": null,
+          "url": "https://www.metmuseum.org/art/collection/search/437127"
+        },
+        {
+          "id": 437133,
+          "title": "Garden at Sainte-Adresse",
+          "date": "1867",
+          "objectNumber": "67.241",
+          "heightCm": "98.1",
+          "widthCm": "129.9",
+          "medium": "Oil on canvas",
+          "revisionId": null,
+          "lastUpdate": null,
+          "url": "https://www.metmuseum.org/art/collection/search/437133"
+        }
+      ],
+      "partialKeyVerifiedAt": "2026-10-24",
+      "revisionNote": "No displayed object revision/last-update dates available; observed object values dated by capture date.",
+      "observedCaptureLabels": [
+        {
+          "label": "search-field",
+          "value": "All Fields"
+        },
+        {
+          "label": "Highlights",
+          "value": "unchecked"
+        },
+        {
+          "label": "On view",
+          "value": "unchecked"
+        },
+        {
+          "label": "Has image",
+          "value": "checked"
+        },
+        {
+          "label": "Has Open Access image",
+          "value": "unchecked"
+        },
+        {
+          "label": "Has 3D image",
+          "value": "unchecked"
+        },
+        {
+          "label": "sort-by",
+          "value": "Title (a-z)"
+        }
+      ],
+      "missing": []
+    },
+    "botRisk": "medium: dynamic hydration/filter results may lag; prior cloud bot blocks; no bypass or ranking assumptions.",
+    "deterministic": {
+      "kind": "state",
+      "answerIncludes": [
+        {
+          "type": "text",
+          "value": "437127 | Bridge over a Pond of Water Lilies | 1899 | 29.100.113 | 92.7 x 73.7 cm"
+        },
+        {
+          "type": "text",
+          "value": "437133 | Garden at Sainte-Adresse | 1867 | 67.241 | 98.1 x 129.9 cm"
+        },
+        {
+          "type": "text",
+          "value": "Taller: 437133"
+        }
+      ],
+      "final": {
+        "url": {
+          "origin": "https://www.metmuseum.org",
+          "path": "/art/collection/search",
+          "query": {
+            "q": "Monet",
+            "showOnly": "withImage",
+            "sortBy": "Title",
+            "offset": "42"
+          }
+        },
+        "textIncludes": [
+          {
+            "type": "entity",
+            "value": "43-84 of"
+          },
+          {
+            "type": "entity",
+            "value": "results for Monet"
+          }
+        ],
+        "formValues": [
+          {
+            "label": "search-field",
+            "value": "All Fields"
+          },
+          {
+            "label": "Highlights",
+            "value": "unchecked"
+          },
+          {
+            "label": "On view",
+            "value": "unchecked"
+          },
+          {
+            "label": "Has image",
+            "value": "checked"
+          },
+          {
+            "label": "Has Open Access image",
+            "value": "unchecked"
+          },
+          {
+            "label": "Has 3D image",
+            "value": "unchecked"
+          },
+          {
+            "label": "sort-by",
+            "value": "Title (a-z)"
+          }
+        ]
+      }
+    },
+    "nearMiss": {
+      "description": "Correct comparison but page one is still rendered under the selected filter/sort controls.",
+      "finalStateMutation": {
+        "from": "43-84 of",
+        "to": "1-42 of"
+      },
+      "answerMutation": {
+        "from": "29.100.113",
+        "to": "67.241"
+      },
+      "expected": "reject"
+    }
+  },
+  {
+    "task_id": "longlive-met-rembrandt-search",
+    "family": "interactive-exploration",
+    "grading": "deterministic",
+    "level": "hard",
+    "website": "https://www.metmuseum.org/art/collection",
+    "confirmed_task": "Search The Met collection for 'Rembrandt' in All Fields. Enable Has image, keep other quick filters off, sort Title (a-z), inspect the first results page, then use pagination to inspect page two. Compare the fixed objects 437397 (Self-Portrait) and 437394 (Aristotle with a Bust of Homer); locate Self-Portrait through a separate Object Number-field search for accession 14.40.618, and Aristotle with a Bust of Homer through a separate Title-field search for that full title. Open the matching specified object ID in each result set. Restore the retained original page-two search before the second lookup and again for the final step. Do not navigate directly to the object URLs. Read each Artwork Details / Overview and report a plain line 'ID | title | displayed date | object number | height x width cm', using unframed dimensions, displayed order and ASCII x. Add 'Taller: <ID>' for the greater displayed height. Return to page TWO of the original 'Rembrandt' search, with Has image checked and Title (a-z) selected. Wait until the rendered results range begins 43-84; a checked control with stale page-one results is incomplete. Do not use live counts, gallery locations, rankings or prices as answer facts.",
+    "source": {
+      "canonicalUrl": "https://www.metmuseum.org/art/collection/search?q=Rembrandt",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "reachable"
+    },
+    "taskType": "search-facets-pagination-compare",
+    "referenceActions": [
+      26,
+      26
+    ],
+    "mantisActions": [
+      20,
+      30
+    ],
+    "referenceWalkthrough": {
+      "status": "measured-live-playwright",
+      "method": "2026-10-24 full live Chromium successful route: 26 individual navigate/read/type/check/select/click equivalents. Re-scoped to explicit Object Number 14.40.618 and Title Aristotle with a Bust of Homer searches; unrestricted Self-Portrait Title search has hundreds of matches and is unreliable to size. Failed broad-search/early-hydration diagnostics excluded. Page-two capture requires rendered 43-84 and URL offset=42 together.",
+      "steps": [
+        "navigate https://www.metmuseum.org/art/collection",
+        "read https://www.metmuseum.org/art/collection",
+        "type Rembrandt",
+        "Search Submit",
+        "read https://www.metmuseum.org/art/collection/search?q=Rembrandt",
+        "check Has image",
+        "sort Title (a-z)",
+        "read https://www.metmuseum.org/art/collection/search?q=Rembrandt",
+        "page 2",
+        "read page2",
+        "select Object Number search field",
+        "type accession 14.40.618",
+        "Search Submit",
+        "read https://www.metmuseum.org/art/collection/search?q=14.40.618&showOnly=withImage&sortBy=Title&searchField=AccessionNum",
+        "open 437397",
+        "read https://www.metmuseum.org/art/collection/search/437397",
+        "navigate https://www.metmuseum.org/art/collection/search?q=Rembrandt&showOnly=withImage&sortBy=Title&offset=42",
+        "read https://www.metmuseum.org/art/collection/search?q=Rembrandt&showOnly=withImage&sortBy=Title&offset=42",
+        "select Title search field",
+        "type Aristotle with a Bust of Homer",
+        "Search Submit",
+        "read https://www.metmuseum.org/art/collection/search?q=Aristotle+with+a+Bust+of+Homer&showOnly=withImage&sortBy=Title&searchField=Title",
+        "open 437394",
+        "read https://www.metmuseum.org/art/collection/search/437394",
+        "navigate https://www.metmuseum.org/art/collection/search?q=Rembrandt&showOnly=withImage&sortBy=Title&offset=42",
+        "read final state"
+      ]
+    },
+    "limits": {
+      "maxToolCalls": 100,
+      "timeoutSeconds": 1200
+    },
+    "keyStatus": "verified",
+    "keyNotes": {
+      "capturedAt": "2026-10-24",
+      "expectedAnswer": "437397 | Self-Portrait | 1660 | 14.40.618 | 80.3 x 67.3 cm\n437394 | Aristotle with a Bust of Homer | 1653 | 61.198 | 143.5 x 136.5 cm\nTaller: 437394",
+      "captureMethod": "2026-10-24 original Rembrandt / All Fields search, Has image and Title (a-z), page one and page two read; accession 14.40.618 lookup opened #437397 and full Title lookup opened #437394. Both Artwork Details Overviews read: 1660, 14.40.618, 80.3 x 67.3 cm; 1653, 61.198, 143.5 x 136.5 cm. Aristotle taller. Retained original page-two search restored; actual final PAGE_STATE_FUNCTION captured q=Rembrandt, showOnly=withImage, sortBy=Title, offset=42, All Fields, only Has image checked, Title (a-z) and 43-84 of ... results for Rembrandt. Live page-one near miss captured with otherwise correct answer and rejected by evaluateDeterministicGrader; live page-two capture accepted. Wrong comparison answer tested independently against the good terminal frame.",
+      "records": [
+        {
+          "id": 437397,
+          "title": "Self-Portrait",
+          "date": "1660",
+          "objectNumber": "14.40.618",
+          "heightCm": "80.3",
+          "widthCm": "67.3",
+          "medium": "Oil on canvas",
+          "revisionId": null,
+          "lastUpdate": null,
+          "url": "https://www.metmuseum.org/art/collection/search/437397"
+        },
+        {
+          "id": 437394,
+          "title": "Aristotle with a Bust of Homer",
+          "date": "1653",
+          "objectNumber": "61.198",
+          "heightCm": "143.5",
+          "widthCm": "136.5",
+          "medium": "Oil on canvas",
+          "revisionId": null,
+          "lastUpdate": null,
+          "url": "https://www.metmuseum.org/art/collection/search/437394"
+        }
+      ],
+      "partialKeyVerifiedAt": "2026-10-24",
+      "revisionNote": "No displayed object revision/last-update dates available; observed object values dated by capture date.",
+      "observedCaptureLabels": [
+        {
+          "label": "search-field",
+          "value": "All Fields"
+        },
+        {
+          "label": "Highlights",
+          "value": "unchecked"
+        },
+        {
+          "label": "On view",
+          "value": "unchecked"
+        },
+        {
+          "label": "Has image",
+          "value": "checked"
+        },
+        {
+          "label": "Has Open Access image",
+          "value": "unchecked"
+        },
+        {
+          "label": "Has 3D image",
+          "value": "unchecked"
+        },
+        {
+          "label": "sort-by",
+          "value": "Title (a-z)"
+        }
+      ],
+      "missing": []
+    },
+    "botRisk": "medium: dynamic hydration/filter results may lag; prior cloud bot blocks; no bypass or ranking assumptions.",
+    "deterministic": {
+      "kind": "state",
+      "answerIncludes": [
+        {
+          "type": "text",
+          "value": "437397 | Self-Portrait | 1660 | 14.40.618 | 80.3 x 67.3 cm"
+        },
+        {
+          "type": "text",
+          "value": "437394 | Aristotle with a Bust of Homer | 1653 | 61.198 | 143.5 x 136.5 cm"
+        },
+        {
+          "type": "text",
+          "value": "Taller: 437394"
+        }
+      ],
+      "final": {
+        "url": {
+          "origin": "https://www.metmuseum.org",
+          "path": "/art/collection/search",
+          "query": {
+            "q": "Rembrandt",
+            "showOnly": "withImage",
+            "sortBy": "Title",
+            "offset": "42"
+          }
+        },
+        "textIncludes": [
+          {
+            "type": "entity",
+            "value": "43-84 of"
+          },
+          {
+            "type": "entity",
+            "value": "results for Rembrandt"
+          }
+        ],
+        "formValues": [
+          {
+            "label": "search-field",
+            "value": "All Fields"
+          },
+          {
+            "label": "Highlights",
+            "value": "unchecked"
+          },
+          {
+            "label": "On view",
+            "value": "unchecked"
+          },
+          {
+            "label": "Has image",
+            "value": "checked"
+          },
+          {
+            "label": "Has Open Access image",
+            "value": "unchecked"
+          },
+          {
+            "label": "Has 3D image",
+            "value": "unchecked"
+          },
+          {
+            "label": "sort-by",
+            "value": "Title (a-z)"
+          }
+        ]
+      }
+    },
+    "nearMiss": {
+      "description": "Correct comparison but page one is still rendered under the selected filter/sort controls.",
+      "finalStateMutation": {
+        "from": "43-84 of",
+        "to": "1-42 of"
+      },
+      "answerMutation": {
+        "from": "14.40.618",
+        "to": "61.198"
+      },
+      "expected": "reject"
+    }
+  },
+  {
+    "task_id": "longlive-form-demoqa-student",
+    "family": "interactive-exploration",
+    "grading": "deterministic",
+    "level": "medium",
+    "website": "https://www.selenium.dev/selenium/web/formPage.html",
+    "confirmed_task": "Prepare Selenium's Form Page without submitting. Controls without visible labels are identified by their exact HTML id/name. First fill email (id email) ada@example.com, age (id age) 35, working 'Draft profile', inputWithText 'Ada', withText 'Draft synthetic notes', emptyTextArea 'Example Lane'. Check checky, uncheck checkedchecky, set selectomatic to Two, and multi to Ham plus Onion gravy. Inspect the first pass. Then correct age to 36, working to 'Reviewed profile', inputWithText to 'Ada Example', withText to 'Synthetic profile. Leave unsubmitted.', emptyTextArea to '12 Example Lane', selectomatic to Four, and multi to Eggs plus Sausages only. Retain email and both checkbox changes. Leave all other controls at defaults, including the empty upload file input. Do not click any submit/image button, press Enter, or select redirect. Stop on Form Page with the reviewed controls present. Report 'Prepared: Ada Example; Four; Eggs and Sausages; unsubmitted'.",
+    "source": {
+      "canonicalUrl": "https://www.selenium.dev/selenium/web/formPage.html",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "reachable"
+    },
+    "taskType": "form-fill-no-submit",
+    "referenceActions": [
+      21,
+      21
+    ],
+    "mantisActions": [
+      18,
+      26
+    ],
+    "referenceWalkthrough": {
+      "status": "measured-live-playwright",
+      "method": "2026-10-24 full live Chromium route, 21 individually counted navigate/read/type/check/select equivalents; 6 initial text entries, 2 checkboxes, 2 selects, first-pass read, 5 text corrections, 2 select corrections, final capture. Replaces persistently blank DemoQA; legacy task_id retained for concurrent loader stability.",
+      "steps": [
+        "navigate https://www.selenium.dev/selenium/web/formPage.html",
+        "read https://www.selenium.dev/selenium/web/formPage.html",
+        "type #email ada@example.com",
+        "type #age 35",
+        "type #working Draft profile",
+        "type #inputWithText Ada",
+        "type #withText Draft synthetic notes",
+        "type #emptyTextArea Example Lane",
+        "check checky",
+        "uncheck checkedchecky",
+        "select selectomatic Two",
+        "multi Ham and Onion gravy",
+        "read https://www.selenium.dev/selenium/web/formPage.html",
+        "correct #age 36",
+        "correct #working Reviewed profile",
+        "correct #inputWithText Ada Example",
+        "correct #withText Synthetic profile. Leave unsubmitted.",
+        "correct #emptyTextArea 12 Example Lane",
+        "select selectomatic Four",
+        "multi Eggs and Sausages",
+        "read final form"
+      ]
+    },
+    "limits": {
+      "maxToolCalls": 100,
+      "timeoutSeconds": 1200
+    },
+    "keyStatus": "verified",
+    "keyNotes": {
+      "capturedAt": "2026-10-24",
+      "captureMethod": "Full live Form Page first pass and review corrections, followed by actual PAGE_STATE_FUNCTION capture; labels fall back to ids/names as explicitly stated in prompt. DemoQA rendered an empty Vite app after repeated long waits, so this row was replaced on Selenium. Live named near miss captured and rejected by evaluateDeterministicGrader; exact live terminal capture accepted.",
+      "sources": [
+        "https://www.selenium.dev/selenium/web/formPage.html"
+      ],
+      "provisional": false,
+      "expectedControls": {
+        "email": "ada@example.com",
+        "age": "36",
+        "checky": "checked",
+        "checkedchecky": "unchecked",
+        "selectomatic": "Four",
+        "multi": "Eggs, Sausages",
+        "working": "Reviewed profile",
+        "inputWithText": "Ada Example",
+        "withText": "Synthetic profile. Leave unsubmitted.",
+        "emptyTextArea": "12 Example Lane",
+        "unchangedControls": [
+          {
+            "label": "disabledchecky",
+            "value": "unchecked"
+          },
+          {
+            "label": "randomlydisabledchecky",
+            "value": "checked"
+          },
+          {
+            "label": "no-select",
+            "value": "Foo"
+          },
+          {
+            "label": "select_empty_multiple",
+            "value": ""
+          },
+          {
+            "label": "multi_true",
+            "value": ""
+          },
+          {
+            "label": "multi_false",
+            "value": ""
+          },
+          {
+            "label": "single_disabled",
+            "value": "Enabled"
+          },
+          {
+            "label": "multi_disabled",
+            "value": ""
+          },
+          {
+            "label": "invisi_select",
+            "value": "Apples"
+          },
+          {
+            "label": "invisible_multi_select",
+            "value": "Apples, Lemons"
+          },
+          {
+            "label": "select-default",
+            "value": "One"
+          },
+          {
+            "label": "select_with_spaces",
+            "value": "One"
+          },
+          {
+            "label": "",
+            "value": ""
+          },
+          {
+            "label": "snack",
+            "value": "unchecked"
+          },
+          {
+            "label": "snack",
+            "value": "unchecked"
+          },
+          {
+            "label": "snack",
+            "value": "checked"
+          },
+          {
+            "label": "snack",
+            "value": "unchecked"
+          },
+          {
+            "label": "snack",
+            "value": "unchecked"
+          },
+          {
+            "label": "not_a_snack",
+            "value": "checked"
+          },
+          {
+            "label": "notWorking",
+            "value": ""
+          },
+          {
+            "label": "notWorkingArea",
+            "value": ""
+          },
+          {
+            "label": "redirect",
+            "value": "One"
+          },
+          {
+            "label": "no-type",
+            "value": ""
+          },
+          {
+            "label": "upload",
+            "value": ""
+          },
+          {
+            "label": "id-name1",
+            "value": "name"
+          },
+          {
+            "label": "id-name1",
+            "value": "id"
+          },
+          {
+            "label": "id-name2",
+            "value": "id"
+          },
+          {
+            "label": "id-name2",
+            "value": "name"
+          },
+          {
+            "label": "readonly",
+            "value": ""
+          },
+          {
+            "label": "x",
+            "value": "name"
+          },
+          {
+            "label": "disabledTextElement1",
+            "value": ""
+          },
+          {
+            "label": "disabledTextElement2",
+            "value": ""
+          },
+          {
+            "label": "Label",
+            "value": "unchecked"
+          },
+          {
+            "label": "SearchableText",
+            "value": ""
+          }
+        ]
+      },
+      "contractLimitation": "Existing schema cannot enforce empty upload, unchanged unnamed/duplicate-label defaults or no-submit/revisit history. Positive values and multi-selection association are exact.",
+      "missing": [
+        "General retained evidence/negative predicates for empty upload, untouched defaults and no-submit history."
+      ]
+    },
+    "botRisk": "low: official Selenium static test form; no account or submission needed. Replaced blank DemoQA.",
+    "deterministic": {
+      "kind": "form",
+      "answerIncludes": [
+        {
+          "type": "text",
+          "value": "Prepared: Ada Example; Four; Eggs and Sausages; unsubmitted"
+        }
+      ],
+      "final": {
+        "url": {
+          "origin": "https://www.selenium.dev",
+          "path": "/selenium/web/formPage.html"
+        },
+        "textIncludes": [
+          {
+            "type": "text",
+            "value": "There should be a form here:"
+          },
+          {
+            "type": "text",
+            "value": "Here's a checkbox:"
+          }
+        ],
+        "formValues": [
+          {
+            "label": "email",
+            "value": "ada@example.com"
+          },
+          {
+            "label": "age",
+            "value": "36"
+          },
+          {
+            "label": "checky",
+            "value": "checked"
+          },
+          {
+            "label": "checkedchecky",
+            "value": "unchecked"
+          },
+          {
+            "label": "selectomatic",
+            "value": "Four"
+          },
+          {
+            "label": "multi",
+            "value": "Eggs, Sausages"
+          },
+          {
+            "label": "working",
+            "value": "Reviewed profile"
+          },
+          {
+            "label": "inputWithText",
+            "value": "Ada Example"
+          },
+          {
+            "label": "withText",
+            "value": "Synthetic profile. Leave unsubmitted."
+          },
+          {
+            "label": "emptyTextArea",
+            "value": "12 Example Lane"
+          }
+        ]
+      }
+    },
+    "nearMiss": {
+      "description": "Retain first-pass Ham and Onion gravy instead of reviewed Eggs and Sausages; all other reviewed controls correct.",
+      "finalStateMutation": {
+        "label": "multi",
+        "from": "Eggs, Sausages",
+        "to": "Ham, Onion gravy"
+      },
+      "expected": "reject"
+    },
+    "excluded": true,
+    "exclusionReason": "Replacement full key and 21-call route verified; empty upload/defaults/no-submit history remain unenforceable in the unchanged deterministic schema."
+  },
+  {
+    "task_id": "longlive-form-selenium-review",
+    "family": "interactive-exploration",
+    "grading": "deterministic",
+    "level": "medium",
+    "website": "https://www.selenium.dev/selenium/web/web-form.html",
+    "confirmed_task": "Fill the Selenium Web form without submitting. In the first pass set Text input 'LL16 draft', Textarea 'Draft synthetic profile', Dropdown (select) One, Dropdown (datalist) Seattle, uncheck Checked checkbox, check Default checkbox, choose Default radio, set Color picker #336699, Date picker 10/23/2026 (choose October 23 in the calendar; do not type the date) and Example range 5. Inspect the populated form, then apply these review corrections: Text input 'LL16 rehearsal', Textarea 'Synthetic profile. Leave unsubmitted.', Dropdown (select) Two, Date picker 10/24/2026 (choose October 24 in the calendar) and Example range 7. Keep Seattle, both checkbox changes, Default radio and #336699. Leave Password and File input empty; do not modify Disabled input or Readonly input. Dismiss the date popup and finish on the filled form. Do not click Submit or press Enter in a text field. Report 'Prepared: LL16 rehearsal; unsubmitted'.",
+    "source": {
+      "canonicalUrl": "https://www.selenium.dev/selenium/web/web-form.html",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "reachable"
+    },
+    "taskType": "form-fill-no-submit",
+    "referenceActions": [
+      23,
+      23
+    ],
+    "mantisActions": [
+      15,
+      22
+    ],
+    "referenceWalkthrough": {
+      "status": "measured-live-playwright",
+      "method": "2026-10-24 live Chromium; 23 individual navigate/read/type/select/click/key equivalents. Calendar was observed October 2026; changing month/year on another date adds calls. Range starts 5, so no redundant first-pass range action. Calendar selection persists after final blur.",
+      "steps": [
+        "navigate https://www.selenium.dev/selenium/web/web-form.html",
+        "read https://www.selenium.dev/selenium/web/web-form.html",
+        "type Text input",
+        "type Textarea",
+        "select One",
+        "type Seattle",
+        "uncheck Checked checkbox",
+        "check Default checkbox",
+        "choose Default radio",
+        "fill #336699",
+        "open calendar",
+        "choose October 23",
+        "read https://www.selenium.dev/selenium/web/web-form.html",
+        "correct Text input",
+        "correct Textarea",
+        "select Two",
+        "open calendar",
+        "choose October 24",
+        "range ArrowRight",
+        "range ArrowRight",
+        "read final form",
+        "dismiss calendar by heading click",
+        "read settled final form"
+      ]
+    },
+    "limits": {
+      "maxToolCalls": 100,
+      "timeoutSeconds": 1200
+    },
+    "keyStatus": "verified",
+    "keyNotes": {
+      "capturedAt": "2026-10-24",
+      "captureMethod": "2026-10-24 full live first pass and review corrections, actual PAGE_STATE_FUNCTION capture after calendar dismissal. Every positive field matches expectedFormValues; Password and File input empty, Disabled blank, Readonly retained; date 10/24/2026 and range 7. No Submit action performed. Live named near miss captured and rejected by evaluateDeterministicGrader; exact live terminal capture accepted.",
+      "expectedFormValues": [
+        {
+          "label": "Text input",
+          "value": "LL16 rehearsal"
+        },
+        {
+          "label": "Textarea",
+          "value": "Synthetic profile. Leave unsubmitted."
+        },
+        {
+          "label": "Readonly input",
+          "value": "Readonly input"
+        },
+        {
+          "label": "Dropdown (select) Open this select menu One Two Three",
+          "value": "Two"
+        },
+        {
+          "label": "Dropdown (datalist)",
+          "value": "Seattle"
+        },
+        {
+          "label": "Checked checkbox",
+          "value": "unchecked"
+        },
+        {
+          "label": "Default checkbox",
+          "value": "checked"
+        },
+        {
+          "label": "Checked radio",
+          "value": "unchecked"
+        },
+        {
+          "label": "Default radio",
+          "value": "checked"
+        },
+        {
+          "label": "Color picker",
+          "value": "#336699"
+        },
+        {
+          "label": "Date picker",
+          "value": "10/24/2026"
+        },
+        {
+          "label": "Example range",
+          "value": "7"
+        }
+      ],
+      "revisionId": null,
+      "recordDate": null,
+      "limitations": "Exact positive final key and stale-date near miss verified. Existing deterministic schema cannot assert empty Password/File or absence of submit/revisit history; keep excluded until general retained evidence handles those constraints."
+    },
+    "botRisk": "low: official static Selenium test page reachable with no gate; date-picker popup must be dismissed.",
+    "deterministic": {
+      "kind": "form",
+      "answerIncludes": [
+        {
+          "type": "text",
+          "value": "Prepared: LL16 rehearsal; unsubmitted"
+        }
+      ],
+      "final": {
+        "url": {
+          "origin": "https://www.selenium.dev",
+          "path": "/selenium/web/web-form.html"
+        },
+        "textIncludes": [
+          {
+            "type": "entity",
+            "value": "Web form"
+          },
+          {
+            "type": "entity",
+            "value": "Submit"
+          }
+        ],
+        "formValues": [
+          {
+            "label": "Text input",
+            "value": "LL16 rehearsal"
+          },
+          {
+            "label": "Textarea",
+            "value": "Synthetic profile. Leave unsubmitted."
+          },
+          {
+            "label": "Readonly input",
+            "value": "Readonly input"
+          },
+          {
+            "label": "Dropdown (select) Open this select menu One Two Three",
+            "value": "Two"
+          },
+          {
+            "label": "Dropdown (datalist)",
+            "value": "Seattle"
+          },
+          {
+            "label": "Checked checkbox",
+            "value": "unchecked"
+          },
+          {
+            "label": "Default checkbox",
+            "value": "checked"
+          },
+          {
+            "label": "Checked radio",
+            "value": "unchecked"
+          },
+          {
+            "label": "Default radio",
+            "value": "checked"
+          },
+          {
+            "label": "Color picker",
+            "value": "#336699"
+          },
+          {
+            "label": "Date picker",
+            "value": "10/24/2026"
+          },
+          {
+            "label": "Example range",
+            "value": "7"
+          }
+        ]
+      }
+    },
+    "nearMiss": {
+      "description": "Retain the first-pass calendar date October 23 after applying every other review correction.",
+      "formValueMutation": {
+        "label": "Date picker",
+        "from": "10/24/2026",
+        "to": "10/23/2026"
+      },
+      "expected": "reject"
+    },
+    "excluded": true,
+    "exclusionReason": "Full 23-call route and exact final values verified today; existing schema still cannot enforce empty Password/File and no-submit history. No source/schema change authorized."
+  },
+  {
+    "task_id": "longlive-form-internet-profile",
+    "family": "interactive-exploration",
+    "grading": "deterministic",
+    "level": "medium",
+    "website": "https://the-internet.herokuapp.com/large_form",
+    "confirmed_task": "Prepare the Internet demo's Large Form with synthetic data, without submitting. Fill First name Ada, Last name Example, Email ada@example.com, Nickname LL16, Birthday 1990-03-15, Age 36, Country Germany, Languages English and German, and About you 'Synthetic automation profile'. Set years of experience 8 and favorite color #336699. For review, change Country to India and Languages to English and Hindi, retaining the other fields. Leave Password empty, retain the default contact and interest settings, and leave I accept the terms unchecked. Inspect Account, Details, Preferences and Terms, then stop with the form filled; do not click Submit or Reset. Report 'Prepared: Ada Example; India; English and Hindi; unsubmitted'.",
+    "source": {
+      "canonicalUrl": "https://the-internet.herokuapp.com/large_form",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "changed"
+    },
+    "taskType": "form-fill-no-submit",
+    "referenceActions": [
+      22,
+      32
+    ],
+    "mantisActions": [
+      16,
+      24
+    ],
+    "referenceWalkthrough": {
+      "status": "estimated-not-measured",
+      "method": "2026-10-24 full route unavailable: repeated live The Internet navigation timeouts with no readable body; no measured reference count. Failed navigation probes are diagnostics, not a 20-40-call route. Existing range remains an estimate.",
+      "steps": [
+        "Fill Account fields",
+        "Set date/age/country/languages and biography",
+        "Adjust range/color",
+        "Apply country/language review corrections; inspect four form sections without submitting"
+      ]
+    },
+    "limits": {
+      "maxToolCalls": 100,
+      "timeoutSeconds": 1200
+    },
+    "keyStatus": "to-verify",
+    "keyNotes": {
+      "capturedAt": "2026-10-24",
+      "captureMethod": "2026-10-24 current follow-up: live Chromium navigation to The Internet root, /large_form and /windows repeatedly timed out (10-25 seconds per attempt) without a readable body, including a fresh page retry. This session successfully loaded Gutenberg, Met, Selenium and Sauce Demo, so this is a per-origin reachability failure, not the earlier global network policy denial. No form/window/frame/file route could be walked; prior partial key is retained and not reverified.",
+      "revisionId": null,
+      "expectedSelections": {
+        "country": "India",
+        "languages": [
+          "English",
+          "Hindi"
+        ]
+      },
+      "contractLimitation": "Some labels intentionally absent in HTML; fallback labels and dynamic range label need real PAGE_STATE_FUNCTION verification. Repeated contact/interest labels cannot distinguish those defaults; a same-URL POST also needs a no-submit guard.",
+      "missing": [
+        "Capture the filled form with PAGE_STATE_FUNCTION to confirm fallback labels and multi-select order.",
+        "Validate empty password, unchanged default preferences and no-submit state independently of a same-URL POST.",
+        "Measure tree route."
+      ]
+    },
+    "botRisk": "low-medium: live HTML 200; full Chromium rendering intermittently timed out on blocking scripts; no gate seen.",
+    "deterministic": {
+      "kind": "form",
+      "answerIncludes": [
+        {
+          "type": "text",
+          "value": "Prepared: Ada Example; India; English and Hindi; unsubmitted"
+        }
+      ],
+      "final": {
+        "url": {
+          "origin": "https://the-internet.herokuapp.com",
+          "path": "/large_form"
+        },
+        "textIncludes": [
+          {
+            "type": "entity",
+            "value": "Large Form"
+          },
+          {
+            "type": "entity",
+            "value": "Terms"
+          }
+        ],
+        "formValues": [
+          {
+            "label": "First name",
+            "value": "Ada"
+          },
+          {
+            "label": "Last name",
+            "value": "Example"
+          },
+          {
+            "label": "email",
+            "value": "ada@example.com"
+          },
+          {
+            "label": "Nickname (optional)",
+            "value": "LL16"
+          },
+          {
+            "label": "Birthday",
+            "value": "1990-03-15"
+          },
+          {
+            "label": "age",
+            "value": "36"
+          },
+          {
+            "label": "Country",
+            "value": "India"
+          },
+          {
+            "label": "languages[]",
+            "value": "English, Hindi"
+          },
+          {
+            "label": "About you",
+            "value": "Synthetic automation profile"
+          },
+          {
+            "label": "Years of experience: 8",
+            "value": "8"
+          },
+          {
+            "label": "color",
+            "value": "#336699"
+          },
+          {
+            "label": "I accept the terms",
+            "value": "unchecked"
+          }
+        ]
+      }
+    },
+    "nearMiss": {
+      "description": "Correct country but retain English and German instead of English and Hindi.",
+      "formValueMutation": {
+        "label": "languages[]",
+        "from": "English, Hindi",
+        "to": "English, German"
+      },
+      "expected": "reject"
+    },
+    "excluded": true,
+    "exclusionReason": "2026-10-24 live per-origin navigation timeouts prevented full route, complete final key and near-miss closure. Large Form exact labels/defaults and no-submit evidence remain unverified."
+  },
+  {
+    "task_id": "longlive-sauce-cart-revise",
+    "family": "interactive-exploration",
+    "grading": "deterministic",
+    "level": "medium",
+    "website": "https://www.saucedemo.com/",
+    "confirmed_task": "This is Sauce Demo, an explicit test-account sandbox. Log in with its displayed standard_user / secret_sauce test credentials. Set inventory sorting Name (A to Z), inspect the Backpack and Bolt T-Shirt detail pages, returning to Products after each. Add Sauce Labs Backpack, Sauce Labs Bike Light and Sauce Labs Bolt T-Shirt. Open the cart, remove Bike Light, return to Products to check the Backpack still offers Remove, then return to the cart. Stop with exactly one Backpack and one Bolt T-Shirt, cart badge 2, and Checkout visible. Do not click Checkout or buy anything. Report 'Cart: Sauce Labs Backpack; Sauce Labs Bolt T-Shirt; count 2'.",
+    "source": {
+      "canonicalUrl": "https://www.saucedemo.com/cart.html",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "reachable"
+    },
+    "taskType": "demo-test-account-flow",
+    "referenceActions": [
+      23,
+      23
+    ],
+    "mantisActions": [
+      16,
+      23
+    ],
+    "referenceWalkthrough": {
+      "status": "measured-live-playwright",
+      "method": "2026-10-24 live Chromium, 23 individual navigate/read/type/select/click equivalents. Waits for destination controls inside navigation/click calls; no extra calls charged for local waiting. Fresh standard_user session; exact requested detail/sort/add/remove/inventory/cart route.",
+      "steps": [
+        "navigate https://www.saucedemo.com/",
+        "read https://www.saucedemo.com/",
+        "type standard_user",
+        "type sandbox password",
+        "click Login",
+        "read https://www.saucedemo.com/inventory.html",
+        "select az",
+        "detail Sauce Labs Backpack",
+        "read https://www.saucedemo.com/inventory-item.html?id=4",
+        "Back to products",
+        "detail Sauce Labs Bolt T-Shirt",
+        "read https://www.saucedemo.com/inventory-item.html?id=1",
+        "Back to products",
+        "Add sauce-labs-backpack",
+        "Add sauce-labs-bike-light",
+        "Add sauce-labs-bolt-t-shirt",
+        "open cart",
+        "read https://www.saucedemo.com/cart.html",
+        "remove Bike Light",
+        "Continue Shopping",
+        "read https://www.saucedemo.com/inventory.html",
+        "open cart",
+        "read final cart"
+      ]
+    },
+    "limits": {
+      "maxToolCalls": 100,
+      "timeoutSeconds": 1200
+    },
+    "keyStatus": "verified",
+    "keyNotes": {
+      "capturedAt": "2026-10-24",
+      "expectedAnswer": "Cart: Sauce Labs Backpack; Sauce Labs Bolt T-Shirt; count 2",
+      "captureMethod": "2026-10-24 complete live route verified: Name (A to Z), both detail pages with Back to products, three adds, cart Bike Light removal, inventory Backpack Remove recheck, final cart. Actual PAGE_STATE_FUNCTION capture: Backpack quantity 1, Bolt T-Shirt quantity 1, header Swag Labs 2 Your Cart, Checkout visible. No Checkout clicked. Live named near miss captured and rejected by evaluateDeterministicGrader; exact live terminal capture accepted.",
+      "revisionId": null,
+      "expectedCart": [
+        {
+          "name": "Sauce Labs Backpack",
+          "quantity": 1
+        },
+        {
+          "name": "Sauce Labs Bolt T-Shirt",
+          "quantity": 1
+        }
+      ],
+      "count": 2,
+      "observedFinalHeader": "Open Menu Swag Labs 2 Your Cart",
+      "validation": "Captured final cart names plus adjacent badge/header text distinguish two items from extra-item carts. Prices deliberately omitted.",
+      "missing": [
+        "Existing generic realsitePrompt prohibits login; long-live sandbox-specific authorization must be integrated by the loader job.",
+        "Deterministic final cart does not enforce earlier detail/sort/revisit history; retained evidence required to grade full route."
+      ]
+    },
+    "botRisk": "low: public test credentials displayed; login, cart changes and stopping state exercised today; no real payment.",
+    "deterministic": {
+      "kind": "fact",
+      "answerIncludes": [
+        {
+          "type": "text",
+          "value": "Cart: Sauce Labs Backpack; Sauce Labs Bolt T-Shirt; count 2"
+        }
+      ],
+      "final": {
+        "url": {
+          "origin": "https://www.saucedemo.com",
+          "path": "/cart.html"
+        },
+        "textIncludes": [
+          {
+            "type": "entity",
+            "value": "Sauce Labs Backpack"
+          },
+          {
+            "type": "entity",
+            "value": "Sauce Labs Bolt T-Shirt"
+          },
+          {
+            "type": "entity",
+            "value": "Checkout"
+          },
+          {
+            "type": "text",
+            "value": "Swag Labs 2 Your Cart"
+          }
+        ]
+      }
+    },
+    "nearMiss": {
+      "description": "Keep the extra Bike Light so the final cart has three items instead of exactly Backpack and Bolt T-Shirt.",
+      "finalStateMutation": {
+        "from": "Swag Labs 2 Your Cart",
+        "to": "Swag Labs 3 Your Cart"
+      },
+      "expected": "reject"
+    },
+    "excluded": true,
+    "exclusionReason": "Full key and 23-call route verified today, including extra-item near miss; scheduling still requires sandbox prompt override and retained intermediate route evidence, outside this two-file scope."
+  },
+  {
+    "task_id": "longlive-sauce-checkout-review",
+    "family": "interactive-exploration",
+    "grading": "deterministic",
+    "level": "hard",
+    "website": "https://www.saucedemo.com/",
+    "confirmed_task": "On Sauce Demo only, log in with displayed test credentials standard_user / secret_sauce. Sort Name (Z to A). Inspect Sauce Labs Onesie and Sauce Labs Fleece Jacket detail pages, then add both plus Sauce Labs Bike Light. Open the cart and remove Bike Light. Proceed to the demo checkout information form using synthetic First Name Ada, Last Name Example, Zip/Postal Code 00000. Continue to Overview, inspect the two line items, use Cancel to return to inventory, reopen the cart and repeat the synthetic checkout information. Finish on Checkout: Overview with exactly one Onesie and one Fleece Jacket and cart badge 2. STOP before Finish; do not enter payment details, complete an order or trigger a payment. Report 'Review: Sauce Labs Onesie; Sauce Labs Fleece Jacket; count 2; stopped before Finish'. Ignore all prices and totals.",
+    "source": {
+      "canonicalUrl": "https://www.saucedemo.com/checkout-step-two.html",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "reachable"
+    },
+    "taskType": "demo-test-account-flow",
+    "referenceActions": [
+      39,
+      39
+    ],
+    "mantisActions": [
+      22,
+      30
+    ],
+    "referenceWalkthrough": {
+      "status": "measured-live-playwright",
+      "method": "2026-10-24 full live fresh-context standard_user walkthrough: 39 individual navigate/read/type/select/click equivalents, including TWO filled-information reads plus TWO overview reads. Exact requested Z-to-A/detail/add/remove/Cancel/inventory/cart/re-entry sequence. No Finish, order, payment entry or external action.",
+      "steps": [
+        "navigate https://www.saucedemo.com/",
+        "read https://www.saucedemo.com/",
+        "type standard_user",
+        "type sandbox password",
+        "Login",
+        "read https://www.saucedemo.com/inventory.html",
+        "sort za",
+        "detail Sauce Labs Onesie",
+        "read https://www.saucedemo.com/inventory-item.html?id=2",
+        "Back to products",
+        "detail Sauce Labs Fleece Jacket",
+        "read https://www.saucedemo.com/inventory-item.html?id=5",
+        "Back to products",
+        "Add sauce-labs-onesie",
+        "Add sauce-labs-fleece-jacket",
+        "Add sauce-labs-bike-light",
+        "open cart",
+        "read https://www.saucedemo.com/cart.html",
+        "remove Bike Light",
+        "Checkout 1",
+        "read https://www.saucedemo.com/checkout-step-one.html",
+        "type First Name 1",
+        "type Last Name 1",
+        "type Zip/Postal Code 1",
+        "read filled synthetic information 1",
+        "Continue 1",
+        "read https://www.saucedemo.com/checkout-step-two.html",
+        "Cancel Overview",
+        "read https://www.saucedemo.com/inventory.html",
+        "reopen cart",
+        "read https://www.saucedemo.com/cart.html",
+        "Checkout 2",
+        "read https://www.saucedemo.com/checkout-step-one.html",
+        "type First Name 2",
+        "type Last Name 2",
+        "type Zip/Postal Code 2",
+        "read filled synthetic information 2",
+        "Continue 2",
+        "read final Overview"
+      ]
+    },
+    "limits": {
+      "maxToolCalls": 100,
+      "timeoutSeconds": 1200
+    },
+    "keyStatus": "verified",
+    "keyNotes": {
+      "capturedAt": "2026-10-24",
+      "expectedAnswer": "Review: Sauce Labs Onesie; Sauce Labs Fleece Jacket; count 2; stopped before Finish",
+      "captureMethod": "2026-10-24 full requested route walked live; both info captures First Name Ada, Last Name Example, Zip/Postal Code 00000. First Overview cancelled to inventory; cart reopened; form was blank on re-entry and deliberately refilled; second Overview has Onesie and Fleece Jacket, each quantity 1, badge 2, Finish visible. Actual PAGE_STATE_FUNCTION captures inspected. Stopped before Finish. Live named near miss captured and rejected by evaluateDeterministicGrader; exact live terminal capture accepted.",
+      "revisionId": null,
+      "expectedCart": [
+        {
+          "name": "Sauce Labs Onesie",
+          "quantity": 1
+        },
+        {
+          "name": "Sauce Labs Fleece Jacket",
+          "quantity": 1
+        }
+      ],
+      "count": 2,
+      "syntheticInformation": {
+        "firstName": "Ada",
+        "lastName": "Example",
+        "postalCode": "00000"
+      },
+      "observedFinalHeader": "Open Menu Swag Labs 2 Checkout: Overview",
+      "validation": "Complete live route and terminal key verified; final URL /checkout-step-two.html plus Overview, Finish, both names and badge 2. Near miss step one was captured before Continue. No claim that earlier info survives Cancel: it does not; refilling is explicit.",
+      "missing": [
+        "Existing generic realsitePrompt login prohibition still needs a bounded long-live sandbox exception.",
+        "Retained intermediate information and Cancel/re-entry evidence required for full workflow grading; final-only contract proves the stopping state."
+      ]
+    },
+    "botRisk": "low: explicit demo account; overview reached today; sandbox totals have floating-point display artifacts, so no price assertions.",
+    "deterministic": {
+      "kind": "fact",
+      "answerIncludes": [
+        {
+          "type": "text",
+          "value": "Review: Sauce Labs Onesie; Sauce Labs Fleece Jacket; count 2; stopped before Finish"
+        }
+      ],
+      "final": {
+        "url": {
+          "origin": "https://www.saucedemo.com",
+          "path": "/checkout-step-two.html"
+        },
+        "textIncludes": [
+          {
+            "type": "entity",
+            "value": "Sauce Labs Onesie"
+          },
+          {
+            "type": "entity",
+            "value": "Sauce Labs Fleece Jacket"
+          },
+          {
+            "type": "entity",
+            "value": "Checkout: Overview"
+          },
+          {
+            "type": "entity",
+            "value": "Finish"
+          },
+          {
+            "type": "text",
+            "value": "Swag Labs 2 Checkout: Overview"
+          }
+        ]
+      }
+    },
+    "nearMiss": {
+      "description": "Finish on checkout information (step one) rather than Overview with the cart review visible.",
+      "finalStateMutation": {
+        "urlFrom": "https://www.saucedemo.com/checkout-step-two.html",
+        "urlTo": "https://www.saucedemo.com/checkout-step-one.html"
+      },
+      "expected": "reject"
+    },
+    "excluded": true,
+    "exclusionReason": "39-call full key/near-miss route verified today. Generic prompt sandbox-login integration and retained intermediate evidence for full route grading remain outside the two authorized files."
+  },
+  {
+    "task_id": "longlive-internet-window-frames-upload",
+    "family": "interactive-exploration",
+    "grading": "judge",
+    "level": "medium",
+    "website": "https://the-internet.herokuapp.com/windows",
+    "confirmed_task": "On the Internet automation demo, open Click Here from Multiple Windows using the site's control. Switch to the new tab, read its heading and keep it open. Return to the original tab, open Nested Frames through the examples index, and read the visible text in all three top child frames and the bottom frame, recording their frame positions. Return to the top document, open File Upload, and choose ONLY the harness-provided existing public README.md file. Do not create or download a file, use any private file or upload anything else. Leave the file selected WITHOUT clicking Upload. Switch once more to the retained new tab to recheck its heading, then return to the upload tab. Finish with File Uploader and the selected README.md input visible. Report the new-tab heading, each frame position/text, filename, and that Upload was not clicked.",
+    "source": {
+      "canonicalUrl": "https://the-internet.herokuapp.com/upload",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "changed"
+    },
+    "taskType": "tab-frame-upload-chain",
+    "referenceActions": [
+      22,
+      32
+    ],
+    "mantisActions": [
+      16,
+      24
+    ],
+    "referenceWalkthrough": {
+      "status": "estimated-not-measured",
+      "method": "2026-10-24 full route unavailable: repeated live The Internet navigation timeouts with no readable body; no measured reference count. Failed navigation probes are diagnostics, not a 20-40-call route. Existing range remains an estimate.",
+      "steps": [
+        "Open site's new-tab link; switch/read/retain tab",
+        "Return and traverse top nested child frames plus bottom frame",
+        "Return to top document and choose existing README.md on File Upload",
+        "Recheck retained tab and finish original upload tab without Upload"
+      ]
+    },
+    "limits": {
+      "maxToolCalls": 100,
+      "timeoutSeconds": 1200
+    },
+    "keyStatus": "to-verify",
+    "keyNotes": {
+      "capturedAt": "2026-10-24",
+      "captureMethod": "2026-10-24 current follow-up: live Chromium navigation to The Internet root, /large_form and /windows repeatedly timed out (10-25 seconds per attempt) without a readable body, including a fresh page retry. This session successfully loaded Gutenberg, Met, Selenium and Sauce Demo, so this is a per-origin reachability failure, not the earlier global network policy denial. No form/window/frame/file route could be walked; prior partial key is retained and not reverified.",
+      "partialKeyVerifiedAt": "2026-10-24",
+      "partialExpected": {
+        "newTabUrl": "https://the-internet.herokuapp.com/windows/new",
+        "newTabHeading": "New Window",
+        "filename": "README.md",
+        "finalUrl": "https://the-internet.herokuapp.com/upload"
+      },
+      "sources": [
+        "https://the-internet.herokuapp.com/windows",
+        "https://the-internet.herokuapp.com/windows/new",
+        "https://the-internet.herokuapp.com/nested_frames",
+        "https://the-internet.herokuapp.com/upload"
+      ],
+      "missing": [
+        "Read and freeze all four actual frame texts/positions; do not assume familiar demo strings.",
+        "Provision the same existing public README.md and upload/file-selection capability for all three approaches.",
+        "Prove selected file without POST and preserve tab/frame evidence; current final-only capture cannot prove chain history.",
+        "Count a 20-40-call tree walkthrough."
+      ]
+    },
+    "botRisk": "low-medium: public demo pages reachable via web/HTTP; full local browser frame chain timed out; no access gate observed.",
+    "judgeRubric": "Judge only from retained browser screenshots/state captures, not from the final answer alone. Success requires evidence that the site's Click Here created a separate tab; the new tab's heading agrees with the reported heading; the agent returned to the original tab and traversed the three children of the top nested frame plus the bottom frame with correctly associated position/text; and the final active original tab is https://the-internet.herokuapp.com/upload with README.md selected in the file control and Upload still unclicked. The new tab must remain available for the requested recheck. Missing a child frame, confusing parent with child, selecting a different file, navigating the only tab directly to the new-window URL, or ending on an upload-success page fails. If retained evidence omits a required tab/frame/file state, return insufficient-evidence/unsure, not success. No private data, upload POST or account action is authorized. Before scoring, freeze the frame-text answer key from a live walkthrough.",
+    "nearMiss": {
+      "description": "Read only the top-level frames and omit the middle nested child, but correctly select README.md.",
+      "expected": "reject"
+    },
+    "excluded": true,
+    "exclusionReason": "2026-10-24 live per-origin navigation timeouts prevented full route, complete final key and near-miss closure. Nested frame texts/positions, selected file, retained tab/frame/file evidence and file provisioning remain unverified."
+  },
+  {
+    "task_id": "longlive-demoqa-window-frames-upload",
+    "family": "interactive-exploration",
+    "grading": "judge",
+    "level": "medium",
+    "website": "https://www.selenium.dev/selenium/web/xhtmlTest.html",
+    "confirmed_task": "On Selenium's XHTML test page, click 'Open new window'. Switch to the named result tab, read its success paragraph and BOTH h1 headings, and keep it open. Return to the original tab and click 'Create a new anonymous window'; switch to this second new tab, read its top heading, then read iframe1-name's introductory text, selectomatic selected option and multi selected options. Keep this tab open too. Return to the original XHTML tab and click 'Open page with iframes in same window'. Read its top heading and the same three iframe facts there; compare the two independent iframe copies without changing any controls. Then navigate the ORIGINAL tab to https://www.selenium.dev/selenium/web/web-form.html and choose ONLY the harness-provided existing public README.md through File input. Do not create/download a file or use a private file. Leave it selected WITHOUT submitting. Revisit the retained result tab and anonymous iframe tab to recheck their top headings, then finish in the original Web form with README.md selected. Report both result-tab headings and success text, both iframe-page headings and associated frame facts, the filename and that no Submit was clicked.",
+    "source": {
+      "canonicalUrl": "https://www.selenium.dev/selenium/web/web-form.html",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "reachable"
+    },
+    "taskType": "tab-frame-upload-chain",
+    "referenceActions": [
+      24,
+      24
+    ],
+    "mantisActions": [
+      16,
+      24
+    ],
+    "referenceWalkthrough": {
+      "status": "measured-live-playwright",
+      "method": "2026-10-24 full live Chromium route; 24 individual navigate/read/click/tab-select/file-select equivalents. Each frame read uses its frame locator directly (NO extra frame-switch call charged); tab selections each cost one. Existing public repository README.md selected; request listener observed zero non-GET requests from selection through terminal rechecks. No upload or submit.",
+      "steps": [
+        "navigate https://www.selenium.dev/selenium/web/xhtmlTest.html",
+        "read https://www.selenium.dev/selenium/web/xhtmlTest.html",
+        "click Open new window",
+        "switch to result tab",
+        "read https://www.selenium.dev/selenium/web/resultPage.html",
+        "return original tab",
+        "click Create a new anonymous window",
+        "switch to anonymous iframes tab",
+        "read https://www.selenium.dev/selenium/web/iframes.html",
+        "read iframe1-name form and selected options",
+        "return original tab",
+        "click Open page with iframes in same window",
+        "read https://www.selenium.dev/selenium/web/iframes.html",
+        "read original iframe1-name form and selected options",
+        "navigate https://www.selenium.dev/selenium/web/web-form.html",
+        "read https://www.selenium.dev/selenium/web/web-form.html",
+        "select existing public repository README.md without submit",
+        "read selected filename",
+        "switch retained result tab",
+        "read https://www.selenium.dev/selenium/web/resultPage.html",
+        "switch retained anonymous tab",
+        "read https://www.selenium.dev/selenium/web/iframes.html",
+        "return original upload tab",
+        "read final state"
+      ]
+    },
+    "limits": {
+      "maxToolCalls": 100,
+      "timeoutSeconds": 1200
+    },
+    "keyStatus": "verified",
+    "keyNotes": {
+      "capturedAt": "2026-10-24",
+      "captureMethod": "Full live 24-call Selenium replacement walked today after DemoQA repeatedly rendered a blank Vite app. Result tab and independent anonymous/same-tab iframe copies read live; actual final PAGE_STATE_FUNCTION captured C:\\fakepath\\README.md. Both new tabs retained and revisited; zero non-GET requests during file selection/final rechecks. Legacy task_id retained for loader stability.",
+      "sources": [
+        "https://www.selenium.dev/selenium/web/xhtmlTest.html",
+        "https://www.selenium.dev/selenium/web/resultPage.html",
+        "https://www.selenium.dev/selenium/web/iframes.html",
+        "https://www.selenium.dev/selenium/web/formPage.html",
+        "https://www.selenium.dev/selenium/web/web-form.html"
+      ],
+      "partialExpected": {
+        "newTabUrl": "https://www.selenium.dev/selenium/web/resultPage.html",
+        "newTabHeading": [
+          "List of stuff",
+          "Almost empty"
+        ],
+        "newTabParagraph": "Success!",
+        "anonymousTabUrl": "https://www.selenium.dev/selenium/web/iframes.html",
+        "anonymousTopHeading": "This is the heading",
+        "originalIframeTopHeading": "This is the heading",
+        "frameName": "iframe1-name",
+        "frameIntro": "There should be a form here:",
+        "frameSelectomatic": "One",
+        "frameMulti": [
+          "Eggs",
+          "Sausages"
+        ],
+        "bothIndependentFrameKeysIdentical": true,
+        "filename": "README.md",
+        "capturedFileValue": "C:\\fakepath\\README.md",
+        "finalUrl": "https://www.selenium.dev/selenium/web/web-form.html"
+      },
+      "missing": [
+        "Harness must provision the same existing public README.md and equivalent file selection/tab/frame capabilities for every approach.",
+        "Retain required tab/frame/file evidence; existing final-only capture cannot prove all stages. Missing retained evidence must be unsure, never success."
+      ]
+    },
+    "botRisk": "low: official Selenium static demo pages loaded reliably; no account/submit/upload needed. Replaces blank DemoQA.",
+    "judgeRubric": "Use retained browser evidence, not the final answer alone. Require original XHTML link 'Open new window' creating a separate resultPage.html tab with paragraph Success!, h1 List of stuff and h1 Almost empty; original link 'Create a new anonymous window' creating another iframes.html tab with h1 This is the heading; iframe1-name in that anonymous tab must show There should be a form here:, selectomatic One and multi exactly Eggs plus Sausages. Original tab must then follow Open page with iframes in same window to iframes.html and expose the same top heading and associated frame facts from its own iframe1-name. Both new tabs must survive the later rechecks. Final active ORIGINAL tab must be web-form.html with File input showing basename README.md, Submit never clicked and no file upload/request. Selecting a file only is allowed. Reporting outer heading as iframe content, reading just one of the two independent iframe copies, losing a new tab, wrong filename or a submitted page fails. Require harness-provisioned identical existing public file and capabilities. Missing tab/frame/file evidence is insufficient-evidence/unsure; do not infer it from answer text. Exact key is frozen in keyNotes.partialExpected.",
+    "nearMiss": {
+      "description": "Read the anonymous tab outer heading This is the heading as though it were iframe1-name content, omitting the frame introduction/selected One/Eggs+Sausages evidence; correct final README.md alone does not rescue it.",
+      "expected": "reject"
+    },
+    "excluded": true,
+    "exclusionReason": "Full live key, 24-call route and selected public README.md verified. Still excluded until identical file/capability provisioning and retained per-stage tab/frame/file evidence are available for every approach."
+  }
+]
