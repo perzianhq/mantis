@@ -87,7 +87,7 @@ Frozen `local-v2`: 48 code-graded local fixture tasks x 3 approaches x 3 runs = 
 
 - All 432 rows launched: no HTTP 429s, connection failures, wall-cap timeouts, or harness failures.
 - The original state contract marked 20 completed rows wrong for answer-format/oracle reasons. The versioned regrade promotes those rows from their saved final answers and authoritative fixture observations; no agent or browser row was rerun.
-- The 35 remaining misses are 28 step limits and seven task/action mistakes. The raw artifact, traces, and regrade artifact remain local. `local-v1` below remains a separate historical baseline.
+- The 35 remaining misses are 28 step limits and seven task/action mistakes. The raw artifact, traces, and regrade artifact remain local. `local-v1` (the 225-run baseline) remains a separate historical baseline; its raw result is committed gzipped at `bench/results/final-deepseek-225-rpm50-cases10-active600-20261019.json.gz`, and [bench/README.md](README.md) shows how to verify its checksum against [the manifest](manifests/local-v1.json).
 - The published local-v2 command explicitly used 35 standard steps. Future non-`long` local-v2 runs default to 50, a separate policy/result line that does not alter this score.
 
 ## Token replay

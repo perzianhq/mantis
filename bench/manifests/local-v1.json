@@ -6,7 +6,7 @@
   "baseline": {
     "sourceCommit": "88bdbf4b456238e311da8a15189c328c6f4bc87b",
     "packageVersion": "0.1.2",
-    "result": "bench/results/final-deepseek-225-rpm50-cases10-active600-20261019.json",
+    "result": "bench/results/final-deepseek-225-rpm50-cases10-active600-20261019.json.gz",
     "resultSha256CanonicalUtf8Lf": "f2bd8506b0426d70e21944d565b49a8fb571cec389c626cbd89956e178f6515a",
     "configFingerprint": "e21db1f6df31f4a9c5788a596fd50b4abb90d16124ad61525f6330a8db8777b5"
   },

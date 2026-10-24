@@ -24,10 +24,11 @@ change in a new `local-v2` manifest and report it separately. The result checksu
 UTF-8 text with LF line endings, so it is stable across Git's line-ending settings. To verify it:
 
 ```powershell
-$path = 'bench/results/final-deepseek-225-rpm50-cases10-active600-20261019.json'
-$text = (Get-Content -Raw $path) -replace "`r`n", "`n" -replace "`r", "`n"
+$path = (Resolve-Path 'bench/results/final-deepseek-225-rpm50-cases10-active600-20261019.json.gz').Path
+$gz = [IO.Compression.GZipStream]::new([IO.File]::OpenRead($path), [IO.Compression.CompressionMode]::Decompress)
+$text = [IO.StreamReader]::new($gz, [Text.UTF8Encoding]::new($false)).ReadToEnd() -replace "`r`n", "`n" -replace "`r", "`n"
 $bytes = [Text.UTF8Encoding]::new($false).GetBytes($text)
-([BitConverter]::ToString([Security.Cryptography.SHA256]::HashData($bytes))).Replace('-', '').ToLowerInvariant()
+([BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash($bytes))).Replace('-', '').ToLowerInvariant()
 ```
 
 `local-v2-development` is frozen at 32 development cases across the eight domains. `local-v2` is the completed historical 48-case scorecard. `local-v2.1` is the completed 54-case local baseline: those 48 plus six reliability contracts, three approaches and three repeats (486 rows); see [RESULTS.md](RESULTS.md). The separate frozen live-site set ([live-v1](live-v1.md)) is scored in [RESULTS.md](RESULTS.md). Report all suites separately; no self-hosted-app stage is planned.
