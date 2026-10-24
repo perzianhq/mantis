@@ -1,0 +1,18 @@
+<!doctype html><title>Result cards</title><main></main>
+<script>
+const q = new URLSearchParams(location.search), main = document.querySelector('main');
+window.calls = 0;
+function detail() { document.title = 'Entry detail'; main.innerHTML = '<h1>Entry detail</h1>'; }
+function render() {
+  main.innerHTML = '<article style="padding:64px"><a href="?detail=1" style="display:block;padding:32px"><span>Sample entry</span></a></article>';
+}
+window.hydrate = () => main.querySelector('a').addEventListener('click', e => {
+  window.calls++;
+  if (q.get('mode') === 'blocked') e.preventDefault();
+  if (q.get('mode') === 'router') {
+    e.preventDefault(); history.pushState({}, '', '?detail=1'); detail();
+  }
+});
+window.replaceCard = () => { render(); window.hydrate(); };
+if (q.has('detail')) detail(); else render();
+</script>

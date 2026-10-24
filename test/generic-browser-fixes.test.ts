@@ -6,6 +6,61 @@ let browser: MantisBrowser;
 beforeAll(() => { browser = new MantisBrowser({ actionTimeoutMs: 300 }); });
 afterAll(async () => { await browser.close(); });
 
+type FixturePage = {
+  evaluate<T>(fn: () => T): Promise<T>;
+  context(): { pages(): unknown[] };
+};
+
+// Navigating clicks wait for the page load, which a 300ms action budget cannot cover.
+let navBrowser: MantisBrowser;
+beforeAll(() => { navBrowser = new MantisBrowser({ actionTimeoutMs: 3000 }); });
+afterAll(async () => { await navBrowser.close(); });
+
+const fixturePage = (): FixturePage => (navBrowser as unknown as { page: FixturePage }).page;
+
+for (const [mode, name] of [['', 'native'], ['?mode=router', 'router']] as const) {
+  it(`follows ${name} link navigation after a card replacement`, async () => {
+    for (const replaced of [false, true]) {
+      const startUrl = `${fixture('generic-browser-result-card.html')}${mode}`;
+      const dest = `${fixture('generic-browser-result-card.html')}?detail=1`;
+      await navBrowser.open(startUrl);
+      const page = fixturePage();
+      await page.evaluate(() => (window as unknown as { hydrate(): void }).hydrate());
+      const view = await navBrowser.read({ fresh: true });
+      const id = idOf(view, 'link "Sample entry"');
+      if (replaced) await page.evaluate(() => (window as unknown as { replaceCard(): void }).replaceCard());
+
+      const out = await navBrowser.click(id);
+      expect(out).toMatch(/^clicked /);
+      expect(out).not.toContain('(no visible change)');
+      expect((await navBrowser.snapshot()).url).toBe(dest);
+      expect(await navBrowser.read()).toContain('# Entry detail');
+      if (replaced) expect(out).toContain(`(was #${id}; the page re-rendered)`);
+    }
+  });
+}
+
+it('keeps intentional prevented link activation as a no-change result after replacement', async () => {
+  for (const replaced of [false, true]) {
+    const startUrl = `${fixture('generic-browser-result-card.html')}?mode=blocked`;
+    await navBrowser.open(startUrl);
+    const page = fixturePage();
+    await page.evaluate(() => (window as unknown as { hydrate(): void }).hydrate());
+    let id = idOf(await navBrowser.read({ fresh: true }), 'link "Sample entry"');
+    if (replaced) await page.evaluate(() => (window as unknown as { replaceCard(): void }).replaceCard());
+
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      const out = await navBrowser.click(id);
+      expect(out.split('\n').slice(1).join('\n')).toBe('(no visible change)');
+      expect((await navBrowser.snapshot()).url).toBe(startUrl);
+      expect(await navBrowser.read()).not.toContain('# Entry detail');
+      expect(await page.evaluate(() => (window as unknown as { calls: number }).calls)).toBe(attempt);
+      expect(page.context().pages()).toHaveLength(1);
+      if (attempt === 1) id = idOf(await navBrowser.read({ fresh: true }), 'link "Sample entry"');
+    }
+  }
+});
+
 it('activates only a verified associated label when it intercepts a pointer', async () => {
   const view = await browser.open(fixture('generic-browser-pointer.html'));
   const selected = await browser.click(idOf(view, 'radio "Valid radio"'));

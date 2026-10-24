@@ -66,6 +66,37 @@ it('identifies an expanded combobox popup as recoverable while retaining persist
   }
 });
 
+it('verifies completed result-card navigation without accepting a prevented activation', async () => {
+  const mantis = new MantisBrowser({ actionTimeoutMs: 300 });
+  try {
+    for (const mode of ['', '?mode=router']) {
+      const startUrl = `${fixture('generic-browser-result-card.html')}${mode}`;
+      const dest = `${fixture('generic-browser-result-card.html')}?detail=1`;
+      await mantis.open(startUrl);
+      const page = (mantis as unknown as { page: { evaluate<T>(fn: () => T): Promise<T> } }).page;
+      await page.evaluate(() => (window as unknown as { hydrate(): void }).hydrate());
+      const view = await mantis.read({ fresh: true });
+      await mantis.click(idOf(view, 'link "Sample entry"'));
+      const snap = await mantis.snapshot();
+      const success = snap.url === dest && snap.nodes.some((n) => n.kind === 'heading' && n.name === 'Entry detail');
+      expect(success).toBe(true);
+    }
+
+    const startUrl = `${fixture('generic-browser-result-card.html')}?mode=blocked`;
+    await mantis.open(startUrl);
+    const page = (mantis as unknown as { page: { evaluate<T>(fn: () => T): Promise<T> } }).page;
+    await page.evaluate(() => (window as unknown as { hydrate(): void }).hydrate());
+    const view = await mantis.read({ fresh: true });
+    await mantis.click(idOf(view, 'link "Sample entry"'));
+    const snap = await mantis.snapshot();
+    const success = snap.url === `${fixture('generic-browser-result-card.html')}?detail=1`
+      && snap.nodes.some((n) => n.kind === 'heading' && n.name === 'Entry detail');
+    expect(success).toBe(false);
+  } finally {
+    await mantis.close();
+  }
+});
+
 it('long-live-v1 deterministic contracts accept reviewed keys and reject an associated tuple near miss', () => {
   const mutate = (value: string): string => value.length > 1 ? `${value.slice(0, -1)}?` : `${value}?`;
   for (const row of LONG_LIVE_V1_ROWS.filter((entry) => entry.grading === 'deterministic')) {
