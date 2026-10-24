@@ -62,8 +62,10 @@ Verdict (Opus review, 2026-10-24): good enough to launch as a v0.x beta. Accurac
    - Docs link to the gitignored `.codex-jobs/`.
    - Delete about 145 untracked scratch files at the repo root (`.tmp-*`) and decide which `bench/results/` leftovers to commit or ignore.
 
+### Before launch (moved up, 2026-10-24)
+- 12 interactive live tasks (search plus filter, forms without submit, new tab, iframe, upload on a demo site, login with a test account), Luna and Haiku, 3 runs each, Mantis vs tree. Backs the long-task claim on real sites: it is measured on local fixtures only. Tasks and sites not chosen yet.
+
 ### Within about 2 weeks after launch
-- 12 interactive live tasks (search plus filter, forms without submit, new tab, iframe, upload on a demo site, login with a test account), Luna and Haiku, 3 runs each, Mantis vs tree.
 - Re-run tree and screenshots on the frozen commit (also fixes the Haiku token comparability caveat).
 - Replace the fragile `data-gov-climate` task in a v1.8.
 

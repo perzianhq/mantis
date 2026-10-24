@@ -27,6 +27,8 @@ Headline models are Luna (`gpt-6-luna`) and Haiku (`claude-haiku-5-5`). Suites a
 
 Frozen [live-v1](live-v1.md) v1.7: 30 real-site tasks x 3 approaches x 3 runs = 90 runs per approach and model, judged blind by Codex `gpt-6.1-sol`. Task changes, regrades and run notes are in the [live-v1 changelog](live-v1.md#changelog-and-disclosures).
 
+Post-hoc swaps were GPL-3 to RFC 8259, IMDb to TMDB, and USGS to NIST; see the [changelog and disclosures](live-v1.md#changelog-and-disclosures). The 30 tasks are now frozen with no further swaps. The blind judge (`gpt-6.1-sol`) has not passed its calibration gate: 100 packets, 30 tasks, 95% agreement, and <=2% false successes.
+
 **Luna (`gpt-6-luna`)**
 
 | | Mantis | Accessibility tree | Screenshots |

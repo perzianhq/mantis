@@ -38,7 +38,7 @@ Same tasks, same pass criteria, three ways to browse. Mantis vs the accessibilit
 | `gpt-6-luna` | 89 | **90** | 85 |
 | `claude-haiku-5-5` | 87 | 86 | **89** |
 
-**Net:** accuracy is on par with the tree (within 1 run of 90 on real sites, equal on long workflows), at roughly 30% fewer tokens and calls on long tasks.
+**Net:** Accuracy is on par with the tree (within 1 run of 90 on real sites, equal on long workflows). The roughly 30% saving in tokens and calls was measured on long workflows that run on local fixtures, not live sites; on real-site tasks, which are shorter, the difference is smaller. Accuracy claims cover read/navigate tasks on public sites with Luna and Haiku. The screenshot baseline is our own minimal tool, not a product's.
 
 ### Where Mantis is better
 

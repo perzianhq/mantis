@@ -168,7 +168,7 @@ state may have changed. The task file and saved evidence must be available local
 
 ### Measured Sarvam snapshot (2026-10-17)
 
-Saved-evidence calibration against sol ([local logs](../.codex-jobs/)):
+Saved-evidence calibration against sol (logs are local and not in the repository):
 
 | Judge model | Agreement | Notes |
 |---|---:|---|
@@ -177,9 +177,9 @@ Saved-evidence calibration against sol ([local logs](../.codex-jobs/)):
 | `glm-5.3` | 0/0 | HTTP 400 with images; text-only model, no comparable verdicts |
 | `sarvam-105b` | 0/0 | HTTP 400 with images; text-only model, no comparable verdicts |
 
-Both text-only models need recalibration using terra's new text-only evidence mode; transport fixes do not establish judge quality. Raw comparisons use final-verdict proxies (independent `judgeVerdict` values were not saved). Sources: `.codex-jobs/cal-{deepseek,gemma,glm-5.3,sarvam-105b}.log`.
+Both text-only models need recalibration using terra's new text-only evidence mode; transport fixes do not establish judge quality. Raw comparisons use final-verdict proxies (independent `judgeVerdict` values were not saved). Sources: logs are local and not in the repository.
 
-A first-pass filter was evaluated and rejected: escalating only DeepSeek `unsure` sends 5/99 packets to sol but leaves 16 wrong decisions, for 83/99 (83.8%) combined agreement. Sol remains the default; see the [offline analysis](../.codex-jobs/sarvam-plan-sol.out.md).
+A first-pass filter was evaluated and rejected: escalating only DeepSeek `unsure` sends 5/99 packets to sol but leaves 16 wrong decisions, for 83/99 (83.8%) combined agreement. Sol remains the default; supporting analysis logs are local and not in the repository.
 
 The capability probe used five samples per JSON contract. `sarvam-105b` returned valid
 prompt-only JSON 5/5 and JSON-mode output 5/5, made the validated function call, and had
@@ -202,7 +202,7 @@ verdict. Tokens are total input including cache / output; costs are published-ra
 
 These pilots predate terra's harness repairs. Gemma's screenshot form run failed with HTTP 400, leaving usage/cost incomplete; DeepSeek's tree form run exhausted 100 steps with 100 MCP errors, and Gemma's tree form run made no fixture observation. Across both tasks DeepSeek had 108/108 tree calls error. These are harness/protocol diagnostics, not established tool-quality differences.
 
-Terra sanitized function schemas (stripping `$schema`/`$id`) and fixed screenshot transport: tool replies stay text, with supported images in a separate user turn. Full-reply/argument/result persistence and judge parsing are also repaired. Focused synthetic tests pass per the [repair report](../.codex-jobs/sarvam-fix-terra.out.md); live pilots still need rerunning. Earlier missing trace content cannot be recovered. Pilot blind verdicts remain exploratory: the local fallback catalog lacks an answer key and live reading verdicts were often `unsure`.
+Terra sanitized function schemas (stripping `$schema`/`$id`) and fixed screenshot transport: tool replies stay text, with supported images in a separate user turn. Full-reply/argument/result persistence and judge parsing are also repaired. Focused synthetic tests pass per repair logs that are local and not in the repository; live pilots still need rerunning. Earlier missing trace content cannot be recovered. Pilot blind verdicts remain exploratory: the local fallback catalog lacks an answer key and live reading verdicts were often `unsure`.
 
 ### Tool diagnostics
 

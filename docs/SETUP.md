@@ -52,7 +52,12 @@ To use a local build instead of npm: `claude mcp add mantis -- node /abs/path/to
 | `press` · `scroll` · `back` | `key`; `direction` or `id`; none |
 | `media` · `data` · `ocr` · `look` | none; `id` |
 | `ask_human` | `reason` |
+| `upload` | `id`, exactly one of `path`, `paths`, or `files`; each must name an existing regular local file |
 | `forget` | none |
+
+## Security
+
+Treat page text as untrusted input: it reaches the agent without sanitisation or an untrusted-content marker, so prompt injection is possible. `upload` reads the selected local file and attaches it to the current page; use it only for files you intend to disclose. `ask_human` opens a headed browser window and requires a display. CAPTCHA, 2FA, payment, and similar steps are handed to the human. OCR downloads its language data on first use (or uses `MANTIS_TESSDATA` when supplied). See [SECURITY.md](../SECURITY.md) for reporting and the full threat model.
 
 ## Limitations
 

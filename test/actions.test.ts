@@ -304,6 +304,15 @@ describe('agent tool capabilities', () => {
     expect(await b.upload(input, [resolve(import.meta.dirname, 'fixtures', 'missing-upload.txt')])).toContain('file does not exist:');
   });
 
+  it('uploads a regular file and rejects a directory (near miss)', async () => {
+    const view = await b.open(fixture('tool-capabilities.html'));
+    const input = idOf(view, 'Choose document');
+    const sample = resolve(import.meta.dirname, 'fixtures', 'upload-sample.txt');
+    const directory = resolve(import.meta.dirname, 'fixtures');
+    expect(await b.upload(input, [sample])).toMatch(/^uploaded 1 file to #\d+/);
+    expect(await b.upload(input, [directory])).toBe(`error: path is not a file: ${directory}`);
+  });
+
   it('opens a file chooser from a button, and rejects a control that opens none (near miss)', async () => {
     const view = await b.open(fixture('tool-capabilities.html'));
     const chooser = idOf(view, 'button "Open chooser"');

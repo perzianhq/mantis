@@ -11,6 +11,16 @@ bench/results/agent-logs/
 .playwright-mcp/
 bench/agent/realsite-tasks.json
 .codex-jobs/
+.tmp-*
+bench/results/agent-debug.*
+bench/results/codex-smoke.*
+bench/results/concurrency-probe-*
+bench/results/*.aborted.json
+bench/results/.haiku-remaining-rows.txt
+/about-nist.png
+/chart-device.png
+/chart.png
+/nist-about.png
 
 # Large live-long result JSONs are pretty-printed (100+ MB, over the GitHub limit); commit the .json.gz copies instead
 bench/results/live-long-fixtures-*.json
