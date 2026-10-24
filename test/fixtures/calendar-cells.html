@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Delegated grid cells</title>
+  <style>
+    [role="dialog"] { padding: 8px; border: 1px solid #999; width: 280px; }
+    .choice { cursor: pointer; width: 32px; height: 28px; text-align: center; }
+    .muted { color: #999; }
+  </style>
+</head>
+<body>
+  <label>Chosen value <input id="chosen" readonly></label>
+  <div role="dialog" aria-label="Choose a value">
+    <table role="grid" aria-activedescendant="">
+      <tbody>
+        <tr>
+          <td class="choice" data-date="2026-10-21">21</td>
+          <td class="choice" data-date="2026-10-22">22</td>
+          <td class="choice" data-date="2026-10-23">23</td>
+          <td class="choice" data-date="2026-10-24">24</td>
+          <td class="choice" data-date="2026-10-25">25</td>
+          <td class="choice" data-date="2026-10-26">26</td>
+          <td class="choice" data-date="2026-10-27">27</td>
+        </tr>
+        <tr>
+          <td class="choice muted" data-date="2026-09-30" data-other-month aria-disabled="true">30</td>
+          <td class="choice muted" data-date="2026-11-01" data-other-month aria-disabled="true">1</td>
+          <td class="choice muted" data-date="2026-11-02" data-other-month aria-disabled="true">2</td>
+          <td class="choice muted" data-date="2026-11-03" data-other-month aria-disabled="true">3</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <table aria-label="Ordinary numeric data"><tbody><tr><td>21</td><td>22</td><td>23</td><td>24</td><td>25</td></tr></tbody></table>
+  <script>
+    document.addEventListener('click', (event) => {
+      const cell = event.target instanceof Element ? event.target.closest('[data-date]') : null;
+      if (cell && cell.getAttribute('aria-disabled') !== 'true') document.getElementById('chosen').value = cell.dataset.date;
+    });
+  </script>
+</body>
+</html>

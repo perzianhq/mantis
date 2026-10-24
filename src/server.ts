@@ -136,7 +136,7 @@ export function createServer(browser: MantisBrowser = new MantisBrowser()): McpS
   server.registerTool(
     'upload',
     {
-      description: 'Set local file path(s) on #id.',
+      description: 'Select local file path(s) on #id; this selects files but does not submit a form.',
       inputSchema: {
         id,
         path: z.string().optional(),

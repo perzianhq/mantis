@@ -324,7 +324,7 @@ describe('agent tool capabilities', () => {
     const view = await b.open(fixture('tool-capabilities.html'));
     const input = idOf(view, 'Choose document');
     const sample = resolve(import.meta.dirname, 'fixtures', 'upload-sample.txt');
-    expect(await b.upload(input, [sample])).toMatch(/^uploaded 1 file to #\d+/);
+    expect(await b.upload(input, [sample])).toMatch(/^selected 1 file on #\d+ button "Choose document": upload-sample\.txt/);
     const page = await (b as unknown as { activePage: () => Promise<{ evaluate: <T>(fn: () => T) => Promise<T> }> }).activePage();
     expect(await page.evaluate(() => (document.getElementById('document') as HTMLInputElement).files?.[0]?.name)).toBe('upload-sample.txt');
     expect(await b.upload(input, [resolve(import.meta.dirname, 'fixtures', 'missing-upload.txt')])).toContain('file does not exist:');
@@ -335,7 +335,7 @@ describe('agent tool capabilities', () => {
     const input = idOf(view, 'Choose document');
     const sample = resolve(import.meta.dirname, 'fixtures', 'upload-sample.txt');
     const directory = resolve(import.meta.dirname, 'fixtures');
-    expect(await b.upload(input, [sample])).toMatch(/^uploaded 1 file to #\d+/);
+    expect(await b.upload(input, [sample])).toMatch(/^selected 1 file on #\d+ button "Choose document": upload-sample\.txt/);
     expect(await b.upload(input, [directory])).toBe(`error: path is not a file: ${directory}`);
   });
 
@@ -344,7 +344,7 @@ describe('agent tool capabilities', () => {
     const chooser = idOf(view, 'button "Open chooser"');
     const plain = idOf(view, 'button "Reveal detail"');
     const sample = resolve(import.meta.dirname, 'fixtures', 'upload-sample.txt');
-    expect(await b.upload(chooser, [sample])).toMatch(/^uploaded 1 file to #[0-9]+/);
+    expect(await b.upload(chooser, [sample])).toMatch(/^selected 1 file on #[0-9]+ button "Open chooser": upload-sample\.txt/);
     expect(await b.upload(plain, [sample])).toContain('did not open a file chooser');
   });
 

@@ -1,5 +1,5 @@
 import { existsSync, statSync } from 'node:fs';
-import { resolve as resolvePath } from 'node:path';
+import { basename, resolve as resolvePath } from 'node:path';
 import { chromium } from 'playwright';
 import type { Browser, BrowserContext, ElementHandle, Frame, Page } from 'playwright';
 import { capture, resolve } from './capture/index.js';
@@ -973,7 +973,7 @@ export class MantisBrowser {
           if (!opened) throw new ActionError(`${label} did not open a file chooser`);
           await opened.setFiles(files);
         }
-        return `uploaded ${files.length} file${files.length === 1 ? '' : 's'} to ${label}`;
+        return `selected ${files.length} file${files.length === 1 ? '' : 's'} on ${label}: ${files.map((file) => basename(file)).join(', ')}`;
       } finally {
         await el.dispose();
       }

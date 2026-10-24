@@ -1,0 +1,16 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Date attribute calendar</title>
+<input id="when" aria-label="When">
+<table id="days"><tbody>
+<tr><td data-date="20261019">19</td><td data-date="20261020">20</td><td data-date="20261021">21</td><td data-date="20261022">22</td><td data-date="20261023">23</td></tr>
+</tbody></table>
+<table id="stats"><tbody>
+<tr><td>19</td><td>20</td><td>21</td><td>22</td><td>23</td></tr>
+</tbody></table>
+<script>
+document.getElementById('days').addEventListener('click', (e) => {
+  const d = e.target.closest('td[data-date]');
+  if (d) document.getElementById('when').value = d.dataset.date;
+});
+</script>

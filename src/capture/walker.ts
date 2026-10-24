@@ -284,6 +284,34 @@ export function walker(includeSrOnly = false): WalkResult {
   const SCRIPT_CLICK_NEVER = new Set(['html', 'body', 'label', 'main', 'nav', 'header', 'footer', 'aside', 'section', 'article', 'form', 'ul', 'ol', 'table', 'tbody', 'tr']);
   const CONTAINER_SEL = 'h1,h2,h3,h4,h5,h6,p,ul,ol,table,form,section,article,main,nav,header,footer,aside';
 
+  /** Repeated short pointer-styled leaves are usually choices rather than ordinary table data. */
+  function repeatedPointerLeaf(el: Element, cs: CSSStyleDeclaration): boolean {
+    const text = collapse(el.textContent || '');
+    if (cs.cursor !== 'pointer' || !text || text.length > 12 || el.querySelector(INTERACTIVE_SEL)) return false;
+    const parent = el.parentElement;
+    if (!parent) return false;
+    const peers = Array.from(parent.children).filter((peer) =>
+      peer.localName === el.localName &&
+      getComputedStyle(peer).cursor === 'pointer' &&
+      !!collapse(peer.textContent || '') && collapse(peer.textContent || '').length <= 12 &&
+      !peer.querySelector(INTERACTIVE_SEL),
+    );
+    return peers.length >= 4;
+  }
+
+  function repeatedDateLeaf(el: Element): boolean {
+    const text = collapse(el.textContent || '');
+    if (!text || text.length > 12 || el.querySelector(INTERACTIVE_SEL)) return false;
+    const row = el.parentElement;
+    if (!row) return false;
+    const peers = Array.from(row.children).filter((peer) => peer.localName === el.localName && hasDateData(peer));
+    return peers.length >= 4;
+  }
+
+  function hasDateData(el: Element): boolean {
+    return el.getAttributeNames().some((name) => /^data-(?:date|day)(?:-|$)/i.test(name));
+  }
+
   function interactiveRole(el: Element, explicit: string, cs: CSSStyleDeclaration): string {
     const t = el.localName;
     const native =
@@ -302,6 +330,18 @@ export function walker(includeSrOnly = false): WalkResult {
     }
     const ce = el.getAttribute('contenteditable');
     if (ce !== null && ce !== 'false') return 'textbox';
+    const disabledChoice = el.matches(':disabled') || el.getAttribute('aria-disabled') === 'true' ||
+      el.hasAttribute('data-disabled') || el.hasAttribute('data-other-month');
+    const grid = el.closest('[role="grid"],[aria-multiselectable="true"],[aria-activedescendant]');
+    const selectableGrid = !!grid &&
+      (el.hasAttribute('aria-selected') || grid!.getAttribute('aria-multiselectable') === 'true' || grid!.hasAttribute('aria-activedescendant'));
+    // A gridcell is normally structural, but selected cells in a selectable grid represent choices.
+    if (!disabledChoice && explicit === 'gridcell' && selectableGrid && repeatedPointerLeaf(el, cs)) return 'gridcell';
+    // Delegated widgets often put their handler on a container. Require both a repeated pointer
+    // pattern and a grid/date-selection signal so ordinary numeric tables stay text.
+    if (!disabledChoice && repeatedPointerLeaf(el, cs) && (selectableGrid || hasDateData(el))) return 'clickable';
+    // Pointer styling is often applied only on :hover, so a date attribute repeated across short sibling cells is enough.
+    if (!disabledChoice && hasDateData(el) && repeatedDateLeaf(el)) return 'clickable';
     const clickish =
       el.hasAttribute('onclick') ||
       (el.hasAttribute('tabindex') && (el as HTMLElement).tabIndex >= 0 && cs.cursor === 'pointer');
@@ -990,6 +1030,8 @@ export function walker(includeSrOnly = false): WalkResult {
       value = Array.from(sel.selectedOptions).map((o) => collapse(o.label || o.text)).join(', ');
       const opts = Array.from(sel.options).map((o) => cap(collapse(o.label || o.text), 30));
       node.options = opts.length > 12 ? [...opts.slice(0, 12), `…+${opts.length - 12} more`] : opts;
+    } else if (t === 'input' && input.type === 'file') {
+      value = Array.from(input.files ?? []).map((file) => file.name).join(', ') || 'no file';
     } else if (t === 'textarea' || (t === 'input' && node.role !== 'checkbox' && node.role !== 'radio' && node.role !== 'button')) {
       value = input.value;
     } else if ((el as HTMLElement).isContentEditable) {
