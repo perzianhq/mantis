@@ -74,14 +74,17 @@ const LOG_NAME = /^(.+)--([a-z]+)--(\d+)--attempt-(\d+)-.*\.jsonl$/;
 
 /** The last agent message of the last attempt of every run in a log folder, keyed `task|approach|run`. */
 export function readFinalTexts(logDir: string, provider: string): Map<string, string> {
-  const latest = new Map<string, { attempt: number; file: string }>();
+  const latest = new Map<string, { attempt: number; stamp: number; file: string }>();
   if (!existsSync(logDir)) return new Map();
   for (const file of readdirSync(logDir)) {
     const m = LOG_NAME.exec(file);
-    if (!m) continue;
+    if (!m || /\.long\.jsonl$/.test(file)) continue;
     const key = runKey(m[1]!, m[2]!, Number(m[3]));
     const attempt = Number(m[4]);
-    if (!latest.has(key) || latest.get(key)!.attempt < attempt) latest.set(key, { attempt, file });
+    // A relaunch into the same folder repeats attempt numbers; the later timestamp is the one the result row came from.
+    const stamp = Number(/--attempt-\d+-(\d+)-/.exec(file)?.[1] ?? 0);
+    const cur = latest.get(key);
+    if (!cur || cur.attempt < attempt || (cur.attempt === attempt && cur.stamp < stamp)) latest.set(key, { attempt, stamp, file });
   }
   const texts = new Map<string, string>();
   for (const [key, { file }] of latest) {

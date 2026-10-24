@@ -178,6 +178,17 @@ describe('judge helpers', () => {
     expect(readFinalTexts(path.join(FIXTURE, 'no-such-logs'), 'codex').size).toBe(0);
   });
 
+  it('readFinalTexts prefers the later relaunch when two logs share an attempt number', () => {
+    const dir = mkdtempSync(path.join(tmpdir(), 'final-texts-'));
+    const event = (text: string) => JSON.stringify({ type: 'item.completed', item: { type: 'agent_message', text } });
+    writeFileSync(path.join(dir, 't--mantis--1--attempt-1-1000-aaaaaa.jsonl'), event('truncated first launch'));
+    writeFileSync(path.join(dir, 't--mantis--1--attempt-1-2000-bbbbbb.jsonl'), event('complete relaunch'));
+    writeFileSync(path.join(dir, 't--mantis--2--attempt-1-3000-cccccc.jsonl'), event('only launch'));
+    const texts = readFinalTexts(dir, 'codex');
+    expect(texts.get(runKey('t', 'mantis', 1))).toBe('complete relaunch');
+    expect(texts.get(runKey('t', 'mantis', 2))).toBe('only launch');
+  });
+
   it('reads full Sarvam final replies from its trace rather than treating them as Codex events', () => {
     const full = 'Completed the requested work.\nFINAL_URL: https://example.test/final';
     expect(parseSarvamTrace(`${JSON.stringify({ type: 'sarvam.completion', content: full, toolCalls: [] })}\n${JSON.stringify({ type: 'sarvam.summary', resultText: full })}`)).toBe(full);
