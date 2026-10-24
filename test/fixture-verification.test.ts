@@ -113,6 +113,23 @@ it('form-history graders require an ordered, redacted journal and exact control 
   expect(deterministicGradeForRun({ task_id: 'fixture', website: 'https://fixture.test', task: 'x', level: 'medium', deterministic: grader }, 'success', true, 'done', frame(finalForms, { ...journal, submissions: [{ method: 'GET', url: 'https://fixture.test/form' }] })).pass).toBe(false);
 });
 
+it('allowedSubmissions tolerates exactly the workflow-required submissions and fails one more', () => {
+  const forms = [{ label: 'Name', value: 'Ada', id: 'name' }];
+  const grader = {
+    kind: 'form' as const,
+    answerIncludes: [{ type: 'text' as const, value: 'done' }],
+    final: { url: { origin: 'https://fixture.test', path: '/form' }, textIncludes: [{ type: 'text' as const, value: 'Form' }], formValues: forms },
+    history: { allowedSubmissions: 1, requireJournal: true as const },
+  };
+  expect(validateDeterministicGrader(grader)).toBeNull();
+  for (const bad of [0, 6, 1.5, '1']) expect(validateDeterministicGrader({ ...grader, history: { allowedSubmissions: bad as number } }), String(bad)).not.toBeNull();
+  const submission = { method: 'POST', url: 'https://fixture.test/login' };
+  const grade = (submissions: { method: string; url: string }[]) => evaluateDeterministicGrader(grader, 'done', [{ final: true, url: 'https://fixture.test/form', text: 'Form', forms, journal: { complete: true, submissions, states: [] } }])!;
+  expect(grade([]).pass).toBe(true);
+  expect(grade([submission]).pass).toBe(true);
+  expect(grade([submission, { ...submission, url: 'https://fixture.test/checkout' }]).pass).toBe(false);
+});
+
 const crc32 = (buf: Uint8Array): number => {
   let c = ~0;
   for (const b of buf) { c ^= b; for (let k = 0; k < 8; k++) c = (c >>> 1) ^ (0xedb88320 & -(c & 1)); }

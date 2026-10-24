@@ -38,6 +38,8 @@ export interface OrderedFormState { name: string; formValues: FormValue[] }
 export interface FormHistory {
   /** A submitted form is never an acceptable intermediate state. */
   noSubmission?: true;
+  /** Submissions the workflow legitimately needs (e.g. a published sandbox sign-in); more than this fails. */
+  allowedSubmissions?: number;
   /** These controls must retain their original values throughout the run. */
   untouched?: FormValue[];
   /** Do not silently accept a final snapshot when the workflow needs history. */
@@ -253,9 +255,9 @@ export function validateDeterministicGrader(value: unknown): string | null {
   }))) return 'deterministic.orderedStates must be non-empty named form checkpoints';
   const history = o.history;
   if (history !== undefined) {
-    if (!history || typeof history !== 'object' || Array.isArray(history) || Object.keys(history as object).some((key) => !['noSubmission', 'untouched', 'requireJournal'].includes(key))) return 'deterministic.history contains an unknown field';
+    if (!history || typeof history !== 'object' || Array.isArray(history) || Object.keys(history as object).some((key) => !['noSubmission', 'allowedSubmissions', 'untouched', 'requireJournal'].includes(key))) return 'deterministic.history contains an unknown field';
     const h = history as Record<string, unknown>;
-    if ((h.noSubmission !== undefined && h.noSubmission !== true) || (h.requireJournal !== undefined && h.requireJournal !== true) ||
+    if ((h.noSubmission !== undefined && h.noSubmission !== true) || (h.allowedSubmissions !== undefined && (!Number.isInteger(h.allowedSubmissions) || (h.allowedSubmissions as number) < 1 || (h.allowedSubmissions as number) > 5)) || (h.requireJournal !== undefined && h.requireJournal !== true) ||
       (h.untouched !== undefined && (!Array.isArray(h.untouched) || !h.untouched.length || !h.untouched.every(validFormValue)))) return 'deterministic.history must contain valid redacted history constraints';
   }
   return null;
@@ -286,7 +288,7 @@ function parseDeterministicGrader(value: unknown): DeterministicGrader | undefin
       ...(o.final.formValues ? { formValues: o.final.formValues.map((entry) => ({ label: entry.label.trim(), value: entry.value, ...(entry.id !== undefined ? { id: entry.id } : {}), ...(entry.name !== undefined ? { name: entry.name } : {}), ...(entry.occurrence !== undefined ? { occurrence: entry.occurrence } : {}) })) } : {}),
     },
     ...(o.orderedStates ? { orderedStates: o.orderedStates.map((state) => ({ name: state.name.trim(), formValues: state.formValues.map((entry) => ({ label: entry.label.trim(), value: entry.value, ...(entry.id !== undefined ? { id: entry.id } : {}), ...(entry.name !== undefined ? { name: entry.name } : {}), ...(entry.occurrence !== undefined ? { occurrence: entry.occurrence } : {}) })) })) } : {}),
-    ...(o.history ? { history: { ...(o.history.noSubmission ? { noSubmission: true as const } : {}), ...(o.history.requireJournal ? { requireJournal: true as const } : {}), ...(o.history.untouched ? { untouched: o.history.untouched.map((entry) => ({ label: entry.label.trim(), value: entry.value, ...(entry.id !== undefined ? { id: entry.id } : {}), ...(entry.name !== undefined ? { name: entry.name } : {}), ...(entry.occurrence !== undefined ? { occurrence: entry.occurrence } : {}) })) } : {}) } } : {}),
+    ...(o.history ? { history: { ...(o.history.noSubmission ? { noSubmission: true as const } : {}), ...(o.history.allowedSubmissions ? { allowedSubmissions: o.history.allowedSubmissions } : {}), ...(o.history.requireJournal ? { requireJournal: true as const } : {}), ...(o.history.untouched ? { untouched: o.history.untouched.map((entry) => ({ label: entry.label.trim(), value: entry.value, ...(entry.id !== undefined ? { id: entry.id } : {}), ...(entry.name !== undefined ? { name: entry.name } : {}), ...(entry.occurrence !== undefined ? { occurrence: entry.occurrence } : {}) })) } : {}) } } : {}),
   };
 }
 
@@ -373,7 +375,7 @@ export function evaluateDeterministicGrader(grader: DeterministicGrader | undefi
       const history = grader.history;
       return [
         ...(missing ? [`missing ordered journal state ${JSON.stringify(missing.name)}`] : []),
-        ...(history?.noSubmission && (journal.submissions?.length ?? 0) > 0 ? ['journal records a form submission'] : []),
+        ...((history?.noSubmission || history?.allowedSubmissions !== undefined) && (journal.submissions?.length ?? 0) > (history.allowedSubmissions ?? 0) ? ['journal records a form submission'] : []),
         ...(history?.untouched ?? []).filter((wanted) => states.some((state) => (state.forms ?? []).some((actual) => norm(actual.label) === norm(wanted.label) && actual.id === wanted.id && actual.name === wanted.name && actual.occurrence === wanted.occurrence && actual.value !== wanted.value))).map((wanted) => `journal shows changed untouched control ${JSON.stringify(wanted.label)}`),
       ];
     })(),

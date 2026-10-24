@@ -5,7 +5,7 @@
     "grading": "deterministic",
     "level": "hard",
     "website": "https://en.wikipedia.org/",
-    "confirmed_task": "Using Wikipedia's on-site search, visit Voyager 1, Voyager 2, Pioneer 10, Pioneer 11, New Horizons, Cassini-Huygens, Galileo (spacecraft) and Juno (spacecraft). Read the pinned revisions listed below using each article's permanent-link control if needed. Report each infobox launch date (UTC date only), COSPAR ID, rocket and launch mass in kg. For Galileo use the main spacecraft COSPAR ID and TOTAL launch mass, not the separate probe. Use the labelled launch mass even where other mass values are discussed. Return one plain line per entity: 'Name | YYYY-MM-DD | COSPAR ID | rocket | mass kg'. Use the short names below, ungrouped numbers and ASCII hyphens, including in Cassini-Huygens and Centaur D-1T. Add 'Lightest: <name>'. Finish on the pinned article of the lightest probe. Revisions: Voyager 1: https://en.wikipedia.org/w/index.php?title=Voyager_1&oldid=1380322223; Voyager 2: https://en.wikipedia.org/w/index.php?title=Voyager_2&oldid=1379941955; Pioneer 10: https://en.wikipedia.org/w/index.php?title=Pioneer_10&oldid=1381047166; Pioneer 11: https://en.wikipedia.org/w/index.php?title=Pioneer_11&oldid=1380900278; New Horizons: https://en.wikipedia.org/w/index.php?title=New_Horizons&oldid=1379942369; Cassini-Huygens: https://en.wikipedia.org/w/index.php?title=Cassini%E2%80%93Huygens&oldid=1379940444; Galileo: https://en.wikipedia.org/w/index.php?title=Galileo_(spacecraft)&oldid=1380930326; Juno: https://en.wikipedia.org/w/index.php?title=Juno_(spacecraft)&oldid=1379942933.",
+    "confirmed_task": "Using Wikipedia's on-site search, visit Voyager 1, Voyager 2, Pioneer 10, Pioneer 11, New Horizons, Cassini-Huygens, Galileo (spacecraft) and Juno (spacecraft). Read the pinned revisions listed below using each article's permanent-link control if needed. Report each infobox launch date (UTC date only), COSPAR ID and launch mass in kg. For Galileo use the main spacecraft COSPAR ID and TOTAL launch mass, not the separate probe. Use the labelled launch mass even where other mass values are discussed. Return one plain line per entity: 'Name | YYYY-MM-DD | COSPAR ID | mass kg'. Use the short names below, ungrouped numbers and ASCII hyphens, including in Cassini-Huygens. Add 'Lightest: <name>'. Finish on the pinned article of the lightest probe. Revisions: Voyager 1: https://en.wikipedia.org/w/index.php?title=Voyager_1&oldid=1380322223; Voyager 2: https://en.wikipedia.org/w/index.php?title=Voyager_2&oldid=1379941955; Pioneer 10: https://en.wikipedia.org/w/index.php?title=Pioneer_10&oldid=1381047166; Pioneer 11: https://en.wikipedia.org/w/index.php?title=Pioneer_11&oldid=1380900278; New Horizons: https://en.wikipedia.org/w/index.php?title=New_Horizons&oldid=1379942369; Cassini-Huygens: https://en.wikipedia.org/w/index.php?title=Cassini%E2%80%93Huygens&oldid=1379940444; Galileo: https://en.wikipedia.org/w/index.php?title=Galileo_(spacecraft)&oldid=1380930326; Juno: https://en.wikipedia.org/w/index.php?title=Juno_(spacecraft)&oldid=1379942933.",
     "source": {
       "canonicalUrl": "https://en.wikipedia.org/w/index.php?title=Pioneer_10&oldid=1381047166",
       "fingerprintBasis": "canonical-url-and-contract",
@@ -37,7 +37,7 @@
     "keyStatus": "verified",
     "keyNotes": {
       "capturedAt": "2026-10-24",
-      "expectedAnswer": "Voyager 1 | 1977-09-05 | 1977-084A | Titan IIIE | 815 kg\nVoyager 2 | 1977-08-20 | 1977-076A | Titan IIIE | 721.9 kg\nPioneer 10 | 1972-03-03 | 1972-012A | Atlas SLV-3C Centaur-D Star-37E | 258 kg\nPioneer 11 | 1973-04-06 | 1973-019A | Atlas SLV-3D Centaur-D1A Star-37E | 258.5 kg\nNew Horizons | 2006-01-19 | 2006-001A | Atlas V (551) AV-010 | 478 kg\nCassini-Huygens | 1997-10-15 | 1997-061A | Titan IV-B / Centaur D-1T (B-33) | 5712 kg\nGalileo | 1989-10-18 | 1989-084B | Space Shuttle Atlantis STS-34/IUS | 2560 kg\nJuno | 2011-08-05 | 2011-040A | Atlas V 551 (AV-029) | 3625 kg\nLightest: Pioneer 10",
+      "expectedAnswer": "Voyager 1 | 1977-09-05 | 1977-084A | 815 kg\nVoyager 2 | 1977-08-20 | 1977-076A | 721.9 kg\nPioneer 10 | 1972-03-03 | 1972-012A | 258 kg\nPioneer 11 | 1973-04-06 | 1973-019A | 258.5 kg\nNew Horizons | 2006-01-19 | 2006-001A | 478 kg\nCassini-Huygens | 1997-10-15 | 1997-061A | 5712 kg\nGalileo | 1989-10-18 | 1989-084B | 2560 kg\nJuno | 2011-08-05 | 2011-040A | 3625 kg\nLightest: Pioneer 10",
       "captureMethod": "Live Chromium infobox rows, permanent links and last-edited footers; terminal pinned URL also opened.",
       "records": [
         {
@@ -137,35 +137,35 @@
       "answerIncludes": [
         {
           "type": "text",
-          "value": "Voyager 1 | 1977-09-05 | 1977-084A | Titan IIIE | 815 kg"
+          "value": "Voyager 1 | 1977-09-05 | 1977-084A | 815 kg"
         },
         {
           "type": "text",
-          "value": "Voyager 2 | 1977-08-20 | 1977-076A | Titan IIIE | 721.9 kg"
+          "value": "Voyager 2 | 1977-08-20 | 1977-076A | 721.9 kg"
         },
         {
           "type": "text",
-          "value": "Pioneer 10 | 1972-03-03 | 1972-012A | Atlas SLV-3C Centaur-D Star-37E | 258 kg"
+          "value": "Pioneer 10 | 1972-03-03 | 1972-012A | 258 kg"
         },
         {
           "type": "text",
-          "value": "Pioneer 11 | 1973-04-06 | 1973-019A | Atlas SLV-3D Centaur-D1A Star-37E | 258.5 kg"
+          "value": "Pioneer 11 | 1973-04-06 | 1973-019A | 258.5 kg"
         },
         {
           "type": "text",
-          "value": "New Horizons | 2006-01-19 | 2006-001A | Atlas V (551) AV-010 | 478 kg"
+          "value": "New Horizons | 2006-01-19 | 2006-001A | 478 kg"
         },
         {
           "type": "text",
-          "value": "Cassini-Huygens | 1997-10-15 | 1997-061A | Titan IV-B / Centaur D-1T (B-33) | 5712 kg"
+          "value": "Cassini-Huygens | 1997-10-15 | 1997-061A | 5712 kg"
         },
         {
           "type": "text",
-          "value": "Galileo | 1989-10-18 | 1989-084B | Space Shuttle Atlantis STS-34/IUS | 2560 kg"
+          "value": "Galileo | 1989-10-18 | 1989-084B | 2560 kg"
         },
         {
           "type": "text",
-          "value": "Juno | 2011-08-05 | 2011-040A | Atlas V 551 (AV-029) | 3625 kg"
+          "value": "Juno | 2011-08-05 | 2011-040A | 3625 kg"
         },
         {
           "type": "text",
@@ -200,8 +200,8 @@
     "nearMiss": {
       "description": "Use Voyager 1 dry mass for launch mass.",
       "replace": {
-        "from": "Titan IIIE | 815 kg",
-        "to": "Titan IIIE | 721.9 kg"
+        "from": "Voyager 1 | 1977-09-05 | 1977-084A | 815 kg",
+        "to": "Voyager 1 | 1977-09-05 | 1977-084A | 721.9 kg"
       },
       "expected": "reject"
     }
@@ -2619,7 +2619,7 @@
         ]
       },
       "history": {
-        "noSubmission": true,
+        "allowedSubmissions": 1,
         "requireJournal": true
       }
     },
@@ -2773,7 +2773,7 @@
         ]
       },
       "history": {
-        "noSubmission": true,
+        "allowedSubmissions": 2,
         "requireJournal": true
       }
     },
