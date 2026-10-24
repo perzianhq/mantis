@@ -450,7 +450,7 @@ export class MantisBrowser {
   async find(query: string, contextChars?: number): Promise<string> {
     return this.guard(async () => {
       const page = await this.activePage();
-      const observed = await this.observe(page);
+      const observed = (await this.unchanged(page)) ?? (await this.observe(page));
       const { snap } = observed;
       this.remember(snap, observed.doc);
       const text = findInSnapshot(snap, query, 20, contextChars);
@@ -1311,7 +1311,7 @@ export class MantisBrowser {
   }
 
   private async view(page: Page, opts: ReadOptions = {}): Promise<string> {
-    const observed = await this.observe(page);
+    const observed = (await this.unchanged(page)) ?? (await this.observe(page));
     let text = this.render(observed.snap, opts, observed.doc);
     const captcha = await detectCaptcha(page);
     if (captcha) text += `\n${captcha}`;

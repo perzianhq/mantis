@@ -142,11 +142,12 @@ export function walker(includeSrOnly = false): WalkResult {
     return id;
   }
 
-  const vw = document.documentElement.clientWidth || window.innerWidth;
+  const documentElement = document.documentElement;
+  const vw = documentElement?.clientWidth || window.innerWidth;
   // In quirks mode (no doctype) clientHeight is the whole document, which would make everything "in view".
-  const vh = document.compatMode === 'BackCompat' ? window.innerHeight : document.documentElement.clientHeight || window.innerHeight;
-  const docW = Math.max(document.documentElement.scrollWidth, document.body ? document.body.scrollWidth : 0);
-  const docH = Math.max(document.documentElement.scrollHeight, document.body ? document.body.scrollHeight : 0);
+  const vh = document.compatMode === 'BackCompat' ? window.innerHeight : documentElement?.clientHeight || window.innerHeight;
+  const docW = Math.max(documentElement?.scrollWidth ?? 0, document.body?.scrollWidth ?? 0, window.innerWidth);
+  const docH = Math.max(documentElement?.scrollHeight ?? 0, document.body?.scrollHeight ?? 0, window.innerHeight);
 
   // Private-use code points are icon-font glyphs (Font Awesome etc.): no meaning as text.
   const collapse = (s: string): string => s.replace(/[-]/g, ' ').replace(/\s+/g, ' ').trim();
@@ -1375,6 +1376,7 @@ export function walker(includeSrOnly = false): WalkResult {
   }
 
   const rootEl = document.body ?? document.documentElement;
+  if (!rootEl) return { url: location.href, title: document.title, nodes: [], truncated, page: { vw, vh, docW, docH } };
   visit(rootEl, -1, 0, rootEl.getBoundingClientRect());
 
   markPrimary();

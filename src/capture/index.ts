@@ -6,6 +6,7 @@ export type { RawNode, NodeKind } from './walker.js';
 export type Snapshot = WalkResult;
 
 const CONTEXT_LOST = /Execution context was destroyed|Target (page, context or browser )?has been closed|navigation/i;
+const NULL_DOCUMENT = /TypeError:\s*Cannot read properties of null/;
 
 // The result goes back as one JSON string: Playwright's structured serializer is several times
 // slower on a 3000-node result than a native JSON.stringify / JSON.parse round trip.
@@ -48,7 +49,7 @@ async function walk(frame: Frame, base: number, includeSrOnly = false): Promise<
       return JSON.parse((await frame.evaluate(script)) as string) as Snapshot;
     } catch (e) {
       // A navigation can land mid-evaluate; wait for the new document and retry once.
-      if (attempt >= 1 || !CONTEXT_LOST.test(String(e))) throw e;
+      if (attempt >= 1 || !(CONTEXT_LOST.test(String(e)) || NULL_DOCUMENT.test(String(e)))) throw e;
       await frame.waitForLoadState('domcontentloaded').catch(() => undefined);
     }
   }

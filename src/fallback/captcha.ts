@@ -43,6 +43,7 @@ function renderedElement(element: Element): boolean {
   const rect = element.getBoundingClientRect();
   if (rect.width < 10 || rect.height < 10) return false;
   const root = document.documentElement;
+  if (!root) return false;
   const left = rect.left + scrollX;
   const top = rect.top + scrollY;
   return left + rect.width > 0 && top + rect.height > 0 && left < root.scrollWidth && top < root.scrollHeight;
@@ -70,6 +71,7 @@ async function detectVerificationGateInFrame(frame: Frame): Promise<boolean> {
       if (style.display === 'none' || style.visibility !== 'visible' || parseFloat(style.opacity) === 0) return false;
       const rect = element.getBoundingClientRect();
       const root = document.documentElement;
+      if (!root) return false;
       const left = rect.left + scrollX;
       const top = rect.top + scrollY;
       return rect.width >= 10 && rect.height >= 10 && left + rect.width > 0 && top + rect.height > 0 &&
@@ -140,6 +142,7 @@ async function detectVerificationGateInFrame(frame: Frame): Promise<boolean> {
       if (!element || ['html', 'body', 'main'].includes(element.localName)) return false;
       const rect = element.getBoundingClientRect();
       const root = document.documentElement;
+      if (!root) return false;
       // A shared wrapper is evidence only when it is actually local to the pair. In particular,
       // a page-wide div must not turn unrelated sibling sections into a concise-page gate.
       return rect.width <= Math.min(640, root.clientWidth * 0.98) &&
