@@ -34,8 +34,12 @@ export interface McpProxy {
    * answer MCP requests. Only the Sarvam runner uses this before discovery.
    */
   ready(timeoutMs?: number, signal?: AbortSignal): Promise<void>;
-  /** Called after an agent tools/call response has been forwarded, with the number of agent tool calls completed. */
-  onToolResult(callback: (count: number) => void): void;
+  /**
+   * Called for an agent tools/call result before that result is released back to
+   * the agent. Harness observers may await here; their own proxy calls are not
+   * agent calls and therefore never affect tool accounting.
+   */
+  onToolResult(callback: (count: number) => void | Promise<void>): void;
   /**
    * Optional tool-call accounting for agent calls only (never `call()`, so harness captures are not counted): a dispatch
    * cap applied synchronously before forwarding, and dispatch/blocked/result hooks. Can also be passed to the factory.
@@ -96,7 +100,7 @@ export function createMcpProxy(child: { stdin: Writable; stdout: Readable }, too
     try { control.hooks?.onToolCall?.(event); } catch { /* a harness hook must not break forwarding */ }
   };
   const pending = new Map<string, { resolve: (value: any) => void; reject: (error: Error) => void; timer: ReturnType<typeof setTimeout> }>();
-  const listeners: ((count: number) => void)[] = [];
+  const listeners: ((count: number) => void | Promise<void>)[] = [];
   let agentInitialized = false;
   let serverReady: Promise<any> | null = null;
   let initializeResult: any;
@@ -145,7 +149,8 @@ export function createMcpProxy(child: { stdin: Writable; stdout: Readable }, too
   // A child that exits while a readiness request is pending closes stdout. Do
   // not leave its 15 s request timer alive until the harness notices the exit.
   child.stdout.once('end', () => closePending('MCP server stdout ended during startup'));
-  child.stdout.on('data', lineSplitter((line) => {
+  child.stdout.on('data', lineSplitter((line) => { void handleChildLine(line); }));
+  const handleChildLine = async (line: string): Promise<void> => {
     const message = parseLine(line);
     if (message && typeof message.id === 'string' && message.id.startsWith(HARNESS_PREFIX) && message.method === undefined) {
       const waiting = pending.get(message.id);
@@ -156,7 +161,6 @@ export function createMcpProxy(child: { stdin: Writable; stdout: Readable }, too
       else waiting.resolve(message.result);
       return;
     }
-    for (const socket of sockets) socket.write(line + '\n');
     if (message && message.method === undefined && message.id !== undefined && ('result' in message || 'error' in message)) {
       const key = JSON.stringify(message.id);
       for (const calls of agentCalls.values()) {
@@ -164,11 +168,15 @@ export function createMcpProxy(child: { stdin: Writable; stdout: Readable }, too
         if (!meta || !calls.delete(key)) continue;
         if (control.hooks) emit({ phase: 'result', source: 'proxy', key: meta.key, name: meta.name, arguments: meta.arguments, at: Date.now(), dispatchedAt: meta.dispatchedAt, ...summarizeResult(message) });
         completed++;
-        for (const listener of listeners) { try { listener(completed); } catch { /* a harness hook must not break forwarding */ } }
+        // Hold this response until the harness has captured its post-action
+        // state. The model cannot dispatch another action meanwhile, avoiding
+        // an asynchronous sampling race. Observer failures remain diagnostic.
+        await Promise.all(listeners.map(async (listener) => { try { await listener(completed); } catch { /* a harness hook must not break forwarding */ } }));
         break;
       }
     }
-  }));
+    for (const socket of sockets) socket.write(line + '\n');
+  };
 
   return {
     attach(socket) {

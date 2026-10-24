@@ -27,8 +27,13 @@ describe('long-live-v1 draft catalog', () => {
     expect(() => validateLongLiveV1Rows(demos)).toThrow(/at most four demo sites/);
   });
 
-  it('keeps the freeze assertion separate while draft keys remain unverified', () => {
-    expect(() => assertLongLiveFreezable(LONG_LIVE_V1_ROWS)).toThrow(/cannot freeze/);
+  it('admits all 16 rows with the planned split and is freezable', () => {
+    expect(LONG_LIVE_V1_ROWS.some((row) => row.excluded)).toBe(false);
+    expect(LONG_LIVE_V1_TASKS).toHaveLength(16);
+    const count = (key: 'taskType' | 'level') => Object.fromEntries([...new Set(LONG_LIVE_V1_ROWS.map((row) => row[key]))].map((value) => [value, LONG_LIVE_V1_ROWS.filter((row) => row[key] === value).length]));
+    expect(count('taskType')).toEqual({ 'multi-entity-extraction': 5, 'search-facets-pagination-compare': 4, 'form-fill-no-submit': 3, 'demo-test-account-flow': 2, 'tab-frame-upload-chain': 2 });
+    expect(count('level')).toEqual({ medium: 10, hard: 6 });
+    expect(() => assertLongLiveFreezable(LONG_LIVE_V1_ROWS)).not.toThrow();
   });
 
   it('registers the suite, output suffix, long limits, manifest path, and draft in the integrity inputs', () => {

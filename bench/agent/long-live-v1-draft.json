@@ -1728,7 +1728,7 @@
     }
   },
   {
-    "task_id": "longlive-form-demoqa-student",
+    "task_id": "longlive-form-selenium-student",
     "family": "interactive-exploration",
     "grading": "deterministic",
     "level": "medium",
@@ -2008,6 +2008,42 @@
             "value": "12 Example Lane"
           }
         ]
+      },
+      "orderedStates": [
+        {
+          "name": "draft",
+          "formValues": [
+            {
+              "label": "email",
+              "value": "ada@example.com",
+              "id": "email"
+            },
+            {
+              "label": "multi",
+              "value": "Ham, Onion gravy",
+              "name": "multi"
+            }
+          ]
+        },
+        {
+          "name": "review",
+          "formValues": [
+            {
+              "label": "email",
+              "value": "ada@example.com",
+              "id": "email"
+            },
+            {
+              "label": "multi",
+              "value": "Eggs, Sausages",
+              "name": "multi"
+            }
+          ]
+        }
+      ],
+      "history": {
+        "noSubmission": true,
+        "requireJournal": true
       }
     },
     "nearMiss": {
@@ -2018,9 +2054,7 @@
         "to": "Ham, Onion gravy"
       },
       "expected": "reject"
-    },
-    "excluded": true,
-    "exclusionReason": "Replacement full key and 21-call route verified; empty upload/defaults/no-submit history remain unenforceable in the unchanged deterministic schema."
+    }
   },
   {
     "task_id": "longlive-form-selenium-review",
@@ -2154,7 +2188,7 @@
             "value": "Web form"
           },
           {
-            "type": "entity",
+            "type": "text",
             "value": "Submit"
           }
         ],
@@ -2208,6 +2242,52 @@
             "value": "7"
           }
         ]
+      },
+      "orderedStates": [
+        {
+          "name": "draft",
+          "formValues": [
+            {
+              "label": "Text input",
+              "value": "LL16 draft"
+            },
+            {
+              "label": "Date picker",
+              "value": "10/23/2026"
+            },
+            {
+              "label": "Example range",
+              "value": "5"
+            }
+          ]
+        },
+        {
+          "name": "review",
+          "formValues": [
+            {
+              "label": "Text input",
+              "value": "LL16 rehearsal"
+            },
+            {
+              "label": "Date picker",
+              "value": "10/24/2026"
+            },
+            {
+              "label": "Example range",
+              "value": "7"
+            }
+          ]
+        }
+      ],
+      "history": {
+        "noSubmission": true,
+        "requireJournal": true,
+        "untouched": [
+          {
+            "label": "Readonly input",
+            "value": "Readonly input"
+          }
+        ]
       }
     },
     "nearMiss": {
@@ -2218,151 +2298,210 @@
         "to": "10/23/2026"
       },
       "expected": "reject"
-    },
-    "excluded": true,
-    "exclusionReason": "Full 23-call route and exact final values verified today; existing schema still cannot enforce empty Password/File and no-submit history. No source/schema change authorized."
+    }
   },
   {
-    "task_id": "longlive-form-internet-profile",
+    "task_id": "longlive-form-selenium-select",
     "family": "interactive-exploration",
     "grading": "deterministic",
     "level": "medium",
-    "website": "https://the-internet.herokuapp.com/large_form",
-    "confirmed_task": "Prepare the Internet demo's Large Form with synthetic data, without submitting. Fill First name Ada, Last name Example, Email ada@example.com, Nickname LL16, Birthday 1990-03-15, Age 36, Country Germany, Languages English and German, and About you 'Synthetic automation profile'. Set years of experience 8 and favorite color #336699. For review, change Country to India and Languages to English and Hindi, retaining the other fields. Leave Password empty, retain the default contact and interest settings, and leave I accept the terms unchecked. Inspect Account, Details, Preferences and Terms, then stop with the form filled; do not click Submit or Reset. Report 'Prepared: Ada Example; India; English and Hindi; unsubmitted'.",
+    "website": "https://www.selenium.dev/selenium/web/selectPage.html",
+    "confirmed_task": "Prepare Selenium's Multiple Selection test page without submitting. Controls have no visible labels; identify the seven requested controls by their exact HTML IDs. For a multi-select, each requested set replaces the entire previous selection. First pass: selectWithoutMultiple = two; selectWithMultipleEqualsMultiple = Roquefort + Cheddar; selectWithEmptyStringMultiple = two; selectWithMultipleWithoutValue = one; selectWithRandomMultipleValue = two; selectWithMultipleLongList = one + two; narrow = LaClare Farms Evalon with Cummin. Inspect all seven first-pass selections. Review pass: selectWithoutMultiple = one; selectWithMultipleEqualsMultiple = Emmental + Parmigiano; selectWithEmptyStringMultiple = one; selectWithMultipleWithoutValue = two; selectWithRandomMultipleValue = one; selectWithMultipleLongList = three + four; narrow = Yarra Valley Vintage Savourine. Inspect the review. Final audit: change selectWithoutMultiple to two, selectWithMultipleEqualsMultiple to Emmental + Cheddar, selectWithEmptyStringMultiple to one + two, selectWithMultipleLongList to two + five + six, and narrow to Avonlea Clothbound Cheddar. Retain the other two reviewed selections. Read back all seven final selections and stop on this page. Do not submit, navigate away, or interact with the transparent/hidden/disabled options or other controls. Return one plain line per requested control, in the order listed: 'id | selected visible option texts', with multiple selected texts joined by comma and space in DOM order. Preserve spelling and case.",
     "source": {
-      "canonicalUrl": "https://the-internet.herokuapp.com/large_form",
+      "canonicalUrl": "https://www.selenium.dev/selenium/web/selectPage.html",
       "fingerprintBasis": "canonical-url-and-contract",
-      "preflight": "changed"
+      "preflight": "reachable"
     },
     "taskType": "form-fill-no-submit",
     "referenceActions": [
-      22,
-      32
+      24,
+      24
     ],
     "mantisActions": [
       16,
       24
     ],
     "referenceWalkthrough": {
-      "status": "estimated-not-measured",
-      "method": "2026-10-24 full route unavailable: repeated live The Internet navigation timeouts with no readable body; no measured reference count. Failed navigation probes are diagnostics, not a 20-40-call route. Existing range remains an estimate.",
+      "status": "measured-live-playwright-mcp",
+      "method": "2026-10-24 actual Playwright MCP calls against live Chromium: 1 navigation, 1 read-only ID/options inspection, 19 individual browser_select_option calls and 3 accessibility snapshots = 24. Tool calls and actual returned trees/results retained in .codex-jobs/ll-internet-evidence/verification.json. Harness final-state captures, diagnostic failures and near-miss probes are not charged. No batched-control select calls.",
       "steps": [
-        "Fill Account fields",
-        "Set date/age/country/languages and biography",
-        "Adjust range/color",
-        "Apply country/language review corrections; inspect four form sections without submitting"
+        "1. Navigate https://www.selenium.dev/selenium/web/selectPage.html [browser_navigate]",
+        "2. Read the visible select IDs, options and selected values [browser_evaluate]",
+        "3. First pass: #selectWithoutMultiple = two [browser_select_option]",
+        "4. First pass: #selectWithMultipleEqualsMultiple = Roquefort + Cheddar [browser_select_option]",
+        "5. First pass: #selectWithEmptyStringMultiple = two [browser_select_option]",
+        "6. First pass: #selectWithMultipleWithoutValue = one [browser_select_option]",
+        "7. First pass: #selectWithRandomMultipleValue = two [browser_select_option]",
+        "8. First pass: #selectWithMultipleLongList = one + two [browser_select_option]",
+        "9. First pass: #narrow = evalon [browser_select_option]",
+        "10. Read the complete first pass [browser_snapshot]",
+        "11. Review: #selectWithoutMultiple = one [browser_select_option]",
+        "12. Review: #selectWithMultipleEqualsMultiple = Emmental + Parmigiano [browser_select_option]",
+        "13. Review: #selectWithEmptyStringMultiple = one [browser_select_option]",
+        "14. Review: #selectWithMultipleWithoutValue = two [browser_select_option]",
+        "15. Review: #selectWithRandomMultipleValue = one [browser_select_option]",
+        "16. Review: #selectWithMultipleLongList = three + four [browser_select_option]",
+        "17. Review: #narrow = savourine [browser_select_option]",
+        "18. Read the complete review [browser_snapshot]",
+        "19. Final audit: #selectWithoutMultiple = two [browser_select_option]",
+        "20. Final audit: #selectWithMultipleEqualsMultiple = Emmental + Cheddar [browser_select_option]",
+        "21. Final audit: #selectWithEmptyStringMultiple = one + two [browser_select_option]",
+        "22. Final audit: #selectWithMultipleLongList = two + five + six [browser_select_option]",
+        "23. Final audit: #narrow = cheddar [browser_select_option]",
+        "24. Read final selections [browser_snapshot]"
       ]
     },
     "limits": {
       "maxToolCalls": 100,
       "timeoutSeconds": 1200
     },
-    "keyStatus": "to-verify",
+    "keyStatus": "verified",
     "keyNotes": {
       "capturedAt": "2026-10-24",
-      "captureMethod": "2026-10-24 current follow-up: live Chromium navigation to The Internet root, /large_form and /windows repeatedly timed out (10-25 seconds per attempt) without a readable body, including a fresh page retry. This session successfully loaded Gutenberg, Met, Selenium and Sauce Demo, so this is a per-origin reachability failure, not the earlier global network policy denial. No form/window/frame/file route could be walked; prior partial key is retained and not reverified.",
-      "revisionId": null,
-      "expectedSelections": {
-        "country": "India",
-        "languages": [
-          "English",
-          "Hindi"
-        ]
+      "capturedAtUtc": "2026-10-24T06:04:17.893Z",
+      "expectedAnswer": "selectWithoutMultiple | two\nselectWithMultipleEqualsMultiple | Emmental, Cheddar\nselectWithEmptyStringMultiple | one, two\nselectWithMultipleWithoutValue | two\nselectWithRandomMultipleValue | one\nselectWithMultipleLongList | two, five, six\nnarrow | Avonlea Clothbound Cheddar",
+      "expectedFinalValues": [
+        {
+          "label": "selectWithoutMultiple",
+          "value": "two"
+        },
+        {
+          "label": "selectWithMultipleEqualsMultiple",
+          "value": "Emmental, Cheddar"
+        },
+        {
+          "label": "selectWithEmptyStringMultiple",
+          "value": "one, two"
+        },
+        {
+          "label": "selectWithMultipleWithoutValue",
+          "value": "two"
+        },
+        {
+          "label": "selectWithRandomMultipleValue",
+          "value": "one"
+        },
+        {
+          "label": "selectWithMultipleLongList",
+          "value": "two, five, six"
+        },
+        {
+          "label": "narrow",
+          "value": "Avonlea Clothbound Cheddar"
+        }
+      ],
+      "captureMethod": "Live actual Playwright MCP walkthrough and harness PAGE_STATE_FUNCTION terminal capture. Seven uniquely named fallback labels verified from the live page; all sets below are exact, in DOM option order. Actual stale-selection capture rejected by the unchanged final-value contract.",
+      "replacementFor": "Unreachable The Internet /large_form; original task_id and taskType retained.",
+      "sources": [
+        "https://www.selenium.dev/selenium/web/selectPage.html"
+      ],
+      "definitions": "This is the native selection-controls variant of form-fill-no-submit. The page has zero HTML form elements and no submit control. Only the seven positive final selections and answer tuples are scored; intermediate review operations are the measured reference route, not separately asserted history. Untouched/default/empty-field predicates are deliberately outside this task contract.",
+      "measuredTreeCalls": 24,
+      "mantisActionsStatus": "Unmeasured planning estimate, not a performance claim.",
+      "verification": {
+        "passing": {
+          "pass": true,
+          "failed": []
+        },
+        "nearMiss": {
+          "pass": false,
+          "failed": [
+            "final form lacks \"selectWithMultipleLongList\"=\"two, five, six\""
+          ]
+        },
+        "nonGetRequests": 0
       },
-      "contractLimitation": "Some labels intentionally absent in HTML; fallback labels and dynamic range label need real PAGE_STATE_FUNCTION verification. Repeated contact/interest labels cannot distinguish those defaults; a same-URL POST also needs a no-submit guard.",
-      "missing": [
-        "Capture the filled form with PAGE_STATE_FUNCTION to confirm fallback labels and multi-select order.",
-        "Validate empty password, unchanged default preferences and no-submit state independently of a same-URL POST.",
-        "Measure tree route."
-      ]
+      "evidence": ".codex-jobs/ll-internet-evidence/verification.json"
     },
-    "botRisk": "low-medium: live HTML 200; full Chromium rendering intermittently timed out on blocking scripts; no gate seen.",
+    "botRisk": "low: official static Selenium test pages; loaded successfully on 2026-10-24, no bot gate seen.",
     "deterministic": {
       "kind": "form",
       "answerIncludes": [
         {
           "type": "text",
-          "value": "Prepared: Ada Example; India; English and Hindi; unsubmitted"
+          "value": "selectWithoutMultiple | two"
+        },
+        {
+          "type": "text",
+          "value": "selectWithMultipleEqualsMultiple | Emmental, Cheddar"
+        },
+        {
+          "type": "text",
+          "value": "selectWithEmptyStringMultiple | one, two"
+        },
+        {
+          "type": "text",
+          "value": "selectWithMultipleWithoutValue | two"
+        },
+        {
+          "type": "text",
+          "value": "selectWithRandomMultipleValue | one"
+        },
+        {
+          "type": "text",
+          "value": "selectWithMultipleLongList | two, five, six"
+        },
+        {
+          "type": "text",
+          "value": "narrow | Avonlea Clothbound Cheddar"
         }
       ],
       "final": {
         "url": {
-          "origin": "https://the-internet.herokuapp.com",
-          "path": "/large_form"
+          "origin": "https://www.selenium.dev",
+          "path": "/selenium/web/selectPage.html"
         },
         "textIncludes": [
           {
             "type": "entity",
-            "value": "Large Form"
+            "value": "Emmental"
           },
           {
             "type": "entity",
-            "value": "Terms"
+            "value": "Avonlea Clothbound Cheddar"
           }
         ],
         "formValues": [
           {
-            "label": "First name",
-            "value": "Ada"
+            "label": "selectWithoutMultiple",
+            "value": "two"
           },
           {
-            "label": "Last name",
-            "value": "Example"
+            "label": "selectWithMultipleEqualsMultiple",
+            "value": "Emmental, Cheddar"
           },
           {
-            "label": "email",
-            "value": "ada@example.com"
+            "label": "selectWithEmptyStringMultiple",
+            "value": "one, two"
           },
           {
-            "label": "Nickname (optional)",
-            "value": "LL16"
+            "label": "selectWithMultipleWithoutValue",
+            "value": "two"
           },
           {
-            "label": "Birthday",
-            "value": "1990-03-15"
+            "label": "selectWithRandomMultipleValue",
+            "value": "one"
           },
           {
-            "label": "age",
-            "value": "36"
+            "label": "selectWithMultipleLongList",
+            "value": "two, five, six"
           },
           {
-            "label": "Country",
-            "value": "India"
-          },
-          {
-            "label": "languages[]",
-            "value": "English, Hindi"
-          },
-          {
-            "label": "About you",
-            "value": "Synthetic automation profile"
-          },
-          {
-            "label": "Years of experience: 8",
-            "value": "8"
-          },
-          {
-            "label": "color",
-            "value": "#336699"
-          },
-          {
-            "label": "I accept the terms",
-            "value": "unchecked"
+            "label": "narrow",
+            "value": "Avonlea Clothbound Cheddar"
           }
         ]
       }
     },
     "nearMiss": {
-      "description": "Correct country but retain English and German instead of English and Hindi.",
+      "description": "Complete every other final audit change but retain selectWithMultipleLongList = three + four from the review pass. Keep the correct reported answer so rejection must come from live terminal form evidence.",
       "formValueMutation": {
-        "label": "languages[]",
-        "from": "English, Hindi",
-        "to": "English, German"
+        "label": "selectWithMultipleLongList",
+        "from": "two, five, six",
+        "to": "three, four"
       },
       "expected": "reject"
-    },
-    "excluded": true,
-    "exclusionReason": "2026-10-24 live per-origin navigation timeouts prevented full route, complete final key and near-miss closure. Large Form exact labels/defaults and no-submit evidence remain unverified."
+    }
   },
   {
     "task_id": "longlive-sauce-cart-revise",
@@ -2370,6 +2509,10 @@
     "grading": "deterministic",
     "level": "medium",
     "website": "https://www.saucedemo.com/",
+    "sandboxLogin": {
+      "username": "standard_user",
+      "password": "secret_sauce"
+    },
     "confirmed_task": "This is Sauce Demo, an explicit test-account sandbox. Log in with its displayed standard_user / secret_sauce test credentials. Set inventory sorting Name (A to Z), inspect the Backpack and Bolt T-Shirt detail pages, returning to Products after each. Add Sauce Labs Backpack, Sauce Labs Bike Light and Sauce Labs Bolt T-Shirt. Open the cart, remove Bike Light, return to Products to check the Backpack still offers Remove, then return to the cart. Stop with exactly one Backpack and one Bolt T-Shirt, cart badge 2, and Checkout visible. Do not click Checkout or buy anything. Report 'Cart: Sauce Labs Backpack; Sauce Labs Bolt T-Shirt; count 2'.",
     "source": {
       "canonicalUrl": "https://www.saucedemo.com/cart.html",
@@ -2474,6 +2617,10 @@
             "value": "Swag Labs 2 Your Cart"
           }
         ]
+      },
+      "history": {
+        "noSubmission": true,
+        "requireJournal": true
       }
     },
     "nearMiss": {
@@ -2483,9 +2630,7 @@
         "to": "Swag Labs 3 Your Cart"
       },
       "expected": "reject"
-    },
-    "excluded": true,
-    "exclusionReason": "Full key and 23-call route verified today, including extra-item near miss; scheduling still requires sandbox prompt override and retained intermediate route evidence, outside this two-file scope."
+    }
   },
   {
     "task_id": "longlive-sauce-checkout-review",
@@ -2493,6 +2638,10 @@
     "grading": "deterministic",
     "level": "hard",
     "website": "https://www.saucedemo.com/",
+    "sandboxLogin": {
+      "username": "standard_user",
+      "password": "secret_sauce"
+    },
     "confirmed_task": "On Sauce Demo only, log in with displayed test credentials standard_user / secret_sauce. Sort Name (Z to A). Inspect Sauce Labs Onesie and Sauce Labs Fleece Jacket detail pages, then add both plus Sauce Labs Bike Light. Open the cart and remove Bike Light. Proceed to the demo checkout information form using synthetic First Name Ada, Last Name Example, Zip/Postal Code 00000. Continue to Overview, inspect the two line items, use Cancel to return to inventory, reopen the cart and repeat the synthetic checkout information. Finish on Checkout: Overview with exactly one Onesie and one Fleece Jacket and cart badge 2. STOP before Finish; do not enter payment details, complete an order or trigger a payment. Report 'Review: Sauce Labs Onesie; Sauce Labs Fleece Jacket; count 2; stopped before Finish'. Ignore all prices and totals.",
     "source": {
       "canonicalUrl": "https://www.saucedemo.com/checkout-step-two.html",
@@ -2622,6 +2771,10 @@
             "value": "Swag Labs 2 Checkout: Overview"
           }
         ]
+      },
+      "history": {
+        "noSubmission": true,
+        "requireJournal": true
       }
     },
     "nearMiss": {
@@ -2631,9 +2784,7 @@
         "urlTo": "https://www.saucedemo.com/checkout-step-one.html"
       },
       "expected": "reject"
-    },
-    "excluded": true,
-    "exclusionReason": "39-call full key/near-miss route verified today. Generic prompt sandbox-login integration and retained intermediate evidence for full route grading remain outside the two authorized files."
+    }
   },
   {
     "task_id": "longlive-internet-window-frames-upload",
@@ -2641,74 +2792,247 @@
     "grading": "judge",
     "level": "medium",
     "website": "https://the-internet.herokuapp.com/windows",
-    "confirmed_task": "On the Internet automation demo, open Click Here from Multiple Windows using the site's control. Switch to the new tab, read its heading and keep it open. Return to the original tab, open Nested Frames through the examples index, and read the visible text in all three top child frames and the bottom frame, recording their frame positions. Return to the top document, open File Upload, and choose ONLY the harness-provided existing public README.md file. Do not create or download a file, use any private file or upload anything else. Leave the file selected WITHOUT clicking Upload. Switch once more to the retained new tab to recheck its heading, then return to the upload tab. Finish with File Uploader and the selected README.md input visible. Report the new-tab heading, each frame position/text, filename, and that Upload was not clicked.",
+    "uploadFixture": "README.md",
+    "confirmed_task": "Perform one browser handoff check on The Internet demo. On Multiple Windows, click Click Here, switch to the site-created new tab, read its heading, and keep it open. Return to the original tab. Navigate to the examples index at https://the-internet.herokuapp.com/ and follow Nested Frames. Read each top child frame separately (left, middle and right), then the bottom frame; associate each text with its position and distinguish the top parent frameset from its children. In the same original tab return to the examples index and follow File Upload. Choose only README.md from the exact harness-provided path supplied with this task. Read the filename shown by the file control; do not expect a separate filename echo. Do not create/download a file, use repository README.md or any private file, click Upload, submit, or transmit the file. Revisit the retained new tab and recheck its heading, then return to the original upload tab with README.md still selected. Finish there. Return one combined report with plain lines New tab: <heading>, Top left: <text>, Top middle: <text>, Top right: <text>, Bottom: <text>, Selected file: <basename>, and Upload: not submitted. Distinguish earlier tab/frame observations from the currently visible File Uploader and selected filename.",
     "source": {
       "canonicalUrl": "https://the-internet.herokuapp.com/upload",
       "fingerprintBasis": "canonical-url-and-contract",
-      "preflight": "changed"
+      "preflight": "reachable"
     },
     "taskType": "tab-frame-upload-chain",
     "referenceActions": [
-      22,
-      32
-    ],
-    "mantisActions": [
-      16,
+      24,
       24
     ],
     "referenceWalkthrough": {
-      "status": "estimated-not-measured",
-      "method": "2026-10-24 full route unavailable: repeated live The Internet navigation timeouts with no readable body; no measured reference count. Failed navigation probes are diagnostics, not a 20-40-call route. Existing range remains an estimate.",
+      "status": "measured-live-playwright",
+      "method": "Full successful live headless Chromium tree-style route on 2026-10-24T06:37:27.437Z. 24 individually instrumented operation equivalents, not an MCP-agent evaluation: navigate/click, explicit accessibility-tree read, tab selection and file-picker action. File-chooser click and setFiles are separate calls. Each frame-locator read is one call; no fictitious frame-switch calls. Browser setup, warm-up GET, selector waits, retry overhead, screenshots, PAGE_STATE_FUNCTION captures, frame/opener inspection and other harness diagnostics are excluded. Snapshot/read operations are explicit as in the existing verified rows; MCP action responses may already include snapshots, so this is not a proven minimum MCP route.",
       "steps": [
-        "Open site's new-tab link; switch/read/retain tab",
-        "Return and traverse top nested child frames plus bottom frame",
-        "Return to top document and choose existing README.md on File Upload",
-        "Recheck retained tab and finish original upload tab without Upload"
+        "01 navigate /windows",
+        "02 read Multiple Windows tree",
+        "03 click Click Here; retain site-created tab",
+        "04 select created tab",
+        "05 read created-tab heading",
+        "06 select original tab",
+        "07 navigate examples index",
+        "08 read examples index for Nested Frames",
+        "09 click Nested Frames",
+        "10 read frame-left tree",
+        "11 read frame-middle tree",
+        "12 read frame-right tree",
+        "13 read frame-bottom tree",
+        "14 navigate examples index",
+        "15 read examples index for File Upload",
+        "16 click File Upload",
+        "17 read File Uploader and empty chooser",
+        "18 click Choose File control",
+        "19 select harness-equivalent README.md only",
+        "20 read selected filename in file control",
+        "21 select retained new tab",
+        "22 re-read retained new-tab heading",
+        "23 select original upload tab",
+        "24 read final File Uploader and chosen filename"
       ]
     },
     "limits": {
       "maxToolCalls": 100,
       "timeoutSeconds": 1200
     },
-    "keyStatus": "to-verify",
+    "keyStatus": "verified",
     "keyNotes": {
-      "capturedAt": "2026-10-24",
-      "captureMethod": "2026-10-24 current follow-up: live Chromium navigation to The Internet root, /large_form and /windows repeatedly timed out (10-25 seconds per attempt) without a readable body, including a fresh page retry. This session successfully loaded Gutenberg, Met, Selenium and Sauce Demo, so this is a per-origin reachability failure, not the earlier global network policy denial. No form/window/frame/file route could be walked; prior partial key is retained and not reverified.",
-      "partialKeyVerifiedAt": "2026-10-24",
-      "partialExpected": {
-        "newTabUrl": "https://the-internet.herokuapp.com/windows/new",
-        "newTabHeading": "New Window",
-        "filename": "README.md",
-        "finalUrl": "https://the-internet.herokuapp.com/upload"
-      },
+      "capturedAt": "2026-10-24T06:37:27.437Z",
+      "captureMethod": "Full live route through the repository Playwright package with headless Chromium 156.0.8078.4. Warm-up GET to /; each navigation uses waitUntil commit followed by selector readiness, timeout 90000 ms, at most three retries after 10/30/60 s. No content interception, bot-check bypass or form submission. Live snapshots, screenshots, tab opener/frame identities, requests and terminal harness capture saved under .codex-jobs/ll-chain.*.",
       "sources": [
         "https://the-internet.herokuapp.com/windows",
         "https://the-internet.herokuapp.com/windows/new",
         "https://the-internet.herokuapp.com/nested_frames",
         "https://the-internet.herokuapp.com/upload"
       ],
-      "missing": [
-        "Read and freeze all four actual frame texts/positions; do not assume familiar demo strings.",
-        "Provision the same existing public README.md and upload/file-selection capability for all three approaches.",
-        "Prove selected file without POST and preserve tab/frame evidence; current final-only capture cannot prove chain history.",
-        "Count a 20-40-call tree walkthrough."
-      ]
+      "provisional": false,
+      "referenceCountMeasured": true,
+      "expectedAnswer": "New tab: New Window\nTop left: LEFT\nTop middle: MIDDLE\nTop right: RIGHT\nBottom: BOTTOM\nSelected file: README.md\nUpload: not submitted\nFINAL_URL: https://the-internet.herokuapp.com/upload",
+      "deterministicKey": {
+        "newTabUrl": "https://the-internet.herokuapp.com/windows/new",
+        "newTabHeading": "New Window",
+        "newTabOpenerIsOriginal": true,
+        "frames": [
+          {
+            "name": "frame-left",
+            "path": [
+              "frame-top",
+              "frame-left"
+            ],
+            "url": "https://the-internet.herokuapp.com/frame_left",
+            "text": "LEFT"
+          },
+          {
+            "name": "frame-middle",
+            "path": [
+              "frame-top",
+              "frame-middle"
+            ],
+            "url": "https://the-internet.herokuapp.com/frame_middle",
+            "text": "MIDDLE"
+          },
+          {
+            "name": "frame-right",
+            "path": [
+              "frame-top",
+              "frame-right"
+            ],
+            "url": "https://the-internet.herokuapp.com/frame_right",
+            "text": "RIGHT"
+          },
+          {
+            "name": "frame-bottom",
+            "path": [
+              "frame-bottom"
+            ],
+            "url": "https://the-internet.herokuapp.com/frame_bottom",
+            "text": "BOTTOM"
+          }
+        ],
+        "finalOriginalTabUrl": "https://the-internet.herokuapp.com/upload",
+        "finalHeading": "File Uploader",
+        "fileControl": {
+          "label": "file",
+          "value": "C:\\fakepath\\README.md",
+          "id": "file-upload",
+          "name": "file"
+        },
+        "rawFileValueDiagnostic": "C:\\fakepath\\README.md",
+        "retainedTabs": [
+          {
+            "url": "https://the-internet.herokuapp.com/upload",
+            "original": true,
+            "created": false
+          },
+          {
+            "url": "https://the-internet.herokuapp.com/windows/new",
+            "original": false,
+            "created": true
+          }
+        ],
+        "submissions": 0,
+        "nonGetRequests": 0
+      },
+      "terminalContract": {
+        "kind": "state",
+        "answerIncludes": [
+          {
+            "type": "text",
+            "value": "New tab: New Window"
+          },
+          {
+            "type": "text",
+            "value": "Top left: LEFT"
+          },
+          {
+            "type": "text",
+            "value": "Top middle: MIDDLE"
+          },
+          {
+            "type": "text",
+            "value": "Top right: RIGHT"
+          },
+          {
+            "type": "text",
+            "value": "Bottom: BOTTOM"
+          },
+          {
+            "type": "text",
+            "value": "Selected file: README.md"
+          },
+          {
+            "type": "text",
+            "value": "Upload: not submitted"
+          }
+        ],
+        "final": {
+          "url": {
+            "origin": "https://the-internet.herokuapp.com",
+            "path": "/upload"
+          },
+          "textIncludes": [
+            {
+              "type": "text",
+              "value": "File Uploader"
+            }
+          ],
+          "formValues": [
+            {
+              "label": "file",
+              "value": "C:\\fakepath\\README.md",
+              "id": "file-upload",
+              "name": "file"
+            }
+          ]
+        },
+        "history": {
+          "noSubmission": true,
+          "requireJournal": true
+        }
+      },
+      "terminalContractValidation": {
+        "baseline": {
+          "pass": true,
+          "failed": []
+        },
+        "emptyFileNearMiss": {
+          "pass": false,
+          "failed": [
+            "final form lacks \"file\"=\"C:\\\\fakepath\\\\README.md\""
+          ]
+        },
+        "wrongMiddleAnswer": "reject",
+        "missingJournal": "reject",
+        "scope": "These checks cover answer facts, terminal URL/text/file control and no-submission history only. They cannot prove tab creation, opener identity, all four frame reads, their provenance or the retained-tab recheck."
+      },
+      "uploadProvisioning": {
+        "rowField": "uploadFixture: README.md",
+        "implementation": "bench/agent/run.ts creates path.join(dir, path.basename(task.uploadFixture)) before each approach and appends that exact absolute path to the prompt.",
+        "content": "Harness-provided public benchmark fixture.\n",
+        "equivalence": "All approaches receive identical basename and bytes in their own per-run directory. Agents use only the supplied path, never repository README.md or a user file.",
+        "verificationFixture": {
+          "path": "D:\\Aadit\\claudez\\mantis\\.codex-jobs\\ll-chain-fixture\\README.md",
+          "basename": "README.md",
+          "bytes": 43
+        },
+        "filenameRepresentation": "Live PAGE_STATE_FUNCTION currently preserves the raw file value C:\\fakepath\\README.md; the actual selected File.name is README.md. The terminalContract matches the observed raw control value. If the harness later normalizes it, update this terminal expectation to basename README.md. There is no separate local filename echo to require."
+      },
+      "requiredEvidence": [
+        "Site-created tab with original-tab opener and observed heading, retained through recheck",
+        "Original-tab frame paths and associated visible text from all four leaf frames",
+        "Return to original /upload with native file control basename README.md",
+        "Retained-tab heading recheck followed by original upload-tab final capture",
+        "Complete no-submission journal and absence of file-bearing upload request"
+      ],
+      "harnessGap": "Current deterministic schema/journal lacks tab/opener/frame text-provenance predicates. Keep judge grading for the complete chain; do not promote terminalContract to a full deterministic chain grader. Retain all required tab/frame stages across evidence packing. Missing route evidence must never pass. Equivalent approach tab/frame/chooser capabilities need an integration pilot; this job performs no approach comparison or paid judging."
     },
-    "botRisk": "low-medium: public demo pages reachable via web/HTTP; full local browser frame chain timed out; no access gate observed.",
-    "judgeRubric": "Judge only from retained browser screenshots/state captures, not from the final answer alone. Success requires evidence that the site's Click Here created a separate tab; the new tab's heading agrees with the reported heading; the agent returned to the original tab and traversed the three children of the top nested frame plus the bottom frame with correctly associated position/text; and the final active original tab is https://the-internet.herokuapp.com/upload with README.md selected in the file control and Upload still unclicked. The new tab must remain available for the requested recheck. Missing a child frame, confusing parent with child, selecting a different file, navigating the only tab directly to the new-window URL, or ending on an upload-success page fails. If retained evidence omits a required tab/frame/file state, return insufficient-evidence/unsure, not success. No private data, upload POST or account action is authorized. Before scoring, freeze the frame-text answer key from a live walkthrough.",
+    "botRisk": "low observed: public demo rendered through all three routes without a challenge in this headless session. Transient origin/network stalls are handled only with ordinary retries; do not bypass an access gate. No /large_form dependency.",
+    "judgeRubric": "Use retained harness browser evidence with the frozen deterministic key in keyNotes. Require Click Here on /windows to create a distinct tab whose opener is the original; its heading must be New Window. Require return to the original tab and traversal of /nested_frames: frame-top/frame-left=LEFT, frame-top/frame-middle=MIDDLE, frame-top/frame-right=RIGHT, and frame-bottom=BOTTOM. The parent frame-top is a frameset, not a fifth answer. Require the original tab to follow the examples index to /upload, choose exactly the harness-provided README.md and show its basename in native control #file-upload (name file). Require the created tab to remain open for the heading recheck, then final active ORIGINAL tab /upload with File Uploader and README.md still selected. The combined final report must match each position/text and filename and say Upload: not submitted. No Upload click, form submission or file-bearing request is allowed. A fabricated answer, direct navigation replacing tab creation, omitted/misassociated leaf frame, lost tab, wrong or empty selected filename, or upload-success page fails. Missing required route/tab/frame/file history is insufficient evidence/unsure, never success; terminal filename and answer alone do not establish the chain. Do not require a separate upload echo or an upload-success response.",
     "nearMiss": {
-      "description": "Read only the top-level frames and omit the middle nested child, but correctly select README.md.",
-      "expected": "reject"
-    },
-    "excluded": true,
-    "exclusionReason": "2026-10-24 live per-origin navigation timeouts prevented full route, complete final key and near-miss closure. Nested frame texts/positions, selected file, retained tab/frame/file evidence and file provisioning remain unverified."
+      "description": "All tab/frame facts and the final answer are correct, but the final #file-upload control is empty (README.md was cleared or never selected). Reject even if the reply claims Selected file: README.md.",
+      "finalStateMutation": {
+        "control": {
+          "id": "file-upload",
+          "name": "file"
+        },
+        "from": "README.md",
+        "to": ""
+      },
+      "expected": "reject",
+      "verificationStatus": "executed-saved-evidence-mutation",
+      "verification": "Applied one empty-filename mutation to the actual live terminal capture, preserved the correct answer and journal, and observed evaluateDeterministicGrader reject. No alternative file was chosen and no upload occurred. Full chain judge was not run."
+    }
   },
   {
-    "task_id": "longlive-demoqa-window-frames-upload",
+    "task_id": "longlive-selenium-window-frames-upload",
     "family": "interactive-exploration",
     "grading": "judge",
     "level": "medium",
     "website": "https://www.selenium.dev/selenium/web/xhtmlTest.html",
+    "uploadFixture": "README.md",
     "confirmed_task": "On Selenium's XHTML test page, click 'Open new window'. Switch to the named result tab, read its success paragraph and BOTH h1 headings, and keep it open. Return to the original tab and click 'Create a new anonymous window'; switch to this second new tab, read its top heading, then read iframe1-name's introductory text, selectomatic selected option and multi selected options. Keep this tab open too. Return to the original XHTML tab and click 'Open page with iframes in same window'. Read its top heading and the same three iframe facts there; compare the two independent iframe copies without changing any controls. Then navigate the ORIGINAL tab to https://www.selenium.dev/selenium/web/web-form.html and choose ONLY the harness-provided existing public README.md through File input. Do not create/download a file or use a private file. Leave it selected WITHOUT submitting. Revisit the retained result tab and anonymous iframe tab to recheck their top headings, then finish in the original Web form with README.md selected. Report both result-tab headings and success text, both iframe-page headings and associated frame facts, the filename and that no Submit was clicked.",
     "source": {
       "canonicalUrl": "https://www.selenium.dev/selenium/web/web-form.html",
@@ -2801,8 +3125,6 @@
     "nearMiss": {
       "description": "Read the anonymous tab outer heading This is the heading as though it were iframe1-name content, omitting the frame introduction/selected One/Eggs+Sausages evidence; correct final README.md alone does not rescue it.",
       "expected": "reject"
-    },
-    "excluded": true,
-    "exclusionReason": "Full live key, 24-call route and selected public README.md verified. Still excluded until identical file/capability provisioning and retained per-stage tab/frame/file evidence are available for every approach."
+    }
   }
 ]

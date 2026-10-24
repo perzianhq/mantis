@@ -1,4 +1,6 @@
 import path from 'node:path';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import os from 'node:os';
 import { pathToFileURL } from 'node:url';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
@@ -17,7 +19,7 @@ async function withClient(run: (client: Client, call: (name: string, args: Recor
 it('exposes one Anthropic-style computer tool and targets nested scrollers by coordinate', async () => {
   await withClient(async (client, call) => {
     const { tools } = await client.listTools();
-    expect(tools.map((tool) => tool.name).sort()).toEqual(['back', 'bench_capture', 'computer', 'navigate']);
+    expect(tools.map((tool) => tool.name).sort()).toEqual(['back', 'bench_capture', 'computer', 'navigate', 'upload']);
     expect(tools.find((tool) => tool.name === 'computer')?.description).toContain('one tick is 100 CSS pixels');
     const html = `<!doctype html><style>html,body{margin:0}#outer{position:absolute;left:20px;top:20px;width:280px;height:180px;overflow:auto}#target,#decoy{width:220px;height:100px;overflow:auto;white-space:nowrap}#target{margin:20px}#decoy{position:absolute;left:360px;top:20px}#target>div,#decoy>div{width:700px;height:400px}</style><div id="outer"><div id="target"><div>nested target</div></div><div style="height:300px"></div></div><div id="decoy"><div>wrong target</div></div>`;
     const url = `data:text/html,${encodeURIComponent(html)}`;
@@ -34,6 +36,21 @@ it('exposes one Anthropic-style computer tool and targets nested scrollers by co
     expect(wrongTarget.target[0]).toBe(0);
     expect(wrongTarget.decoy[0]).toBeGreaterThan(0);
   });
+}, 30_000);
+
+it('selects a harness-provided file without submitting the enclosing form', async () => {
+  const dir = mkdtempSync(path.join(os.tmpdir(), 'mantis-screenshot-upload-'));
+  const fixture = path.join(dir, 'README.md');
+  writeFileSync(fixture, 'public fixture\n');
+  try {
+    await withClient(async (_client, call) => {
+      const html = '<form onsubmit="window.submitted=true; return false"><input id="file" type="file" style="position:absolute;left:20px;top:20px"><button>Submit</button></form>';
+      await call('navigate', { url: `data:text/html,${encodeURIComponent(html)}` });
+      await call('upload', { coordinate: [30, 30], path: fixture });
+      const state = JSON.parse(textOf(await call('bench_capture', { evaluate: '() => ({name:file.files[0]?.name || "", submitted:!!window.submitted})' }))) as { name: string; submitted: boolean };
+      expect(state).toEqual({ name: 'README.md', submitted: false });
+    });
+  } finally { rmSync(dir, { recursive: true, force: true }); }
 }, 30_000);
 
 it('uses xdotool ctrl+a to replace focused text; plain type remains an append near miss', async () => {

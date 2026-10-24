@@ -26,6 +26,8 @@ export interface AgentTask {
   check?: FixtureCheck;
   /** Real-site task with no regex answer: `expect` only checks the agent finished; bench/agent/judge.ts grades it afterwards. */
   judged?: boolean;
+  /** Harness-created safe input file that may be selected but never submitted. */
+  uploadFixture?: string;
 }
 
 type EventKind = FixtureObservation['kind'];

@@ -39,7 +39,7 @@ import { LONG_LIVE_V1_MANIFEST_FILE, LONG_LIVE_V1_SUITE, LONG_LIVE_V1_TASKS } fr
 import { aggregateUsage, assertCompatibleResume, classifyAttempt, extractGradedAnswer, hashSources, isHarnessFailure, isSarvamStepLimit, makeMetadata, nextHarnessFailureStreak, parseClaudeStream, validateFlag, validatePositiveInt, wrongAnswerDetail } from './integrity.js';
 import type { AttemptStatus, RunMetadata, StreamUsage } from './integrity.js';
 import { codexArgs, rawMcpToolName } from './codex-config.js';
-import { PAGE_STATE_FUNCTION, packEvidence, parsePageState, toCapturedFrame } from './evidence.js';
+import { PAGE_STATE_FUNCTION, journalFromPageStates, packEvidence, parsePageState, toCapturedFrame } from './evidence.js';
 import type { CapturedFrame } from './evidence.js';
 import { createMcpProxy } from './mcp-proxy.js';
 import type { McpProxy } from './mcp-proxy.js';
@@ -238,7 +238,7 @@ const APPROACHES: Record<Approach, { label: string; server: (dir: string) => Rec
       },
     }),
     allow: [
-      'navigate', 'navigate_back', 'snapshot', 'click', 'type', 'fill_form', 'select_option', 'press_key', 'hover',
+      'navigate', 'navigate_back', 'snapshot', 'click', 'type', 'fill_form', 'select_option', 'press_key', 'hover', 'file_upload',
       'wait_for', 'find', 'tabs', 'handle_dialog', 'take_screenshot',
     ].map((t) => `mcp__playwright__browser_${t}`),
     // Running page JavaScript would bypass the approach being measured.
@@ -425,33 +425,31 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
     mcpStartupMs = Date.now() - startupStarted;
     if (server.failure()) throw new Error(server.failure()!);
     server.setToolControl(toolControl);
-    // Judged real-site runs: after each agent tool result, grab a viewport frame and page state in the background.
-    // Never delays the agent: at most one capture runs at a time, and results arriving meanwhile get one more capture.
+    // Judged real-site runs: retain a viewport frame and page state after every
+    // agent action. The proxy awaits this observer before releasing the tool
+    // result, so a fast next action cannot overwrite a required checkpoint.
     const live = server;
     const capturing = !!task.judged && (approach === 'mantis' || approach === 'tree' || approach === 'screenshot');
     const raw: RawCapture[] = [];
     let toolsDone = 0;
-    let capturedAt = -1;
-    let stepsOpen = true;
-    let stepRun: Promise<void> | null = null;
-    const queueCapture = (): void => {
-        if (stepRun || !stepsOpen) return;
-        stepRun = (async () => {
-          while (stepsOpen && capturedAt < toolsDone) {
-            const step = capturedAt = toolsDone;
-            const started = Date.now();
-            try { raw.push(await captureOnce(live, approach, step, false)); } catch { captureFailures++; }
-            captureMs += Date.now() - started;
-          }
-        })().finally(() => { stepRun = null; });
+    let stepRun: Promise<void> = Promise.resolve();
+    const captureStep = (step: number): Promise<void> => {
+      stepRun = stepRun.then(async () => {
+        const started = Date.now();
+        try { raw.push(await captureOnce(live, approach, step, false)); } catch { captureFailures++; }
+        captureMs += Date.now() - started;
+      });
+      return stepRun;
     };
-    if (capturing) live.onToolResult((count) => { toolsDone = count; queueCapture(); });
+    if (capturing) live.onToolResult((count) => { toolsDone = count; return captureStep(count); });
     const bridge = { command: node, args: [path.join(REPO, 'bench', 'agent', 'bridge.mjs'), String(server.port)] };
     if (PROVIDER !== 'sarvam') writeFileSync(cfg, JSON.stringify({ mcpServers: { [name]: bridge } }));
     const taskBase = task.site === 'local' ? fixtures.baseFor(task.id, attemptId) : base;
+    const uploadFixture = task.uploadFixture ? path.join(dir, path.basename(task.uploadFixture)) : null;
+    if (uploadFixture) writeFileSync(uploadFixture, 'Harness-provided public benchmark fixture.\n');
     // Judged real-site prompts already say how to end the reply (FINAL_URL line); the judge reads the whole reply.
     const prompt = task.judged
-      ? `${FIXTURE_VARIANT?.forward(task.prompt(taskBase)) ?? task.prompt(taskBase)}\n\nUse only the browser tools you have.`
+      ? `${FIXTURE_VARIANT?.forward(task.prompt(taskBase)) ?? task.prompt(taskBase)}${uploadFixture ? `\n\nFor a permitted file-picker action, use only this harness-created file: ${uploadFixture}` : ''}\n\nUse only the browser tools you have.`
       : `${FIXTURE_VARIANT?.forward(task.prompt(taskBase)) ?? task.prompt(taskBase)}\n\nUse only the browser tools you have. ${EXPLICIT_ACTION_GUIDANCE} ${COMPLETION_GUIDANCE} When done, reply with exactly one line and nothing else: ANSWER: <answer>`;
     const a = APPROACHES[approach];
     const codexServer = {
@@ -491,7 +489,7 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
         client: sarvamClient, mcp: server, model: MODEL, prompt, server: name,
         allow: a.allow, deny: a.deny, maxSteps: sarvamMaxStepsForTask(task), toolTimeoutMs: Math.min(60_000, TIMEOUT_MS),
         trace: (event) => traceLog.write(JSON.stringify({ at: new Date().toISOString(), ...event }) + '\n'),
-        onToolResult: () => { toolsDone++; queueCapture(); },
+        onToolResult: () => { toolsDone++; void captureStep(toolsDone); },
         toolCap: toolControl.cap, toolHooks: toolControl.hooks ?? undefined,
         signal: controller.signal,
       });
@@ -572,8 +570,7 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
     });
     if (PROVIDER !== 'sarvam') parsed = PROVIDER === 'codex' ? parseCodexStream(processResult.out, name) : parseClaudeStream(processResult.out);
     if (capturing) {
-      stepsOpen = false;
-      if (stepRun) await Promise.race([stepRun, new Promise((resolve) => setTimeout(resolve, 20_000))]);
+      await Promise.race([stepRun, new Promise((resolve) => setTimeout(resolve, 20_000))]);
       const started = Date.now();
       try { raw.push(await captureOnce(live, approach, toolsDone, true)); } catch (error) {
         console.warn(`[agent] final capture failed for ${unique}: ${error instanceof Error ? error.message : String(error)}`);
@@ -581,7 +578,13 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
       captureMs += Date.now() - started;
       // Drop near-duplicates, cap the count, and save the kept frames beside the run log.
       const frames = raw.flatMap((c): CapturedFrame[] => { const frame = toCapturedFrame(c.png, c.state, c.step, c.final); return frame ? [frame] : []; });
-      const { sidecar, pngs } = packEvidence(frames, unique, captureMs);
+      // History is retained separately from the image sampler: an intermediate
+      // form can be evidence even when its near-duplicate PNG is not kept.
+      const journal = journalFromPageStates(raw.flatMap((capture) => {
+        const state = capture.state === null ? null : parsePageState(capture.state);
+        return state ? [state] : [];
+      }));
+      const { sidecar, pngs } = packEvidence(frames, unique, captureMs, journal);
       try {
         for (const { file, png } of pngs) writeFileSync(path.join(logDir, file), png);
         evidencePath = path.join(logDir, `${unique}.evidence.json`);

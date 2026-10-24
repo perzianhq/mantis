@@ -6,7 +6,24 @@
  */
 import { decodePng, grayThumb, thumbDiff } from './png.js';
 
-export interface FormValue { label: string; value: string }
+export interface FormValue {
+  label: string; value: string; id?: string; name?: string; occurrence?: number;
+  /** Password contents are never retained; only this emptiness bit is allowed. */
+  passwordEmpty?: boolean;
+  disabled?: boolean;
+  readonly?: boolean;
+}
+/**
+ * Harness-only workflow record. Passwords are represented only by emptiness and
+ * files by basename; this shape must never carry secret control values.
+ */
+export interface EvidenceJournal {
+  complete: boolean;
+  submissions: { method: string; url: string }[];
+  states: { name?: string; forms: FormValue[] }[];
+  transitions: { kind: 'document' | 'tab' | 'frame'; url: string }[];
+  uploads: string[];
+}
 export interface EvidenceFrame {
   id: string; /** F1.. in chronological order */
   step: number; /** agent tool calls completed when captured */
@@ -14,7 +31,7 @@ export interface EvidenceFrame {
   file: string; /** basename of the PNG, in the same folder as the sidecar */
   text: string; final?: boolean; forms?: FormValue[];
 }
-export interface EvidenceSidecar { frames: EvidenceFrame[]; captured: number; kept: number; captureMs: number }
+export interface EvidenceSidecar { frames: EvidenceFrame[]; captured: number; kept: number; captureMs: number; journal?: EvidenceJournal }
 
 /**
  * Strict, site-agnostic signatures for browser/network/server error documents. These deliberately do not include
@@ -44,7 +61,7 @@ export const MAX_FRAMES = 12;
  */
 export const PAGE_STATE_FUNCTION = `() => {
   const clip = (s, n) => String(s == null ? '' : s).replace(/\\s+/g, ' ').trim().slice(0, n);
-  const skip = ['hidden', 'submit', 'button', 'password', 'image', 'reset'];
+  const skip = ['hidden', 'submit', 'button', 'image', 'reset'];
   const forms = [];
   for (const el of document.querySelectorAll('input, select, textarea')) {
     if (forms.length >= 100) break;
@@ -60,14 +77,62 @@ export const PAGE_STATE_FUNCTION = `() => {
     let value;
     if (el.tagName === 'SELECT') value = Array.from(el.selectedOptions).map((o) => o.textContent || '').join(', ');
     else if (type === 'checkbox' || type === 'radio') value = el.checked ? 'checked' : 'unchecked';
+    else if (type === 'password') value = '';
+    else if (type === 'file') value = String(el.value || '').split(/[\\/]/).pop() || '';
     else value = el.value;
-    forms.push({ label, value: clip(value, 200) });
+    const identity = { label, value: clip(value, 200), ...(el.id ? { id: el.id } : {}), ...(el.getAttribute('name') ? { name: el.getAttribute('name') } : {}), ...(type === 'password' ? { passwordEmpty: !el.value } : {}), ...(el.disabled ? { disabled: true } : {}), ...(el.readOnly ? { readonly: true } : {}) };
+    forms.push(identity);
+  }
+  for (let i = 0; i < forms.length; i++) {
+    const control = forms[i];
+    const matches = forms.filter((other) => other.id === control.id && other.name === control.name && other.label === control.label);
+    if (matches.length > 1) control.occurrence = matches.indexOf(control);
+  }
+  const submissionKey = '__mantis_bench_submissions_v1';
+  let submissions = [];
+  let saved = window.__mantisBenchSubmissions;
+  if (!Array.isArray(saved)) { try { saved = JSON.parse(sessionStorage.getItem(submissionKey) || '[]'); } catch { saved = []; } }
+  if (Array.isArray(saved)) submissions = saved.filter((entry) => entry && typeof entry.method === 'string' && typeof entry.url === 'string').slice(-20);
+  if (!window.__mantisBenchSubmissionObserver) {
+    window.__mantisBenchSubmissionObserver = true;
+    document.addEventListener('submit', (event) => {
+      const form = event.target;
+      if (!(form instanceof HTMLFormElement)) return;
+      let prior = window.__mantisBenchSubmissions;
+      if (!Array.isArray(prior)) { try { prior = JSON.parse(sessionStorage.getItem(submissionKey) || '[]'); } catch { prior = []; } }
+      const next = Array.isArray(prior) ? prior : [];
+      next.push({ method: (form.method || 'get').toUpperCase(), url: form.action || location.href });
+      window.__mantisBenchSubmissions = next.slice(-20);
+      try { sessionStorage.setItem(submissionKey, JSON.stringify(window.__mantisBenchSubmissions)); } catch { /* in-memory history covers sandboxed same-document flows */ }
+    }, true);
   }
   const body = document.body;
-  return JSON.stringify({ url: location.href, title: document.title, text: body ? body.innerText.slice(0, ${FINAL_TEXT_CAP}) : '', forms });
+  return JSON.stringify({ url: location.href, title: document.title, text: body ? body.innerText.slice(0, ${FINAL_TEXT_CAP}) : '', forms, submissions });
 }`;
 
-export interface PageState { url: string; title: string; text: string; forms: FormValue[] }
+export interface PageState { url: string; title: string; text: string; forms: FormValue[]; submissions?: { method: string; url: string }[] }
+
+/** Build the redacted, retained history from synchronous harness captures. */
+export function journalFromPageStates(states: readonly PageState[], submissions: { method: string; url: string }[] = []): EvidenceJournal {
+  const transitions = states.flatMap((state, index) => !index || states[index - 1]!.url !== state.url ? [{ kind: 'document' as const, url: state.url }] : []);
+  const uploads = [...new Set(states.flatMap((state) => state.forms.filter((form) => /file|upload/i.test(`${form.label} ${form.name ?? ''} ${form.id ?? ''}`) && form.value).map((form) => form.value.split(/[\\/]/).pop()!)))];
+  const observedSubmissions = [...submissions];
+  for (const state of states) {
+    // Each document retains the accumulated same-origin history. Append only the
+    // suffix that was not present in the preceding synchronous checkpoint.
+    const seen = state.submissions ?? [];
+    if (seen.length >= observedSubmissions.length) observedSubmissions.push(...seen.slice(observedSubmissions.length));
+  }
+  return {
+    // Captures are synchronous with each completed agent call. A zero-capture run
+    // is deliberately incomplete and therefore cannot establish history.
+    complete: states.length > 0,
+    submissions: observedSubmissions,
+    states: states.map((state) => ({ forms: state.forms })),
+    transitions,
+    uploads,
+  };
+}
 
 /** Parse PAGE_STATE_FUNCTION output: the raw JSON, or the Playwright MCP "### Result" wrapper around it. */
 export function parsePageState(text: string): PageState | null {
@@ -84,10 +149,17 @@ export function parsePageState(text: string): PageState | null {
   const forms = Array.isArray(o.forms)
     ? o.forms.flatMap((f): FormValue[] => {
       const v = f as Record<string, unknown> | null;
-      return v && typeof v.label === 'string' && typeof v.value === 'string' ? [{ label: v.label, value: v.value }] : [];
+      return v && typeof v.label === 'string' && typeof v.value === 'string'
+        ? [{ label: v.label, value: v.value, ...(typeof v.id === 'string' ? { id: v.id } : {}), ...(typeof v.name === 'string' ? { name: v.name } : {}), ...(Number.isInteger(v.occurrence) && (v.occurrence as number) >= 0 ? { occurrence: v.occurrence as number } : {}), ...(typeof v.passwordEmpty === 'boolean' ? { passwordEmpty: v.passwordEmpty } : {}), ...(v.disabled === true ? { disabled: true } : {}), ...(v.readonly === true ? { readonly: true } : {}) }]
+        : [];
     })
     : [];
-  return { url: o.url, title: typeof o.title === 'string' ? o.title : '', text: o.text, forms };
+  const submissions = Array.isArray(o.submissions) ? o.submissions.flatMap((entry): { method: string; url: string }[] => {
+    if (!entry || typeof entry !== 'object') return [];
+    const event = entry as Record<string, unknown>;
+    return typeof event.method === 'string' && typeof event.url === 'string' ? [{ method: event.method, url: event.url }] : [];
+  }) : [];
+  return { url: o.url, title: typeof o.title === 'string' ? o.title : '', text: o.text, forms, ...(submissions.length ? { submissions } : {}) };
 }
 
 /**
@@ -131,7 +203,7 @@ export function toCapturedFrame(png: Buffer, state: string | null, step: number,
  * Select the frames to keep and name their files. Earlier frames are `<unique>.step-NN.png` (a `-b`, `-c`..
  * suffix when two share a step); the final one is `<unique>.final.png`. Earlier text is capped for the sidecar.
  */
-export function packEvidence(frames: CapturedFrame[], unique: string, captureMs: number): { sidecar: EvidenceSidecar; pngs: { file: string; png: Buffer }[] } {
+export function packEvidence(frames: CapturedFrame[], unique: string, captureMs: number, journal?: EvidenceJournal): { sidecar: EvidenceSidecar; pngs: { file: string; png: Buffer }[] } {
   const kept = selectFrames(frames);
   const used = new Map<number, number>();
   const pngs: { file: string; png: Buffer }[] = [];
@@ -147,5 +219,5 @@ export function packEvidence(frames: CapturedFrame[], unique: string, captureMs:
     if (frame.final) { entry.final = true; entry.forms = frame.forms; }
     return entry;
   });
-  return { sidecar: { frames: out, captured: frames.length, kept: out.length, captureMs }, pngs };
+  return { sidecar: { frames: out, captured: frames.length, kept: out.length, captureMs, ...(journal ? { journal } : {}) }, pngs };
 }

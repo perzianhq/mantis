@@ -90,6 +90,25 @@ async function click(p: Page, at: Coordinate, action: typeof CLICK_ACTIONS[numbe
 const server = new McpServer({ name: 'screenshot', version: '0.2.0' });
 server.registerTool('navigate', { description: 'Go to a URL. This benchmark-only browser navigation is separate from the computer tool.', inputSchema: { url: z.string() } }, ({ url }) => act(async (p) => { await p.goto(url, { waitUntil: 'domcontentloaded' }); return `navigated to ${p.url()}`; }));
 server.registerTool('back', { description: 'Go back one page.', inputSchema: {} }, () => act(async (p) => { await p.goBack(); return `back to ${p.url()}`; }));
+server.registerTool('upload', {
+  description: 'Select one existing local file in a file input at a viewport coordinate. This only selects the file; it does not submit a form.',
+  inputSchema: { coordinate: z.array(z.number()).length(2), path: z.string() },
+}, async ({ coordinate: point, path: file }) => {
+  const at = coordinate(point);
+  if (typeof at === 'string') return error(at);
+  return act(async (p) => {
+    const input = await p.evaluateHandle(([x, y]) => {
+      const node = document.elementFromPoint(x, y);
+      if (node instanceof HTMLInputElement && node.type === 'file') return node;
+      if (node instanceof HTMLLabelElement && node.control instanceof HTMLInputElement && node.control.type === 'file') return node.control;
+      return node?.closest('label')?.querySelector('input[type="file"]') ?? null;
+    }, at);
+    const element = input.asElement();
+    if (!element) throw new Error('coordinate does not identify a file input or its label');
+    await element.setInputFiles(file);
+    return `selected ${file.split(/[\\/]/).pop() ?? 'file'}`;
+  });
+});
 server.registerTool('computer', {
   description: `Anthropic-style coordinate computer tool for a ${VIEWPORT.width}x${VIEWPORT.height} viewport. screenshot returns the viewport; zoom crops region [x0,y0,x1,y1]. Click coordinates are [x,y], click text is optional ctrl/alt/shift/meta modifiers. key accepts portable xdotool-style names and space-separated presses. scroll_amount is wheel ticks; one tick is ${COMPUTER_SCROLL_TICK_PIXELS} CSS pixels. ${NATIVE_SELECT_KEYBOARD_GUIDANCE}`,
   inputSchema: {

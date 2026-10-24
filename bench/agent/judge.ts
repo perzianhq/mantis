@@ -28,7 +28,7 @@ import type { RealsiteRow } from './realsite.js';
 import { LIVE_V1_SCORED_ROWS } from './live-v1.js';
 import { TASKS } from './tasks.js';
 import { evidenceShowsOnlySiteErrors } from './evidence.js';
-import type { EvidenceFrame, EvidenceSidecar, FormValue } from './evidence.js';
+import type { EvidenceFrame, EvidenceJournal, EvidenceSidecar, FormValue } from './evidence.js';
 import { decodePng, encodePng, fitWithin } from './png.js';
 import { loadSarvamEnv, resolveSarvamModel, SarvamClient, sarvamModelSupportsImages } from './sarvam.js';
 import type { SarvamContentPart } from './sarvam.js';
@@ -153,7 +153,7 @@ export function buildJudgePrompt(input: { task: string; website: string; finalUr
 // ---- Evidence packet (newer runs) ----
 
 /** One harness frame as the judge sees it: blind image name, page text as captured, no step numbers or tool names. */
-export interface PacketFrame { id: string; url: string; text: string; final: boolean; forms?: FormValue[]; image: string }
+export interface PacketFrame { id: string; url: string; text: string; final: boolean; forms?: FormValue[]; journal?: EvidenceJournal; image: string }
 
 const EARLIER_EXCERPT_CHARS = 1_200;
 const FINAL_EXCERPT_CHARS = 30_000;
@@ -185,7 +185,14 @@ export function buildEvidencePrompt(input: { task: string; website: string; fina
           `Image: ${where(f.image)}`,
           f.final ? 'Page text:' : `Page text (first ${EARLIER_EXCERPT_CHARS.toLocaleString('en-US')} characters):`,
           '"""', excerpt(f.text, f.final ? FINAL_EXCERPT_CHARS : EARLIER_EXCERPT_CHARS), '"""',
-          ...(f.final ? ['Form values:', ...(f.forms?.length ? f.forms.map((v) => `- ${v.label || '(unlabelled)'}: ${v.value}`) : ['none'])] : []),
+          ...(f.final ? [
+            'Form values:', ...(f.forms?.length ? f.forms.map((v) => `- ${v.label || '(unlabelled)'}: ${v.passwordEmpty === undefined ? v.value : (v.passwordEmpty ? '(password empty)' : '(password populated)')}`) : ['none']),
+            ...(f.journal ? [
+              'Harness workflow journal (independent of image sampling):',
+              `- complete: ${f.journal.complete === true ? 'yes' : 'no'}; checkpoints: ${f.journal.states.length}; submissions: ${f.journal.submissions.length}; uploads: ${f.journal.uploads.join(', ') || 'none'}`,
+              ...(f.journal.transitions.length ? [`- transitions: ${f.journal.transitions.map((transition) => `${transition.kind} ${transition.url}`).join(' | ')}`] : []),
+            ] : []),
+          ] : []),
         ];
       }),
     ]
@@ -298,7 +305,7 @@ export function buildEvidencePacket(sidecarPath: string | null | undefined, allo
     if (!existsSync(source) || !statSync(source).isFile()) return;
     const image = `f${i + 1}.png`;
     writeFileSync(path.join(destDir, image), prepareFrameImage(readFileSync(source), frame.final === true).png);
-    frames.push({ id: frame.id, url: frame.url, text: frame.text, final: frame.final === true, ...(frame.final ? { forms: frame.forms ?? [] } : {}), image });
+    frames.push({ id: frame.id, url: frame.url, text: frame.text, final: frame.final === true, ...(frame.final ? { forms: frame.forms ?? [], ...(sidecar.journal ? { journal: sidecar.journal } : {}) } : {}), image });
   });
   return { frames, texts: sidecar.frames.map((f) => f.text), siteFailure: evidenceShowsOnlySiteErrors(sidecar.frames) };
 }

@@ -25,6 +25,25 @@ export interface UrlPredicate { origin: string; path: string; alsoPaths?: string
 /** A heading whose required answer and visible text are bound to one final URL. */
 export interface PathHeadingPredicate { origin?: string; path: string; heading: MatchPredicate }
 
+/** A form control is identified independently of its human-facing label. */
+export interface FormValue {
+  label: string;
+  value: string;
+  id?: string;
+  name?: string;
+  /** Zero-based occurrence among controls with the same id/name/label. */
+  occurrence?: number;
+}
+export interface OrderedFormState { name: string; formValues: FormValue[] }
+export interface FormHistory {
+  /** A submitted form is never an acceptable intermediate state. */
+  noSubmission?: true;
+  /** These controls must retain their original values throughout the run. */
+  untouched?: FormValue[];
+  /** Do not silently accept a final snapshot when the workflow needs history. */
+  requireJournal?: true;
+}
+
 /**
  * Explicit opt-in for answer keys that are safe to grade without a model.  All
  * requirements are checked against one final, harness-captured page state, so
@@ -38,22 +57,30 @@ export interface DeterministicGrader {
     textIncludes: MatchPredicate[];
     /** Optional path-specific heading variants. Existing contracts keep their single shared heading checks. */
     pathHeadings?: PathHeadingPredicate[];
-    formValues?: { label: string; value: string }[];
+    formValues?: FormValue[];
   };
+  /** Named checkpoints that must occur in this order in the harness journal. */
+  orderedStates?: OrderedFormState[];
+  history?: FormHistory;
 }
 
 /** Minimal final-frame shape, kept independent of the evidence implementation. */
 export interface DeterministicEvidence {
   url: string;
   text: string;
-  forms?: { label: string; value: string }[];
+  forms?: FormValue[];
   final?: boolean;
+  /** Redacted harness history; imported structurally to keep this module pure. */
+  journal?: { complete?: boolean; submissions?: unknown[]; states?: Array<{ name?: string; forms?: FormValue[] }> };
 }
 
 export interface RealsiteRow {
   task_id: string; website: string; task: string; level: string;
   checks?: RealsiteChecks;
   deterministic?: DeterministicGrader;
+  /** Narrow opt-in for a published disposable demonstration account. */
+  sandboxLogin?: { username: string; password: string };
+  uploadFixture?: string;
   /** Task-specific, non-leading criteria supplied to the blind judge. */
   judgeRubric?: string;
 }
@@ -140,12 +167,17 @@ export function loadRealsiteRows(file: string = REALSITE_FILE, reportIssues: (me
     const deterministic = parseDeterministicGrader(o.deterministic);
     const checksIssue = validateChecks(o.checks);
     const judgeRubric = text(o.judgeRubric);
+    const sandbox = o.sandboxLogin;
+    const sandboxLogin = sandbox && typeof sandbox === 'object' && !Array.isArray(sandbox) && text((sandbox as Record<string, unknown>).username) && text((sandbox as Record<string, unknown>).password)
+      ? { username: text((sandbox as Record<string, unknown>).username)!, password: text((sandbox as Record<string, unknown>).password)! }
+      : undefined;
+    const uploadFixture = text(o.uploadFixture);
     // A complete deterministic grader is itself the explicit answer-key opt-in;
     // legacy substring checks remain optional for those rows.
     if (checksIssue && !deterministic && !judgeRubric) issues.push(`${task_id}: ${checksIssue}`);
     if (deterministicIssue) issues.push(`${task_id}: ${deterministicIssue}`);
     const checks = parseChecks(o.checks);
-    return [{ task_id, website, task, level: text(o.level) ?? 'unknown', ...(checks ? { checks } : {}), ...(deterministic ? { deterministic } : {}), ...(judgeRubric ? { judgeRubric } : {}) }];
+    return [{ task_id, website, task, level: text(o.level) ?? 'unknown', ...(checks ? { checks } : {}), ...(deterministic ? { deterministic } : {}), ...(judgeRubric ? { judgeRubric } : {}), ...(sandboxLogin ? { sandboxLogin } : {}), ...(uploadFixture ? { uploadFixture } : {}) }];
   });
   if (issues.length) {
     const shown = issues.slice(0, 10).join('; ');
@@ -172,7 +204,7 @@ export function validateDeterministicGrader(value: unknown): string | null {
   if (value === undefined) return null;
   if (!value || typeof value !== 'object' || Array.isArray(value)) return 'deterministic must be an object';
   const o = value as Record<string, unknown>;
-  if (Object.keys(o).some((key) => !['kind', 'answerIncludes', 'final'].includes(key))) return 'deterministic contains an unknown field';
+  if (Object.keys(o).some((key) => !['kind', 'answerIncludes', 'final', 'orderedStates', 'history'].includes(key))) return 'deterministic contains an unknown field';
   if (o.kind !== 'fact' && o.kind !== 'form' && o.kind !== 'state') return 'deterministic.kind must be fact, form or state';
   if (!o.final || typeof o.final !== 'object' || Array.isArray(o.final)) return 'deterministic.final must be an object';
   const final = o.final as Record<string, unknown>;
@@ -201,13 +233,31 @@ export function validateDeterministicGrader(value: unknown): string | null {
   }))) return 'deterministic.final.pathHeadings must be non-empty path/heading predicates';
   if (!o.answerIncludes.length && !headings?.length) return 'deterministic.answerIncludes must be non-empty unless final.pathHeadings supplies headings';
   const values = final.formValues;
-  const validForms = Array.isArray(values) && values.length > 0 && values.every((entry) => {
+  const validFormValue = (entry: unknown): entry is FormValue => {
     if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return false;
     const form = entry as Record<string, unknown>;
-    return typeof form.label === 'string' && Boolean(form.label.trim()) && typeof form.value === 'string' && Boolean(form.value.trim());
-  });
+    return Object.keys(form).every((key) => ['label', 'value', 'id', 'name', 'occurrence'].includes(key)) &&
+      typeof form.label === 'string' && Boolean(form.label.trim()) && typeof form.value === 'string' &&
+      (form.id === undefined || typeof form.id === 'string') && (form.name === undefined || typeof form.name === 'string') &&
+      (form.occurrence === undefined || (Number.isInteger(form.occurrence) && (form.occurrence as number) >= 0));
+  };
+  const validForms = Array.isArray(values) && values.length > 0 && values.every(validFormValue);
   if ((o.kind === 'form' || o.kind === 'state') && !validForms) return 'deterministic.final.formValues must be a non-empty label/value array for form or state graders';
   if (o.kind === 'fact' && values !== undefined && !validForms) return 'deterministic.final.formValues must be a non-empty label/value array when supplied';
+  const ordered = o.orderedStates;
+  if (ordered !== undefined && (!Array.isArray(ordered) || !ordered.length || !ordered.every((entry) => {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return false;
+    const state = entry as Record<string, unknown>;
+    return Object.keys(state).every((key) => key === 'name' || key === 'formValues') && typeof state.name === 'string' && Boolean(state.name.trim()) &&
+      Array.isArray(state.formValues) && state.formValues.length > 0 && state.formValues.every(validFormValue);
+  }))) return 'deterministic.orderedStates must be non-empty named form checkpoints';
+  const history = o.history;
+  if (history !== undefined) {
+    if (!history || typeof history !== 'object' || Array.isArray(history) || Object.keys(history as object).some((key) => !['noSubmission', 'untouched', 'requireJournal'].includes(key))) return 'deterministic.history contains an unknown field';
+    const h = history as Record<string, unknown>;
+    if ((h.noSubmission !== undefined && h.noSubmission !== true) || (h.requireJournal !== undefined && h.requireJournal !== true) ||
+      (h.untouched !== undefined && (!Array.isArray(h.untouched) || !h.untouched.length || !h.untouched.every(validFormValue)))) return 'deterministic.history must contain valid redacted history constraints';
+  }
   return null;
 }
 
@@ -233,8 +283,10 @@ function parseDeterministicGrader(value: unknown): DeterministicGrader | undefin
       url: { origin: o.final.url.origin.trim(), path: o.final.url.path, ...(o.final.url.alsoPaths ? { alsoPaths: [...o.final.url.alsoPaths] } : {}), ...(o.final.url.query ? { query: { ...o.final.url.query } } : {}) },
       textIncludes: predicates(o.final.textIncludes),
       ...(o.final.pathHeadings ? { pathHeadings: o.final.pathHeadings.map((entry) => ({ ...(entry.origin ? { origin: entry.origin.trim() } : {}), path: entry.path, heading: predicates([entry.heading])[0]! })) } : {}),
-      ...(o.final.formValues ? { formValues: o.final.formValues.map(({ label, value }) => ({ label: label.trim(), value: value.trim() })) } : {}),
+      ...(o.final.formValues ? { formValues: o.final.formValues.map((entry) => ({ label: entry.label.trim(), value: entry.value, ...(entry.id !== undefined ? { id: entry.id } : {}), ...(entry.name !== undefined ? { name: entry.name } : {}), ...(entry.occurrence !== undefined ? { occurrence: entry.occurrence } : {}) })) } : {}),
     },
+    ...(o.orderedStates ? { orderedStates: o.orderedStates.map((state) => ({ name: state.name.trim(), formValues: state.formValues.map((entry) => ({ label: entry.label.trim(), value: entry.value, ...(entry.id !== undefined ? { id: entry.id } : {}), ...(entry.name !== undefined ? { name: entry.name } : {}), ...(entry.occurrence !== undefined ? { occurrence: entry.occurrence } : {}) })) })) } : {}),
+    ...(o.history ? { history: { ...(o.history.noSubmission ? { noSubmission: true as const } : {}), ...(o.history.requireJournal ? { requireJournal: true as const } : {}), ...(o.history.untouched ? { untouched: o.history.untouched.map((entry) => ({ label: entry.label.trim(), value: entry.value, ...(entry.id !== undefined ? { id: entry.id } : {}), ...(entry.name !== undefined ? { name: entry.name } : {}), ...(entry.occurrence !== undefined ? { occurrence: entry.occurrence } : {}) })) } : {}) } } : {}),
   };
 }
 
@@ -253,6 +305,10 @@ const norm = (s: string): string => s.replace(/\s+/g, ' ').trim().toLowerCase();
 const predicateLabel = (predicate: MatchPredicate): string => String(predicate.value);
 const matchesPredicate = (source: string, predicate: MatchPredicate): boolean =>
   matchesAnswerRequirement(source, { id: 'realsite', ...predicate });
+const formMatches = (actual: FormValue, wanted: FormValue): boolean =>
+  norm(actual.label) === norm(wanted.label) && actual.value === wanted.value &&
+  (wanted.id === undefined || actual.id === wanted.id) && (wanted.name === undefined || actual.name === wanted.name) &&
+  (wanted.occurrence === undefined || actual.occurrence === wanted.occurrence);
 
 /**
  * Run a row's answer-key checks (case-insensitive, whitespace collapsed): every `answerIncludes` string must be in
@@ -301,13 +357,35 @@ export function evaluateDeterministicGrader(grader: DeterministicGrader | undefi
     ...(pathHeading && !matchesPredicate(answer, pathHeading.heading) ? [`answer lacks heading "${predicateLabel(pathHeading.heading)}" for the final path`] : []),
     ...grader.final.textIncludes.filter((item) => !matchesPredicate(text, item)).map((item) => `final frame lacks "${predicateLabel(item)}"`),
     ...(pathHeading && !matchesPredicate(text, pathHeading.heading) ? [`final frame lacks heading "${predicateLabel(pathHeading.heading)}" for the final path`] : []),
-    ...(grader.final.formValues ?? []).filter((wanted) => !forms.some((actual) => norm(actual.label) === norm(wanted.label) && norm(actual.value) === norm(wanted.value))).map((wanted) => `final form lacks ${JSON.stringify(wanted.label)}=${JSON.stringify(wanted.value)}`),
+    ...(grader.final.formValues ?? []).filter((wanted) => !forms.some((actual) => formMatches(actual, wanted))).map((wanted) => `final form lacks ${JSON.stringify(wanted.label)}=${JSON.stringify(wanted.value)}`),
+    ...(() => {
+      const journal = final.journal;
+      if (!grader.orderedStates?.length && !grader.history) return [] as string[];
+      if (!journal?.complete) return ['missing complete harness journal'];
+      const states = journal.states ?? [];
+      let cursor = -1;
+      const missing = (grader.orderedStates ?? []).find((required) => {
+        const found = states.findIndex((state, index) => index > cursor && (state.name === required.name || required.formValues.every((wanted) => (state.forms ?? []).some((actual) => formMatches(actual, wanted)))));
+        if (found < 0) return true;
+        cursor = found;
+        return false;
+      });
+      const history = grader.history;
+      return [
+        ...(missing ? [`missing ordered journal state ${JSON.stringify(missing.name)}`] : []),
+        ...(history?.noSubmission && (journal.submissions?.length ?? 0) > 0 ? ['journal records a form submission'] : []),
+        ...(history?.untouched ?? []).filter((wanted) => states.some((state) => (state.forms ?? []).some((actual) => norm(actual.label) === norm(wanted.label) && actual.id === wanted.id && actual.name === wanted.name && actual.occurrence === wanted.occurrence && actual.value !== wanted.value))).map((wanted) => `journal shows changed untouched control ${JSON.stringify(wanted.label)}`),
+      ];
+    })(),
   ];
   return { pass: failed.length === 0, failed };
 }
 
-export function realsitePrompt(row: Pick<RealsiteRow, 'website' | 'task'>): string {
-  return `Start at ${row.website}. ${row.task} Do not log in, buy anything, or enter personal information; stop before that step. ` +
+export function realsitePrompt(row: Pick<RealsiteRow, 'website' | 'task'> & { sandboxLogin?: { username: string; password: string } }): string {
+  const safety = row.sandboxLogin
+    ? `You may sign in only with this site's published sandbox credentials: username ${row.sandboxLogin.username}, password ${row.sandboxLogin.password}. Do not use any other account or credentials. Do not buy anything or enter personal information; use only task-provided synthetic values and stop before any irreversible step. `
+    : 'Do not log in, buy anything, or enter personal information; stop before that step. Use only task-provided synthetic values. ';
+  return `Start at ${row.website}. ${row.task} ${safety}` +
     'Finish with the page showing the evidence for your answer, including relevant inputs and site-generated results. Leave any required sign-in, purchase, or personal-information prompt open. State what is currently visible and distinguish it from earlier observations or your own calculations. Do not substitute your own estimate for a requested site result. ' +
     'When done, reply with your answer or what you did, then a last line "FINAL_URL: <url of the page you ended on>".';
 }
@@ -320,6 +398,7 @@ export function realsiteTask(row: RealsiteRow): AgentTask {
     prompt: () => realsitePrompt(row),
     expect: /FINAL_URL:/,
     judged: true,
+    ...(row.uploadFixture ? { uploadFixture: row.uploadFixture } : {}),
   };
 }
 

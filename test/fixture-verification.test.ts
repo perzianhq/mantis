@@ -48,7 +48,12 @@ it('long-live-v1 deterministic contracts accept reviewed keys and reject an asso
     const url = new URL(`${grader.final.url.origin}${grader.final.url.path}`);
     for (const [name, value] of Object.entries(grader.final.url.query ?? {})) url.searchParams.set(name, value);
     const text = grader.final.textIncludes.map((predicate) => String(predicate.value)).join('\n');
-    const frames = [{ final: true, url: url.href, text, forms: grader.final.formValues?.map((form) => ({ ...form })) }];
+    const journal = grader.history || grader.orderedStates ? {
+      complete: true,
+      submissions: [],
+      states: (grader.orderedStates ?? [{ name: 'final', formValues: grader.final.formValues ?? [] }]).map((state) => ({ name: state.name, forms: state.formValues.map((form) => ({ ...form })) })),
+    } : undefined;
+    const frames = [{ final: true, url: url.href, text, forms: grader.final.formValues?.map((form) => ({ ...form })), ...(journal ? { journal } : {}) }];
     expect(evaluateDeterministicGrader(grader, answer, frames)?.pass, row.task_id).toBe(true);
 
     const answerMutation = row.nearMiss.answerMutation;
@@ -61,6 +66,51 @@ it('long-live-v1 deterministic contracts accept reviewed keys and reject an asso
     const nearMissAnswer = answer.includes(from) ? answer.replace(from, to) : answer.replace(String(grader.answerIncludes[0]!.value), mutate(String(grader.answerIncludes[0]!.value)));
     expect(evaluateDeterministicGrader(grader, nearMissAnswer, frames)?.pass, `${row.task_id}: ${row.nearMiss.description}`).toBe(false);
   }
+});
+
+it('form-history graders require an ordered, redacted journal and exact control identity', () => {
+  const grader = {
+    kind: 'form' as const,
+    answerIncludes: [{ type: 'text' as const, value: 'done' }],
+    final: {
+      url: { origin: 'https://fixture.test', path: '/form' }, textIncludes: [{ type: 'text' as const, value: 'Form' }],
+      formValues: [
+        { label: 'Date', value: '2026-10-24', id: 'date' }, { label: 'Choices', value: 'Eggs, Sausages', name: 'multi' },
+        { label: 'Password', value: '', id: 'password' }, { label: 'File', value: '', id: 'file' },
+        { label: 'Default', value: 'keep', id: 'readonly' }, { label: 'Duplicate', value: 'right', id: 'dup-2', occurrence: 1 },
+      ],
+    },
+    orderedStates: [
+      { name: 'draft', formValues: [{ label: 'Date', value: '2026-10-23', id: 'date' }, { label: 'Choices', value: 'Ham, Onion gravy', name: 'multi' }] },
+      { name: 'review', formValues: [{ label: 'Date', value: '2026-10-24', id: 'date' }, { label: 'Choices', value: 'Eggs, Sausages', name: 'multi' }] },
+    ],
+    history: { noSubmission: true as const, requireJournal: true as const, untouched: [{ label: 'Default', value: 'keep', id: 'readonly' }] },
+  };
+  expect(validateDeterministicGrader(grader)).toBeNull();
+  const finalForms = grader.final.formValues.map((form) => ({ ...form }));
+  const journal = { complete: true, submissions: [] as { method: string; url: string }[], states: [
+    { name: 'draft', forms: [...grader.orderedStates[0]!.formValues, { label: 'Default', value: 'keep', id: 'readonly' }] },
+    { name: 'review', forms: finalForms },
+  ] };
+  const frame = (forms = finalForms, record = journal) => [{ final: true, url: 'https://fixture.test/form', text: 'Form', forms, journal: record }];
+  const grade = (forms = finalForms, record = journal) => evaluateDeterministicGrader(grader, 'done', frame(forms, record))!;
+  expect(grade().pass).toBe(true);
+  // Stale date / multi-select, an extra selected option, populated password or file, and a changed default all fail.
+  expect(grade(finalForms.map((f) => f.id === 'date' ? { ...f, value: '2026-10-23' } : f)).pass).toBe(false);
+  expect(grade(finalForms.map((f) => f.name === 'multi' ? { ...f, value: 'Eggs, Sausages, Bacon' } : f)).pass).toBe(false);
+  expect(grade(finalForms.map((f) => f.id === 'password' ? { ...f, value: 'not-recorded-here' } : f)).pass).toBe(false);
+  expect(grade(finalForms.map((f) => f.id === 'file' ? { ...f, value: 'fixture.txt' } : f)).pass).toBe(false);
+  const changedDefault = { ...journal, states: [{ ...journal.states[0]!, forms: journal.states[0]!.forms.map((f) => f.id === 'readonly' ? { ...f, value: 'changed' } : f) }, journal.states[1]! ] };
+  expect(grade(finalForms, changedDefault).pass).toBe(false);
+  // Duplicate labels are not interchangeable: id/occurrence selects the second control.
+  expect(grade(finalForms.map((f) => f.id === 'dup-2' ? { ...f, id: 'dup-1', occurrence: 0 } : f)).pass).toBe(false);
+  // A final snapshot cannot substitute for the draft, and a submit/back/refill remains a failure.
+  expect(grade(finalForms, { ...journal, states: [journal.states[1]!] }).pass).toBe(false);
+  expect(grade(finalForms, { ...journal, submissions: [{ method: 'GET', url: 'https://fixture.test/form' }] }).pass).toBe(false);
+  expect(evaluateDeterministicGrader(grader, 'done', [{ final: true, url: 'https://fixture.test/form', text: 'Form', forms: finalForms }])!.pass).toBe(false);
+  // The saved-evidence route uses the same deterministic contract, never a judge success fallback.
+  expect(deterministicGradeForRun({ task_id: 'fixture', website: 'https://fixture.test', task: 'x', level: 'medium', deterministic: grader }, 'success', true, 'done', frame()).pass).toBe(true);
+  expect(deterministicGradeForRun({ task_id: 'fixture', website: 'https://fixture.test', task: 'x', level: 'medium', deterministic: grader }, 'success', true, 'done', frame(finalForms, { ...journal, submissions: [{ method: 'GET', url: 'https://fixture.test/form' }] })).pass).toBe(false);
 });
 
 const crc32 = (buf: Uint8Array): number => {
@@ -1084,7 +1134,7 @@ it('parses page state from raw JSON and from the Playwright MCP result wrapper',
   expect(parsePageState(JSON.stringify({ url: 'u' }))).toBeNull();
 });
 
-it('reads text and rendered form values in the page, skipping hidden, password and unrendered controls', async () => {
+it('reads rendered controls while retaining password emptiness but never its contents', async () => {
   const p = await browser.newPage();
   try {
     await p.setContent(`<title>Cart</title><h1>Your cart</h1>
@@ -1098,11 +1148,11 @@ it('reads text and rendered form values in the page, skipping hidden, password a
     expect(state.title).toBe('Cart');
     expect(state.text).toContain('Your cart');
     expect(state.forms).toEqual([
-      { label: 'Quantity', value: '2' }, { label: 'Size', value: 'Large' }, { label: 'Gift wrap', value: 'checked' },
-      { label: 'Express', value: 'unchecked' }, { label: 'Coupon code', value: 'SAVE5' }, { label: 'note', value: 'hello world' },
+      { label: 'Quantity', value: '2', id: 'q' }, { label: 'pw', value: '', name: 'pw', passwordEmpty: false }, { label: 'Size', value: 'Large' }, { label: 'Gift wrap', value: 'checked', name: 'gift' },
+      { label: 'Express', value: 'unchecked', name: 'r' }, { label: 'Coupon code', value: 'SAVE5' }, { label: 'note', value: 'hello world', name: 'note' },
     ]);
     const labels = state.forms.map((f) => f.label).join(',');
-    for (const hidden of ['csrf', 'pw', 'ghost']) expect(labels).not.toContain(hidden);
+    for (const hidden of ['csrf', 'ghost']) expect(labels).not.toContain(hidden);
     expect(JSON.stringify(state)).not.toContain('secret');
     // The text is capped.
     await p.setContent(`<body>${'word '.repeat(20_000)}</body>`);
