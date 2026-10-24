@@ -24,7 +24,8 @@ import { evidenceShowsOnlySiteErrors, FINAL_TEXT_CAP, PAGE_STATE_FUNCTION, STEP_
 import type { CapturedFrame } from '../bench/agent/evidence.js';
 import { deterministicGradeForRun, finalizeSiteBrokenVerdicts, parseJudgeOutput, renderJudgedMarkdown, universallySiteBrokenTasks } from '../bench/agent/judge.js';
 import type { JudgedRun } from '../bench/agent/judge.js';
-import { evaluateDeterministicGrader, loadRealsiteRows, validateChecks, validateDeterministicGrader } from '../bench/agent/realsite.js';
+import { evaluateDeterministicGrader, loadRealsiteRows, sanitizeAnswer, validateChecks, validateDeterministicGrader } from '../bench/agent/realsite.js';
+import { uploadFixturePath } from '../bench/agent/upload-fixture.js';
 import { LIVE_V1_ROWS } from '../bench/agent/live-v1.js';
 import { LONG_LIVE_V1_ROWS } from '../bench/agent/long-live-v1.js';
 import { createMcpProxy } from '../bench/agent/mcp-proxy.js';
@@ -33,6 +34,37 @@ import { classifyClickError } from '../src/browser.js';
 import { answerReadyCue } from '../src/diff.js';
 import type { Snapshot } from '../src/capture/index.js';
 import { fixture, idOf } from './helpers.js';
+
+it('keeps tool-neutral answer facts and provisions upload fixtures in the permitted root', () => {
+  const answer = sanitizeAnswer('File selected: README.md (#9) with mcp__playwright__browser_click.');
+  expect(answer).toContain('README.md');
+  expect(answer).not.toMatch(/mcp|playwright|#9/i);
+  expect(uploadFixturePath('tree', 'attempt', 'README.md')).toBe(join('attempt', 'tree-output', 'README.md'));
+  expect(uploadFixturePath('mantis', 'attempt', 'README.md')).toBe(join('attempt', 'README.md'));
+  expect(uploadFixturePath('tree', 'attempt', undefined)).toBeNull();
+});
+
+it('identifies an expanded combobox popup as recoverable while retaining persistent-veil blocking', async () => {
+  const mantis = new MantisBrowser({ actionTimeoutMs: 300 });
+  try {
+    let view = await mantis.open(fixture('generic-browser-combobox-popup.html'));
+    const blocked = await mantis.click(idOf(view, 'checkbox "Include archived"'));
+    expect(blocked).toContain('combobox suggestion popup');
+    expect(blocked).toContain('press Escape, select a suggestion, or click elsewhere');
+    expect(blocked).not.toContain('non-dismissible layer');
+    await mantis.press('Escape');
+    view = await mantis.read();
+    expect(await mantis.click(idOf(view, 'checkbox "Include archived"'))).not.toMatch(/^error:/);
+    expect(await mantis.read()).toContain('archived selected');
+
+    view = await mantis.open(`${fixture('generic-browser-combobox-popup.html')}?loading=1`);
+    const veil = await mantis.click(idOf(view, 'checkbox "Include archived"'));
+    expect(veil).toContain('a non-dismissible layer');
+    expect(veil).toContain('nothing to dismiss');
+  } finally {
+    await mantis.close();
+  }
+});
 
 it('long-live-v1 deterministic contracts accept reviewed keys and reject an associated tuple near miss', () => {
   const mutate = (value: string): string => value.length > 1 ? `${value.slice(0, -1)}?` : `${value}?`;

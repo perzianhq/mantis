@@ -436,18 +436,29 @@ export function parseFinalUrl(text: string): string | null {
   return null;
 }
 
-// Substring match on purpose: names appear inside identifiers such as mcp__playwright__browser_click.
-const TOOL_WORDS = /mcp|mantis|playwright|snapshot|accessibility tree|screenshot|browser_\w+|\btool calls?\b/i;
+// Tool identifiers may be embedded in names such as mcp__playwright__browser_click.
+const TOOL_IDENTIFIERS = /\bmcp(?:__[a-z0-9_-]+)*\b|\bmantis\b|\bplaywright\b|\bsnapshots?\b|\baccessibility tree\b|\bscreenshots?\b|\bbrowser_\w+\b|\b\d+\s+tool calls?\b|\btool calls?\s*[:=]\s*\d+\b/gi;
 // Pixel coordinates from a click-by-position tool: x=123, y=456 / (123, 456) / [123,456] / at 123,456 / "coordinates".
-const COORDS = /\b[xy]\s*[=:]\s*\d{1,4}\b|[(\[]\s*\d{1,4}\s*,\s*\d{1,4}\s*[)\]]|\bat\s+\d{1,4}\s*,\s*\d{1,4}\b|\bcoordinates?\b/i;
-const REF_TOKENS = /(?<![\w$.])e\d{1,5}\b|(?<![\w&])#\d{1,5}\b|\bref[ =:]*\[?\w*\d+/i;
+const COORDS = /\bat\s+[xy]\s*[=:]\s*\d{1,4}(?:\s*,\s*[xy]\s*[=:]\s*\d{1,4})?\b|\b[xy]\s*[=:]\s*\d{1,4}\b|[(\[]\s*\d{1,4}\s*,\s*\d{1,4}\s*[)\]]|\bat\s+\d{1,4}\s*,\s*\d{1,4}\b|\bcoordinates?\b/gi;
+const REF_TOKENS = /(?<![\w$.])e\d{1,5}\b|(?<![\w&])#\d{1,5}\b|\[?\bref(?:\s*[=:]\s*|\s+)\[?\w*\d+\]?/gi;
 
 /**
  * The final reply with anything that could reveal the browsing tool removed, so a judge cannot tell which
- * approach produced it: whole lines that mention a tool word or a numbered element ref (e42, #12, ref=...),
- * pixel coordinates, the FINAL_URL line (it is passed separately), and surrounding blank space.
+ * approach produced it: tool identifiers, numbered element refs (e42, #12, ref=...), and pixel coordinates
+ * are redacted in place; FINAL_URL lines are omitted because that value is passed separately.
  */
 export function sanitizeAnswer(text: string): string {
-  const kept = text.split(/\r?\n/).filter((line) => !/^\s*FINAL_URL:/i.test(line) && !TOOL_WORDS.test(line) && !COORDS.test(line) && !REF_TOKENS.test(line));
+  const kept = text.split(/\r?\n/).flatMap((line) => {
+    if (/^\s*FINAL_URL:/i.test(line)) return [];
+    const redacted = line
+      .replace(TOOL_IDENTIFIERS, '')
+      .replace(COORDS, '')
+      .replace(REF_TOKENS, '')
+      .replace(/[ \t]{2,}/g, ' ')
+      .replace(/\(\s*\)/g, '')
+      .replace(/\s+([,.;:!?])/g, '$1')
+      .trim();
+    return redacted ? [redacted] : [];
+  });
   return kept.join('\n').replace(/\n{3,}/g, '\n\n').trim();
 }

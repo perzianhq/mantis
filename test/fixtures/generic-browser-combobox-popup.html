@@ -1,0 +1,26 @@
+<!doctype html>
+<html><head><title>Combobox popup recovery</title>
+<style>
+  #choice { position: absolute; top: 110px; left: 24px; }
+  #suggestions { position: absolute; top: 72px; left: 20px; width: 220px; height: 100px; z-index: 2; background: white; border: 1px solid #777; }
+  #veil { display: none; position: fixed; inset: 0; z-index: 3; background: rgba(20, 20, 20, .35); }
+  body.loading #veil { display: block; }
+</style></head><body>
+<label>Search <input id="search" role="combobox" aria-expanded="true" aria-controls="suggestions" autofocus></label>
+<div id="suggestions" role="listbox"><div role="option">First suggestion</div></div>
+<label id="choice"><input id="target" type="checkbox"> Include archived</label>
+<div id="veil"></div>
+<p id="result"></p>
+<script>
+  const search = document.querySelector('#search');
+  const suggestions = document.querySelector('#suggestions');
+  search.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      search.setAttribute('aria-expanded', 'false');
+      suggestions.style.display = 'none';
+    }
+  });
+  document.querySelector('#target').addEventListener('change', () => { document.querySelector('#result').textContent = 'archived selected'; });
+  if (new URLSearchParams(location.search).has('loading')) document.body.classList.add('loading');
+</script>
+</body></html>

@@ -121,7 +121,7 @@ describe('parseFinalUrl', () => {
 });
 
 describe('sanitizeAnswer', () => {
-  it('drops lines that reveal the tool and the FINAL_URL line', () => {
+  it('redacts tool details while retaining unrelated facts and omitting FINAL_URL', () => {
     const text = [
       'The cheapest item is $12.99.',
       'I used the Mantis open tool.',
@@ -136,7 +136,19 @@ describe('sanitizeAnswer', () => {
       'It is the Blue Mug.',
       'FINAL_URL: https://example.com/mugs',
     ].join('\n');
-    expect(sanitizeAnswer(text)).toBe('The cheapest item is $12.99.\nIt is the Blue Mug.');
+    expect(sanitizeAnswer(text)).toBe([
+      'The cheapest item is $12.99.',
+      'I used the open tool.',
+      'Called.',
+      'The showed a list.',
+      'Clicked to continue.',
+      'Pressed next.',
+      'Clicked then.',
+      'Clicked on the button.',
+      'Then tapped to submit.',
+      'I took a of the page.',
+      'It is the Blue Mug.',
+    ].join('\n'));
   });
   it('keeps ordinary content such as prices, ranks written as words, and HTML entities', () => {
     const text = 'Rated 4.5 stars by 1,200 users for $19.99 (see e-mail help). Entity &#39; stays.';
@@ -147,7 +159,13 @@ describe('sanitizeAnswer', () => {
     expect(sanitizeAnswer(text)).toBe(text);
   });
   it('collapses the blank space left behind', () => {
-    expect(sanitizeAnswer('A\n\nplaywright line\n\n\nB')).toBe('A\n\nB');
+    expect(sanitizeAnswer('A\n\nplaywright\n\n\nB')).toBe('A\nB');
+  });
+  it('keeps filename and frame facts when nearby tokens identify a tool', () => {
+    const answer = sanitizeAnswer('File selected: README.md (temp path #9) via mcp__playwright__browser_click.\nIntro text, One, Eggs; both snapshots look identical.');
+    expect(answer).toContain('README.md');
+    expect(answer).toContain('Intro text, One, Eggs; both look identical.');
+    expect(answer).not.toMatch(/mcp|playwright|snapshot|#9/i);
   });
 });
 

@@ -56,6 +56,7 @@ import type { ActiveTimeoutTelemetry, SarvamWaitKind, TimeoutKind } from './acti
 import { recoveryCounts } from './recovery-report.js';
 import { rowKey, selectExactRows } from './row-selector.js';
 import { COMPLETION_GUIDANCE, EXPLICIT_ACTION_GUIDANCE } from './guidance.js';
+import { uploadFixturePath } from './upload-fixture.js';
 
 const REPO = path.resolve(import.meta.dirname, '..', '..');
 const OUT = path.join(REPO, 'bench', 'results');
@@ -420,6 +421,13 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
   const toolControl = { cap: toolCap, hooks: longTelemetry?.hooks ?? null };
   try {
     const cfg = path.join(dir, 'mcp.json');
+    const uploadFixture = uploadFixturePath(approach, dir, task.uploadFixture);
+    // Playwright MCP permits uploads only from its configured output directory or the repository.
+    // Create the path before starting the server so it is available throughout the attempt.
+    if (uploadFixture) {
+      mkdirSync(path.dirname(uploadFixture), { recursive: true });
+      writeFileSync(uploadFixture, 'Harness-provided public benchmark fixture.\n');
+    }
     const [name, spec] = Object.entries(APPROACHES[approach].server(dir))[0]!;
     server = await startServer(spec, APPROACHES[approach].warmMs ?? 2_000, serverLog, PROVIDER === 'sarvam');
     mcpStartupMs = Date.now() - startupStarted;
@@ -445,8 +453,6 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
     const bridge = { command: node, args: [path.join(REPO, 'bench', 'agent', 'bridge.mjs'), String(server.port)] };
     if (PROVIDER !== 'sarvam') writeFileSync(cfg, JSON.stringify({ mcpServers: { [name]: bridge } }));
     const taskBase = task.site === 'local' ? fixtures.baseFor(task.id, attemptId) : base;
-    const uploadFixture = task.uploadFixture ? path.join(dir, path.basename(task.uploadFixture)) : null;
-    if (uploadFixture) writeFileSync(uploadFixture, 'Harness-provided public benchmark fixture.\n');
     // Judged real-site prompts already say how to end the reply (FINAL_URL line); the judge reads the whole reply.
     const prompt = task.judged
       ? `${FIXTURE_VARIANT?.forward(task.prompt(taskBase)) ?? task.prompt(taskBase)}${uploadFixture ? `\n\nFor a permitted file-picker action, use only this harness-created file: ${uploadFixture}` : ''}\n\nUse only the browser tools you have.`

@@ -326,6 +326,8 @@ interface Cover {
   busy: boolean;
   /** Nothing visible in the overlay (no text, background, border, shadow or content): a real pointer is blocked but a user would not see why. */
   invisible: boolean;
+  /** An expanded combobox owns this suggestion popup and can close it with Escape or a selection. */
+  comboboxPopup: boolean;
 }
 
 /**
@@ -1282,7 +1284,7 @@ export class MantisBrowser {
   /** The last scan, if this page has not changed since (DOM, scroll, input, focus, size, hover). */
   private async unchanged(page: Page): Promise<{ snap: Snapshot; doc: string | null } | null> {
     const l = this.last;
-    if (!l || l.page !== page) return null;
+    if (!l || l.page !== page || l.snap.url !== page.url()) return null;
     const now = await this.pageState(page);
     return now.doc === l.doc && now.mut === l.mut ? { snap: l.snap, doc: l.doc } : null;
   }
@@ -1506,6 +1508,15 @@ export class MantisBrowser {
       }
       const controls: { id: number; name: string }[] = [];
       const seenControls = new Set<number>();
+      const popup = hit.closest('[role="listbox"], [role="menu"]') ?? (hit.matches('[role="option"]') ? hit : null);
+      const comboboxPopup = !!popup && Array.from(document.querySelectorAll('[role="combobox"], input, textarea')).some((owner) => {
+        if (owner.getAttribute('aria-expanded') !== 'true') return false;
+        const owns = `${owner.getAttribute('aria-controls') ?? ''} ${owner.getAttribute('aria-owns') ?? ''}`.trim().split(/\s+/);
+        return owns.some((id) => {
+          const controlled = document.getElementById(id);
+          return controlled === popup || !!controlled?.contains(popup);
+        });
+      });
       let busy = !!hit.closest('[aria-busy="true"]') || !!document.querySelector('[role="progressbar"], progress');
       const focusable = 'a[href], button, input:not([type="hidden"]), select, textarea, [tabindex]:not([tabindex="-1"]), [contenteditable="true"], [role="button"], [role="link"], [role="menuitem"]';
       const rendered = (node: Element): boolean => {
@@ -1554,7 +1565,7 @@ export class MantisBrowser {
       };
       let invisible = empty(hit);
       for (let n: Element | null = parent(hit); invisible && n && n !== document.documentElement && !n.contains(pointerTarget); n = parent(n)) if (paints(n)) invisible = false;
-      return { desc: describe(hit), hitId, close, controls, interactive, busy, invisible };
+      return { desc: describe(hit), hitId, close, controls, interactive: interactive || comboboxPopup, busy, invisible, comboboxPopup };
     }, label).catch(() => null);
   }
 
@@ -1580,6 +1591,9 @@ export class MantisBrowser {
     const plain = label.replace(' (password)', '');
     const by = cover.hitId !== undefined ? `${cover.desc} (#${cover.hitId})` : cover.desc;
     const close = cover.close ? ` (try #${cover.close.id} "${cover.close.name}")` : '';
+    if (cover.comboboxPopup) {
+      return `${plain} is covered by a combobox suggestion popup, ${by}; press Escape, select a suggestion, or click elsewhere to dismiss it`;
+    }
     if (!cover.interactive && !cover.invisible) {
       const direct = href ? `; href ${href}; try open("${href}")` : '';
       return `${plain} is covered by another element, a non-dismissible layer, ${by}; nothing to dismiss (the page may be loading or the region is inactive)${direct}`;
