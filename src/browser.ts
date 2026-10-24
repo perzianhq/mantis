@@ -547,14 +547,14 @@ export class MantisBrowser {
     });
   }
 
-  async select(id: number, option: string): Promise<string> {
+  async select(id: number, option: string | string[]): Promise<string> {
     return this.act(async (page) => {
       const { el, label } = await this.target(page, id);
       try {
         const native = await el.evaluate((node) => node instanceof HTMLSelectElement);
         const picked = native
           ? await this.chooseOption(el, label, option)
-          : await this.chooseCustomOption(el, label, option);
+          : await this.chooseCustomOption(el, label, typeof option === 'string' ? option : this.oneOption(option, label));
         return `selected "${picked}" in ${label}`;
       } catch (e) {
         throw e instanceof ActionError ? e : new ActionError(this.explain(e, label));
@@ -564,29 +564,44 @@ export class MantisBrowser {
     });
   }
 
-  /** Match `option` against a <select>'s options (value, exact label, case-insensitive label, substring) and choose it. */
-  private async chooseOption(el: ElementHandle<Element>, label: string, option: string): Promise<string> {
-    const found = await el.evaluate((node, want) => {
+  /** Custom comboboxes choose one option per call; a one-element list is accepted. */
+  private oneOption(option: string[], label: string): string {
+    if (option.length !== 1) throw new ActionError(`${label} is not a multi-select <select>; give one option per call`);
+    return option[0]!;
+  }
+
+  /**
+   * Match `option` against a <select>'s options (value, exact label, case-insensitive label, substring) and choose it.
+   * A list is only valid for <select multiple>; it replaces the whole selection with exactly those options.
+   */
+  private async chooseOption(el: ElementHandle<Element>, label: string, option: string | string[]): Promise<string> {
+    const wants = Array.isArray(option) ? option : [option];
+    const found = await el.evaluate((node, list) => {
       if (!(node instanceof HTMLSelectElement)) return { notSelect: true as const };
       const opts = Array.from(node.options).map((o, index) => ({
         index, value: o.value, label: (o.label || o.text).replace(/\s+/g, ' ').trim(),
       }));
-      const w = want.toLowerCase();
-      const hit =
-        opts.find((o) => o.value === want) ??
-        opts.find((o) => o.label === want) ??
-        opts.find((o) => o.label.toLowerCase() === w) ??
-        opts.find((o) => o.label.toLowerCase().includes(w));
-      return { index: hit ? hit.index : -1, labels: opts.map((o) => o.label), picked: hit?.label };
-    }, option);
+      const hits = list.map((want) => {
+        const w = want.toLowerCase();
+        return opts.find((o) => o.value === want) ??
+          opts.find((o) => o.label === want) ??
+          opts.find((o) => o.label.toLowerCase() === w) ??
+          opts.find((o) => o.label.toLowerCase().includes(w));
+      });
+      return { multiple: node.multiple, hits: hits.map((h) => h?.index ?? -1), picked: hits.map((h) => h?.label), labels: opts.map((o) => o.label) };
+    }, wants);
     if ('notSelect' in found) {
       throw new ActionError(`${label} is not a <select>; click it, then click the option you want`);
     }
-    if (found.index < 0) {
-      throw new ActionError(`no option "${option}" in ${label}; options: ${found.labels.slice(0, 15).join(' | ')}`);
+    if (wants.length > 1 && !found.multiple) {
+      throw new ActionError(`${label} is a single-choice select; give one option, not ${wants.length}`);
     }
-    await el.selectOption({ index: found.index }, { timeout: this.actionTimeout });
-    return found.picked ?? option;
+    const missing = found.hits.findIndex((index) => index < 0);
+    if (missing >= 0) {
+      throw new ActionError(`no option "${wants[missing]}" in ${label}; options: ${found.labels.slice(0, 15).join(' | ')}`);
+    }
+    await el.selectOption(found.hits.map((index) => ({ index })), { timeout: this.actionTimeout });
+    return found.picked.map((text, i) => text ?? wants[i]).join(', ');
   }
 
   /** Open a custom combobox/listbox and choose its one unambiguous matching option. */
@@ -689,7 +704,7 @@ export class MantisBrowser {
   }
 
   /** Fill several fields in one call: text, dropdown option, or true/false for checkboxes and radios. */
-  async fill(fields: { id: number; value: string | boolean }[]): Promise<string> {
+  async fill(fields: { id: number; value: string | boolean | string[] }[]): Promise<string> {
     return this.act(async (page) => {
       if (!fields.length) throw new ActionError('no fields given');
       const done: number[] = [];
@@ -720,7 +735,7 @@ export class MantisBrowser {
                 : 'text',
           );
           if (kind === 'select') {
-            parts.push(`selected "${await this.chooseOption(el, name, String(value))}" in ${name}`);
+            parts.push(`selected "${await this.chooseOption(el, name, Array.isArray(value) ? value : String(value))}" in ${name}`);
           } else if (kind === 'check') {
             const on = /^(true|on|yes)$/i.test(String(value));
             if (!on && !/^(false|off|no)$/i.test(String(value))) {

@@ -82,14 +82,14 @@ export function createServer(browser: MantisBrowser = new MantisBrowser()): McpS
   );
   server.registerTool(
     'select',
-    { description: 'Choose option text in select or combobox #id.', inputSchema: { id, option: z.string() } },
+    { description: 'Choose option text in select or combobox #id. A <select multiple> takes a list and its selection becomes exactly that list.', inputSchema: { id, option: z.union([z.string(), z.array(z.string()).min(1)]) } },
     async ({ id, option }) => reply(await browser.select(id, option)),
   );
   server.registerTool(
     'fill',
     {
       description: 'Prefer one mixed call for related text, dropdown, and checkbox fields; unrelated fields stay unchanged. Verify entity identity before editing. On failure or rerender it stops and reports partial completion; after confirmed completion, report it rather than re-inspecting.',
-      inputSchema: { fields: z.array(z.object({ id, value: z.union([z.string(), z.boolean()]) })) },
+      inputSchema: { fields: z.array(z.object({ id, value: z.union([z.string(), z.boolean(), z.array(z.string()).min(1)]) })) },
     },
     async ({ fields }) => reply(await browser.fill(fields)),
   );

@@ -157,6 +157,32 @@ describe('select', () => {
     expect(await b.select(id, 'Mars')).toBe(`error: no option "Mars" in #${id} combobox "Country"; options: France | Spain`);
   });
 
+  it('replaces a <select multiple> selection with exactly the listed options and rejects lists elsewhere', async () => {
+    const url =
+      'data:text/html,' +
+      encodeURIComponent(
+        '<title>Multi</title><label for=m>Cheese</label><select id=m multiple><option>Emmental</option><option>Cheddar</option><option>Roquefort</option></select>' +
+          '<label for=s>Size</label><select id=s><option>Small</option><option>Large</option></select>',
+      );
+    const view = await b.open(url);
+    const multi = idOf(view, '"Cheese"');
+    const single = idOf(view, '"Size"');
+    const chosen = () => b.page!.$eval('#m', (n) => Array.from((n as HTMLSelectElement).selectedOptions).map((o) => o.text));
+    expect(await b.select(multi, ['Roquefort', 'Cheddar'])).toContain('selected "Roquefort, Cheddar"');
+    expect(await chosen()).toEqual(['Cheddar', 'Roquefort']);
+    // a later set replaces the earlier one; a single string still means one option
+    await b.select(multi, ['emmental', 'cheddar']);
+    expect(await chosen()).toEqual(['Emmental', 'Cheddar']);
+    await b.select(multi, 'Roquefort');
+    expect(await chosen()).toEqual(['Roquefort']);
+    // near misses: a missing option changes nothing, and a list on a single-choice select is refused
+    expect(await b.select(multi, ['Emmental', 'Mars'])).toContain('error: no option "Mars"');
+    expect(await chosen()).toEqual(['Roquefort']);
+    expect(await b.select(single, ['Small', 'Large'])).toContain('single-choice select');
+    expect(await b.fill([{ id: multi, value: ['Emmental', 'Roquefort'] }])).toContain('Emmental, Roquefort');
+    expect(await chosen()).toEqual(['Emmental', 'Roquefort']);
+  });
+
   it('opens a custom combobox and only accepts an unambiguous text match', async () => {
     const url =
       'data:text/html,' +
