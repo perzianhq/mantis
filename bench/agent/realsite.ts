@@ -73,7 +73,7 @@ export interface DeterministicEvidence {
   forms?: FormValue[];
   final?: boolean;
   /** Redacted harness history; imported structurally to keep this module pure. */
-  journal?: { complete?: boolean; submissions?: unknown[]; states?: Array<{ name?: string; forms?: FormValue[] }> };
+  journal?: { complete?: boolean; submissions?: unknown[]; states?: Array<{ name?: string; step?: number; url?: string; forms?: FormValue[] }> };
 }
 
 export interface RealsiteRow {

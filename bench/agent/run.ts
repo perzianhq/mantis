@@ -41,6 +41,7 @@ import type { AttemptStatus, RunMetadata, StreamUsage } from './integrity.js';
 import { codexArgs, rawMcpToolName } from './codex-config.js';
 import { PAGE_STATE_FUNCTION, journalFromPageStates, packEvidence, parsePageState, toCapturedFrame } from './evidence.js';
 import type { CapturedFrame } from './evidence.js';
+import { retainFinalAnswer } from './final-answer.js';
 import { createMcpProxy } from './mcp-proxy.js';
 import type { McpProxy } from './mcp-proxy.js';
 import { ToolCallCap, createLongTelemetry } from './long-telemetry.js';
@@ -325,6 +326,7 @@ function claudeBin(): string {
 interface AttemptResult {
   attempt: number;
   attemptId: string;
+  logPath: string;
   finalScreenshotPath: string | null;
   /** Evidence sidecar (bench/agent/evidence.ts) and the PNGs of its kept frames, chronological, final last. */
   evidencePath: string | null;
@@ -366,6 +368,7 @@ interface AttemptResult {
 
 interface RunResult {
   task: string; approach: Approach; run: number;
+  attempt: number; attemptId: string; logPath: string;
   finalScreenshotPath?: string | null;
   evidencePath: string | null; evidenceFrames: string[];
   status: AttemptStatus; ok: boolean; error: string; answer: string;
@@ -392,6 +395,7 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
   const dir = mkdtempSync(path.join(os.tmpdir(), 'mantis-agent-'));
   mkdirSync(logDir, { recursive: true });
   const unique = `${task.id}--${approach}--${run}--attempt-${attempt}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const logPath = path.join(logDir, `${unique}.jsonl`);
   const serverLog = path.join(logDir, `${unique}.server.log`);
   const attemptId = `${task.id}-${approach}-${run}-${attempt}-${Date.now()}`;
   let server: Awaited<ReturnType<typeof startServer>> | null = null;
@@ -472,7 +476,7 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
       ] : [];
     cliStart = Date.now();
     if (PROVIDER === 'sarvam') {
-      const traceLog = createWriteStream(path.join(logDir, `${unique}.jsonl`));
+      const traceLog = createWriteStream(logPath);
       traceLog.on('error', () => { /* diagnostic traces are best-effort */ });
       const controller = new AbortController();
       let timedOut = false;
@@ -524,7 +528,7 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
       const p = spawn(cliCommand!, args, { cwd: dir, stdio: ['ignore', 'pipe', 'pipe'], env });
       let stream = '';
       let stderr = '';
-      const stdoutLog = createWriteStream(path.join(logDir, `${unique}.jsonl`));
+      const stdoutLog = createWriteStream(logPath);
       stdoutLog.on('error', () => { /* keep the attempt alive if the diagnostic log cannot be written */ });
       let timedOut = false;
       let settled = false;
@@ -588,7 +592,7 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
       // form can be evidence even when its near-duplicate PNG is not kept.
       const journal = journalFromPageStates(raw.flatMap((capture) => {
         const state = capture.state === null ? null : parsePageState(capture.state);
-        return state ? [state] : [];
+        return state ? [{ ...state, step: capture.step }] : [];
       }));
       const { sidecar, pngs } = packEvidence(frames, unique, captureMs, journal);
       try {
@@ -634,7 +638,7 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
         : SUITE === LONG_LOCAL_V1_SUITE
           ? gradeLongLocalV1Case(task.id, gradedAnswer, fixtureEvidence?.events ?? [])
     : gradeTaskAnswer(task, rawAnswer);
-  const answer = gradedAnswer.slice(0, 160);
+  const answer = retainFinalAnswer(gradedAnswer);
   const connected = parsed.connected;
   const connectionState = connected ? 'connected' : parsed.sawInit ? 'failed' : 'unknown';
   const stepLimited = PROVIDER === 'sarvam' && isSarvamStepLimit(rawResultText);
@@ -666,7 +670,7 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
   const cliWallMs = cliStart === null || cliExitAt === null ? null : cliExitAt - cliStart;
   const diagnostics = [...(('diagnostics' in parsed ? parsed.diagnostics as string[] : [])), ...(captureFailures ? [`${captureFailures} step capture(s) failed or timed out`] : [])];
   return {
-    attempt, attemptId, finalScreenshotPath, evidencePath, evidenceFrames, status, connected, connectionState, error, answer, initModel: parsed.initModel, resolvedModels: parsed.resolvedModels,
+    attempt, attemptId, logPath, finalScreenshotPath, evidencePath, evidenceFrames, status, connected, connectionState, error, answer, initModel: parsed.initModel, resolvedModels: parsed.resolvedModels,
     turns: parsed.turns, toolCalls: parsed.toolCalls, toolErrors: parsed.toolErrors,
     observationChars: parsed.observationChars, observationImages: parsed.observationImages,
     totalInputTokens: PROVIDER === 'codex' ? (parsed as ReturnType<typeof parseCodexStream>).totalInputTokens :
@@ -944,7 +948,7 @@ try {
       const nullableSum = (key: keyof StreamUsage): number | null => usage[key];
       const allTurnsKnown = attempts.every((x) => x.turns !== null);
       const r: RunResult = {
-        task: t.id, approach: a, run, status: finalAttempt.status, finalScreenshotPath: finalAttempt.finalScreenshotPath,
+        task: t.id, approach: a, run, attempt: finalAttempt.attempt, attemptId: finalAttempt.attemptId, logPath: finalAttempt.logPath, status: finalAttempt.status, finalScreenshotPath: finalAttempt.finalScreenshotPath,
         evidencePath: finalAttempt.evidencePath, evidenceFrames: finalAttempt.evidenceFrames,
         valid: finalAttempt.status !== 'connection_failure', ok: finalAttempt.status === 'success', harnessFailure: finalAttempt.harnessFailure,
         error: finalAttempt.error, answer: finalAttempt.answer,

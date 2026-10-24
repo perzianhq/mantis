@@ -20,7 +20,8 @@ export interface FormValue {
 export interface EvidenceJournal {
   complete: boolean;
   submissions: { method: string; url: string }[];
-  states: { name?: string; forms: FormValue[] }[];
+  /** Every synchronous capture, including its browser-tool step when available. */
+  states: { name?: string; step?: number; url?: string; forms: FormValue[] }[];
   transitions: { kind: 'document' | 'tab' | 'frame'; url: string }[];
   uploads: string[];
 }
@@ -113,7 +114,7 @@ export const PAGE_STATE_FUNCTION = `() => {
 export interface PageState { url: string; title: string; text: string; forms: FormValue[]; submissions?: { method: string; url: string }[] }
 
 /** Build the redacted, retained history from synchronous harness captures. */
-export function journalFromPageStates(states: readonly PageState[], submissions: { method: string; url: string }[] = []): EvidenceJournal {
+export function journalFromPageStates(states: readonly (PageState & { step?: number })[], submissions: { method: string; url: string }[] = []): EvidenceJournal {
   const transitions = states.flatMap((state, index) => !index || states[index - 1]!.url !== state.url ? [{ kind: 'document' as const, url: state.url }] : []);
   const uploads = [...new Set(states.flatMap((state) => state.forms.filter((form) => /file|upload/i.test(`${form.label} ${form.name ?? ''} ${form.id ?? ''}`) && form.value).map((form) => form.value.split(/[\\/]/).pop()!)))];
   const observedSubmissions = [...submissions];
@@ -128,7 +129,7 @@ export function journalFromPageStates(states: readonly PageState[], submissions:
     // is deliberately incomplete and therefore cannot establish history.
     complete: states.length > 0,
     submissions: observedSubmissions,
-    states: states.map((state) => ({ forms: state.forms })),
+    states: states.map((state) => ({ ...(state.step === undefined ? {} : { step: state.step }), url: state.url, forms: state.forms })),
     transitions,
     uploads,
   };
@@ -164,25 +165,39 @@ export function parsePageState(text: string): PageState | null {
 
 /**
  * Drop near-duplicate frames and cap the count. Input is chronological; the last element is the final frame.
- * A frame is dropped when it is within `threshold` of the previous kept frame and on the same URL (if the frame
- * before the final one is a near-duplicate of the final, that earlier one goes instead). Above `max`, the first and
- * last stay and the frames with the biggest change from their predecessor fill the rest, in chronological order.
+ * A frame is dropped when it is within `threshold` of the previous kept frame, on the same URL, and has unchanged
+ * form values (if the frame before the final one is a near-duplicate of the final, that earlier one goes instead).
+ * Above `max`, the first and last stay and the frames with the biggest visual, URL, or form-state change from their
+ * predecessor fill the rest, in chronological order.
  */
-export function selectFrames<T extends { thumb: Uint8Array; url: string }>(frames: T[], max = MAX_FRAMES, threshold = 2): T[] {
+const sameForm = (a: FormValue, b: FormValue): boolean =>
+  a.label === b.label && a.id === b.id && a.name === b.name && a.occurrence === b.occurrence
+    && a.value === b.value && a.passwordEmpty === b.passwordEmpty && a.disabled === b.disabled && a.readonly === b.readonly;
+
+/** Form values are sampled independently of pixels, so preserve small but meaningful input changes. */
+const formsChanged = (before: readonly FormValue[] | undefined, after: readonly FormValue[] | undefined): boolean => {
+  const left = before ?? [];
+  const right = after ?? [];
+  return left.length !== right.length || left.some((form) => !right.some((other) => sameForm(form, other)));
+};
+
+export function selectFrames<T extends { thumb: Uint8Array; url: string; forms?: readonly FormValue[] }>(frames: T[], max = MAX_FRAMES, threshold = 2): T[] {
   if (frames.length === 0) return [];
   const final = frames[frames.length - 1]!;
   if (max <= 1) return [final];
   const seq: T[] = [];
   for (const frame of frames.slice(0, -1)) {
     const prev = seq[seq.length - 1];
-    if (prev && prev.url === frame.url && thumbDiff(prev.thumb, frame.thumb) < threshold) continue;
+    if (prev && prev.url === frame.url && thumbDiff(prev.thumb, frame.thumb) < threshold && !formsChanged(prev.forms, frame.forms)) continue;
     seq.push(frame);
   }
   const last = seq[seq.length - 1];
-  if (last && last.url === final.url && thumbDiff(last.thumb, final.thumb) < threshold) seq.pop();
+  if (last && last.url === final.url && thumbDiff(last.thumb, final.thumb) < threshold && !formsChanged(last.forms, final.forms)) seq.pop();
   seq.push(final);
   if (seq.length <= max) return seq;
-  const score = (i: number): number => thumbDiff(seq[i - 1]!.thumb, seq[i]!.thumb) + (seq[i - 1]!.url !== seq[i]!.url ? 50 : 0);
+  const score = (i: number): number => thumbDiff(seq[i - 1]!.thumb, seq[i]!.thumb)
+    + (seq[i - 1]!.url !== seq[i]!.url ? 50 : 0)
+    + (formsChanged(seq[i - 1]!.forms, seq[i]!.forms) ? 10_000 : 0);
   const middle = Array.from({ length: seq.length - 2 }, (_, k) => k + 1).sort((a, b) => score(b) - score(a) || a - b).slice(0, max - 2);
   const keep = new Set([0, seq.length - 1, ...middle]);
   return seq.filter((_, i) => keep.has(i));

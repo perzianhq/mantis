@@ -8,8 +8,10 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { evaluateChecks, evaluateDeterministicGrader, loadRealsiteRows, loadRealsiteTasks, mulberry32, parseFinalUrl, realsitePrompt, sampleRealsite, sanitizeAnswer } from '../bench/agent/realsite.js';
 import type { RealsiteRow } from '../bench/agent/realsite.js';
-import { buildJudgePrompt, parseJudgeOutput, parseSarvamTrace, readFinalTexts, renderJudgedMarkdown, runKey } from '../bench/agent/judge.js';
+import { buildEvidencePrompt, buildJudgePrompt, parseJudgeOutput, parseSarvamTrace, readFinalTexts, renderJudgedMarkdown, runKey } from '../bench/agent/judge.js';
 import type { JudgedRun } from '../bench/agent/judge.js';
+import { journalFromPageStates, selectFrames } from '../bench/agent/evidence.js';
+import { retainFinalAnswer } from '../bench/agent/final-answer.js';
 
 const FIXTURE = path.join(import.meta.dirname, 'fixtures', 'realsite');
 
@@ -187,6 +189,58 @@ describe('judge helpers', () => {
     const texts = readFinalTexts(dir, 'codex');
     expect(texts.get(runKey('t', 'mantis', 1))).toBe('complete relaunch');
     expect(texts.get(runKey('t', 'mantis', 2))).toBe('only launch');
+  });
+
+  it('binds a saved row to its terminal transcript instead of preferring a stale higher attempt number', () => {
+    const dir = mkdtempSync(path.join(tmpdir(), 'final-texts-identity-'));
+    const event = (text: string) => JSON.stringify({ type: 'item.completed', item: { type: 'agent_message', text } });
+    const old = 'case--mantis--1--attempt-2-1000-aaaaaa.jsonl';
+    const current = 'case--mantis--1--attempt-1-2000-bbbbbb.jsonl';
+    writeFileSync(path.join(dir, old), event('aborted prior launch'));
+    writeFileSync(path.join(dir, current), event('complete terminal launch'));
+    const rows = [{ task: 'case', approach: 'mantis', run: 1, status: 'success', toolCalls: 0, totalInputTokens: null, logPath: path.join(dir, current) }];
+    expect(readFinalTexts(dir, 'codex', rows).get(runKey('case', 'mantis', 1))).toBe('complete terminal launch');
+
+    // Near miss: legacy rows without a retained identity use the newest launch,
+    // even when an older transcript happens to look more complete.
+    writeFileSync(path.join(dir, 'near--mantis--1--attempt-2-3000-dddddd.jsonl'), event('older complete reply'));
+    writeFileSync(path.join(dir, 'near--mantis--1--attempt-1-4000-cccccc.jsonl'), event('newer truncated reply'));
+    expect(readFinalTexts(dir, 'codex', [{ task: 'near', approach: 'mantis', run: 1, status: 'success', toolCalls: 0, totalInputTokens: null }]).get(runKey('near', 'mantis', 1))).toBe('newer truncated reply');
+  });
+
+  it('retains complete fallback replies for deterministic graders', () => {
+    const answer = `${'detail '.repeat(80)}required tail`;
+    expect(answer.length).toBeGreaterThan(160);
+    const retained = retainFinalAnswer(answer);
+    expect(retained).toBe(answer);
+    expect(evaluateDeterministicGrader({
+      kind: 'fact', answerIncludes: [{ type: 'entity', value: 'required tail' }],
+      final: { url: { origin: 'https://example.test', path: '/final' }, textIncludes: [] },
+    }, retained, [{ final: true, url: 'https://example.test/final', text: '' }])).toEqual({ pass: true, failed: [] });
+  });
+
+  it('keeps semantic form changes and gives the judge their checkpoint order', () => {
+    const samePixels = new Uint8Array(4).fill(7);
+    const selected = { label: 'Upload file', value: 'README.md', name: 'upload' };
+    const kept = selectFrames([
+      { thumb: samePixels, url: 'https://example.test/chooser', forms: [] },
+      { thumb: samePixels, url: 'https://example.test/chooser', forms: [selected] },
+      { thumb: samePixels, url: 'https://example.test/chooser', forms: [selected] },
+    ]);
+    expect(kept).toHaveLength(2);
+
+    const timeline = (selectAfterRevisits: boolean) => journalFromPageStates([
+      { step: 4, url: 'https://example.test/chooser', title: '', text: '', forms: [] },
+      ...(selectAfterRevisits
+        ? [{ step: 5, url: 'https://example.test/left', title: '', text: '', forms: [] }, { step: 6, url: 'https://example.test/right', title: '', text: '', forms: [] }, { step: 7, url: 'https://example.test/chooser', title: '', text: '', forms: [selected] }]
+        : [{ step: 5, url: 'https://example.test/chooser', title: '', text: '', forms: [selected] }, { step: 6, url: 'https://example.test/left', title: '', text: '', forms: [] }, { step: 7, url: 'https://example.test/right', title: '', text: '', forms: [] }, { step: 8, url: 'https://example.test/chooser', title: '', text: '', forms: [selected] }]),
+    ]);
+    const prompt = (journal: ReturnType<typeof timeline>) => buildEvidencePrompt({ task: 't', website: 'https://example.test', finalUrl: null, answer: '', attached: false, frames: [{ id: 'F1', url: 'https://example.test/right', text: '', final: true, forms: [], journal, image: 'f1.png' }] });
+    const before = prompt(timeline(false));
+    const after = prompt(timeline(true));
+    expect(before.indexOf('step 5')).toBeLessThan(before.indexOf('step 6'));
+    expect(before.indexOf('Upload file=README.md')).toBeLessThan(before.indexOf('step 6'));
+    expect(after.indexOf('Upload file=README.md')).toBeGreaterThan(after.indexOf('step 6'));
   });
 
   it('reads full Sarvam final replies from its trace rather than treating them as Codex events', () => {

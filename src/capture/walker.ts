@@ -28,6 +28,8 @@ export interface RawNode {
   states: string[];
   /** Current value of inputs / selects (password values are masked). */
   value?: string;
+  /** Native form-control attributes that distinguish an otherwise similarly named action target. */
+  identity?: string[];
   href?: string;
   /** Option labels for native <select>. */
   options?: string[];
@@ -398,6 +400,30 @@ export function walker(includeSrOnly = false): WalkResult {
     return '';
   }
 
+  /**
+   * Form authors often use an id/name as the only stable way to distinguish repeated controls.
+   * Treat an attribute as already conveyed when its words appear intact in the accessible name.
+   */
+  function identityWords(s: string): string {
+    return collapse(s)
+      .replace(/([a-z\p{Ll}])([A-Z\p{Lu}])/gu, '$1 $2')
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}]+/gu, ' ')
+      .trim();
+  }
+
+  function controlIdentity(el: Element, accessibleName: string): string[] {
+    if (!/^(?:select|input|textarea|button)$/.test(el.localName)) return [];
+    const words = ` ${identityWords(accessibleName)} `;
+    const attrs: string[] = [];
+    for (const attr of ['id', 'name']) {
+      const value = collapse(el.getAttribute(attr) || '');
+      const identity = identityWords(value);
+      if (value && identity && !words.includes(` ${identity} `)) attrs.push(`${attr}=${cap(value, 60)}`);
+    }
+    return attrs;
+  }
+
   // ---- name inference for unnamed controls --------------------------------
   // Evidence only, in order: SVG title/aria-label, icon class or ligature, tooltip attributes, href,
   // adjacent text. The caller marks the result as inferred. No evidence -> no name.
@@ -582,6 +608,7 @@ export function walker(includeSrOnly = false): WalkResult {
 
   const peerCache = new Map<string, Element[]>();
   const unnamed: { node: RawNode; el: Element; role: string }[] = [];
+  const identified: { node: RawNode; identity: string[] }[] = [];
   /** Last resort for a control with no accessible name or icon evidence. */
   function contextualName(el: Element, role: string): string {
     // A form field's own name/id tells identical-looking fields apart better than position or section.
@@ -970,6 +997,8 @@ export function walker(includeSrOnly = false): WalkResult {
       if (guess) { node.name = guess; node.inferred = true; }
       else if (/^(?:input|select|textarea)$/.test(t)) node.name = rowName(el);
     }
+    const identity = controlIdentity(el, node.name);
+    if (identity.length) identified.push({ node, identity });
     // Unnamed links keep their href as the identifier (translate shows it when the name is empty).
     if (!node.name && !el.hasAttribute('href')) unnamed.push({ node, el, role });
     const input = el as HTMLInputElement;
@@ -1444,6 +1473,13 @@ export function walker(includeSrOnly = false): WalkResult {
     h.node.name = total > 1 && !/ \d+( of \d+)?$/.test(h.hint) ? `${h.hint} ${at} of ${total}` : h.hint;
     h.node.inferred = true;
   }
+
+  // An id/name only earns its tokens where controls would otherwise look the same.
+  const lookOf = (n: RawNode): string => `${n.role}\u0000${n.name}`;
+  const sameLook = new Map<string, number>();
+  for (const c of identified) sameLook.set(lookOf(c.node), 0);
+  for (const n of nodes) if (n.kind === 'interactive' && sameLook.has(lookOf(n))) sameLook.set(lookOf(n), sameLook.get(lookOf(n))! + 1);
+  for (const c of identified) if (sameLook.get(lookOf(c.node))! > 1) c.node.identity = c.identity;
 
   // Do not let document order decide which third of a long page is useful.  We still walk the
   // page to find content around the current scroll position, then retain the viewport, its near

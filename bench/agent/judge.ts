@@ -43,6 +43,8 @@ export type Verdict = 'success' | 'failure' | 'unsure' | 'blocked' | 'site_broke
 export interface SavedRun {
   task: string; approach: string; run: number;
   status: string; answer?: string;
+  /** Identity of the terminal attempt, retained so a relaunch cannot select a stale transcript. */
+  attempt?: number; attemptId?: string; logPath?: string | null;
   finalScreenshotPath?: string | null;
   /** Evidence-format rows (newer runs) have `evidenceFrames`, even when empty; older rows lack the property. */
   evidencePath?: string | null; evidenceFrames?: string[];
@@ -72,22 +74,40 @@ export interface JudgedRun {
 /** Log file name: `<task>--<approach>--<run>--attempt-<n>-<timestamp>-<rand>.jsonl`. */
 const LOG_NAME = /^(.+)--([a-z]+)--(\d+)--attempt-(\d+)-.*\.jsonl$/;
 
-/** The last agent message of the last attempt of every run in a log folder, keyed `task|approach|run`. */
-export function readFinalTexts(logDir: string, provider: string): Map<string, string> {
-  const latest = new Map<string, { attempt: number; stamp: number; file: string }>();
+/** Final agent messages, bound to saved terminal-attempt identities where available. */
+export function readFinalTexts(logDir: string, provider: string, savedRuns: readonly SavedRun[] = []): Map<string, string> {
+  const candidates = new Map<string, { attempt: number; stamp: number; file: string }[]>();
   if (!existsSync(logDir)) return new Map();
   for (const file of readdirSync(logDir)) {
     const m = LOG_NAME.exec(file);
     if (!m || /\.long\.jsonl$/.test(file)) continue;
     const key = runKey(m[1]!, m[2]!, Number(m[3]));
     const attempt = Number(m[4]);
-    // A relaunch into the same folder repeats attempt numbers; the later timestamp is the one the result row came from.
     const stamp = Number(/--attempt-\d+-(\d+)-/.exec(file)?.[1] ?? 0);
-    const cur = latest.get(key);
-    if (!cur || cur.attempt < attempt || (cur.attempt === attempt && cur.stamp < stamp)) latest.set(key, { attempt, stamp, file });
+    const entries = candidates.get(key) ?? [];
+    entries.push({ attempt, stamp, file });
+    candidates.set(key, entries);
   }
   const texts = new Map<string, string>();
-  for (const [key, { file }] of latest) {
+  const rows = new Map(savedRuns.map((run) => [runKey(run.task, run.approach, run.run), run]));
+  const transcriptNames = (run: SavedRun | undefined): Set<string> => {
+    if (!run) return new Set();
+    const paths = [run.logPath, run.evidencePath, run.finalScreenshotPath, ...(run.evidenceFrames ?? [])].filter((value): value is string => typeof value === 'string');
+    return new Set(paths.map((value) => path.basename(value)
+      .replace(/\.evidence\.json$/, '.jsonl')
+      .replace(/\.(?:final|step-\d+(?:-[a-z]+)?)\.png$/, '.jsonl')));
+  };
+  for (const [key, entries] of candidates) {
+    const row = rows.get(key);
+    const names = transcriptNames(row);
+    const matchingPath = entries.filter((entry) => names.has(entry.file));
+    const matchingAttempt = row?.attempt === undefined ? [] : entries.filter((entry) => entry.attempt === row.attempt);
+    // Legacy result files lack an identity. A relaunch restarts attempt numbering,
+    // so their only reliable selector is the latest launch timestamp.
+    const selected = (matchingPath.length ? matchingPath : matchingAttempt.length ? matchingAttempt : entries)
+      .reduce((latest, entry) => !latest || entry.stamp > latest.stamp ? entry : latest, undefined as typeof entries[number] | undefined);
+    if (!selected) continue;
+    const { file } = selected;
     const stream = readFileSync(path.join(logDir, file), 'utf8');
     const text = provider === 'sarvam' ? parseSarvamTrace(stream) : (provider === 'claude' ? parseClaudeStream(stream) : parseCodexStream(stream)).resultText;
     if (text) texts.set(key, text);
@@ -176,6 +196,15 @@ export function buildEvidencePrompt(input: { task: string; website: string; fina
   const { frames, attached } = input;
   const where = (image: string): string => input.imagesUnavailable ? 'unavailable for this judge model' : (attached ? `${image} (attached)` : `${image} (open it with the Read tool)`);
   const hasFinal = frames.some((f) => f.final);
+  const journalTimeline = (journal: EvidenceJournal): string[] => journal.states.map((state, index) => {
+    const prior = journal.states[index - 1];
+    const changed = state.forms.filter((form) => !prior?.forms.some((previous) =>
+      previous.label === form.label && previous.id === form.id && previous.name === form.name && previous.occurrence === form.occurrence
+        && previous.value === form.value && previous.passwordEmpty === form.passwordEmpty && previous.disabled === form.disabled && previous.readonly === form.readonly));
+    const formChanges = changed.map((form) => `${form.label || '(unlabelled)'}=${form.passwordEmpty === undefined ? form.value : (form.passwordEmpty ? '(password empty)' : '(password populated)')}`);
+    const checkpoint = `checkpoint ${index + 1}${state.step === undefined ? '' : ` (step ${state.step})`}: URL ${state.url || '(unknown)'}`;
+    return `- ${checkpoint}${formChanges.length ? `; form changes: ${formChanges.join(', ')}` : ''}`;
+  });
   const evidence: string[] = frames.length
     ? [
       `Evidence: ${frames.length} frame${frames.length === 1 ? '' : 's'} captured by the evaluation harness (not by the agent) after the agent's browser actions, in chronological order. ` +
@@ -194,6 +223,7 @@ export function buildEvidencePrompt(input: { task: string; website: string; fina
             ...(f.journal ? [
               'Harness workflow journal (independent of image sampling):',
               `- complete: ${f.journal.complete === true ? 'yes' : 'no'}; checkpoints: ${f.journal.states.length}; submissions: ${f.journal.submissions.length}; uploads: ${f.journal.uploads.join(', ') || 'none'}`,
+              ...journalTimeline(f.journal),
               ...(f.journal.transitions.length ? [`- transitions: ${f.journal.transitions.map((transition) => `${transition.kind} ${transition.url}`).join(' | ')}`] : []),
             ] : []),
           ] : []),
@@ -627,7 +657,7 @@ export async function judgeBenchmark(name: string, options: JudgeOptions = {}): 
   const judgedRuns = saved.results.filter((r) => rows.has(r.task) && (!options.runKeys || options.runKeys.has(runKey(r.task, r.approach, r.run))));
   if (!judgedRuns.length) throw new Error(`${name}.json has no runs of known benchmark tasks.`);
   const logs = path.join(resultsDir, 'agent-logs', name);
-  const texts = readFinalTexts(logs, provider);
+  const texts = readFinalTexts(logs, provider, judgedRuns);
 
   const { chromium } = await import('playwright');
   const browserHolder: { promise: ReturnType<typeof chromium.launch> | null } = { promise: null };

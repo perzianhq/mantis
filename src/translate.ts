@@ -95,7 +95,8 @@ export function interactiveLine(n: RawNode, o: LineOpts = {}): string {
   if (n.covered) parts.push('covered');
   const shown = o.maxName ? clip(n.name, o.maxName) : n.name;
   const name = shown ? ` ${n.inferred ? '~' : ''}"${quote(shown)}"` : '';
-  return `#${n.id}${o.omitRole ? '' : ' ' + n.role}${name}${parts.length ? ` (${parts.join(', ')})` : ''}`;
+  const identity = n.identity?.length ? ` (${n.identity.join(', ')})` : '';
+  return `#${n.id}${o.omitRole ? '' : ' ' + n.role}${name}${parts.length ? ` (${parts.join(', ')})` : ''}${identity}`;
 }
 
 /** Plain text line; live messages (alerts, toasts) are flagged. */
