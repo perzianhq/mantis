@@ -59,11 +59,11 @@ Verdict (Opus review, 2026-10-24): good enough to launch as a v0.x beta. Accurac
 6. **CI.** Only publish workflows exist. Add build and test on Ubuntu, Windows and macOS.
 7. **Repo hygiene.**
    - Tracked `AGENTS.md`, `CLAUDE.md` and `scripts/codex-*` expose internal policy and local paths: untrack or sanitise.
-   - Docs link to the gitignored `.codex-jobs/`.
+   - ~~Docs link to the gitignored `.codex-jobs/`~~ (checked: no tracked doc links it).
    - Delete about 145 untracked scratch files at the repo root (`.tmp-*`) and decide which `bench/results/` leftovers to commit or ignore.
 
 ### Before launch (moved up, 2026-10-24)
-- 12 interactive live tasks (search plus filter, forms without submit, new tab, iframe, upload on a demo site, login with a test account), Luna and Haiku, 3 runs each, Mantis vs tree. Backs the long-task claim on real sites: it is measured on local fixtures only. Tasks and sites not chosen yet.
+- `long-live-v1`: 16 long real-site tasks (5 multi-entity extraction, 4 search+facets+pagination, 3 form fills without submit, 2 demo-site test-account flows, 2 new-tab/iframe/upload; 10 medium, 6 hard; at most 4 demo sites). Size on the tree walkthrough at 20-40 calls (about 15-30 for Mantis), cap 100 calls and 1200 s. Reviewed deterministic keys and final-state validators; sol only for leftovers. Pilot once per approach and model, replace failures, then freeze (at least 12 must survive). Luna and Haiku, Mantis vs tree, 3 runs each (192 runs, plus 64-run pilot). Report the median paired ratio per task with a bootstrap CI over tasks, on rows where both succeeded. Backs the long-task claim on real sites, which is measured on local fixtures only (`long-local-v1`). Does not block launch if the copy stays scoped to local fixtures; ship as a labelled follow-up within about 2 weeks. Draft: `bench/agent/long-live-v1-draft.json`.
 
 ### Within about 2 weeks after launch
 - Re-run tree and screenshots on the frozen commit (also fixes the Haiku token comparability caveat).

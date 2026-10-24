@@ -25,3 +25,26 @@ bench/results/.haiku-remaining-rows.txt
 # Large live-long result JSONs are pretty-printed (100+ MB, over the GitHub limit); commit the .json.gz copies instead
 bench/results/live-long-fixtures-*.json
 bench/results/long-local-v1-*.json
+
+# Untracked dev leftovers in bench/results (cited results are committed explicitly)
+bench/results/live-long-fixtures-*
+bench/results/llf-*
+bench/results/live-v1-*
+bench/results/local-v2-*
+bench/results/local-v21-*
+bench/results/opt-*
+bench/results/project-eval-*
+bench/results/regression-*
+bench/results/sarvam-*
+bench/results/seeded-*
+bench/results/steps150-*
+bench/results/timeout-recovery-*
+bench/results/hardening-smoke-*
+bench/results/codex-agent-verified-pilot.json
+bench/results/final-deepseek-225-api16-* 
+bench/results/final-deepseek-225-c8-*
+bench/results/final-deepseek-225-cases10-api16-*
+bench/results/final-deepseek-225-cleanlatency-*
+bench/results/monitor-*
+bench/results/resume-*
+bench/results/run-*.ps1
