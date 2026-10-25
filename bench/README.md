@@ -102,7 +102,7 @@ The agent ends with a `FINAL_URL:` line, so the usual grading only checks that i
 
 The "298 rows missing answer-key checks" warning is an annotation gap: the local catalog has 300 rows, only two with checks. The loader warns across the whole catalog before sampling and still loads the rows; `checks` is a repo extension, not supplied by the imported dataset.
 
-The frozen public live-site cohort, its run plan and preflight status are in [live-v1.md](live-v1.md); it does not alter the gated source above.
+The frozen public live-site cohort (`live-v1` v1.8), its run plan and preflight status are in [live-v1.md](live-v1.md); it does not alter the gated source above.
 
 ### Sarvam judge and capability probe
 

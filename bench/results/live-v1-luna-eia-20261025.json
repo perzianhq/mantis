@@ -1,0 +1,1263 @@
+{
+  "metadata": {
+    "schemaVersion": 3,
+    "configFingerprint": "1f00ab7ac1bd95c9b3827188fcd44dd46a2ed6074395b2986c7092113a99068c",
+    "settings": {
+      "provider": "codex",
+      "suite": "live-v1",
+      "fixtureSeed": null,
+      "suiteVersion": 1,
+      "suiteManifest": "D:\\Aadit\\claudez\\mantis\\bench\\manifests\\live-v1.json",
+      "tasks": [
+        "livev1-data-eia-about"
+      ],
+      "approaches": [
+        "mantis",
+        "tree",
+        "screenshot"
+      ],
+      "runs": 3,
+      "rows": null,
+      "model": "gpt-6-luna",
+      "reasoning": "medium",
+      "maxSteps": null,
+      "timeoutMs": 600000,
+      "concurrency": 3,
+      "sarvamMaxTokens": null,
+      "toolRestrictions": {
+        "builtins": [
+          "shell",
+          "apps",
+          "plugins",
+          "multi_agent",
+          "goals",
+          "sleep_tool",
+          "skill_search",
+          "view_image",
+          "browser_use",
+          "computer_use",
+          "in_app_browser",
+          "web_search"
+        ],
+        "approaches": {
+          "mantis": {
+            "allow": [
+              "mcp__mantis"
+            ],
+            "deny": [
+              "mcp__mantis__bench_capture"
+            ]
+          },
+          "tree": {
+            "allow": [
+              "mcp__playwright__browser_navigate",
+              "mcp__playwright__browser_navigate_back",
+              "mcp__playwright__browser_snapshot",
+              "mcp__playwright__browser_click",
+              "mcp__playwright__browser_type",
+              "mcp__playwright__browser_fill_form",
+              "mcp__playwright__browser_select_option",
+              "mcp__playwright__browser_press_key",
+              "mcp__playwright__browser_hover",
+              "mcp__playwright__browser_file_upload",
+              "mcp__playwright__browser_wait_for",
+              "mcp__playwright__browser_find",
+              "mcp__playwright__browser_tabs",
+              "mcp__playwright__browser_handle_dialog",
+              "mcp__playwright__browser_take_screenshot"
+            ],
+            "deny": [
+              "mcp__playwright__browser_evaluate",
+              "mcp__playwright__browser_run_code_unsafe"
+            ]
+          },
+          "screenshot": {
+            "allow": [
+              "mcp__screenshot"
+            ],
+            "deny": [
+              "mcp__screenshot__bench_capture"
+            ]
+          }
+        }
+      },
+      "runtime": {
+        "nodeVersion": "v20.14.0",
+        "platform": "win32",
+        "arch": "x64"
+      },
+      "environment": {
+        "MANTIS_MEMORY": null,
+        "MANTIS_HEADLESS": null,
+        "BENCH_CHROMIUM": null,
+        "MANTIS_CHROMIUM": null,
+        "PLAYWRIGHT_BROWSERS_PATH": null,
+        "CODEX_BIN": null,
+        "CLAUDE_BIN": null,
+        "resolvedCliCommand": "codex"
+      },
+      "browserPaths": {
+        "chromiumForMcp": "C:\\Users\\aadit\\AppData\\Local\\ms-playwright\\chromium_headless_shell-1248\\chrome-headless-shell-win64\\chrome-headless-shell.exe",
+        "browserUsePlaywrightBrowsersPath": null
+      }
+    },
+    "sourceHashes": {
+      "bench/agent/run.ts": "aa174743bbd44d64811f51e1e20c2d47f70755d799ef4bd6ee6950346ae3b662",
+      "bench/agent/integrity.ts": "879157656e4d375ded331d4bde926301998f21432867ce5e7221f1f529fb9516",
+      "bench/agent/active-timeout.ts": "85334995541be4da3a169d3013e4741135174c0b166dae298648d8442ddf0d60",
+      "bench/agent/row-selector.ts": "37fa2aca183415f564f3b7663b3a8440e43817f37c2434953caa531b343b650e",
+      "bench/agent/tasks.ts": "e47b2f889eac7432f739d02c17eeeef3fe4c9f1f9e52be1141c99ab411d8b4d7",
+      "bench/agent/local-v2-development.ts": "da9f2fccc13eebda4054edc9efa14c14d9367a65b0ab0511071637b32bf0d4b6",
+      "bench/agent/local-v2.ts": "232ab63ae5194b520bb284e91ec43f8505f986df72f6ddfaf1fbcc442611b7d7",
+      "bench/agent/local-v21.ts": "f1fbdfc876ae2cd99368295c04a8f4bb2088dc382f1446b23aa507e3c5d3708d",
+      "bench/agent/live-v1.ts": "3ce93b40d5ae41917178855f843bb36dbc845a7376899e649e46fefd1c8d5821",
+      "bench/agent/long-live-v1.ts": "deeaa6c53543458e4a11d5de0ddfd7425d26815c6502ba07f9f78143e6e434c3",
+      "bench/agent/long-local-v1.ts": "655816cd25ea011b0a69971bdf42c2ee396c04674974f41eee22744056b6aa57",
+      "bench/agent/long-telemetry.ts": "8287467e6df9c27db2180e2fae68e1f99606ccdcba52e82358f71d59327d14bd",
+      "bench/agent/live-v1-tasks.json": "bd886cb36151358f57e339cf689f7044a10160351002e28b8236a94e012087e8",
+      "bench/agent/long-live-v1-draft.json": "8dbc234a5e6d61069918e070acf97d22b8548b4c1231281ba5b53a1dc68aceda",
+      "bench/agent/bridge.mjs": "b1d42914f2ca2196bf100ffda96fce2e75363fdc53bbeab7f5290d9122b91af2",
+      "bench/fixture-variants.ts": "98e6dd2d9bb156c7d3862f87a540e38fc6d4a9663410e3dd2bc6480507a9ea1e",
+      "bench/agent/codex.ts": "8f9917013ccf495aa1fd0a085d37a7e94540ff04908a3e81a4a2e10c62649baa",
+      "bench/agent/codex-config.ts": "a9436b14f70bcd503a9c63e81bf40927a438863d2dd3f4a814fa55e642e2764a",
+      "bench/agent/sarvam.ts": "6847d4f0b4ffc6449a96c4875e942d82eda0f537689b0c20a292d559c0ffc349",
+      "bench/agent/sarvam-agent.ts": "68e2725e594a3306d7757768dc9735ee1c67aa619a811213bed452c2f7f38790",
+      "bench/agent/realsite.ts": "73fc654846065eb0227a866d307668cfca16faf81ed84dc67b0293b10ab9d242",
+      "bench/agent/grading.ts": "347afce3584fe8367176dbd9041385ee40100c1477647af55cf01c59e45dccdb",
+      "bench/agent/evidence.ts": "475f40c02b67aba9fdfbe3045d3fa85b7ec5f374d44a23a67f9f7efa89062312",
+      "bench/agent/png.ts": "97812fc9ea7c48922fb7146ac4d58bd5ad8261cad4dc078a2ad026bdaab43632",
+      "bench/agent/mcp-proxy.ts": "b2874933265edfda4847af9f5f9fd0b683b9681e2175e28fdf84d77e6e5b0e4f",
+      "bench/agent/realsite-tasks.json": "4708f318c5c575a80b03601c0524ae9bc25ff5241c3d2d81913c040bbd19c96e",
+      "bench/agent/screenshot-mcp.ts": "ecb12b6e2810a41124f60cf9a46eae9e623491b303bde9f615f00dc3217a696e",
+      "bench/agent/screenshot-scroll.ts": "14790d3b4d6daee50a54eb2fba1d1c54d3afadd90a1f36bd60a26ea65b260bca",
+      "bench/agent/guidance.ts": "38cba256daea65a3fe8814297fae7f085040f97e04cd4f08a95f4263ae3f3533",
+      "bench/fixtures.ts": "b5b3d162c16799fccd8df2ff877acd6df3f11c69e4aa554597e660914ec6af19",
+      "bench/fixtures-more.ts": "c1a15f3e8f4d00366395994a4d81725203c736f25613150f26ca2b7a5006b594",
+      "bench/fixtures-long.ts": "3695294e9a18c96e237a524b0ba2b8d93953d9e4e1b7491c0f9943cf61559172",
+      "bench/fixtures-v2-development.ts": "995d05d1b0f800621ddd3a01999189fedf4a13dd4805c7a8476823d2157f8b1d",
+      "bench/fixtures-v2-interaction-development.ts": "647b6a4e33ab8386a686d56cfe16483e9b19326781932fac503e0f3be019e152",
+      "bench/fixtures-v2-reading-workflows-development.ts": "df6c4e71af3deb23c6c298500dd162c2fde3096bc51342946ac777fdb4132d89",
+      "bench/fixtures-v2-remaining-heldout.ts": "7199f2447aa6a03e74294e3d83dc2078d9106a0e0ba7c28e4ef260beb6ad3e88",
+      "bench/fixtures-v2-reading-workflows-heldout.ts": "31d9562c00cad55bc17f04f46b281df8ddaaed025928cce14e059646f53ed0fc",
+      "bench/fixtures-v21-reliability.ts": "211bc6b1950a59ba171147fbd18ea82d63e5a6d2a73ce7009c51d4adcbc7392d",
+      "bench/fixtures-long-local-records.ts": "7a02a354f968e47046670d1aee62925466b557c6fbab895a2db4c14b5c839f30",
+      "bench/fixtures-long-local-workflows.ts": "a60446a73b2aa41d8f081bdb5ab7aa9fbfae4ff72f1d913f0fc1fd188c7660d1",
+      "bench/manifests/local-v2.json": "37fb7707efe1ea618ddf54d43d14948ac442ead2cc89c7af72dd0aa2b6682983",
+      "bench/manifests/local-v21.json": "22f9dacf272ee7984f98977d36a40e18ae764fe94bf0de9e100d13c0618ecfbf",
+      "bench/manifests/live-v1.json": "f2de501a3c13fd35111b58dde87b88a73f929d390d7755b21f3ea1b592ad6b42",
+      "bench/manifests/long-local-v1.json": "ab4a10e54068a921cbc9e01cfcf73ea908a1387f61c5cb674d0bcfd060390943",
+      "bench/adapters.ts": "f16af47f036efb1cdcced6d60aad062552736bd192a8dedfc9beed1fcac9c060",
+      "bench/manifests/long-live-v1.json": "18292416db3e403a695b9e674d74db7a7fe450433634e8c5ee9f01cd6fc438b1",
+      "src/browser.ts": "6664ba9e3b6bccda61b34c7015893adf3f1776e4c9d320423335386760e95e07",
+      "src/capture/index.ts": "eb4abb6a7f595823dc1e64365ba02e0affa5e2312cd48e43fbeae48633d17c8e",
+      "src/capture/walker.ts": "1d89001fe1e4ca99b18e430d2afa02660d54563286634159db0ad9a43caa2278",
+      "src/cli.ts": "d67622abcdc84873869f624847896698a0de854a88887e04bc63642f19b7f5ed",
+      "src/diff.ts": "5a73b382074393ef18523eff690b91c8366d2189b315e1e572ce3a5906be180f",
+      "src/fallback/askHuman.ts": "bee773716fae0f9aacd621461434974f29e9678a77b7a8c8b004759303f6aba2",
+      "src/fallback/captcha.ts": "5d9224da13c1bc3a4334e6637e55c8ca82c5603bd252b7ff56877a670b47fd3f",
+      "src/fallback/look.ts": "0827a0b888544343999b2acc74b5faae22d4b6c0cdd63250687e0f5d6c9f808e",
+      "src/fallback/media.ts": "eeb3d2c2a6e2f00520ff43173e3fec14abdcdf5f3150d28cdaa6e22428929c5c",
+      "src/fallback/ocr.ts": "37efa994ec290452be4b89c54c7dfc09968f818ae42d64808b2d690e38aa2432",
+      "src/fallback/probe.ts": "296ac036d82ba24f604f619d182b77518d69efde6912ac58dd3c2c2d5c87ec11",
+      "src/index.ts": "1bb51b56f839083c7ae3fca4066c48b6e16d2d4830d20d897b5c682366a2a83c",
+      "src/install.ts": "4ff910829422c6a323e76153798250f587b29d5174ae7976f918a5e58bf4176e",
+      "src/memory.ts": "e2cefbbe80ec33dee5149a238f49e8d57a4a60dcd012a6b47d36e0d09eea0368",
+      "src/server.ts": "3ce879b669192c3110422695a114eef9260dea63c9d7c8c39b27825fbc2faf61",
+      "src/translate.ts": "7fd10ab12831fecd5978a3a45df0c0c2db1e62960ae4c3abbee1eb035d246a2d",
+      "src/userAgent.ts": "8a7a8d39c03a842b961412bcd67cd74c890efff03caeaaf5f5276fd66c7e9103",
+      "dist/browser.d.ts": "20daf990c5c634e050ca724277aa9525b1cdafb18fa7cd51a39068fc3d6d8940",
+      "dist/browser.js": "1099a9e80433a033e1c212d1c837d45c572067347e880cbdb06a0d269a006a57",
+      "dist/browser.js.map": "c09d9c502ea825b244c4c2c21f89d3a1e9f86de8984d4b8d18b759ed4d39d66c",
+      "dist/capture/index.d.ts": "211f66225f70bc80d6a8788708947f4c70112eb7168a0d46d71550442d7fbd17",
+      "dist/capture/index.js": "609894ee718183c7e6ed2ba1a26ea7a2bfa2270fd90fb2e95664ab44c841de71",
+      "dist/capture/index.js.map": "01c1353815c21c8a2a94e99db7639ecafe73653cca4c6b449cac0828a06123fc",
+      "dist/capture/walker.d.ts": "55f6ff4c1096d256e6c9f0995c9fa2428f23de06055878fc89dc4eda5e365f56",
+      "dist/capture/walker.js": "1670e085635f86e61d19c7bca1ac6e795f9b38f36443688bd7104f267fa03ba5",
+      "dist/capture/walker.js.map": "b52b358f10a1886c6bffaf79363ab29a452082f4109fd35b3620bffbe3efba20",
+      "dist/cli.d.ts": "e1fe0cad61240bf8aaad4fbe113e9341f0e380db197d3030a9e5bd118f26fc7f",
+      "dist/cli.js": "180f3baac458844688c02af10e8f5f017e6095cfc0835b5f8bb4b4509c8be847",
+      "dist/cli.js.map": "ccb65a89338a5eadfd382d573f7aea0642668dc645e2b2e4133096f2cfc324e7",
+      "dist/diff.d.ts": "c427aca6fd15fbcf4d5b3f44ebdc92828d1be9d10a247f80dc698813898139ef",
+      "dist/diff.js": "46123577bec576ae5fa9a94a9d19598a05699614dca4e1a7a87053f1f9669e84",
+      "dist/diff.js.map": "41ff128b2b15b6dbafda4e4e21d241dbe2c95545ad5c4a43277bce358a86708f",
+      "dist/fallback/askHuman.d.ts": "cce5053ca7a8ad7fd21ec8d4cf3e69c11cb8fe817d34fa746eba144f1420acfd",
+      "dist/fallback/askHuman.js": "32e8cd266efaec4e7d57fdff58dff032dcc282a32911a944dd2b8a474fce84ef",
+      "dist/fallback/askHuman.js.map": "3e31bf36dcf1712e4632b26955674fe6386b0d2a428d9c8a379495a66d65d9c8",
+      "dist/fallback/captcha.d.ts": "be9ff0d8e92775f3b8aaba854f41d514954febe98f3f09cdb61e8a0702efa8b8",
+      "dist/fallback/captcha.js": "5a87ec826861ea91b872f3a3458b9f70f1ef4158a86a8f711da857007d005825",
+      "dist/fallback/captcha.js.map": "7bdda72418922f40410978d690b3020c88ddc66e76a8b39f61adc769833def4c",
+      "dist/fallback/look.d.ts": "955e64af5f409d668fdf46d9fdd877ae012f8d246caedeadfb313e0247ecd6af",
+      "dist/fallback/look.js": "8c33ec0526efad8885fad941d332472cd58115e417cb4f3ca9fb8e1f27329a30",
+      "dist/fallback/look.js.map": "9bcc391e5c964b1920fe5101c3fadcc40e053b5447b5e45ff4dff83e9692e805",
+      "dist/fallback/media.d.ts": "1a85c02b0837c113b53bf738e3dd8d178fa143ec951042492b3bde6d63773b50",
+      "dist/fallback/media.js": "d44cfd1595b4f5b811e202656ceacddb8afba836a78351de56c9d532bdc37504",
+      "dist/fallback/media.js.map": "c7d9143208540d3bd7939e4a65a4b2bff31767030e414a17c638418d57879158",
+      "dist/fallback/ocr.d.ts": "3ed82adbd733fd003ae7002f2ac25a00de1e0c3ed7287216eb021a2f6fe5b038",
+      "dist/fallback/ocr.js": "d10bfbec4e8393489f2388babcebc9c5dd919f51d62abc8859dd95dbd45aaca0",
+      "dist/fallback/ocr.js.map": "1b53352e4eac80692a9cae671c042df7ca9c2d874be55a3c875d1e111387ae5e",
+      "dist/fallback/probe.d.ts": "78c721cd2e4dd405e3270597853801396994f3d87180847d0bd4e3ba4a79f089",
+      "dist/fallback/probe.js": "56a3f86733e41f0647401ed7707d735c2cc3f55d4cfe118b332d16c2d8fe1f95",
+      "dist/fallback/probe.js.map": "7d644fb0a6e44ce9201978528325e1df047a09d357ccc008b35606968d4d2303",
+      "dist/index.d.ts": "1bb51b56f839083c7ae3fca4066c48b6e16d2d4830d20d897b5c682366a2a83c",
+      "dist/index.js": "cf623ed316f23cd356ce68b741e8192234de378587c880d11ce7448692e37ae7",
+      "dist/index.js.map": "ab61ed5039b37dfd5cc78232ec20f2737a407ad3124e87f4b9c2e02d43904127",
+      "dist/install.d.ts": "133ddc9d418dad2dd0ece3d68c260ae3912ecfdfcc502889151b1f4a0b1afb3c",
+      "dist/install.js": "fad3f0fc1077cfc6c847a85afbe46de8a6436d51f77070a92a0453c7858997d9",
+      "dist/install.js.map": "a0c3737592b4292112d18a22de160834ccff01ff3174d025ecd690d15ab6d077",
+      "dist/memory.d.ts": "15258ea9433619fed0f2c921a8b4a584a79d7603acd26e4954cc535232668e46",
+      "dist/memory.js": "d886daad0a558521e4f0952ddb3a8e4fa0cc5a0b5830379d06d474014e44e65e",
+      "dist/memory.js.map": "092966360dd28b5acccbc1b2a5992d3fa8c4e7c6217e73219829e62535390481",
+      "dist/server.d.ts": "f5a308c57accaee9cbd094be29ada17c593a6f85c1cb2f1bad267413fe37d4b6",
+      "dist/server.js": "74d4e08d59b6886b9527d2b1a41983c7b0ecbaebc4fa456ca3b764b59ddc3483",
+      "dist/server.js.map": "eb3f2bb008d65b25ed427e980063b947e458eba5a5e926449474e7be7c1b1208",
+      "dist/translate.d.ts": "4c5ba956e1cea41d377be4db3966e56e7a1dbce80cc9c7464047c500827ff063",
+      "dist/translate.js": "2f0674aec29e7f51a0864531a6bf2574324c50350dffa3620704cc00ab1c2fb4",
+      "dist/translate.js.map": "3828ea4b704b0e7bad4cc518bbbd6e25ae39f18509570c1b7352a47acc2a124b",
+      "dist/userAgent.d.ts": "2761d74b0394609352b41fe933e9e2f03e2f064b4208fe51144963dc926a54e9",
+      "dist/userAgent.js": "60d4b9a9697628334dd7aa2e614f1456db3f5fdcc12eec5bf8de46e06ee3f998",
+      "dist/userAgent.js.map": "d1179ffc69354170e2a1b789da82ea00cc2e7f223247d50042119a2f4be6440c",
+      "package-lock.json": "12cd8d729e2c600c188b4d3c87742a291ab691a12b08f8de0e174c578f7c3d73"
+    },
+    "cliVersion": "codex-cli 0.164.0-alpha.11.1"
+  },
+  "model": "gpt-6-luna",
+  "runs": 3,
+  "results": [
+    {
+      "task": "livev1-data-eia-about",
+      "approach": "mantis",
+      "run": 1,
+      "attempt": 1,
+      "attemptId": "livev1-data-eia-about-mantis-1-1-1792952025328",
+      "logPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--mantis--1--attempt-1-1792952025328-kg76g0.jsonl",
+      "status": "success",
+      "finalScreenshotPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--mantis--1--attempt-1-1792952025328-kg76g0.final.png",
+      "evidencePath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--mantis--1--attempt-1-1792952025328-kg76g0.evidence.json",
+      "evidenceFrames": [
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--mantis--1--attempt-1-1792952025328-kg76g0.step-01.png",
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--mantis--1--attempt-1-1792952025328-kg76g0.step-02.png",
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--mantis--1--attempt-1-1792952025328-kg76g0.final.png"
+      ],
+      "valid": true,
+      "ok": true,
+      "harnessFailure": false,
+      "error": "",
+      "answer": "The About page identifies the agency as the **U.S. Energy Information Administration (EIA)**. The page says it collects, processes, and analyzes energy information. That is the text currently visible on the page; the homepage footer had shown the agency name earlier as well.",
+      "turns": 1,
+      "toolCalls": 2,
+      "toolErrors": 0,
+      "observationChars": 5041,
+      "observationImages": 0,
+      "inputTokens": 24253,
+      "cacheWriteTokens": 0,
+      "cacheReadTokens": 35456,
+      "totalInputTokens": 59709,
+      "outputTokens": 260,
+      "costUsd": null,
+      "costInr": null,
+      "timings": {
+        "mcpStartupMs": 2062,
+        "cliStartupMs": 628,
+        "cliExecutionMs": 19760,
+        "cliWallMs": 20388,
+        "verificationMs": 0,
+        "cleanupMs": 362,
+        "captureMs": 228
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "attemptId": "livev1-data-eia-about-mantis-1-1-1792952025328",
+          "logPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--mantis--1--attempt-1-1792952025328-kg76g0.jsonl",
+          "finalScreenshotPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--mantis--1--attempt-1-1792952025328-kg76g0.final.png",
+          "evidencePath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--mantis--1--attempt-1-1792952025328-kg76g0.evidence.json",
+          "evidenceFrames": [
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--mantis--1--attempt-1-1792952025328-kg76g0.step-01.png",
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--mantis--1--attempt-1-1792952025328-kg76g0.step-02.png",
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--mantis--1--attempt-1-1792952025328-kg76g0.final.png"
+          ],
+          "status": "success",
+          "connected": true,
+          "connectionState": "connected",
+          "error": "",
+          "answer": "The About page identifies the agency as the **U.S. Energy Information Administration (EIA)**. The page says it collects, processes, and analyzes energy information. That is the text currently visible on the page; the homepage footer had shown the agency name earlier as well.",
+          "initModel": null,
+          "resolvedModels": [],
+          "turns": 1,
+          "toolCalls": 2,
+          "toolErrors": 0,
+          "observationChars": 5041,
+          "observationImages": 0,
+          "totalInputTokens": 59709,
+          "usageComplete": true,
+          "usage": {
+            "inputTokens": 24253,
+            "cacheWriteTokens": 0,
+            "cacheReadTokens": 35456,
+            "outputTokens": 260,
+            "costUsd": null
+          },
+          "costInr": null,
+          "apiAttempts": 0,
+          "rateLimits": 0,
+          "timings": {
+            "mcpStartupMs": 2062,
+            "cliStartupMs": 628,
+            "cliExecutionMs": 19760,
+            "cliWallMs": 20388,
+            "verificationMs": 0,
+            "cleanupMs": 362,
+            "captureMs": 228
+          },
+          "exitCode": 0,
+          "signal": null,
+          "timedOut": false,
+          "fixtureCheck": null,
+          "fixtureEvidence": null,
+          "grading": null,
+          "diagnostics": [],
+          "harnessFailure": false,
+          "budget": {
+            "maxSteps": null,
+            "timeoutMs": 600000
+          }
+        }
+      ],
+      "firstPass": {
+        "status": "success",
+        "ok": true,
+        "valid": true
+      },
+      "recovery": {
+        "status": "success",
+        "ok": true,
+        "valid": true
+      },
+      "budget": {
+        "maxSteps": null,
+        "timeoutMs": 600000
+      },
+      "resolvedModels": []
+    },
+    {
+      "task": "livev1-data-eia-about",
+      "approach": "tree",
+      "run": 1,
+      "attempt": 1,
+      "attemptId": "livev1-data-eia-about-tree-1-1-1792952025343",
+      "logPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--tree--1--attempt-1-1792952025343-8d2b3f.jsonl",
+      "status": "success",
+      "finalScreenshotPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--tree--1--attempt-1-1792952025343-8d2b3f.final.png",
+      "evidencePath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--tree--1--attempt-1-1792952025343-8d2b3f.evidence.json",
+      "evidenceFrames": [
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--tree--1--attempt-1-1792952025343-8d2b3f.step-01.png",
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--tree--1--attempt-1-1792952025343-8d2b3f.final.png"
+      ],
+      "valid": true,
+      "ok": true,
+      "harnessFailure": false,
+      "error": "",
+      "answer": "The current page shows the About EIA heading and says: “The U.S. Energy Information Administration (EIA) collects, processes, analyzes, and publishes energy data for the American people.” The agency name is **U.S. Energy Information Administration (EIA)**. No inputs were needed; I did not log in, purchase anything, or enter personal information.",
+      "turns": 1,
+      "toolCalls": 4,
+      "toolErrors": 0,
+      "observationChars": 19936,
+      "observationImages": 0,
+      "inputTokens": 18837,
+      "cacheWriteTokens": 0,
+      "cacheReadTokens": 61824,
+      "totalInputTokens": 80661,
+      "outputTokens": 293,
+      "costUsd": null,
+      "costInr": null,
+      "timings": {
+        "mcpStartupMs": 2061,
+        "cliStartupMs": 631,
+        "cliExecutionMs": 22962,
+        "cliWallMs": 23593,
+        "verificationMs": 0,
+        "cleanupMs": 248,
+        "captureMs": 3739
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "attemptId": "livev1-data-eia-about-tree-1-1-1792952025343",
+          "logPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--tree--1--attempt-1-1792952025343-8d2b3f.jsonl",
+          "finalScreenshotPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--tree--1--attempt-1-1792952025343-8d2b3f.final.png",
+          "evidencePath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--tree--1--attempt-1-1792952025343-8d2b3f.evidence.json",
+          "evidenceFrames": [
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--tree--1--attempt-1-1792952025343-8d2b3f.step-01.png",
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--tree--1--attempt-1-1792952025343-8d2b3f.final.png"
+          ],
+          "status": "success",
+          "connected": true,
+          "connectionState": "connected",
+          "error": "",
+          "answer": "The current page shows the About EIA heading and says: “The U.S. Energy Information Administration (EIA) collects, processes, analyzes, and publishes energy data for the American people.” The agency name is **U.S. Energy Information Administration (EIA)**. No inputs were needed; I did not log in, purchase anything, or enter personal information.",
+          "initModel": null,
+          "resolvedModels": [],
+          "turns": 1,
+          "toolCalls": 4,
+          "toolErrors": 0,
+          "observationChars": 19936,
+          "observationImages": 0,
+          "totalInputTokens": 80661,
+          "usageComplete": true,
+          "usage": {
+            "inputTokens": 18837,
+            "cacheWriteTokens": 0,
+            "cacheReadTokens": 61824,
+            "outputTokens": 293,
+            "costUsd": null
+          },
+          "costInr": null,
+          "apiAttempts": 0,
+          "rateLimits": 0,
+          "timings": {
+            "mcpStartupMs": 2061,
+            "cliStartupMs": 631,
+            "cliExecutionMs": 22962,
+            "cliWallMs": 23593,
+            "verificationMs": 0,
+            "cleanupMs": 248,
+            "captureMs": 3739
+          },
+          "exitCode": 0,
+          "signal": null,
+          "timedOut": false,
+          "fixtureCheck": null,
+          "fixtureEvidence": null,
+          "grading": null,
+          "diagnostics": [],
+          "harnessFailure": false,
+          "budget": {
+            "maxSteps": null,
+            "timeoutMs": 600000
+          }
+        }
+      ],
+      "firstPass": {
+        "status": "success",
+        "ok": true,
+        "valid": true
+      },
+      "recovery": {
+        "status": "success",
+        "ok": true,
+        "valid": true
+      },
+      "budget": {
+        "maxSteps": null,
+        "timeoutMs": 600000
+      },
+      "resolvedModels": []
+    },
+    {
+      "task": "livev1-data-eia-about",
+      "approach": "screenshot",
+      "run": 1,
+      "attempt": 1,
+      "attemptId": "livev1-data-eia-about-screenshot-1-1-1792952025358",
+      "logPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--screenshot--1--attempt-1-1792952025358-6fec5a.jsonl",
+      "status": "success",
+      "finalScreenshotPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--screenshot--1--attempt-1-1792952025358-6fec5a.final.png",
+      "evidencePath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--screenshot--1--attempt-1-1792952025358-6fec5a.evidence.json",
+      "evidenceFrames": [
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--screenshot--1--attempt-1-1792952025358-6fec5a.step-01.png",
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--screenshot--1--attempt-1-1792952025358-6fec5a.step-04.png",
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--screenshot--1--attempt-1-1792952025358-6fec5a.step-07.png",
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--screenshot--1--attempt-1-1792952025358-6fec5a.final.png"
+      ],
+      "valid": true,
+      "ok": true,
+      "harnessFailure": false,
+      "error": "",
+      "answer": "The About page identifies the agency as the **U.S. Energy Information Administration (EIA)**. The current page shows: “The U.S. Energy Information Administration (EIA) collects, processes, analyzes, and publishes energy data for the American people.” This is the site’s displayed result; I did not calculate or estimate it. The earlier homepage header also showed “U.S. Energy Information Administration.”",
+      "turns": 1,
+      "toolCalls": 8,
+      "toolErrors": 0,
+      "observationChars": 104,
+      "observationImages": 3,
+      "inputTokens": 15973,
+      "cacheWriteTokens": 0,
+      "cacheReadTokens": 109056,
+      "totalInputTokens": 125029,
+      "outputTokens": 747,
+      "costUsd": null,
+      "costInr": null,
+      "timings": {
+        "mcpStartupMs": 2062,
+        "cliStartupMs": 600,
+        "cliExecutionMs": 31247,
+        "cliWallMs": 31847,
+        "verificationMs": 0,
+        "cleanupMs": 337,
+        "captureMs": 1451
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "attemptId": "livev1-data-eia-about-screenshot-1-1-1792952025358",
+          "logPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--screenshot--1--attempt-1-1792952025358-6fec5a.jsonl",
+          "finalScreenshotPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--screenshot--1--attempt-1-1792952025358-6fec5a.final.png",
+          "evidencePath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--screenshot--1--attempt-1-1792952025358-6fec5a.evidence.json",
+          "evidenceFrames": [
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--screenshot--1--attempt-1-1792952025358-6fec5a.step-01.png",
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--screenshot--1--attempt-1-1792952025358-6fec5a.step-04.png",
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--screenshot--1--attempt-1-1792952025358-6fec5a.step-07.png",
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--screenshot--1--attempt-1-1792952025358-6fec5a.final.png"
+          ],
+          "status": "success",
+          "connected": true,
+          "connectionState": "connected",
+          "error": "",
+          "answer": "The About page identifies the agency as the **U.S. Energy Information Administration (EIA)**. The current page shows: “The U.S. Energy Information Administration (EIA) collects, processes, analyzes, and publishes energy data for the American people.” This is the site’s displayed result; I did not calculate or estimate it. The earlier homepage header also showed “U.S. Energy Information Administration.”",
+          "initModel": null,
+          "resolvedModels": [],
+          "turns": 1,
+          "toolCalls": 8,
+          "toolErrors": 0,
+          "observationChars": 104,
+          "observationImages": 3,
+          "totalInputTokens": 125029,
+          "usageComplete": true,
+          "usage": {
+            "inputTokens": 15973,
+            "cacheWriteTokens": 0,
+            "cacheReadTokens": 109056,
+            "outputTokens": 747,
+            "costUsd": null
+          },
+          "costInr": null,
+          "apiAttempts": 0,
+          "rateLimits": 0,
+          "timings": {
+            "mcpStartupMs": 2062,
+            "cliStartupMs": 600,
+            "cliExecutionMs": 31247,
+            "cliWallMs": 31847,
+            "verificationMs": 0,
+            "cleanupMs": 337,
+            "captureMs": 1451
+          },
+          "exitCode": 0,
+          "signal": null,
+          "timedOut": false,
+          "fixtureCheck": null,
+          "fixtureEvidence": null,
+          "grading": null,
+          "diagnostics": [],
+          "harnessFailure": false,
+          "budget": {
+            "maxSteps": null,
+            "timeoutMs": 600000
+          }
+        }
+      ],
+      "firstPass": {
+        "status": "success",
+        "ok": true,
+        "valid": true
+      },
+      "recovery": {
+        "status": "success",
+        "ok": true,
+        "valid": true
+      },
+      "budget": {
+        "maxSteps": null,
+        "timeoutMs": 600000
+      },
+      "resolvedModels": []
+    },
+    {
+      "task": "livev1-data-eia-about",
+      "approach": "mantis",
+      "run": 2,
+      "attempt": 1,
+      "attemptId": "livev1-data-eia-about-mantis-2-1-1792952048527",
+      "logPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--mantis--2--attempt-1-1792952048527-b25kgo.jsonl",
+      "status": "success",
+      "finalScreenshotPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--mantis--2--attempt-1-1792952048527-b25kgo.final.png",
+      "evidencePath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--mantis--2--attempt-1-1792952048527-b25kgo.evidence.json",
+      "evidenceFrames": [
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--mantis--2--attempt-1-1792952048527-b25kgo.step-01.png",
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--mantis--2--attempt-1-1792952048527-b25kgo.final.png"
+      ],
+      "valid": true,
+      "ok": true,
+      "harnessFailure": false,
+      "error": "",
+      "answer": "The About page identifies the agency as the **U.S. Energy Information Administration (EIA)**. The page is currently showing that name in its About section; I did not enter personal information or encounter a sign-in or purchase prompt.",
+      "turns": 1,
+      "toolCalls": 2,
+      "toolErrors": 0,
+      "observationChars": 5041,
+      "observationImages": 0,
+      "inputTokens": 15128,
+      "cacheWriteTokens": 0,
+      "cacheReadTokens": 44544,
+      "totalInputTokens": 59672,
+      "outputTokens": 235,
+      "costUsd": null,
+      "costInr": null,
+      "timings": {
+        "mcpStartupMs": 2017,
+        "cliStartupMs": 911,
+        "cliExecutionMs": 13551,
+        "cliWallMs": 14462,
+        "verificationMs": 0,
+        "cleanupMs": 356,
+        "captureMs": 243
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "attemptId": "livev1-data-eia-about-mantis-2-1-1792952048527",
+          "logPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--mantis--2--attempt-1-1792952048527-b25kgo.jsonl",
+          "finalScreenshotPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--mantis--2--attempt-1-1792952048527-b25kgo.final.png",
+          "evidencePath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--mantis--2--attempt-1-1792952048527-b25kgo.evidence.json",
+          "evidenceFrames": [
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--mantis--2--attempt-1-1792952048527-b25kgo.step-01.png",
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--mantis--2--attempt-1-1792952048527-b25kgo.final.png"
+          ],
+          "status": "success",
+          "connected": true,
+          "connectionState": "connected",
+          "error": "",
+          "answer": "The About page identifies the agency as the **U.S. Energy Information Administration (EIA)**. The page is currently showing that name in its About section; I did not enter personal information or encounter a sign-in or purchase prompt.",
+          "initModel": null,
+          "resolvedModels": [],
+          "turns": 1,
+          "toolCalls": 2,
+          "toolErrors": 0,
+          "observationChars": 5041,
+          "observationImages": 0,
+          "totalInputTokens": 59672,
+          "usageComplete": true,
+          "usage": {
+            "inputTokens": 15128,
+            "cacheWriteTokens": 0,
+            "cacheReadTokens": 44544,
+            "outputTokens": 235,
+            "costUsd": null
+          },
+          "costInr": null,
+          "apiAttempts": 0,
+          "rateLimits": 0,
+          "timings": {
+            "mcpStartupMs": 2017,
+            "cliStartupMs": 911,
+            "cliExecutionMs": 13551,
+            "cliWallMs": 14462,
+            "verificationMs": 0,
+            "cleanupMs": 356,
+            "captureMs": 243
+          },
+          "exitCode": 0,
+          "signal": null,
+          "timedOut": false,
+          "fixtureCheck": null,
+          "fixtureEvidence": null,
+          "grading": null,
+          "diagnostics": [],
+          "harnessFailure": false,
+          "budget": {
+            "maxSteps": null,
+            "timeoutMs": 600000
+          }
+        }
+      ],
+      "firstPass": {
+        "status": "success",
+        "ok": true,
+        "valid": true
+      },
+      "recovery": {
+        "status": "success",
+        "ok": true,
+        "valid": true
+      },
+      "budget": {
+        "maxSteps": null,
+        "timeoutMs": 600000
+      },
+      "resolvedModels": []
+    },
+    {
+      "task": "livev1-data-eia-about",
+      "approach": "tree",
+      "run": 2,
+      "attempt": 1,
+      "attemptId": "livev1-data-eia-about-tree-2-1-1792952052263",
+      "logPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--tree--2--attempt-1-1792952052263-i4e1sm.jsonl",
+      "status": "success",
+      "finalScreenshotPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--tree--2--attempt-1-1792952052263-i4e1sm.final.png",
+      "evidencePath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--tree--2--attempt-1-1792952052263-i4e1sm.evidence.json",
+      "evidenceFrames": [
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--tree--2--attempt-1-1792952052263-i4e1sm.step-01.png",
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--tree--2--attempt-1-1792952052263-i4e1sm.final.png"
+      ],
+      "valid": true,
+      "ok": true,
+      "harnessFailure": false,
+      "error": "",
+      "answer": "The About page identifies the agency as the **U.S. Energy Information Administration (EIA)**. The page currently shows that name in its introductory heading; this is the site’s displayed text, not a calculated result. No sign-in, purchase, or personal-information prompt is open.",
+      "turns": 1,
+      "toolCalls": 4,
+      "toolErrors": 0,
+      "observationChars": 19936,
+      "observationImages": 0,
+      "inputTokens": 18795,
+      "cacheWriteTokens": 0,
+      "cacheReadTokens": 60416,
+      "totalInputTokens": 79211,
+      "outputTokens": 266,
+      "costUsd": null,
+      "costInr": null,
+      "timings": {
+        "mcpStartupMs": 2038,
+        "cliStartupMs": 562,
+        "cliExecutionMs": 15236,
+        "cliWallMs": 15798,
+        "verificationMs": 0,
+        "cleanupMs": 378,
+        "captureMs": 3115
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "attemptId": "livev1-data-eia-about-tree-2-1-1792952052263",
+          "logPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--tree--2--attempt-1-1792952052263-i4e1sm.jsonl",
+          "finalScreenshotPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--tree--2--attempt-1-1792952052263-i4e1sm.final.png",
+          "evidencePath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--tree--2--attempt-1-1792952052263-i4e1sm.evidence.json",
+          "evidenceFrames": [
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--tree--2--attempt-1-1792952052263-i4e1sm.step-01.png",
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--tree--2--attempt-1-1792952052263-i4e1sm.final.png"
+          ],
+          "status": "success",
+          "connected": true,
+          "connectionState": "connected",
+          "error": "",
+          "answer": "The About page identifies the agency as the **U.S. Energy Information Administration (EIA)**. The page currently shows that name in its introductory heading; this is the site’s displayed text, not a calculated result. No sign-in, purchase, or personal-information prompt is open.",
+          "initModel": null,
+          "resolvedModels": [],
+          "turns": 1,
+          "toolCalls": 4,
+          "toolErrors": 0,
+          "observationChars": 19936,
+          "observationImages": 0,
+          "totalInputTokens": 79211,
+          "usageComplete": true,
+          "usage": {
+            "inputTokens": 18795,
+            "cacheWriteTokens": 0,
+            "cacheReadTokens": 60416,
+            "outputTokens": 266,
+            "costUsd": null
+          },
+          "costInr": null,
+          "apiAttempts": 0,
+          "rateLimits": 0,
+          "timings": {
+            "mcpStartupMs": 2038,
+            "cliStartupMs": 562,
+            "cliExecutionMs": 15236,
+            "cliWallMs": 15798,
+            "verificationMs": 0,
+            "cleanupMs": 378,
+            "captureMs": 3115
+          },
+          "exitCode": 0,
+          "signal": null,
+          "timedOut": false,
+          "fixtureCheck": null,
+          "fixtureEvidence": null,
+          "grading": null,
+          "diagnostics": [],
+          "harnessFailure": false,
+          "budget": {
+            "maxSteps": null,
+            "timeoutMs": 600000
+          }
+        }
+      ],
+      "firstPass": {
+        "status": "success",
+        "ok": true,
+        "valid": true
+      },
+      "recovery": {
+        "status": "success",
+        "ok": true,
+        "valid": true
+      },
+      "budget": {
+        "maxSteps": null,
+        "timeoutMs": 600000
+      },
+      "resolvedModels": []
+    },
+    {
+      "task": "livev1-data-eia-about",
+      "approach": "screenshot",
+      "run": 2,
+      "attempt": 1,
+      "attemptId": "livev1-data-eia-about-screenshot-2-1-1792952060484",
+      "logPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--screenshot--2--attempt-1-1792952060483-70xp4g.jsonl",
+      "status": "success",
+      "finalScreenshotPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--screenshot--2--attempt-1-1792952060483-70xp4g.final.png",
+      "evidencePath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--screenshot--2--attempt-1-1792952060483-70xp4g.evidence.json",
+      "evidenceFrames": [
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--screenshot--2--attempt-1-1792952060483-70xp4g.step-01.png",
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--screenshot--2--attempt-1-1792952060483-70xp4g.final.png"
+      ],
+      "valid": true,
+      "ok": true,
+      "harnessFailure": false,
+      "error": "",
+      "answer": "The About EIA page currently shows the agency name as **U.S. Energy Information Administration (EIA)**. The page text says it “collects, processes, analyzes, and publishes energy data for the American people.”\n\nNo inputs or site-generated results were involved.",
+      "turns": 1,
+      "toolCalls": 4,
+      "toolErrors": 0,
+      "observationChars": 72,
+      "observationImages": 2,
+      "inputTokens": 18242,
+      "cacheWriteTokens": 0,
+      "cacheReadTokens": 57472,
+      "totalInputTokens": 75714,
+      "outputTokens": 474,
+      "costUsd": null,
+      "costInr": null,
+      "timings": {
+        "mcpStartupMs": 2030,
+        "cliStartupMs": 581,
+        "cliExecutionMs": 15176,
+        "cliWallMs": 15757,
+        "verificationMs": 0,
+        "cleanupMs": 337,
+        "captureMs": 433
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "attemptId": "livev1-data-eia-about-screenshot-2-1-1792952060484",
+          "logPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--screenshot--2--attempt-1-1792952060483-70xp4g.jsonl",
+          "finalScreenshotPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--screenshot--2--attempt-1-1792952060483-70xp4g.final.png",
+          "evidencePath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--screenshot--2--attempt-1-1792952060483-70xp4g.evidence.json",
+          "evidenceFrames": [
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--screenshot--2--attempt-1-1792952060483-70xp4g.step-01.png",
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--screenshot--2--attempt-1-1792952060483-70xp4g.final.png"
+          ],
+          "status": "success",
+          "connected": true,
+          "connectionState": "connected",
+          "error": "",
+          "answer": "The About EIA page currently shows the agency name as **U.S. Energy Information Administration (EIA)**. The page text says it “collects, processes, analyzes, and publishes energy data for the American people.”\n\nNo inputs or site-generated results were involved.",
+          "initModel": null,
+          "resolvedModels": [],
+          "turns": 1,
+          "toolCalls": 4,
+          "toolErrors": 0,
+          "observationChars": 72,
+          "observationImages": 2,
+          "totalInputTokens": 75714,
+          "usageComplete": true,
+          "usage": {
+            "inputTokens": 18242,
+            "cacheWriteTokens": 0,
+            "cacheReadTokens": 57472,
+            "outputTokens": 474,
+            "costUsd": null
+          },
+          "costInr": null,
+          "apiAttempts": 0,
+          "rateLimits": 0,
+          "timings": {
+            "mcpStartupMs": 2030,
+            "cliStartupMs": 581,
+            "cliExecutionMs": 15176,
+            "cliWallMs": 15757,
+            "verificationMs": 0,
+            "cleanupMs": 337,
+            "captureMs": 433
+          },
+          "exitCode": 0,
+          "signal": null,
+          "timedOut": false,
+          "fixtureCheck": null,
+          "fixtureEvidence": null,
+          "grading": null,
+          "diagnostics": [],
+          "harnessFailure": false,
+          "budget": {
+            "maxSteps": null,
+            "timeoutMs": 600000
+          }
+        }
+      ],
+      "firstPass": {
+        "status": "success",
+        "ok": true,
+        "valid": true
+      },
+      "recovery": {
+        "status": "success",
+        "ok": true,
+        "valid": true
+      },
+      "budget": {
+        "maxSteps": null,
+        "timeoutMs": 600000
+      },
+      "resolvedModels": []
+    },
+    {
+      "task": "livev1-data-eia-about",
+      "approach": "mantis",
+      "run": 3,
+      "attempt": 1,
+      "attemptId": "livev1-data-eia-about-mantis-3-1-1792952065638",
+      "logPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--mantis--3--attempt-1-1792952065638-ufk7am.jsonl",
+      "status": "success",
+      "finalScreenshotPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--mantis--3--attempt-1-1792952065638-ufk7am.final.png",
+      "evidencePath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--mantis--3--attempt-1-1792952065638-ufk7am.evidence.json",
+      "evidenceFrames": [
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--mantis--3--attempt-1-1792952065638-ufk7am.step-01.png",
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--mantis--3--attempt-1-1792952065638-ufk7am.final.png"
+      ],
+      "valid": true,
+      "ok": true,
+      "harnessFailure": false,
+      "error": "",
+      "answer": "The About page identifies the agency as the **U.S. Energy Information Administration (EIA)**. That is the agency name shown in the page’s “About EIA” section.\n\nCurrently visible: the About page, with the heading “About EIA” and the agency name in its introductory text. No inputs or site generated results are involved.",
+      "turns": 1,
+      "toolCalls": 2,
+      "toolErrors": 0,
+      "observationChars": 5041,
+      "observationImages": 0,
+      "inputTokens": 15256,
+      "cacheWriteTokens": 0,
+      "cacheReadTokens": 44800,
+      "totalInputTokens": 60056,
+      "outputTokens": 256,
+      "costUsd": null,
+      "costInr": null,
+      "timings": {
+        "mcpStartupMs": 2017,
+        "cliStartupMs": 775,
+        "cliExecutionMs": 12815,
+        "cliWallMs": 13590,
+        "verificationMs": 0,
+        "cleanupMs": 250,
+        "captureMs": 270
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "attemptId": "livev1-data-eia-about-mantis-3-1-1792952065638",
+          "logPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--mantis--3--attempt-1-1792952065638-ufk7am.jsonl",
+          "finalScreenshotPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--mantis--3--attempt-1-1792952065638-ufk7am.final.png",
+          "evidencePath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--mantis--3--attempt-1-1792952065638-ufk7am.evidence.json",
+          "evidenceFrames": [
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--mantis--3--attempt-1-1792952065638-ufk7am.step-01.png",
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--mantis--3--attempt-1-1792952065638-ufk7am.final.png"
+          ],
+          "status": "success",
+          "connected": true,
+          "connectionState": "connected",
+          "error": "",
+          "answer": "The About page identifies the agency as the **U.S. Energy Information Administration (EIA)**. That is the agency name shown in the page’s “About EIA” section.\n\nCurrently visible: the About page, with the heading “About EIA” and the agency name in its introductory text. No inputs or site generated results are involved.",
+          "initModel": null,
+          "resolvedModels": [],
+          "turns": 1,
+          "toolCalls": 2,
+          "toolErrors": 0,
+          "observationChars": 5041,
+          "observationImages": 0,
+          "totalInputTokens": 60056,
+          "usageComplete": true,
+          "usage": {
+            "inputTokens": 15256,
+            "cacheWriteTokens": 0,
+            "cacheReadTokens": 44800,
+            "outputTokens": 256,
+            "costUsd": null
+          },
+          "costInr": null,
+          "apiAttempts": 0,
+          "rateLimits": 0,
+          "timings": {
+            "mcpStartupMs": 2017,
+            "cliStartupMs": 775,
+            "cliExecutionMs": 12815,
+            "cliWallMs": 13590,
+            "verificationMs": 0,
+            "cleanupMs": 250,
+            "captureMs": 270
+          },
+          "exitCode": 0,
+          "signal": null,
+          "timedOut": false,
+          "fixtureCheck": null,
+          "fixtureEvidence": null,
+          "grading": null,
+          "diagnostics": [],
+          "harnessFailure": false,
+          "budget": {
+            "maxSteps": null,
+            "timeoutMs": 600000
+          }
+        }
+      ],
+      "firstPass": {
+        "status": "success",
+        "ok": true,
+        "valid": true
+      },
+      "recovery": {
+        "status": "success",
+        "ok": true,
+        "valid": true
+      },
+      "budget": {
+        "maxSteps": null,
+        "timeoutMs": 600000
+      },
+      "resolvedModels": []
+    },
+    {
+      "task": "livev1-data-eia-about",
+      "approach": "tree",
+      "run": 3,
+      "attempt": 1,
+      "attemptId": "livev1-data-eia-about-tree-3-1-1792952071410",
+      "logPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--tree--3--attempt-1-1792952071410-t379ye.jsonl",
+      "status": "success",
+      "finalScreenshotPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--tree--3--attempt-1-1792952071410-t379ye.final.png",
+      "evidencePath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--tree--3--attempt-1-1792952071410-t379ye.evidence.json",
+      "evidenceFrames": [
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--tree--3--attempt-1-1792952071410-t379ye.step-01.png",
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--tree--3--attempt-1-1792952071410-t379ye.final.png"
+      ],
+      "valid": true,
+      "ok": true,
+      "harnessFailure": false,
+      "error": "",
+      "answer": "The agency name shown on the EIA About page is **U.S. Energy Information Administration (EIA)**. The page’s visible text says it “collects, processes, analyzes, and publishes energy data for the American people.”\n\nCurrently visible: the About EIA page, with that agency name in its introductory heading. No inputs or site-generated results apply to this request.",
+      "turns": 1,
+      "toolCalls": 4,
+      "toolErrors": 0,
+      "observationChars": 19936,
+      "observationImages": 0,
+      "inputTokens": 33058,
+      "cacheWriteTokens": 0,
+      "cacheReadTokens": 46208,
+      "totalInputTokens": 79266,
+      "outputTokens": 296,
+      "costUsd": null,
+      "costInr": null,
+      "timings": {
+        "mcpStartupMs": 2023,
+        "cliStartupMs": 580,
+        "cliExecutionMs": 17610,
+        "cliWallMs": 18190,
+        "verificationMs": 0,
+        "cleanupMs": 245,
+        "captureMs": 3153
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "attemptId": "livev1-data-eia-about-tree-3-1-1792952071410",
+          "logPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--tree--3--attempt-1-1792952071410-t379ye.jsonl",
+          "finalScreenshotPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--tree--3--attempt-1-1792952071410-t379ye.final.png",
+          "evidencePath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--tree--3--attempt-1-1792952071410-t379ye.evidence.json",
+          "evidenceFrames": [
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--tree--3--attempt-1-1792952071410-t379ye.step-01.png",
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--tree--3--attempt-1-1792952071410-t379ye.final.png"
+          ],
+          "status": "success",
+          "connected": true,
+          "connectionState": "connected",
+          "error": "",
+          "answer": "The agency name shown on the EIA About page is **U.S. Energy Information Administration (EIA)**. The page’s visible text says it “collects, processes, analyzes, and publishes energy data for the American people.”\n\nCurrently visible: the About EIA page, with that agency name in its introductory heading. No inputs or site-generated results apply to this request.",
+          "initModel": null,
+          "resolvedModels": [],
+          "turns": 1,
+          "toolCalls": 4,
+          "toolErrors": 0,
+          "observationChars": 19936,
+          "observationImages": 0,
+          "totalInputTokens": 79266,
+          "usageComplete": true,
+          "usage": {
+            "inputTokens": 33058,
+            "cacheWriteTokens": 0,
+            "cacheReadTokens": 46208,
+            "outputTokens": 296,
+            "costUsd": null
+          },
+          "costInr": null,
+          "apiAttempts": 0,
+          "rateLimits": 0,
+          "timings": {
+            "mcpStartupMs": 2023,
+            "cliStartupMs": 580,
+            "cliExecutionMs": 17610,
+            "cliWallMs": 18190,
+            "verificationMs": 0,
+            "cleanupMs": 245,
+            "captureMs": 3153
+          },
+          "exitCode": 0,
+          "signal": null,
+          "timedOut": false,
+          "fixtureCheck": null,
+          "fixtureEvidence": null,
+          "grading": null,
+          "diagnostics": [],
+          "harnessFailure": false,
+          "budget": {
+            "maxSteps": null,
+            "timeoutMs": 600000
+          }
+        }
+      ],
+      "firstPass": {
+        "status": "success",
+        "ok": true,
+        "valid": true
+      },
+      "recovery": {
+        "status": "success",
+        "ok": true,
+        "valid": true
+      },
+      "budget": {
+        "maxSteps": null,
+        "timeoutMs": 600000
+      },
+      "resolvedModels": []
+    },
+    {
+      "task": "livev1-data-eia-about",
+      "approach": "screenshot",
+      "run": 3,
+      "attempt": 1,
+      "attemptId": "livev1-data-eia-about-screenshot-3-1-1792952079034",
+      "logPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--screenshot--3--attempt-1-1792952079034-rp56pu.jsonl",
+      "status": "success",
+      "finalScreenshotPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--screenshot--3--attempt-1-1792952079034-rp56pu.final.png",
+      "evidencePath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--screenshot--3--attempt-1-1792952079034-rp56pu.evidence.json",
+      "evidenceFrames": [
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--screenshot--3--attempt-1-1792952079034-rp56pu.step-01.png",
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--screenshot--3--attempt-1-1792952079034-rp56pu.step-04.png",
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--screenshot--3--attempt-1-1792952079034-rp56pu.step-06.png",
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--screenshot--3--attempt-1-1792952079034-rp56pu.final.png"
+      ],
+      "valid": true,
+      "ok": true,
+      "harnessFailure": false,
+      "error": "",
+      "answer": "The **About EIA** page currently shows: “The U.S. Energy Information Administration (EIA) collects, processes, analyzes, and publishes energy data for the American people.” The agency name shown there is **U.S. Energy Information Administration**.\n\nThe earlier homepage header also displayed “U.S. Energy Information Administration”; the About page is the current visible evidence.",
+      "turns": 1,
+      "toolCalls": 7,
+      "toolErrors": 1,
+      "observationChars": 124,
+      "observationImages": 3,
+      "inputTokens": 25716,
+      "cacheWriteTokens": 0,
+      "cacheReadTokens": 89984,
+      "totalInputTokens": 115700,
+      "outputTokens": 700,
+      "costUsd": null,
+      "costInr": null,
+      "timings": {
+        "mcpStartupMs": 2029,
+        "cliStartupMs": 787,
+        "cliExecutionMs": 20370,
+        "cliWallMs": 21157,
+        "verificationMs": 0,
+        "cleanupMs": 283,
+        "captureMs": 772
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "attemptId": "livev1-data-eia-about-screenshot-3-1-1792952079034",
+          "logPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--screenshot--3--attempt-1-1792952079034-rp56pu.jsonl",
+          "finalScreenshotPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--screenshot--3--attempt-1-1792952079034-rp56pu.final.png",
+          "evidencePath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--screenshot--3--attempt-1-1792952079034-rp56pu.evidence.json",
+          "evidenceFrames": [
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--screenshot--3--attempt-1-1792952079034-rp56pu.step-01.png",
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--screenshot--3--attempt-1-1792952079034-rp56pu.step-04.png",
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--screenshot--3--attempt-1-1792952079034-rp56pu.step-06.png",
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\live-v1-luna-eia-20261025\\livev1-data-eia-about--screenshot--3--attempt-1-1792952079034-rp56pu.final.png"
+          ],
+          "status": "success",
+          "connected": true,
+          "connectionState": "connected",
+          "error": "",
+          "answer": "The **About EIA** page currently shows: “The U.S. Energy Information Administration (EIA) collects, processes, analyzes, and publishes energy data for the American people.” The agency name shown there is **U.S. Energy Information Administration**.\n\nThe earlier homepage header also displayed “U.S. Energy Information Administration”; the About page is the current visible evidence.",
+          "initModel": null,
+          "resolvedModels": [],
+          "turns": 1,
+          "toolCalls": 7,
+          "toolErrors": 1,
+          "observationChars": 124,
+          "observationImages": 3,
+          "totalInputTokens": 115700,
+          "usageComplete": true,
+          "usage": {
+            "inputTokens": 25716,
+            "cacheWriteTokens": 0,
+            "cacheReadTokens": 89984,
+            "outputTokens": 700,
+            "costUsd": null
+          },
+          "costInr": null,
+          "apiAttempts": 0,
+          "rateLimits": 0,
+          "timings": {
+            "mcpStartupMs": 2029,
+            "cliStartupMs": 787,
+            "cliExecutionMs": 20370,
+            "cliWallMs": 21157,
+            "verificationMs": 0,
+            "cleanupMs": 283,
+            "captureMs": 772
+          },
+          "exitCode": 0,
+          "signal": null,
+          "timedOut": false,
+          "fixtureCheck": null,
+          "fixtureEvidence": null,
+          "grading": null,
+          "diagnostics": [],
+          "harnessFailure": false,
+          "budget": {
+            "maxSteps": null,
+            "timeoutMs": 600000
+          }
+        }
+      ],
+      "firstPass": {
+        "status": "success",
+        "ok": true,
+        "valid": true
+      },
+      "recovery": {
+        "status": "success",
+        "ok": true,
+        "valid": true
+      },
+      "budget": {
+        "maxSteps": null,
+        "timeoutMs": 600000
+      },
+      "resolvedModels": []
+    }
+  ]
+}

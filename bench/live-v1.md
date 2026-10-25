@@ -1,6 +1,6 @@
 # live-v1: frozen public live-site benchmark
 
-`live-v1` is a 30-scored-task (v1.7), public, read-only live-site cohort. It retains one excluded task in the public catalog for documentation. It is separate from every local suite and from the gated Online-Mind2Web `realsite-tasks.json` source.
+`live-v1` is a 30-scored-task (v1.8), public, read-only live-site cohort. It retains one excluded task in the public catalog for documentation. It is separate from every local suite and from the gated Online-Mind2Web `realsite-tasks.json` source.
 
 The documented allocation is six families of five tasks: standards, documentation, civic reference, open data, site navigation, and interactive exploration. At v1.3 the 29 scored rows had 19 deterministic terminal-state contracts and 10 task-specific blind-judge contracts, with 7 easy, 14 medium, and 8 hard tasks. The catalog spans more than 15 independent sites; no site has more than three rows.
 
@@ -43,15 +43,19 @@ Review changed redirects, access blocks, and page text before changing a catalog
 
 ## Changelog and disclosures
 
-Final scores are in [RESULTS.md](RESULTS.md#live-site-scorecard-live-v1-v17). Everything below was changed or disclosed after seeing results; it is kept here so the headline tables stay short. Entries run newest first.
+Final scores are in [RESULTS.md](RESULTS.md#live-site-scorecard-live-v1-v18). Everything below was changed or disclosed after seeing results; it is kept here so the headline tables stay short. Entries run newest first.
 
-### Haiku tree and screenshot re-run on the Mantis CLI build (20261025)
+### v1.8 task swap: data.gov climate to EIA About
 
-Tree and screenshots were re-run for Haiku on all 30 tasks x 3 runs (180 runs) locally on Claude CLI 2.1.161, the same build as the Mantis re-run, so token and tool-output columns are now comparable. Mantis and Luna were not re-run. Concurrency was 16 on a 12-core, 16 GB machine; 4 rows damaged by contention were re-run at concurrency 4, so latency may be inflated. Judged blind by sol (same deterministic-first gate; 57 validator-graded and 33 judge-graded rows per approach) after fixing evidence-frame paths, which had caused an earlier judge pass to return unsure and blocked verdicts; final: 0 unsure, 0 blocked. Results: tree 86/90 (was 87), screenshots 88/90 (was 89); failures are `data-gov-climate` x5 plus tree `css-color-4` run 2. The original cloud-CLI-2.1.308 tree and screenshot numbers are superseded. Results: `live-v1-haiku-localcli-merged-20261025-judged`.
+`livev1-data-data-gov-climate` was replaced by `livev1-data-eia-about` (EIA About page; answer "Energy Information Administration"; <https://www.eia.gov/about/>). Its strict `/climate/1/` URL contract and site drift made the old task fragile: it caused 7 of 9 Haiku failures and some Mantis misses. The 18 EIA runs (3 approaches x 3 runs x 2 models) all passed deterministic validation. Old data.gov results remain in `bench/results/` and are disclosed here.
 
-### Mantis re-run after `src/` gap fixes (20261023)
+### Historical v1.7 Haiku tree and screenshot re-run on the Mantis CLI build (20261025)
 
-Mantis was re-run on all 30 tasks x 3 runs for Luna and Haiku (tree and screenshot numbers unchanged). Haiku had 6 MCP connection-failure rows, re-run alone (`...-rec-20261024`, 6/6 success) and merged. Remaining failures: Luna `rfc-8259` run 2, Haiku `node-url` run 1 and `data-gov-climate` runs 1-2, all agent behaviour or site drift, no Mantis defect (sol-reviewed). `livev1-data-data-gov-climate` is fragile (the site's climate page drifts); it stays scored.
+Tree and screenshots were re-run for Haiku on all 30 tasks x 3 runs (180 runs) locally on Claude CLI 2.1.161, the same build as the Mantis re-run, so token and tool-output columns are now comparable. Mantis and Luna were not re-run. Concurrency was 16 on a 12-core, 16 GB machine; 4 rows damaged by contention were re-run at concurrency 4, so latency may be inflated. Judged blind by sol (same deterministic-first gate; 57 validator-graded and 33 judge-graded rows per approach) after fixing evidence-frame paths, which had caused an earlier judge pass to return unsure and blocked verdicts; final: 0 unsure, 0 blocked. Historical v1.7 results: tree 86/90 (was 87), screenshots 88/90 (was 89); failures were `data-gov-climate` x5 plus tree `css-color-4` run 2. The original cloud-CLI-2.1.308 tree and screenshot numbers are superseded. Results: `live-v1-haiku-localcli-merged-20261025-judged`.
+
+### Historical v1.7 Mantis re-run after `src/` gap fixes (20261023)
+
+Mantis was re-run on all 30 tasks x 3 runs for Luna and Haiku (tree and screenshot numbers unchanged). Haiku had 6 MCP connection-failure rows, re-run alone (`...-rec-20261024`, 6/6 success) and merged. Historical v1.7 failures: Luna `rfc-8259` run 2, Haiku `node-url` run 1 and `data-gov-climate` runs 1-2, all agent behaviour or site drift, no Mantis defect (sol-reviewed). `livev1-data-data-gov-climate` was fragile (the site's climate page drifted) and was replaced in v1.8.
 
 ### v1.7 grader fixes (after seeing Luna results)
 

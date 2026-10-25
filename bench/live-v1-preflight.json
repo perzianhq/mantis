@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "suite": "live-v1",
   "mode": "network",
-  "taskHash": "6b08ef1a6bb21d2065a7f597e68a96e7d1466606b0ae7878dc896ce1cb42c04e",
+  "taskHash": "38f2b0990c5f48b59621e4913f0b91092cfe5ff3b6db0c1a9719ce17590d9f15",
   "note": "Public GET probes only; review redirects and content changes before promoting a candidate.",
   "candidates": [
     {
@@ -154,13 +154,13 @@
       "finalUrl": "https://ourworldindata.org/co2-emissions"
     },
     {
-      "taskId": "livev1-data-data-gov-climate",
-      "canonicalUrl": "https://data.gov/climate/1/",
-      "sourceFingerprint": "7fbc24aed8dee60d4c5f3349cfad4d00c05583f1f6427bcfc8ef2963f4303f36",
+      "taskId": "livev1-data-eia-about",
+      "canonicalUrl": "https://www.eia.gov/about/",
+      "sourceFingerprint": "91622af8fb9aefe77eccea90f45e0f8353e88033dd8216ede6cf861ce977c82a",
       "status": "reachable",
       "detail": "public GET completed",
       "httpStatus": 200,
-      "finalUrl": "https://data.gov/climate/1/"
+      "finalUrl": "https://www.eia.gov/about/"
     },
     {
       "taskId": "livev1-data-eurostat-database",
