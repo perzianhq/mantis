@@ -76,11 +76,11 @@ Verdict (Opus review, 2026-10-24): good enough to launch as a v0.x beta. Accurac
 
 ### Action plan (remaining)
 1. ~~Cut v0.1.6~~ (done: npm, GitHub tag, MCP Registry).
-2. Spot-check about 30 sol verdicts (owner), recorded in [RESULTS.md](../bench/RESULTS.md).
+2. ~~Spot-check about 30 sol verdicts~~ (done, recorded in [RESULTS.md](../bench/RESULTS.md)).
 3. ~~Untrusted-content note; GitHub repo topics~~ (done).
 4. ~~Clean untracked scratch files~~ (done).
 5. Submit listings: Smithery, mcp.so, Glama, `awesome-mcp-servers` PR.
-6. Owner records the 30-second video and GIF; README opens with it.
+6. Record the 30-second video and GIF; README opens with it. Demo task, figures and cross-check: `video/gif.md`.
 7. Show HN, Tue-Thu 8-10am US Eastern.
 
 ### Biggest risks
