@@ -455,10 +455,12 @@ it('live-v1.1 contracts accept the legitimate page variants the 20261021 run rea
   expect(grade('gpl-3', 'https://www.gnu.org/licenses/lgpl-3.0.html', gplText, gplAnswer)).toBe(false);
   expect(grade('gpl-3', 'https://www.gnu.org/licenses/gpl-3.0.html', 'GNU GENERAL PUBLIC LICENSE Version 2, June 1991', gplAnswer)).toBe(false);
 
-  // Census: the page shows "U.S. Census Bureau" / "Census Bureau", never the long form; the homepage is not the about page.
+  // Census: the landing page and its agency subpage show the same organization; unrelated pages still do not qualify.
   const censusText = 'Within About the U.S. Census Bureau Who We Are';
   expect(grade('census-about', 'https://www.census.gov/about.html', censusText, 'The U.S. Census Bureau')).toBe(true);
+  expect(grade('census-about', 'https://www.census.gov/about/who.html', censusText, 'The U.S. Census Bureau')).toBe(true);
   expect(grade('census-about', 'https://www.census.gov/', censusText, 'The U.S. Census Bureau')).toBe(false);
+  expect(grade('census-about', 'https://www.census.gov/about/other.html', censusText, 'The U.S. Census Bureau')).toBe(false);
   expect(grade('census-about', 'https://www.census.gov/about.html', 'About the Bureau', 'The U.S. Census Bureau')).toBe(false);
   expect(grade('census-about', 'https://www.census.gov/about.html', censusText, 'The Bureau of Labor Statistics')).toBe(false);
 

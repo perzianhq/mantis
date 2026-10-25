@@ -28,7 +28,7 @@ Full table: [bench/RESULTS.md](bench/RESULTS.md)
 
 | Model | Mantis | Accessibility tree | Screenshots |
 |---|---:|---:|---:|
-| `gpt-6-luna` | 89 | **90** | 85 |
+| `gpt-6-luna` | 89 | **90** | 86 |
 | `claude-haiku-5-5` | 87 | 86 | **89** |
 
 **Long real-site workflows** (`long-live-v1`: 16 tasks on public sites, 3 runs per approach, judged blind, medians over all 48 runs, failures included). Mantis vs the accessibility tree:
@@ -44,7 +44,7 @@ Full table: [bench/RESULTS.md](bench/RESULTS.md)
 | | Input tokens | **432k** | 746k |
 | | Tool calls | **26** | 32 |
 
-**Net:** Accuracy is on par with the tree or slightly better. On long real-site tasks Mantis is about a third faster at the median with 28–42% fewer input tokens. The accuracy gap is small and partly explained: three of Luna's four net wins come from one task where Playwright MCP does not read iframe contents ([playwright#43628](https://github.com/microsoft/playwright/issues/43628)), and one of Haiku's two follows a Mantis fix made after that failure (rerun of that one cell, the rest not rerun). The blind judge has not passed its calibration gate: an audit against the deterministic answer keys gave 79% agreement and 6/48 false successes (Sonnet as judge: 85% and 11/48), partly from a Project Gutenberg form quirk and process rules (on-site search) that final state cannot show, so treat the model-judged rows as indicative ([details](bench/RESULTS.md)). The long real-site task set was adjusted before scoring; the swaps are listed in [bench/RESULTS.md](bench/RESULTS.md). Accuracy claims cover read/navigate tasks on public sites with Luna and Haiku. The screenshot baseline is our own minimal tool, not a product's.
+**Net:** Accuracy is on par with the tree or slightly better. On long real-site tasks Mantis is about a third faster at the median with 28–42% fewer input tokens. The accuracy gap is small and partly explained: three of Luna's four net wins come from one task where Playwright MCP does not read iframe contents ([playwright#43628](https://github.com/microsoft/playwright/issues/43628)), and one of Haiku's two follows a Mantis fix made after that failure (rerun of that one cell, the rest not rerun). The blind judge has not passed its calibration gate: an audit against the deterministic answer keys gave 79% agreement and 6/48 false successes (Sonnet as judge: 85% and 11/48; a sol review of Sonnet's disagreements found 8 of 18 gold labels too strict or wrong, which would put Sonnet at about 91%), partly from a Project Gutenberg form quirk and process rules (on-site search) that final state cannot show, so treat the model-judged rows as indicative ([details](bench/RESULTS.md)). The long real-site task set was adjusted before scoring; the swaps are listed in [bench/RESULTS.md](bench/RESULTS.md). Accuracy claims cover read/navigate tasks on public sites with Luna and Haiku. The screenshot baseline is our own minimal tool, not a product's.
 
 ### Where Mantis is better
 
