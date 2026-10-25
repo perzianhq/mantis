@@ -32,7 +32,7 @@ export function chromiumExecutable(): { executablePath?: string } {
 export function missingChromiumHint(error: unknown): string | undefined {
   const message = error instanceof Error ? error.message : String(error);
   if (!/Executable doesn't exist/i.test(message)) return undefined;
-  return `Chromium is not installed for Playwright. Run \`npx playwright install chromium\` (on Linux add \`--with-deps\`), or set MANTIS_CHROMIUM to a Chromium executable.`;
+  return `Chromium is not installed for Playwright. Run \`npx -y -p mantis-browser mantis install\` (on Linux add \`--with-deps\`), or set MANTIS_CHROMIUM to a Chromium executable.`;
 }
 
 let cached: Promise<string> | undefined;

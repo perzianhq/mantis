@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import { MantisBrowser } from '../src/index.js';
-import { fixture, idOf } from './helpers.js';
+import { fixture, idOf, timingCap } from './helpers.js';
 
 let browser: MantisBrowser;
 beforeAll(() => { browser = new MantisBrowser({ actionTimeoutMs: 300 }); });
@@ -102,7 +102,7 @@ it('keeps ordinary open latency short for a single disabled control', async () =
   const view = await browser.open(fixture('generic-browser-disabled.html'));
   expect(view).toContain('Submit');
   expect(view).not.toContain('Hidden consent');
-  expect(performance.now() - start).toBeLessThan(300);
+  expect(performance.now() - start).toBeLessThan(timingCap(300));
 });
 
 it('notes slow hydration and can click as soon as controls become enabled', async () => {

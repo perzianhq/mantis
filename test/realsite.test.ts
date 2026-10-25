@@ -1,4 +1,4 @@
-// Real-site tasks are graded by a blind LLM judge, not by a regex or page-state check, so per AGENTS.md they
+// Real-site tasks are graded by a blind LLM judge, not by a regex or page-state check, so they
 // do not need grader cases in test/fixture-verification.test.ts. This file covers the pieces around the judge:
 // the seeded stratified sampler, the task loader, the reply sanitiser, FINAL_URL parsing, and the judge's
 // log/verdict parsing and report (the `claude -p` call itself needs real results and is not run here).

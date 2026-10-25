@@ -511,7 +511,7 @@ function callCodexJudge(prompt: string, cwd: string, model: string, reasoning: s
 }
 
 function callJudge(prompt: string, cwd: string, model: string, timeoutMs: number, reasoning = 'high'): Promise<string> {
-  // Isolation: no user/project settings or CLAUDE.md, no MCP servers, Read is the only tool, nothing saved.
+  // Isolation: no user/project settings, no MCP servers, Read is the only tool, nothing saved.
   const args = ['-p', '--model', model, '--effort', reasoning, '--output-format', 'json', '--tools', 'Read', '--allowedTools', 'Read',
     '--setting-sources', '', '--strict-mcp-config', '--disable-slash-commands', '--no-session-persistence'];
   return runCli(claudeBin(), args, prompt, cwd, timeoutMs);

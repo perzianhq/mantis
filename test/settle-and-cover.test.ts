@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Page } from 'playwright';
 import { MantisBrowser } from '../src/index.js';
-import { fixture, idOf } from './helpers.js';
+import { fixture, idOf, timingCap } from './helpers.js';
 
 let browser: MantisBrowser;
 beforeAll(() => { browser = new MantisBrowser({ actionTimeoutMs: 5000 }); });
@@ -203,7 +203,7 @@ describe('settle does not over-wait', () => {
     await browser.click(idOf(view, 'Do nothing')); // first action after open pays one-off warm-up
     const { text, ms } = await timed(() => browser.click(idOf(view, 'Do nothing')));
     expect(text).toContain('no visible change');
-    expect(ms).toBeLessThan(380);
+    expect(ms).toBeLessThan(timingCap(380));
   });
 
   it('still waits for an effect a timer delivers later (near miss)', async () => {

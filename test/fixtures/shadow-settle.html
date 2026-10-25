@@ -19,11 +19,11 @@
 </main>
 <script>
   // Frame-driven (not timer-driven) so that nothing but the DOM itself shows the update is coming.
-  // One step per ~60ms, sixteen steps, always written into the given root.
+  // One step per ~30ms (well inside the 150ms quiet window, even on slow runners), sixteen steps, always written into the given root.
   function stage(root, label) {
     let step = 0, last = performance.now();
     const tick = (now) => {
-      if (now - last >= 60) {
+      if (now - last >= 30) {
         last = now;
         step++;
         const p = document.createElement('p');

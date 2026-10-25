@@ -1,0 +1,43 @@
+name: Task where Mantis loses
+description: Share a task where another browsing approach performs better.
+labels: [loses]
+body:
+  - type: markdown
+    attributes:
+      value: "Found a task where Mantis does worse than the accessibility-tree or screenshot approach? We want it; we will turn it into a public benchmark task and fix it in public."
+  - type: textarea
+    id: task_prompt
+    attributes:
+      label: Task prompt given to the agent
+    validations:
+      required: true
+  - type: input
+    id: public_url
+    attributes:
+      label: Public URL, no logins
+    validations:
+      required: true
+  - type: input
+    id: model_client
+    attributes:
+      label: Model and client
+  - type: textarea
+    id: mantis_result
+    attributes:
+      label: What Mantis did and where it got stuck
+    validations:
+      required: true
+  - type: textarea
+    id: alternative_result
+    attributes:
+      label: What the tree or screenshot tool did
+  - type: textarea
+    id: trace
+    attributes:
+      label: Trace or `mantis read` output
+  - type: checkboxes
+    id: trace_permission
+    attributes:
+      label: Trace sharing
+      options:
+        - label: I can share the full trace

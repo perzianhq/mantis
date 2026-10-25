@@ -2,6 +2,10 @@ node_modules/
 dist/
 coverage/
 .env
+AGENTS.md
+CLAUDE.md
+scripts/codex-job.sh
+scripts/codex-jobs.sh
 *.log
 test-results/
 bench/results/partial.*

@@ -48,7 +48,7 @@ while true; do
     snapshot=$(mktemp "$dir/.watch-snapshot.XXXXXX")
     cat "$l" > "$snapshot"
     lines=$(wc -l < "$snapshot")
-    size=$(stat -c %s "$snapshot" 2>/dev/null || wc -c < "$snapshot")
+    size=$(stat -c %s "$snapshot" 2>/dev/null || wc -c < "$snapshot" | tr -d '[:space:]')
     first_hash=$(sed -n '1p' "$snapshot" | cksum | awk '{print $1}')
     previous=$(awk -F '\t' -v path="$l" '$1 == path { value=$2 } END { print value + 0 }' "$cursor")
     previous_size=$(awk -F '\t' -v path="$l" '$1 == path { value=$3 } END { print value + 0 }' "$cursor")

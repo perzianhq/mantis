@@ -1,0 +1,69 @@
+import { spawn as nodeSpawn } from 'node:child_process';
+import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
+import type { ChildProcess } from 'node:child_process';
+
+type SpawnedChild = Pick<ChildProcess, 'once'>;
+type Spawn = (command: string, args: readonly string[], options: { stdio: 'inherit' }) => SpawnedChild;
+type Resolve = (id: string) => string;
+
+export interface InstallDependencies {
+  execPath?: string;
+  prefetchOcr?: () => Promise<void>;
+  resolve?: Resolve;
+  spawn?: Spawn;
+}
+
+const localRequire = createRequire(import.meta.url);
+
+/** Resolve the Playwright CLI from this package's dependency tree, not the caller's npx. */
+export function bundledPlaywrightCli(resolve: Resolve = localRequire.resolve): string {
+  for (const packageName of ['playwright', 'playwright-core']) {
+    try {
+      try {
+        return resolve(`${packageName}/cli.js`);
+      } catch {
+        // Recent Playwright versions do not export cli.js, but do export package.json.
+        return join(dirname(resolve(`${packageName}/package.json`)), 'cli.js');
+      }
+    } catch {
+      // Try the next package: playwright-core is present when consumers omit playwright.
+    }
+  }
+  throw new Error('Unable to resolve the bundled Playwright CLI. Reinstall mantis-browser.');
+}
+
+/** Install Chromium through the Playwright version bundled with Mantis. */
+export async function installChromium(dependencies: InstallDependencies = {}, withDeps = false): Promise<number> {
+  const command = dependencies.execPath ?? process.execPath;
+  const cli = bundledPlaywrightCli(dependencies.resolve);
+  const spawn: Spawn = dependencies.spawn ?? ((file, args, options) => nodeSpawn(file, [...args], options));
+
+  const exitCode = await new Promise<number>((resolve, reject) => {
+    const child = spawn(command, [cli, 'install', ...(withDeps ? ['--with-deps'] : []), 'chromium'], { stdio: 'inherit' });
+    child.once('error', reject);
+    child.once('close', (code) => resolve(code ?? 1));
+  });
+  if (exitCode !== 0) return exitCode;
+
+  console.log('Fetching OCR language data (optional)...');
+  const prefetchOcr = dependencies.prefetchOcr ?? (async () => (await import('./fallback/ocr.js')).prefetchOcrData());
+  try {
+    await prefetchOcr();
+  } catch (error) {
+    const firstLine = String(error instanceof Error ? error.message : error).split('\n')[0] || 'Unknown error';
+    console.warn(`OCR data not fetched (ocr will download it on first use): ${firstLine}`);
+  }
+  return 0;
+}
+
+/** Handle the install subcommand, returning undefined when another command should handle the arguments. */
+export async function runInstallCommand(args: readonly string[], dependencies?: InstallDependencies): Promise<number | undefined> {
+  if (args[0] !== 'install') return undefined;
+  const withDeps = args[1] === '--with-deps';
+  if (args.length > 2 || (args.length === 2 && !withDeps)) {
+    console.error('usage: mantis install [--with-deps]');
+    return 2;
+  }
+  return installChromium(dependencies, withDeps);
+}

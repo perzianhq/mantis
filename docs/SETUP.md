@@ -5,19 +5,24 @@
 Requires Node 20+.
 
 ```bash
-npx playwright install chromium
+npx -y -p mantis-browser mantis install
 claude mcp add mantis -- npx -y -p mantis-browser mantis-mcp
 ```
 
 On native Windows: `claude mcp add mantis -- cmd /c npx -y -p mantis-browser mantis-mcp`
 
+On a bare Linux server or container, run `npx -y -p mantis-browser mantis install --with-deps` instead; it also fetches Chromium's system libraries (needs sudo).
+
 Try it without an agent: `npx -y -p mantis-browser mantis read https://example.com`
+
+`mantis install` also fetches English OCR language data to `~/.cache/mantis/tessdata`; a fetch failure is only a warning.
+For offline OCR, provide `MANTIS_TESSDATA` with `eng.traineddata`.
 
 ## Build and test
 
 ```bash
 npm install
-npx playwright install chromium
+npx tsx src/cli.ts install
 npm run build
 npm test             # includes a check that nothing in Chrome's accessibility tree is lost
 npx tsx src/cli.ts read https://example.com
@@ -26,7 +31,6 @@ npx tsx src/cli.ts read https://example.com
 Benchmarks, their settings and how results are graded: [bench/README.md](../bench/README.md).
 
 Sarvam probe, calibration and diagnostics: [bench/README.md](../bench/README.md#sarvam-judge-and-capability-probe).
-Agent rules and model policy: [AGENTS.md](../AGENTS.md).
 
 To use a local build instead of npm: `claude mcp add mantis -- node /abs/path/to/mantis/dist/server.js`.
 

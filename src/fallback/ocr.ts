@@ -55,6 +55,16 @@ async function getWorker(): Promise<WorkerLike> {
   return worker;
 }
 
+/** Cache the OCR language data ahead of its first recognition request. */
+export async function prefetchOcrData(): Promise<void> {
+  if (process.env.MANTIS_TESSDATA) return;
+  try {
+    await getWorker();
+  } finally {
+    await closeOcr();
+  }
+}
+
 /** Recognise text in a PNG buffer. Throws an Error with a plain, agent-readable message. */
 export async function recognize(png: Buffer): Promise<OcrResult> {
   try {

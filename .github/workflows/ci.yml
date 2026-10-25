@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, long-live-v1]
   pull_request:
 
 jobs:
@@ -28,3 +28,32 @@ jobs:
         if: runner.os != 'Linux'
         run: npx playwright install chromium
       - run: npm test
+
+  install:
+    name: install (packed package, clean directory)
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22.14.0
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm pack --pack-destination "${{ runner.temp }}"
+      - name: Install the tarball in an empty project, as a user would
+        shell: bash
+        run: |
+          mkdir "$RUNNER_TEMP/fresh" && cd "$RUNNER_TEMP/fresh"
+          npm init -y >/dev/null
+          npm install "$RUNNER_TEMP"/mantis-browser-*.tgz
+          if [ "$RUNNER_OS" = "Linux" ]; then ./node_modules/.bin/mantis install --with-deps; else ./node_modules/.bin/mantis install; fi
+          printf '<title>t</title><button>Go</button>' > page.html
+          dir=$(pwd -W 2>/dev/null || pwd)
+          case "$dir" in /*) url="file://$dir/page.html" ;; *) url="file:///$dir/page.html" ;; esac
+          ./node_modules/.bin/mantis read "$url" | tee out.txt
+          grep -q "Go" out.txt
