@@ -43,6 +43,7 @@ jobs:
           node-version: 22.14.0
           cache: npm
       - run: npm ci
+      - run: npm run build
       - run: npm pack --pack-destination "${{ runner.temp }}"
       - name: Install the tarball in an empty project, as a user would
         shell: bash
