@@ -24,6 +24,8 @@ import { evidenceShowsOnlySiteErrors, FINAL_TEXT_CAP, PAGE_STATE_FUNCTION, STEP_
 import type { CapturedFrame } from '../bench/agent/evidence.js';
 import { deterministicGradeForRun, finalizeSiteBrokenVerdicts, parseJudgeOutput, renderJudgedMarkdown, universallySiteBrokenTasks } from '../bench/agent/judge.js';
 import type { JudgedRun } from '../bench/agent/judge.js';
+import { buildAuditManifest, summarizeAudit } from '../bench/agent/judge-audit.js';
+import type { AuditPacket, AuditRun } from '../bench/agent/judge-audit.js';
 import { evaluateDeterministicGrader, loadRealsiteRows, sanitizeAnswer, validateChecks, validateDeterministicGrader } from '../bench/agent/realsite.js';
 import { uploadFixturePath } from '../bench/agent/upload-fixture.js';
 import { LIVE_V1_ROWS } from '../bench/agent/live-v1.js';
@@ -34,6 +36,23 @@ import { classifyClickError } from '../src/browser.js';
 import { answerReadyCue } from '../src/diff.js';
 import type { Snapshot } from '../src/capture/index.js';
 import { fixture, idOf } from './helpers.js';
+
+it('requires an audit to meet both the agreement and false-success calibration gates', () => {
+  const packets: AuditPacket[] = Array.from({ length: 100 }, (_, index) => {
+    const task = `audit-fixture-${index % 30}`;
+    const gold = index < 50 ? 'failure' as const : 'success' as const;
+    const base = { source: 'audit-fixture', task, approach: index % 2 ? 'mantis' : 'tree', model: index % 2 ? 'model-a' : 'model-b', run: index, attemptLog: `attempt-${index}.jsonl`, gold };
+    return { ...base, id: `${task}|${base.approach}|${base.model}|${index}|${base.attemptLog}` };
+  });
+  const manifest = { ...buildAuditManifest(packets), selected: packets, target: 100 };
+  const verdicts = (falseSuccesses: number): AuditRun[] => packets.map((packet, index) => ({
+    ...packet, verdict: packet.gold === 'failure' && index < falseSuccesses ? 'success' : packet.gold,
+    reason: 'fixture verdict', completedAt: '2026-01-01T00:00:00.000Z',
+  }));
+  expect(summarizeAudit(manifest, verdicts(0)).gate.pass).toBe(true);
+  // Near miss: three promoted failures are 6% of the 50 gold failures.
+  expect(summarizeAudit(manifest, verdicts(3)).gate.pass).toBe(false);
+});
 
 it('keeps tool-neutral answer facts and provisions upload fixtures in the permitted root', () => {
   const answer = sanitizeAnswer('File selected: README.md (#9) with mcp__playwright__browser_click.');

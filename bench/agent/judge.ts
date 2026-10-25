@@ -549,8 +549,13 @@ export interface JudgeReport {
 }
 export interface JudgeOptions {
   provider?: JudgeProvider; model?: string; resultsDir?: string;
+  reasoning?: string;
   saved?: SavedBenchmark; rows?: RealsiteRow[];
   write?: boolean; freshScreenshots?: boolean; requireSavedEvidence?: boolean;
+  /** Calibration uses the model verdict even for rows with a complete answer-key grader. */
+  disableDeterministic?: boolean;
+  /** Calibration measures the model alone, without legacy text-check vetoes. */
+  disableChecks?: boolean;
   runKeys?: Set<string>; quiet?: boolean;
   expectedFrameCounts?: Map<string, number>;
   sarvamClient?: Pick<SarvamClient, 'complete'>;
@@ -637,7 +642,7 @@ export async function judgeBenchmark(name: string, options: JudgeOptions = {}): 
   if (judgeProvider === 'sarvam') loadSarvamEnv();
   const explicitModel = options.model ?? process.env.JUDGE_MODEL;
   const model = explicitModel ?? (judgeProvider === 'codex' ? 'gpt-6.1-sol' : judgeProvider === 'claude' ? 'claude-sonnet-5-5' : 'automatic (images: gemma4; text: deepseekv4.1-flash)');
-  const reasoning = process.env.JUDGE_REASONING ?? 'high';
+  const reasoning = options.reasoning ?? process.env.JUDGE_REASONING ?? 'high';
   const concurrency = Number(process.env.JUDGE_CONCURRENCY ?? (judgeProvider === 'sarvam' ? 2 : 6));
   const seed = Number(process.env.JUDGE_SEED ?? 1);
   const timeoutMs = Number(process.env.JUDGE_TIMEOUT_S ?? 240) * 1000;
@@ -747,7 +752,7 @@ export async function judgeBenchmark(name: string, options: JudgeOptions = {}): 
     // Complete graders are an explicit opt-in. They may only decide a completed
     // evidence-format run; an old run, an interrupted run, or a row without a
     // final harness capture follows the normal judged/status path below.
-    const deterministic = deterministicGradeForRun(row, r.status, evidenceRun, text, packet.frames);
+    const deterministic = options.disableDeterministic ? null : deterministicGradeForRun(row, r.status, evidenceRun, text, packet.frames);
     let grading: NonNullable<JudgedRun['grading']>;
     if (deterministic) {
       result = deterministic.pass
@@ -779,8 +784,8 @@ export async function judgeBenchmark(name: string, options: JudgeOptions = {}): 
     if (evidenceRun) {
       const judgeVerdict = grading === 'judge' ? result.verdict : undefined;
       // Deterministic answer-key checks (evidence-format rows only); a failed check overrides the judge.
-      const checks = r.status === 'connection_failure' ? null : evaluateChecks(row.checks, text, packet.texts);
-      if (grading !== 'deterministic' && checks && !checks.pass) result = { verdict: 'failure', reason: `Checks failed: ${checks.failed.join('; ')}. ${result.reason}`.trim() };
+      const checks = options.disableChecks || r.status === 'connection_failure' ? null : evaluateChecks(row.checks, text, packet.texts);
+      if (!options.disableChecks && grading !== 'deterministic' && checks && !checks.pass) result = { verdict: 'failure', reason: `Checks failed: ${checks.failed.join('; ')}. ${result.reason}`.trim() };
       extra = {
         evidence, frameCount: packet.frames.length, finalFrame: packet.frames.find((f) => f.final)?.id ?? null,
         ...(judgeVerdict ? { judgeVerdict } : {}), checks, deterministic, grading,
