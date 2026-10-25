@@ -6,8 +6,8 @@
 
 | Approach | Runs | Success | Failure | Unsure | Blocked | Site broken | Overall success rate | Success rate excluding universally blocked / site-broken tasks | Avg tool calls | Avg input tokens | Avg time (s) |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| mantis | 48 | 44 | 4 | 0 | 0 | 0 | 91.7% | 91.7% | 27.8 | 544,594 | 120.9 |
-| tree | 48 | 44 | 2 | 2 | 0 | 0 | 91.7% | 91.7% | 33.4 | 857,916 | 147.5 |
+| mantis | 48 | 45 | 3 | 0 | 0 | 0 | 93.8% | 93.8% | 27.8 | 544,594 | 120.9 |
+| tree | 48 | 45 | 3 | 0 | 0 | 0 | 93.8% | 93.8% | 33.4 | 857,916 | 147.5 |
 
 Universally blocked tasks: none. Site-broken tasks: none.
 
@@ -17,7 +17,7 @@ Universally blocked tasks: none. Site-broken tasks: none.
 |---|---|---|
 | `longlive` hard: Using Wikipedia's on-site search, visit Voyager 1, Voyager 2, Pioneer 10, Pioneer 11 | success, success, success | success, success, success |
 | `longlive` hard: Using Wikipedia's on-site search, inspect Io, Europa, Ganymede, Callisto, Titan, Tri | success, success, success | success, success, success |
-| `longlive` medium: Use Project Gutenberg's catalogue search to inspect these eight English Text recor | failure, success, success | success, success, success |
+| `longlive` medium: Use Project Gutenberg's catalogue search to inspect these eight English Text recor | success, success, success | success, success, success |
 | `longlive` hard: Audit these eight Project Gutenberg English Text records using catalogue search: Fra | success, success, success | success, success, failure |
 | `longlive` medium: Use The Met collection search to inspect object IDs 436528, 436532, 436535, 436524 | success, success, success | success, success, success |
 | `longlive` medium: Use Project Gutenberg Advanced Search: Author 'Charles Dickens', Language English, | success, success, success | success, success, success |
@@ -29,15 +29,15 @@ Universally blocked tasks: none. Site-broken tasks: none.
 | `longlive` medium: Prepare Selenium's Multiple Selection test page without submitting. Controls have | failure, failure, success | success, success, success |
 | `longlive` medium: This is Sauce Demo, an explicit test-account sandbox. Log in with its displayed st | success, success, success | success, success, success |
 | `longlive` hard: On Sauce Demo only, log in with displayed test credentials standard_user / secret_sa | success, success, success | success, success, success |
-| `longlive` medium: Perform one browser handoff check on The Internet demo. On Multiple Windows, click | success, success, failure | failure, success, success |
-| `longlive` medium: On Selenium's XHTML test page, click 'Open new window'. Switch to the named result | success, success, success | unsure, unsure, success |
+| `longlive` medium: Perform one browser handoff check on The Internet demo. On Multiple Windows, click | success, success, failure | failure, success, failure |
+| `longlive` medium: On Selenium's XHTML test page, click 'Open new window'. Switch to the named result | success, success, success | success, success, success |
 
 ## Evidence and checks
 
 | Approach | Evidence runs | Success | Failure | Unsure | Blocked | Site broken | Deterministic | Judge fallback | Status-only | With frames | Citing an earlier frame |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| mantis | 48 | 44 | 4 | 0 | 0 | 0 | 42 | 6 | 0 | 48 | 6 |
-| tree | 48 | 44 | 2 | 2 | 0 | 0 | 42 | 6 | 0 | 48 | 6 |
+| mantis | 48 | 45 | 3 | 0 | 0 | 0 | 42 | 6 | 0 | 48 | 6 |
+| tree | 48 | 45 | 3 | 0 | 0 | 0 | 42 | 6 | 0 | 48 | 6 |
 
 ### Check vs judge disagreements
 

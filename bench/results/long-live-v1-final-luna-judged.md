@@ -6,7 +6,7 @@
 
 | Approach | Runs | Success | Failure | Unsure | Blocked | Site broken | Overall success rate | Success rate excluding universally blocked / site-broken tasks | Avg tool calls | Avg input tokens | Avg time (s) |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| mantis | 48 | 40 | 7 | 1 | 0 | 0 | 83.3% | 83.3% | 20.4 | 312,057 | 67.5 |
+| mantis | 48 | 41 | 7 | 0 | 0 | 0 | 85.4% | 85.4% | 20.4 | 312,057 | 67.5 |
 | tree | 48 | 37 | 11 | 0 | 0 | 0 | 77.1% | 77.1% | 27.1 | 521,154 | 86.4 |
 
 Universally blocked tasks: none. Site-broken tasks: none.
@@ -30,13 +30,13 @@ Universally blocked tasks: none. Site-broken tasks: none.
 | `longlive` medium: This is Sauce Demo, an explicit test-account sandbox. Log in with its displayed st | success, success, success | success, success, success |
 | `longlive` hard: On Sauce Demo only, log in with displayed test credentials standard_user / secret_sa | success, success, success | success, success, success |
 | `longlive` medium: Perform one browser handoff check on The Internet demo. On Multiple Windows, click | success, success, success | success, success, success |
-| `longlive` medium: On Selenium's XHTML test page, click 'Open new window'. Switch to the named result | unsure, success, success | failure, failure, failure |
+| `longlive` medium: On Selenium's XHTML test page, click 'Open new window'. Switch to the named result | success, success, success | failure, failure, failure |
 
 ## Evidence and checks
 
 | Approach | Evidence runs | Success | Failure | Unsure | Blocked | Site broken | Deterministic | Judge fallback | Status-only | With frames | Citing an earlier frame |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| mantis | 48 | 40 | 7 | 1 | 0 | 0 | 42 | 6 | 0 | 48 | 6 |
+| mantis | 48 | 41 | 7 | 0 | 0 | 0 | 42 | 6 | 0 | 48 | 6 |
 | tree | 48 | 37 | 11 | 0 | 0 | 0 | 42 | 6 | 0 | 48 | 6 |
 
 ### Check vs judge disagreements
