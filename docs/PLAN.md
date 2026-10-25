@@ -44,7 +44,7 @@ Keep model, browser, retry policy, timeout, and token budget matched across appr
 
 ## Next steps: open-source launch (v0.1.5, public beta)
 
-Verdict (Opus review, 2026-10-24): good enough to launch as a v0.x beta. Accuracy matches the tree on real sites (Luna 89 vs 90, Haiku 87 vs 87 of 90) and long workflows (48/48 both), with 35–38% fewer input tokens on long tasks. No large live-site expansion before launch; scope the claim as "read/navigate on public sites, 2 models".
+Verdict (Opus review, 2026-10-24): good enough to launch as a v0.x beta. Accuracy matches the tree on real sites (Luna 89 vs 90, Haiku 87 vs 86 of 90) and long workflows (48/48 both), with 35–38% fewer input tokens on long tasks. No large live-site expansion before launch; scope the claim as "read/navigate on public sites, 2 models".
 
 ### Must do before launch
 1. **Done: release 0.1.5** (npm, GitHub release and MCP Registry; v0.1.6 ships the install, OCR-prefetch and CI changes). Original note: npm `mantis-browser@0.1.3` (published 2026-10-19) predates about 20 `src/` commits behind the headline numbers. Bump `package.json` and `server.json` (still 0.1.2) to 0.1.4, tag it from the benchmarked commit, and cite that commit in [RESULTS.md](../bench/RESULTS.md).
@@ -68,7 +68,7 @@ Verdict (Opus review, 2026-10-24): good enough to launch as a v0.x beta. Accurac
 ### Before launch, remaining (moved up, 2026-10-25)
 - [x] README opens with the GIF, install and a 3-line example.
 - [x] [CONTRIBUTING.md](../CONTRIBUTING.md) and [CHANGELOG.md](../CHANGELOG.md). Issue templates were done earlier.
-- [ ] Re-run Haiku tree and screenshots on the same CLI build and machine as the Mantis re-run (local CLI 2.1.161), so the live-v1 token and latency columns become comparable. Mantis `src/` is frozen at `v0.1.6` (`059cccf`); since `70dbd5f` it only gained install changes and the MCP note, so Mantis rows stay valid. 180 Haiku runs (30 tasks x 3 x 2 approaches); Luna needs no re-run.
+- [x] Re-run Haiku tree and screenshots on the same CLI build and machine as the Mantis re-run (local CLI 2.1.161), so the live-v1 token and latency columns become comparable. Mantis `src/` is frozen at `v0.1.6` (`059cccf`); since `70dbd5f` it only gained install changes and the MCP note, so Mantis rows stay valid. 180 Haiku runs (30 tasks x 3 x 2 approaches); Luna needs no re-run.
 - [ ] Replace the fragile `data-gov-climate` task (a v1.8, live-v1 only): pick a stable replacement, run all three approaches on it for both models (18 runs), and disclose the swap beside the scores.
 
 ### Optional

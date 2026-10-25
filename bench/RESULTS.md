@@ -77,14 +77,14 @@ Post-hoc swaps were GPL-3 to RFC 8259, IMDb to TMDB, and USGS to NIST; see the [
 
 | | Mantis | Accessibility tree | Screenshots |
 |---|---:|---:|---:|
-| Success (of 90) | 87 | 87 | **89** |
-| Avg input tokens (not comparable, see note) | 77.6k | 116.5k | 53.1k |
+| Success (of 90) | 87 | 86 | **88** |
+| Avg input tokens | **77.6k** | 152.6k | 82.1k |
 | Median tool calls | **4** | 7 | 8 |
-| Median wall time (s, not comparable) | 46.4 | **17.9** | **17.9** |
-| Median tool output (chars) | 9.6k | 29.0k | **0.6k** |
-| Median output tokens | **890** | 1076 | 1149 |
+| Median wall time (s, see note) | 46.4 | 43.7 | **33.4** |
+| Median tool output (chars) | 9.6k | 28.8k | **0.1k** |
+| Median output tokens | **890** | 1130 | 1564 |
 
-Haiku input tokens are not comparable across columns: the tree and screenshot runs used Claude CLI 2.1.308 on cloud, the Mantis re-run used 2.1.161 locally, which sends more input per turn (median 14.5k vs 8.3k). The earlier local rerun of blocked rows inflated all three similarly (Mantis 50.4k to 83.7k, tree 116.5k to 216.8k, screenshots 53.1k to 79.6k, on a different task subset). Mantis page text per call is unchanged (10.2k vs 10.6k chars). On short tasks Mantis saves tokens and tool output but is not faster in the merged set: Luna median wall time is 43.7s vs 23.4s for the tree, and in the original Haiku run the medians were equal (17.5-17.9s) while the re-run is slower. The cause is not isolated; the Mantis rows are a later re-run, so latency is not like-for-like. Haiku cost is not shown because the CLI builds differ. Mantis rows are a re-run after `src/` gap fixes (20261023); Haiku includes 6 connection-failure rows re-run alone (6/6 success). Failures: Luna 1 (`rfc-8259`), Haiku 3 (`node-url`, `data-gov-climate` x2), all agent behaviour or site drift; see the [live-v1 changelog](live-v1.md#changelog-and-disclosures).
+Haiku tree and screenshot rows are a local re-run on Claude CLI 2.1.161 (the same build as the Mantis re-run), 180 runs, judged blind by sol with the same deterministic-first gate (57 validator-graded, 33 judge-graded per cell, 0 unsure, 0 blocked). Tokens and tool output are now comparable across columns; the earlier cloud-CLI-2.1.308 numbers are superseded. Latency is less reliable: the re-run used concurrency 16 (4 contention-damaged rows were re-run at concurrency 4), so tree and screenshot times may be inflated by machine contention; Mantis's concurrency was not recorded. On short tasks Mantis saves tokens and tool output (about 49% fewer input tokens than the tree, about even with screenshots) but is not faster: Haiku medians are 46.4s Mantis, 43.7s tree, 33.4s screenshots; Luna 43.7s vs 23.4s vs 28.5s. Haiku cost is not shown because Mantis cost was not recomputed on this build. Mantis rows are a re-run after `src/` gap fixes (20261023); Haiku includes 6 connection-failure rows re-run alone (6/6 success). Failures: Luna 1 (`rfc-8259`); Haiku Mantis 3 (`node-url`, `data-gov-climate` x2), tree 4 (`data-gov-climate` x3, `css-color-4` run 2), screenshots 2 (`data-gov-climate` x2). `data-gov-climate` is a fragile task (site drift) and accounts for 7 of the 9 Haiku failures. See the [live-v1 changelog](live-v1.md#changelog-and-disclosures).
 
 ## Side scorecards (DeepSeek only, local fixtures)
 
