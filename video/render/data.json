@@ -17,6 +17,7 @@
       "events": [
         {
           "atMs": 0,
+          "resultMs": 2822,
           "tool": "open",
           "argument": "gutenberg.org/ebooks/",
           "observationTokensEstimate": 1864,
@@ -24,6 +25,7 @@
         },
         {
           "atMs": 4778,
+          "resultMs": 4999,
           "tool": "fill",
           "argument": "“Charles Dickens”, “PR”, “English”",
           "observationTokensEstimate": 96,
@@ -31,6 +33,7 @@
         },
         {
           "atMs": 7094,
+          "resultMs": 12192,
           "tool": "click",
           "argument": "#31",
           "observationTokensEstimate": 14,
@@ -38,6 +41,7 @@
         },
         {
           "atMs": 13222,
+          "resultMs": 13366,
           "tool": "read",
           "argument": "true",
           "observationTokensEstimate": 1254,
@@ -45,6 +49,7 @@
         },
         {
           "atMs": 18555,
+          "resultMs": 22099,
           "tool": "click",
           "argument": "#13",
           "observationTokensEstimate": 2083,
@@ -52,6 +57,7 @@
         },
         {
           "atMs": 25875,
+          "resultMs": 26662,
           "tool": "type",
           "argument": "“98”",
           "observationTokensEstimate": 638,
@@ -59,6 +65,7 @@
         },
         {
           "atMs": 27897,
+          "resultMs": 28936,
           "tool": "click",
           "argument": "#13",
           "observationTokensEstimate": 1484,
@@ -66,6 +73,7 @@
         },
         {
           "atMs": 30109,
+          "resultMs": 30838,
           "tool": "type",
           "argument": "“1400”",
           "observationTokensEstimate": 616,
@@ -73,6 +81,7 @@
         },
         {
           "atMs": 31840,
+          "resultMs": 32548,
           "tool": "click",
           "argument": "#15",
           "observationTokensEstimate": 1437,
@@ -80,6 +89,7 @@
         },
         {
           "atMs": 34883,
+          "resultMs": 39327,
           "tool": "open",
           "argument": "gutenberg.org/ebooks/results/",
           "observationTokensEstimate": 520,
@@ -89,7 +99,7 @@
       "frames": [
         {
           "call": 1,
-          "atMs": 0,
+          "atMs": 2822,
           "file": "shots/mantis-step-01.png",
           "url": "https://www.gutenberg.org/ebooks/",
           "width": 1280,
@@ -97,7 +107,7 @@
         },
         {
           "call": 4,
-          "atMs": 13222,
+          "atMs": 13366,
           "file": "shots/mantis-step-04.png",
           "url": "https://www.gutenberg.org/ebooks/results/",
           "width": 1280,
@@ -105,7 +115,7 @@
         },
         {
           "call": 5,
-          "atMs": 18555,
+          "atMs": 22099,
           "file": "shots/mantis-step-05.png",
           "url": "https://www.gutenberg.org/ebooks/results/?author=Charles+Dickens&title=&subject=&locc=PR&lang=en&category=&filetype=&submit_search=Search&pageno=2",
           "width": 1280,
@@ -113,7 +123,7 @@
         },
         {
           "call": 6,
-          "atMs": 25875,
+          "atMs": 26662,
           "file": "shots/mantis-step-06.png",
           "url": "https://www.gutenberg.org/ebooks/search/?query=98",
           "width": 1280,
@@ -121,7 +131,7 @@
         },
         {
           "call": 7,
-          "atMs": 27897,
+          "atMs": 28936,
           "file": "shots/mantis-step-07.png",
           "url": "https://www.gutenberg.org/ebooks/98",
           "width": 1280,
@@ -129,7 +139,7 @@
         },
         {
           "call": 8,
-          "atMs": 30109,
+          "atMs": 30838,
           "file": "shots/mantis-step-08.png",
           "url": "https://www.gutenberg.org/ebooks/search/?query=1400",
           "width": 1280,
@@ -137,7 +147,7 @@
         },
         {
           "call": 9,
-          "atMs": 31840,
+          "atMs": 32548,
           "file": "shots/mantis-step-09.png",
           "url": "https://www.gutenberg.org/ebooks/1400",
           "width": 1280,
@@ -145,7 +155,7 @@
         },
         {
           "call": 10,
-          "atMs": 34883,
+          "atMs": 49756,
           "file": "shots/mantis-final.png",
           "url": "https://www.gutenberg.org/ebooks/results/?author=Charles+Dickens&title=&subject=&locc=PR&lang=en&category=&filetype=&submit_search=Search&pageno=2",
           "width": 1280,
@@ -155,7 +165,7 @@
     },
     {
       "name": "Playwright MCP",
-      "detail": "@playwright/mcp 0.0.83 · default settings",
+      "detail": "@playwright/mcp 0.0.83 · benchmark configuration; JavaScript tools disabled",
       "approach": "tree",
       "run": 1,
       "calls": 22,
@@ -166,6 +176,7 @@
       "events": [
         {
           "atMs": 0,
+          "resultMs": 2767,
           "tool": "browser_navigate",
           "argument": "gutenberg.org/ebooks/",
           "observationTokensEstimate": 97,
@@ -173,6 +184,7 @@
         },
         {
           "atMs": 4309,
+          "resultMs": 4342,
           "tool": "browser_snapshot",
           "argument": "page state",
           "observationTokensEstimate": 7089,
@@ -180,6 +192,7 @@
         },
         {
           "atMs": 6330,
+          "resultMs": 6410,
           "tool": "browser_fill_form",
           "argument": "“Charles Dickens”, “PR Language and Litera",
           "observationTokensEstimate": 66,
@@ -187,6 +200,7 @@
         },
         {
           "atMs": 9491,
+          "resultMs": 12451,
           "tool": "browser_click",
           "argument": "Search button",
           "observationTokensEstimate": 102,
@@ -194,6 +208,7 @@
         },
         {
           "atMs": 14140,
+          "resultMs": 14248,
           "tool": "browser_snapshot",
           "argument": "page state",
           "observationTokensEstimate": 28868,
@@ -201,6 +216,7 @@
         },
         {
           "atMs": 16670,
+          "resultMs": 21889,
           "tool": "browser_click",
           "argument": "next page control",
           "observationTokensEstimate": 138,
@@ -208,6 +224,7 @@
         },
         {
           "atMs": 23590,
+          "resultMs": 23689,
           "tool": "browser_find",
           "argument": "“1400”",
           "observationTokensEstimate": 400,
@@ -215,6 +232,7 @@
         },
         {
           "atMs": 26418,
+          "resultMs": 26500,
           "tool": "browser_find",
           "argument": "“98”",
           "observationTokensEstimate": 1476,
@@ -222,6 +240,7 @@
         },
         {
           "atMs": 28342,
+          "resultMs": 28380,
           "tool": "browser_fill_form",
           "argument": "“98”",
           "observationTokensEstimate": 29,
@@ -229,6 +248,7 @@
         },
         {
           "atMs": 30037,
+          "resultMs": 31967,
           "tool": "browser_click",
           "argument": "Quick search Go button",
           "observationTokensEstimate": 108,
@@ -236,6 +256,7 @@
         },
         {
           "atMs": 34098,
+          "resultMs": 34143,
           "tool": "browser_find",
           "argument": "“A Tale of Two Cities”",
           "observationTokensEstimate": 234,
@@ -243,6 +264,7 @@
         },
         {
           "atMs": 36105,
+          "resultMs": 37265,
           "tool": "browser_click",
           "argument": "exact eBook #98 result",
           "observationTokensEstimate": 114,
@@ -250,6 +272,7 @@
         },
         {
           "atMs": 38982,
+          "resultMs": 39008,
           "tool": "browser_find",
           "argument": "“Release Date”",
           "observationTokensEstimate": 212,
@@ -257,6 +280,7 @@
         },
         {
           "atMs": 40761,
+          "resultMs": 40784,
           "tool": "browser_find",
           "argument": "“PR”",
           "observationTokensEstimate": 1618,
@@ -264,6 +288,7 @@
         },
         {
           "atMs": 42664,
+          "resultMs": 42711,
           "tool": "browser_fill_form",
           "argument": "“1400”",
           "observationTokensEstimate": 30,
@@ -271,6 +296,7 @@
         },
         {
           "atMs": 45190,
+          "resultMs": 46999,
           "tool": "browser_click",
           "argument": "Quick search Go button",
           "observationTokensEstimate": 110,
@@ -278,6 +304,7 @@
         },
         {
           "atMs": 48514,
+          "resultMs": 48541,
           "tool": "browser_find",
           "argument": "“Great Expectations”",
           "observationTokensEstimate": 230,
@@ -285,6 +312,7 @@
         },
         {
           "atMs": 50302,
+          "resultMs": 51335,
           "tool": "browser_click",
           "argument": "exact eBook #1400 result",
           "observationTokensEstimate": 111,
@@ -292,6 +320,7 @@
         },
         {
           "atMs": 53444,
+          "resultMs": 53466,
           "tool": "browser_find",
           "argument": "“Release Date”",
           "observationTokensEstimate": 212,
@@ -299,6 +328,7 @@
         },
         {
           "atMs": 55297,
+          "resultMs": 55334,
           "tool": "browser_find",
           "argument": "“LoC Class”",
           "observationTokensEstimate": 211,
@@ -306,6 +336,7 @@
         },
         {
           "atMs": 58606,
+          "resultMs": 61109,
           "tool": "browser_navigate",
           "argument": "gutenberg.org/ebooks/results/",
           "observationTokensEstimate": 168,
@@ -313,6 +344,7 @@
         },
         {
           "atMs": 64976,
+          "resultMs": 65112,
           "tool": "browser_snapshot",
           "argument": "f7e33",
           "observationTokensEstimate": 2682,
@@ -322,7 +354,7 @@
       "frames": [
         {
           "call": 1,
-          "atMs": 0,
+          "atMs": 2767,
           "file": "shots/tree-step-01.png",
           "url": "https://www.gutenberg.org/ebooks/",
           "width": 1280,
@@ -330,7 +362,7 @@
         },
         {
           "call": 4,
-          "atMs": 9491,
+          "atMs": 12451,
           "file": "shots/tree-step-04.png",
           "url": "https://www.gutenberg.org/ebooks/results/",
           "width": 1280,
@@ -338,7 +370,7 @@
         },
         {
           "call": 6,
-          "atMs": 16670,
+          "atMs": 21889,
           "file": "shots/tree-step-06.png",
           "url": "https://www.gutenberg.org/ebooks/results/?author=Charles+Dickens&title=&subject=&locc=PR&lang=en&category=&filetype=&submit_search=Search&pageno=2",
           "width": 1280,
@@ -346,7 +378,7 @@
         },
         {
           "call": 10,
-          "atMs": 30037,
+          "atMs": 31967,
           "file": "shots/tree-step-10.png",
           "url": "https://www.gutenberg.org/ebooks/search/?query=98",
           "width": 1280,
@@ -354,7 +386,7 @@
         },
         {
           "call": 12,
-          "atMs": 36105,
+          "atMs": 37265,
           "file": "shots/tree-step-12.png",
           "url": "https://www.gutenberg.org/ebooks/98",
           "width": 1280,
@@ -362,7 +394,7 @@
         },
         {
           "call": 16,
-          "atMs": 45190,
+          "atMs": 46999,
           "file": "shots/tree-step-16.png",
           "url": "https://www.gutenberg.org/ebooks/search/?query=1400",
           "width": 1280,
@@ -370,7 +402,7 @@
         },
         {
           "call": 18,
-          "atMs": 50302,
+          "atMs": 51335,
           "file": "shots/tree-step-18.png",
           "url": "https://www.gutenberg.org/ebooks/1400",
           "width": 1280,
@@ -378,7 +410,7 @@
         },
         {
           "call": 22,
-          "atMs": 64976,
+          "atMs": 72977,
           "file": "shots/tree-final.png",
           "url": "https://www.gutenberg.org/ebooks/results/?author=Charles+Dickens&title=&subject=&locc=PR&lang=en&category=&filetype=&submit_search=Search&pageno=2",
           "width": 1280,

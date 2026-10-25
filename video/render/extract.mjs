@@ -75,7 +75,7 @@ function pngSize(pathname) {
   return { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20), bytes: bytes.length };
 }
 
-function copyFrames(approach, evidencePath, events) {
+function copyFrames(approach, evidencePath, events, wallMs) {
   const evidence = JSON.parse(fs.readFileSync(evidencePath, 'utf8'));
   const eventByStep = new Map(events.map((event, index) => [index + 1, event]));
   const frames = evidence.frames.map((frame) => {
@@ -87,7 +87,9 @@ function copyFrames(approach, evidencePath, events) {
     const suffix = frame.file.endsWith('.final.png') ? 'final' : `step-${String(frame.step).padStart(2, '0')}`;
     const file = `${approach}-${suffix}.png`;
     fs.copyFileSync(source, path.join(shotsDir, file));
-    return { call: frame.step, atMs: event.atMs, file: `shots/${file}`, url: frame.url, width: size.width, height: size.height };
+    // A capture is shown no earlier than its call returned; the final one at run completion.
+    const atMs = frame.file.endsWith('.final.png') ? wallMs : event.resultMs;
+    return { call: frame.step, atMs, file: `shots/${file}`, url: frame.url, width: size.width, height: size.height };
   });
   const captured = new Set(frames.map((frame) => frame.call));
   const gaps = events.map((_, index) => index + 1).filter((step) => !captured.has(step));
@@ -120,6 +122,7 @@ function readRun(approach, run, expected) {
     cumulative += weights[index] / weightTotal * totalTokens;
     return {
       atMs: Math.max(0, call.dispatchedAt - startAt),
+      resultMs: Math.max(0, (call.resultAt ?? call.dispatchedAt) - startAt),
       tool: call.tool,
       argument: shortArgument(call.tool, call.arguments),
       observationTokensEstimate: call.observation?.tokensEstimate ?? 0,
@@ -128,12 +131,12 @@ function readRun(approach, run, expected) {
   });
   return {
     name: approach === 'mantis' ? 'Mantis' : 'Playwright MCP',
-    detail: approach === 'mantis' ? 'Mantis browser view' : '@playwright/mcp 0.0.83 · default settings',
+    detail: approach === 'mantis' ? 'Mantis browser view' : '@playwright/mcp 0.0.83 · benchmark configuration; JavaScript tools disabled',
     approach, run, calls: calls.length, totalTokens, wallMs,
     tokenMethod: 'estimated-observation-weighted',
     streamUsageEvents: streamTokens.length,
     events,
-    frames: copyFrames(approach, evidencePath, events),
+    frames: copyFrames(approach, evidencePath, events, wallMs),
   };
 }
 

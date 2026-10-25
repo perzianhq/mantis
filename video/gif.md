@@ -1,6 +1,6 @@
 # Demo task for the video and README GIF
 
-One real task, same prompt for both tools, shown side by side with a live token counter. Record on **Luna** (steadier across reruns than Haiku).
+One real task, same prompt for both tools, shown side by side with an estimated replay token counter. Record on **Luna** (steadier across reruns than Haiku).
 
 **Task:** `longlive-gutenberg-dickens-search` (from `long-live-v1`). On Project Gutenberg, run Advanced Search for author Charles Dickens, language English, LoC class PR. Inspect result page one, follow next to page two, then look up #98 and #1400 through separate Quick searches, report `eBook number | title | release date | LoC class`, and return to page two of the original search. About 11 to 30 tool calls, 1 to 2 minutes.
 
@@ -47,8 +47,8 @@ Haiku on the same task (published / rerun): tokens -59% / -69%, time -41% / -58%
 
 ## Honesty note
 
-This is the most favourable of the 16 long tasks, picked for the demo because short tasks tie. Across all long-live-v1 tasks the medians are smaller: wall time -33% on both models, input tokens -28% (Luna) and -42% (Haiku), and total Haiku cost -26%. Say so in the caption. Full results and failures: `bench/RESULTS.md`.
+This is a selected example from the 16 long tasks, picked for the demo because short tasks tie. Across all long-live-v1 tasks the medians are smaller: wall time -33% on both models, input tokens -28% (Luna) and -42% (Haiku), and total Haiku cost -26%. Say so in the caption. Full results and failures: `bench/RESULTS.md`.
 
 ## Recording tips
 
-Fresh browser profile, same model, show the per-call token counter. Last frame, safe to claim: "about a third less time, over 2x fewer input tokens, half the calls". Do not put a single exact number on screen.
+Fresh browser profile, same model, show the per-call token counter. Last frame, safe to claim: "about a third less time, over 2x fewer input tokens, about half the calls". Show exact final totals; label intermediate estimates.
