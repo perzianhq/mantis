@@ -38,13 +38,27 @@ Same tasks, same pass criteria, three ways to browse. Mantis vs the accessibilit
 | `gpt-6-luna` | 89 | **90** | 85 |
 | `claude-haiku-5-5` | 87 | 86 | **89** |
 
-**Net:** Accuracy is on par with the tree (within 1 run of 90 on real sites, equal on long workflows). The roughly 30% saving in tokens and calls was measured on long workflows that run on local fixtures, not live sites; on real-site tasks, which are shorter, the difference is smaller. Accuracy claims cover read/navigate tasks on public sites with Luna and Haiku. The screenshot baseline is our own minimal tool, not a product's.
+**Long real-site workflows** (`long-live-v1`: 16 tasks on public sites, 3 runs per approach, judged blind, medians over all 48 runs, failures included). Mantis vs the accessibility tree:
+
+| Model | | Mantis | Accessibility tree |
+|---|---|---:|---:|
+| `gpt-6-luna` | Correct | **41/48** | 37/48 |
+| | Time | **50s** | 75s |
+| | Input tokens | **262k** | 362k |
+| | Tool calls | **18** | 25 |
+| `claude-haiku-5-5` | Correct | **47/48** | 45/48 |
+| | Time | **90s** | 135s |
+| | Input tokens | **432k** | 746k |
+| | Tool calls | **26** | 32 |
+
+**Net:** Accuracy is on par with the tree or slightly better. On long real-site tasks Mantis is about a third faster at the median with 28–42% fewer input tokens. The accuracy gap is small and partly explained: three of Luna's four net wins come from one task where Playwright MCP does not read iframe contents ([playwright#43628](https://github.com/microsoft/playwright/issues/43628)), and one of Haiku's two follows a Mantis fix made after that failure (rerun of that one cell, the rest not rerun). The blind judge has not passed its calibration gate yet. The long real-site task set was adjusted before scoring; the swaps are listed in [bench/RESULTS.md](bench/RESULTS.md). Accuracy claims cover read/navigate tasks on public sites with Luna and Haiku. The screenshot baseline is our own minimal tool, not a product's.
 
 ### Where Mantis is better
 
 - **Long workflows.** Same accuracy as the tree, with 22–29% less time, 35–38% fewer input tokens and 18–29% fewer tool calls, because each step returns only what changed.
 - **Versus screenshots.** Fewer tokens and calls everywhere; Luna also missed 6 of 48 where Mantis and the tree did not.
-- **Short tasks.** Roughly a tie with the tree. The edge grows with task length.
+- **Long real sites.** The time and token savings hold on public sites: about a third less time and 28–42% fewer input tokens at the median.
+- **Short tasks.** Roughly a tie with the tree. The edge appears once tasks run to many steps.
 
 Method and caveats: [bench/RESULTS.md](bench/RESULTS.md).
 

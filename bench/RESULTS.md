@@ -34,6 +34,19 @@ Formerly named `live-long-fixtures` (the tasks run on local fixtures, not live s
 | Luna (`gpt-6-luna`, Codex, medium) | **41/48 (85%)** | 37/48 (77%) |
 | Haiku (`claude-haiku-5-5`) | **47/48 (98%)** | 45/48 (94%) |
 
+Efficiency, medians over all 48 runs per approach, failed runs included (wall time is whole agent run; pure agent execution `cliExecutionMs` gives the same ratios, 49.4s vs 73.9s Luna and 88.4s vs 133.8s Haiku):
+
+| Metric | Luna Mantis | Luna tree | Diff | Haiku Mantis | Haiku tree | Diff |
+|---|---:|---:|---:|---:|---:|---:|
+| Wall time (s) | 50.1 | 74.8 | -33% | 90.1 | 135.1 | -33% |
+| Tool calls | 18 | 25 | -28% | 26 | 32 | -19% |
+| Input tokens | 262k | 362k | -28% | 432k | 746k | -42% |
+| Output tokens | 1.08k | 1.34k | -19% | 6.03k | 5.99k | +1% |
+| Tool output read (k chars) | 31.4 | 86.7 | -64% | 32.2 | 64.7 | -50% |
+| Cost (USD) | n/a | n/a | n/a | 0.319 | 0.432 | -26% |
+
+Means give smaller gaps (wall time -22% Luna, -18% Haiku; input tokens -40% Luna, -36% Haiku; Haiku cost -28%) because a few long failed runs dominate. The judge has not passed its calibration gate (100 packets, 30 tasks, 95% agreement, <=2% false successes).
+
 - Haiku Mantis includes one cell replaced after a tool fix: `form-selenium-select` failed 2/3 because Mantis did not expose HTML `id`/`name` on identical form controls. After the fix (shown only on look-alike controls) all three runs of that cell were rerun, not just the failures, and passed 3/3. Without the replacement Haiku Mantis is 45/48. Merge: `scripts/merge-idfix.mjs`; files `results/long-live-v1-final-merged-haiku-judged.json`, `results/long-live-v1-idfix-haiku-judged.md`.
 - Sol reviewed all 24 non-success rows against saved logs: 19 model misses, 2 Mantis tool gaps (the id/name gap above, now fixed), 3 Playwright tool gaps (`selenium-window-frames-upload`, iframe contents invisible to the tree snapshot, [microsoft/playwright#43628](https://github.com/microsoft/playwright/issues/43628)), 0 grader or task issues.
 - Luna misses cluster in `gutenberg-gothic` (author strings shortened instead of copied exactly), `wiki-probes` (grouped numbers), and `met-rembrandt-search`. Haiku misses: `gutenberg-gothic` tree r3, `internet-window-frames-upload` (combined frame read instead of separate frame reads).
