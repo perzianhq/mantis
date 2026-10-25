@@ -27,16 +27,21 @@ Formerly named `live-long-fixtures` (the tasks run on local fixtures, not live s
 
 ## Long real-site tasks (long-live-v1)
 
-16 real-site tasks x {Mantis, tree} x 3 runs = 48 runs per approach and model, judged blind by Codex `gpt-6.1-sol`. Results merge the original run and targeted reruns; a rerun replaces a failing verdict only when it is judged a success.
+16 real-site tasks x {Mantis, tree} x 3 runs = 48 runs per approach and model, judged blind by Codex `gpt-6.1-sol`. Final scores come from one clean run per model (`long-live-v1-final-{luna,haiku}`) rejudged with attempt-bound transcripts and upload chronology. No row is selected by outcome.
 
 | Agent | Mantis | Tree (Playwright MCP) |
 |---|---:|---:|
-| Luna (`gpt-6-luna`, Codex, medium) | **47/48 (98%)** | 42/48 (88%) |
-| Haiku (`claude-haiku-5-5`) | **48/48 (100%)** | **48/48 (100%)** |
+| Luna (`gpt-6-luna`, Codex, medium) | **41/48 (85%)** | 37/48 (77%) |
+| Haiku (`claude-haiku-5-5`) | **47/48 (98%)** | 45/48 (94%) |
 
-- Remaining judged failures: Luna Mantis `wiki-moons` r3 stopped extracting early (Mantis returned the values when asked); Luna tree `gutenberg-gothic` r1–r3 shortened Author strings instead of copying them exactly; Luna tree `selenium-window-frames-upload` r1–r3 could not see iframe contents because the Playwright MCP snapshot keeps fallback text over merged children. Mantis nests iframe contents correctly; Haiku recovered via screenshots.
+- Haiku Mantis includes one cell replaced after a tool fix: `form-selenium-select` failed 2/3 because Mantis did not expose HTML `id`/`name` on identical form controls. After the fix (shown only on look-alike controls) all three runs of that cell were rerun, not just the failures, and passed 3/3. Without the replacement Haiku Mantis is 45/48. Merge: `scripts/merge-idfix.mjs`; files `results/long-live-v1-final-merged-haiku-judged.json`, `results/long-live-v1-idfix-haiku-judged.md`.
+- Sol reviewed all 24 non-success rows against saved logs: 19 model misses, 2 Mantis tool gaps (the id/name gap above, now fixed), 3 Playwright tool gaps (`selenium-window-frames-upload`, iframe contents invisible to the tree snapshot, [microsoft/playwright#43628](https://github.com/microsoft/playwright/issues/43628)), 0 grader or task issues.
+- Luna misses cluster in `gutenberg-gothic` (author strings shortened instead of copied exactly), `wiki-probes` (grouped numbers), and `met-rembrandt-search`. Haiku misses: `gutenberg-gothic` tree r3, `internet-window-frames-upload` (combined frame read instead of separate frame reads).
+- Sensitivity: without the Selenium iframe chain task, Luna is 38/45 Mantis vs 37/45 tree; three of the four net Mantis wins on Luna come from that task. Six tasks pass all 12 observed attempts and give no separation.
+- Earlier higher scores (Luna 47/48 vs 42/48, Haiku 48/48 each) merged targeted reruns that replaced only failing verdicts; they are superseded and not a three-run estimate.
+- Post-hoc task substitutions (unreachable `/large_form` and blank DemoQA pages) are recorded in the task catalogue `bench/agent/long-live-v1-draft.json`; they were made before the final run.
+- Case replacement was reviewed and rejected for v1: contracts stay frozen. For a future v2, reword `gutenberg-gothic`, `wiki-probes`, `met-rembrandt-search`, `internet-window-frames-upload` (accept equivalent name forms, thousands separators, header units, combined frame reads), frozen before any scored run.
 - For the tree upload harness, the fixture is written to `<attempt dir>/tree-output`, because tree can upload only from its output directory or the repo.
-- No remaining failure is a Mantis defect. Scores remain as judged; no rows are excluded.
 
 ## Live-site scorecard (live-v1 v1.7)
 

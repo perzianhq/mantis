@@ -1,0 +1,75 @@
+{
+  "source": "long-live-v1-idfix-haiku",
+  "judgeProvider": "codex",
+  "judgeModel": "gpt-6.1-sol",
+  "judgeModels": [
+    "gpt-6.1-sol"
+  ],
+  "siteBrokenTasks": [],
+  "runs": [
+    {
+      "task": "longlive-form-selenium-select",
+      "approach": "mantis",
+      "run": 1,
+      "finalUrl": "https://www.selenium.dev/selenium/web/selectPage.html",
+      "toolCalls": 44,
+      "totalInputTokens": 334113,
+      "wallS": 66.044,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 12,
+      "finalFrame": "F12",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-form-selenium-select",
+      "approach": "mantis",
+      "run": 2,
+      "finalUrl": "https://www.selenium.dev/selenium/web/selectPage.html",
+      "toolCalls": 34,
+      "totalInputTokens": 244267,
+      "wallS": 59.388,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 12,
+      "finalFrame": "F12",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    },
+    {
+      "task": "longlive-form-selenium-select",
+      "approach": "mantis",
+      "run": 3,
+      "finalUrl": "https://www.selenium.dev/selenium/web/selectPage.html",
+      "toolCalls": 28,
+      "totalInputTokens": 156609,
+      "wallS": 49.667,
+      "verdict": "success",
+      "reason": "Complete deterministic grader passed on the final captured state.",
+      "frameCount": 12,
+      "finalFrame": "F12",
+      "checks": null,
+      "deterministic": {
+        "pass": true,
+        "failed": []
+      },
+      "grading": "deterministic",
+      "siteFailure": false,
+      "judgeModel": "gpt-6.1-sol"
+    }
+  ],
+  "skipped": []
+}
