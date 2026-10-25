@@ -98,7 +98,7 @@ Numbers come only from [README.md](../README.md#results) and [bench/RESULTS.md](
 Each links the repo.
 
 - **r/ClaudeAI:** "Mantis: an MCP server so Claude Code reads pages as short numbered text instead of screenshots. Haiku, 30 short real-site tasks: Mantis 89, tree 89, screenshots 90 of 90; 49% fewer input tokens than the tree, about even with screenshots (72k vs 75k). Long real-site workflows: 47/48 vs 44/48 for the tree (45/48 without one re-run cell), about a third less time. Caveats: uncalibrated judge, post-hoc task swaps (disclosed), not faster on short tasks. `claude mcp add mantis -- npx -y -p mantis-browser mantis-mcp`"
-- **r/mcp:** "Open-source browser MCP server with numbered text and diff-only results, about 3-6x less page text than the Playwright MCP tree on short tasks. Accuracy within one task of the tree on 30 real-site tasks (Luna 89 vs 90, Haiku 89 vs 89 of 90). Page text is untrusted (SECURITY.md). Feedback on the tool surface welcome."
+- **r/mcp:** "Open-source browser MCP server with numbered text and diff-only results, about 3-6x less page text than the Playwright MCP tree on short tasks. Accuracy within one task of the tree on 30 real-site tasks (Luna 89 vs 90, Haiku 89 vs 89 of 90). Page text is untrusted (SECURITY.md). Caveats: uncalibrated judge, post-hoc task swaps (disclosed). Feedback on the tool surface welcome."
 - **r/LocalLLaMA:** "Smaller prompts for browser agents: 35-38% fewer input tokens than the accessibility tree on long local workflows (both 48/48), 28-49% on short real-site tasks. Only tested `gpt-6-luna` and `claude-haiku-5-5` on real sites; the judge is uncalibrated and the screenshot baseline is my own. Which local models should I try?"
 
 ### LinkedIn
