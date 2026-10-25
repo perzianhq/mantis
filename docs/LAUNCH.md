@@ -2,7 +2,7 @@
 
 ## 1. The claim
 
-Lead with the Luna and Haiku results in [README.md](../README.md#results): `long-local-v1` (long workflows on local fixtures, not live sites, 48/48 for Mantis on both models with 22-29% less time and 35-38% fewer input tokens than the tree; short tasks are about a tie) and the frozen live-site set `live-v1` v1.7 (read/navigate tasks on public sites; success out of 90 for Mantis / tree / screenshots: Luna 89/90/85, Haiku 87/86/89). The screenshot baseline is our own minimal tool, not a product's. Per-task changes and disclosures: [bench/live-v1.md](../bench/live-v1.md#changelog-and-disclosures); tables and caveats: [bench/RESULTS.md](../bench/RESULTS.md).
+Lead with the Luna and Haiku results in [README.md](../README.md#results): `long-local-v1` (long workflows on local fixtures, not live sites, 48/48 for Mantis on both models with 22-29% less time and 35-38% fewer input tokens than the tree; short tasks are about a tie) and the frozen live-site set `live-v1` v1.7 (read/navigate tasks on public sites; success out of 90 for Mantis / tree / screenshots: Luna 89/90/86, Haiku 87/86/89). The screenshot baseline is our own minimal tool, not a product's. Per-task changes and disclosures: [bench/live-v1.md](../bench/live-v1.md#changelog-and-disclosures); tables and caveats: [bench/RESULTS.md](../bench/RESULTS.md).
 Publish failures and method beside the claim. Lead with agent task results; replay measures
 cheap orientation, not reading a whole article.
 
@@ -11,8 +11,8 @@ cheap orientation, not reading a whole article.
 - [ ] Freeze the evaluated source version and complete the [planned evaluations](PLAN.md#current-sequence).
 - [ ] Make a 30-second side-by-side video of the same task, with a live token counter; export a README GIF.
 - [ ] Open the README with the GIF, measured claim, [install](SETUP.md#install) and a 3-line example.
-- [ ] Configure npm Trusted Publishing for `perzianhq/mantis` and `.github/workflows/publish-npm.yml`.
-- [ ] Publish a matching GitHub release.
+- [x] Configure npm Trusted Publishing for `perzianhq/mantis` and `.github/workflows/publish-npm.yml`.
+- [x] Publish a matching GitHub release (v0.1.4).
 
 ## 3. Launch week
 
