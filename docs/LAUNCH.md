@@ -13,6 +13,8 @@ cheap orientation, not reading a whole article.
 - [ ] Open the README with the GIF, measured claim, [install](SETUP.md#install) and a 3-line example.
 - [x] Configure npm Trusted Publishing for `perzianhq/mantis` and `.github/workflows/publish-npm.yml`.
 - [x] Publish a matching GitHub release (v0.1.5).
+- [x] CI green on Ubuntu, Windows and macOS (tests plus a packed-install check); issue templates and `SECURITY.md` in place.
+- [ ] Cut v0.1.6 (install, OCR prefetch and CI changes), then submit directory listings.
 
 ## 3. Launch week
 

@@ -47,18 +47,18 @@ Keep model, browser, retry policy, timeout, and token budget matched across appr
 Verdict (Opus review, 2026-10-24): good enough to launch as a v0.x beta. Accuracy matches the tree on real sites (Luna 89 vs 90, Haiku 87 vs 87 of 90) and long workflows (48/48 both), with 35–38% fewer input tokens on long tasks. No large live-site expansion before launch; scope the claim as "read/navigate on public sites, 2 models".
 
 ### Must do before launch
-1. **Release 0.1.5 (done when tagged; 0.1.4 was already out).** npm `mantis-browser@0.1.3` (published 2026-10-19) predates about 20 `src/` commits behind the headline numbers. Bump `package.json` and `server.json` (still 0.1.2) to 0.1.4, tag it from the benchmarked commit, and cite that commit in [RESULTS.md](../bench/RESULTS.md).
+1. **Done: release 0.1.5** (npm, GitHub release and MCP Registry; v0.1.6 ships the install, OCR-prefetch and CI changes). Original note: npm `mantis-browser@0.1.3` (published 2026-10-19) predates about 20 `src/` commits behind the headline numbers. Bump `package.json` and `server.json` (still 0.1.2) to 0.1.4, tag it from the benchmarked commit, and cite that commit in [RESULTS.md](../bench/RESULTS.md).
 2. **Honest claims.** Fix stale numbers in [LAUNCH.md](LAUNCH.md) (90/88 should be 89/87). Limit "~30% fewer" to long tasks. State that the screenshot baseline is our own tool. Publish the swapped-out live-v1 tasks (IMDb, USGS, GPL-3) next to the scores. Freeze the 30 tasks: no more swaps.
 3. **Judge check.** The calibration gate (100 packets, 30 tasks, 95% agreement, at most 2% false successes) is not met; a human spot-checks about 30 sol verdicts.
-4. **Install on fresh Windows, Mac and Linux.** Risk: `npx playwright install chromium` fetches a different Chromium build than the package needs, so the first launch fails. Add a `mantis install` command or a clear error. OCR data downloads on first use; document it.
-5. **Security.**
+4. **Done: install on Windows, Mac and Linux.** `mantis install` (with `--with-deps` for bare Linux) fetches Chromium and OCR data; the CI `install` job exercises the packed package on all three OSes. Original note: Risk: `npx playwright install chromium` fetches a different Chromium build than the package needs, so the first launch fails. Add a `mantis install` command or a clear error. OCR data downloads on first use; document it.
+5. **Security (partly done: `SECURITY.md` and README link exist; untrusted-content marker still to decide).**
    - Add `SECURITY.md` and a README section.
    - Page text reaches the agent with no "untrusted" marker and `src/` has no prompt-injection handling: decide what to mark or document.
    - Check whether `upload` restricts local paths.
    - `ask_human` needs a display; document it.
-6. **CI.** Only publish workflows exist. Add build and test on Ubuntu, Windows and macOS.
+6. **Done: CI.** Build and test plus a packed-install job on Ubuntu, Windows and macOS.
 7. **Repo hygiene.**
-   - ~~Tracked internal policy files and Codex helper scripts expose internal policy and local paths: untrack or sanitise.~~ (ignore rules added; owner will remove them from the index)
+   - ~~Tracked internal policy files and Codex helper scripts expose internal policy and local paths: untrack or sanitise.~~ (done)
    - ~~Docs link to the gitignored `.codex-jobs/`~~ (checked: no tracked doc links it).
    - Delete about 145 untracked scratch files at the repo root (`.tmp-*`) and decide which `bench/results/` leftovers to commit or ignore.
 
@@ -70,9 +70,18 @@ Verdict (Opus review, 2026-10-24): good enough to launch as a v0.x beta. Accurac
 - Replace the fragile `data-gov-climate` task in a v1.8.
 
 ### After launch
-- CONTRIBUTING, CHANGELOG, issue templates (bug report; "task where Mantis loses").
-- Add `upload` to the tool table in [SETUP.md](SETUP.md).
+- CONTRIBUTING, CHANGELOG. (Issue templates are done: bug report and "task where Mantis loses".)
+- ~~Add `upload` to the tool table in SETUP.md~~ (done).
 - README GIF and video from the [LAUNCH.md](LAUNCH.md) gate.
+
+### Action plan (remaining)
+1. Cut v0.1.6 (bump `package.json` and `server.json`, tag, publish, registry job).
+2. Spot-check about 30 sol verdicts (owner), recorded in [RESULTS.md](../bench/RESULTS.md).
+3. Decide the untrusted-content marker in tool output (terra implements, sol reviews); set GitHub repo topics.
+4. Clean untracked scratch files (`.tmp-*`, `bench/results/` leftovers).
+5. Submit listings: Smithery, mcp.so, Glama, `awesome-mcp-servers` PR.
+6. Owner records the 30-second video and GIF; README opens with it.
+7. Show HN, Tue-Thu 8-10am US Eastern.
 
 ### Biggest risks
 - Installs that fail on day one.
