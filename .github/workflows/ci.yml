@@ -50,7 +50,7 @@ jobs:
           mkdir "$RUNNER_TEMP/fresh" && cd "$RUNNER_TEMP/fresh"
           npm init -y >/dev/null
           npm install "$RUNNER_TEMP"/mantis-browser-*.tgz
-          if [ "$RUNNER_OS" = "Linux" ]; then npx mantis install --with-deps; else npx mantis install; fi
+          if [ "$RUNNER_OS" = "Linux" ]; then ./node_modules/.bin/mantis install --with-deps; else ./node_modules/.bin/mantis install; fi
           printf '<title>t</title><button>Go</button>' > page.html
-          npx mantis read "file://$PWD/page.html" | tee out.txt
+          ./node_modules/.bin/mantis read "file://$PWD/page.html" | tee out.txt
           grep -q "Go" out.txt
