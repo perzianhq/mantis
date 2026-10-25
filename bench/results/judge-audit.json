@@ -1225,34 +1225,34 @@
   "report": {
     "packets": 120,
     "tasks": 33,
-    "agreement": 93,
-    "agreementRate": 0.775,
+    "agreement": 95,
+    "agreementRate": 0.7916666666666666,
     "falseSuccesses": 6,
     "goldFailures": 48,
     "falseSuccessOfFailures": 0.125,
     "falseSuccessOfAll": 0.05,
     "confusion": {
       "success": {
-        "success": 53,
-        "failure": 12,
-        "other": 7
+        "success": 56,
+        "failure": 8,
+        "other": 8
       },
       "failure": {
         "success": 6,
-        "failure": 40,
-        "other": 2
+        "failure": 39,
+        "other": 3
       }
     },
     "outcomes": {
-      "success": 59,
-      "failure": 52,
-      "unsure": 9,
+      "success": 62,
+      "failure": 47,
+      "unsure": 11,
       "blocked": 0,
       "site_broken": 0
     },
     "wilson95": {
-      "low": 0.6924310051535484,
-      "high": 0.8405084533161647
+      "low": 0.7105232156701865,
+      "high": 0.8547156039189031
     },
     "gate": {
       "packets": true,
@@ -1268,7 +1268,7 @@
         "model": "gpt-6-luna",
         "gold": "failure",
         "verdict": "unsure",
-        "reason": "F12 verifies Mimas and the required final location, but the captured infobox content does not verify all reported radii, periods, and discovery dates for the other seven moons."
+        "reason": "F12 verifies Mimas’s values and the required final page, but the other frames do not expose enough infobox data to verify all reported values and significant digits."
       },
       {
         "task": "livev1-docs-mdn-http-overview",
@@ -1276,7 +1276,7 @@
         "model": "deepseekv4.1-flash",
         "gold": "failure",
         "verdict": "success",
-        "reason": "F2 shows MDN's HTTP landing page with the heading \"HTTP: Hypertext Transfer Protocol\", matching the agent's report and the accepted task criteria."
+        "reason": "F2 shows the accepted MDN HTTP landing page with the heading “HTTP: Hypertext Transfer Protocol,” matching the agent’s report."
       },
       {
         "task": "livev1-docs-django-overview",
@@ -1284,7 +1284,7 @@
         "model": "gpt-6-luna",
         "gold": "failure",
         "verdict": "success",
-        "reason": "F2 shows the official Django overview page and the exact heading quoted in the agent’s reply."
+        "reason": "F2 shows the official Django overview page, and the agent correctly reported its displayed heading."
       },
       {
         "task": "livev1-civic-census-about",
@@ -1292,7 +1292,15 @@
         "model": "gpt-6-luna",
         "gold": "failure",
         "verdict": "success",
-        "reason": "F3 shows the official Census about page, and F4 confirms the reported agency name, U.S. Census Bureau, despite the agent's inaccurate reported URL."
+        "reason": "F3 shows the official Census about page was opened, and F4 supports the reported agency name, U.S. Census Bureau."
+      },
+      {
+        "task": "longlive-gutenberg-shakespeare-search",
+        "approach": "tree",
+        "model": "gpt-6-luna",
+        "gold": "failure",
+        "verdict": "unsure",
+        "reason": "The frames support the search sequence, separate exact-ID searches, and return to page two, but F5 and F7 do not show the release dates or LoC codes needed to verify the reported comparison."
       },
       {
         "task": "livev1-docs-mdn-http-overview",
@@ -1300,7 +1308,7 @@
         "model": "deepseekv4.1-flash",
         "gold": "failure",
         "verdict": "success",
-        "reason": "The agent opened the accepted HTTP landing page and correctly reported its visible heading, \"HTTP: Hypertext Transfer Protocol\"."
+        "reason": "F3 and F4 show the accepted MDN HTTP landing page with the heading “HTTP: Hypertext Transfer Protocol,” matching the agent’s report."
       },
       {
         "task": "longlive-wiki-moons",
@@ -1308,7 +1316,7 @@
         "model": "gpt-6-luna",
         "gold": "failure",
         "verdict": "unsure",
-        "reason": "F12 confirms Mimas’s values and the required final page, but the other frames lack sufficient infobox details to verify all seven remaining moons’ reported values."
+        "reason": "F12 verifies Mimas’s values and the correct final revision, but the supplied frames do not expose the other moons’ required infobox values, so their accuracy and displayed precision cannot be confirmed."
       },
       {
         "task": "livev1-docs-django-overview",
@@ -1316,7 +1324,7 @@
         "model": "gpt-6-luna",
         "gold": "failure",
         "verdict": "success",
-        "reason": "F3 confirms the agent opened the official top-navigation overview and correctly reported its displayed heading, despite reporting an imprecise final URL."
+        "reason": "F2 and F3 show the official Django overview page, and the agent correctly reported its displayed heading."
       },
       {
         "task": "livev1-civic-census-about",
@@ -1324,7 +1332,7 @@
         "model": "deepseekv4.1-flash",
         "gold": "failure",
         "verdict": "success",
-        "reason": "F3 confirms the official Census about page was opened, and F4 supports the correctly reported agency name, U.S. Census Bureau."
+        "reason": "F3 shows the official Census about page, and F4 supports the correctly reported agency name, U.S. Census Bureau."
       },
       {
         "task": "longlive-gutenberg-gothic",
@@ -1332,23 +1340,7 @@
         "model": "claude-haiku-5-5",
         "gold": "success",
         "verdict": "failure",
-        "reason": "The final capture is on #84, but the viewport shows the introduction and download section rather than the required visible “About this eBook” section."
-      },
-      {
-        "task": "longlive-sauce-cart-revise",
-        "approach": "mantis",
-        "model": "claude-haiku-5-5",
-        "gold": "success",
-        "verdict": "failure",
-        "reason": "The agent logged in despite the explicit instruction to stop before login, as shown by the transition from F1 to F2, although F11 shows the requested final cart."
-      },
-      {
-        "task": "longlive-wiki-probes",
-        "approach": "tree",
-        "model": "gpt-6-luna",
-        "gold": "success",
-        "verdict": "unsure",
-        "reason": "All pinned articles were visited and the final page is Pioneer 10, but the evidence does not show the launch dates and labelled launch masses needed to verify most reported values."
+        "reason": "The final capture is on #84 but shows the top of the record, with “About this eBook” below the visible viewport, so the required finishing state was not achieved."
       },
       {
         "task": "longlive-wiki-moons",
@@ -1356,7 +1348,15 @@
         "model": "claude-haiku-5-5",
         "gold": "success",
         "verdict": "unsure",
-        "reason": "F12 verifies Mimas’s values and the required final revision, but the other frames do not expose enough infobox values to verify the complete answer."
+        "reason": "F12 confirms the pinned Mimas endpoint and its reported values, but the captures do not verify Io and Europa’s data or most other moons’ radii and periods."
+      },
+      {
+        "task": "longlive-wiki-probes",
+        "approach": "tree",
+        "model": "gpt-6-luna",
+        "gold": "success",
+        "verdict": "failure",
+        "reason": "The journal shows on-site search used only for Voyager 1, followed by direct navigation to the other seven pinned URLs, so the required search workflow was not completed."
       },
       {
         "task": "longlive-met-vangogh",
@@ -1364,23 +1364,7 @@
         "model": "gpt-6-luna",
         "gold": "success",
         "verdict": "failure",
-        "reason": "The final frame shows 436530, Oleanders, but Artwork Details / Overview is below the viewport rather than visible as required."
-      },
-      {
-        "task": "longlive-gutenberg-shakespeare-search",
-        "approach": "mantis",
-        "model": "claude-haiku-5-5",
-        "gold": "success",
-        "verdict": "failure",
-        "reason": "F12 shows the final Language form selection as Any rather than English, and the reply omits the required 'Earlier: #1524' line."
-      },
-      {
-        "task": "longlive-gutenberg-dickens-search",
-        "approach": "tree",
-        "model": "gpt-6-luna",
-        "gold": "success",
-        "verdict": "failure",
-        "reason": "The agent opened both exact records after separate searches and returned to page two, but its final reply omitted both required eBook numbers and left the required 'Earlier: #<number>' comparison blank."
+        "reason": "The agent visited all eight records and returned the checklist, but F10 shows the final viewport above Artwork Details / Overview, so the required finishing state was not achieved."
       },
       {
         "task": "longlive-met-monet-search",
@@ -1388,15 +1372,23 @@
         "model": "claude-haiku-5-5",
         "gold": "success",
         "verdict": "unsure",
-        "reason": "The searches and final page-two state are supported, but the captures do not show either object's object number or dimensions, so the reported values and height comparison cannot be verified."
+        "reason": "The journal supports the required navigation and F12 confirms the final page-two state, but F6 and F10 do not expose the object numbers or dimensions needed to verify the reported comparison."
       },
       {
-        "task": "longlive-form-selenium-review",
+        "task": "longlive-gutenberg-dickens-search",
         "approach": "tree",
         "model": "gpt-6-luna",
         "gold": "success",
         "verdict": "unsure",
-        "reason": "F1 and the journal support the correct two-pass values and unsubmitted final form, but do not verify that both dates were chosen in the calendar rather than typed."
+        "reason": "The evidence confirms separate number searches, exact-ID records, and return to filtered page two, but F5 and F7 do not show the Release Date or record LoC fields needed to verify the reported details."
+      },
+      {
+        "task": "longlive-gutenberg-shakespeare-search",
+        "approach": "mantis",
+        "model": "claude-haiku-5-5",
+        "gold": "success",
+        "verdict": "failure",
+        "reason": "The final reply incorrectly claims neither target ID appeared on page two, but F12 explicitly lists Hamlet #1524."
       },
       {
         "task": "longlive-gutenberg-novels",
@@ -1404,15 +1396,7 @@
         "model": "gpt-6-luna",
         "gold": "success",
         "verdict": "failure",
-        "reason": "The final viewport shows the top of Persuasion’s record rather than “About this eBook,” and the reply’s Earliest line omits the required #105."
-      },
-      {
-        "task": "longlive-met-rembrandt-search",
-        "approach": "tree",
-        "model": "claude-haiku-5-5",
-        "gold": "success",
-        "verdict": "failure",
-        "reason": "The final reply includes the live count of 73 Title-search results as an answer fact, violating the explicit prohibition, despite correctly restoring page two."
+        "reason": "The final frame shows Persuasion (#105), but the required “About this eBook” section is below the visible viewport, contrary to the agent’s claim and the task’s finishing requirement."
       },
       {
         "task": "longlive-gutenberg-gothic",
@@ -1420,7 +1404,7 @@
         "model": "claude-haiku-5-5",
         "gold": "success",
         "verdict": "unsure",
-        "reason": "Catalogue navigation and the final #84 metadata table are supported, but the captures do not verify the other seven records’ release dates, LoC codes, and exact credited Author fields."
+        "reason": "The journal confirms catalogue searches and visits to all eight records, but only F12 verifies the required metadata; the other seven records’ credited Authors, Release Dates, and LoC codes are not visible in the evidence."
       },
       {
         "task": "longlive-wiki-moons",
@@ -1428,15 +1412,23 @@
         "model": "claude-haiku-5-5",
         "gold": "success",
         "verdict": "failure",
-        "reason": "The agent explicitly admitted bypassing the required on-site search, consistent with the direct article transitions, although it finished on the pinned Mimas revision."
+        "reason": "The agent explicitly admitted skipping the required Wikipedia on-site search and opening pinned URLs directly, although it finished on the correct pinned Mimas article."
       },
       {
-        "task": "longlive-sauce-cart-revise",
+        "task": "longlive-met-rembrandt-search",
         "approach": "tree",
         "model": "claude-haiku-5-5",
         "gold": "success",
-        "verdict": "failure",
-        "reason": "The agent completed the cart workflow but logged in despite the explicit instruction to stop before login."
+        "verdict": "unsure",
+        "reason": "The lookup workflow and restored page-two state are supported, but F6 and F10 do not expose the dimensions and object numbers needed to verify all reported details."
+      },
+      {
+        "task": "longlive-wiki-probes",
+        "approach": "tree",
+        "model": "gpt-6-luna",
+        "gold": "success",
+        "verdict": "unsure",
+        "reason": "All pinned articles were visited and F12 confirms Pioneer 10's reported values and final location, but the other articles' launch dates and labelled launch masses are absent from the captured evidence."
       },
       {
         "task": "longlive-gutenberg-shakespeare-search",
@@ -1444,7 +1436,7 @@
         "model": "gpt-6-luna",
         "gold": "success",
         "verdict": "failure",
-        "reason": "The agent searched both explicit IDs and returned to the original second results page, but its final reply omitted the required tie-break result 'Earlier: #1524'."
+        "reason": "F8 shows the final Advanced Search language field set to Any, so the required English selection was not retained despite the results summary and URL indicating English."
       },
       {
         "task": "longlive-met-vangogh",
@@ -1452,23 +1444,7 @@
         "model": "claude-haiku-5-5",
         "gold": "success",
         "verdict": "unsure",
-        "reason": "All eight object pages were visited and the final Overview is visible, but the captures omit dimensions and Object Numbers for most objects, preventing verification of the complete checklist."
-      },
-      {
-        "task": "longlive-wiki-probes",
-        "approach": "tree",
-        "model": "gpt-6-luna",
-        "gold": "success",
-        "verdict": "failure",
-        "reason": "The journal records only one on-site search, for Voyager 1; the remaining articles were opened directly at pinned URLs, so the required search workflow was not completed."
-      },
-      {
-        "task": "longlive-gutenberg-dickens-search",
-        "approach": "tree",
-        "model": "claude-haiku-5-5",
-        "gold": "success",
-        "verdict": "failure",
-        "reason": "The reply leaves the required 'Earlier: #98' comparison blank, and the final advanced-search form shows Language Any rather than retaining English (F9)."
+        "reason": "All eight objects were visited and F12 confirms the required final Overview state, but the captures omit several dimensions and Object Numbers needed to verify the complete checklist."
       },
       {
         "task": "longlive-met-monet-search",
@@ -1476,7 +1452,15 @@
         "model": "claude-haiku-5-5",
         "gold": "success",
         "verdict": "unsure",
-        "reason": "The search sequence, object visits, and restored page-two state are supported, but F7 and F11 truncate before the object numbers and dimensions, leaving those required answer details unverified."
+        "reason": "The required searches, object visits, and restored page-two state are supported, but the captured Overview text omits object numbers and dimensions, preventing verification of the reported values and taller-object comparison."
+      },
+      {
+        "task": "longlive-gutenberg-dickens-search",
+        "approach": "tree",
+        "model": "claude-haiku-5-5",
+        "gold": "success",
+        "verdict": "failure",
+        "reason": "F9 shows the final advanced-search language control set to Any rather than English, so the required original filter selections were not all retained."
       }
     ]
   }

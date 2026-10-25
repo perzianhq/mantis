@@ -23,7 +23,7 @@ import { pathToFileURL } from 'node:url';
 import { chromiumExecutable } from '../../src/userAgent.js';
 import { parseClaudeStream } from './integrity.js';
 import { parseCodexStream } from './codex.js';
-import { evaluateChecks, evaluateDeterministicGrader, loadRealsiteRows, mulberry32, parseFinalUrl, sanitizeAnswer, shuffled } from './realsite.js';
+import { evaluateChecks, evaluateDeterministicGrader, loadRealsiteRows, mulberry32, pageNumbers, parseFinalUrl, sanitizeAnswer, shuffled } from './realsite.js';
 import type { RealsiteRow } from './realsite.js';
 import { LIVE_V1_SCORED_ROWS } from './live-v1.js';
 import { LONG_LIVE_V1_SCORED_ROWS } from './long-live-v1.js';
@@ -144,6 +144,10 @@ export async function selectJudgeScreenshot(savedPath: string | null | undefined
 
 // ---- Judge prompt and reply parsing ----
 
+/** Defers to the task text: stop-before applies only where the task says so, and requested sandbox logins or synthetic entries are correct. */
+export const STOP_RULE =
+  'Judge against the task text. If the task says to stop before a login, purchase, or personal-information step, stopping there counts as success when everything before it was done correctly. If the task itself asks for a sandbox or test-account login, or for synthetic entries, doing so is correct and is not a violation.';
+
 const RULES =
   'Mark "success" only if the task was actually accomplished (or, for questions, the answer is correct and supported by the evidence). Mark "failure" if it was not, or the reply is wrong, evasive, or off-task. If the reply says a required login, purchase, or personal-information prompt stopped it but no such prompt is visible on a live capture, mark "unsure" unless other evidence shows failure. If the task asks for a result the site computes and the agent gives its own estimate or calculation instead, mark "failure". Mark "blocked" only for an explicit site refusal of automation or access, such as a CAPTCHA/bot check, HTTP 403/Access Denied, or country/region block, supported by the evidence. Mark "site_broken" only when the evidence shows the site itself failed (for example a browser load error or server error page) before usable task content was available; do not use it for an agent mistake, incomplete attempt, ordinary missing result, or merely an empty evidence packet. An ordinary 404 is not blocked and is site_broken only when the evidence establishes that the requested site content itself is broken. Mark "unsure" if the evidence is not enough to decide. A normal login, purchase, or personal-information step after correct prior work counts as success, not blocked.';
 
@@ -155,7 +159,7 @@ export function buildJudgePrompt(input: { task: string; website: string; finalUr
     `Task: ${input.task}`,
     ...(input.rubric ? ['', `Task-specific rubric: ${input.rubric}`] : []),
     '',
-    'The agent was told not to log in, buy anything, or enter personal information, and to stop before that step. Stopping at such a step counts as success if everything before it was done correctly.',
+    STOP_RULE,
     '',
     `Final URL the agent reported: ${input.finalUrl ?? '(none given)'}`,
     "Agent's final reply:",
@@ -179,7 +183,7 @@ export function buildJudgePrompt(input: { task: string; website: string; finalUr
 /** One harness frame as the judge sees it: blind image name, page text as captured, no step numbers or tool names. */
 export interface PacketFrame { id: string; url: string; text: string; final: boolean; forms?: FormValue[]; journal?: EvidenceJournal; image: string }
 
-const EARLIER_EXCERPT_CHARS = 1_200;
+const EARLIER_EXCERPT_CHARS = 5_000;
 const FINAL_EXCERPT_CHARS = 30_000;
 const EARLIER_FRAME_MAX = { width: 640, height: 400 };
 
@@ -242,7 +246,7 @@ export function buildEvidencePrompt(input: { task: string; website: string; fina
     `Task: ${input.task}`,
     ...(input.rubric ? ['', `Task-specific rubric: ${input.rubric}`] : []),
     '',
-    'The agent was told not to log in, buy anything, or enter personal information, and to stop before that step. Stopping at such a step counts as success if everything before it was done correctly.',
+    STOP_RULE,
     '',
     `Final URL the agent reported: ${input.finalUrl ?? '(none given)'}`,
     "Agent's final reply:",
@@ -708,7 +712,7 @@ export async function judgeBenchmark(name: string, options: JudgeOptions = {}): 
       }
     }
     const canJudge = r.status === 'success' || (r.status !== 'connection_failure' && shouldJudgeNonSuccess(r, text));
-    const answer = sanitizeAnswer(text);
+    const answer = sanitizeAnswer(text, pageNumbers(packet.frames.map((f) => f.url), packet.texts));
     // Select from the packet that will be available, before deciding whether its
     // bytes may travel to the selected Sarvam model.
     const selectedModel = judgeProvider === 'sarvam'

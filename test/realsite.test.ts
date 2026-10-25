@@ -6,7 +6,7 @@ import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { evaluateChecks, evaluateDeterministicGrader, loadRealsiteRows, loadRealsiteTasks, mulberry32, parseFinalUrl, realsitePrompt, sampleRealsite, sanitizeAnswer } from '../bench/agent/realsite.js';
+import { evaluateChecks, evaluateDeterministicGrader, loadRealsiteRows, loadRealsiteTasks, mulberry32, parseFinalUrl, realsitePrompt, pageNumbers, sampleRealsite, sanitizeAnswer } from '../bench/agent/realsite.js';
 import type { RealsiteRow } from '../bench/agent/realsite.js';
 import { buildEvidencePrompt, buildJudgePrompt, parseJudgeOutput, parseSarvamTrace, readFinalTexts, renderJudgedMarkdown, runKey } from '../bench/agent/judge.js';
 import type { JudgedRun } from '../bench/agent/judge.js';
@@ -159,6 +159,13 @@ describe('sanitizeAnswer', () => {
   it('keeps numbers that are not coordinates', () => {
     const text = 'Open 9am-5pm, prices 10, 20, 30 dollars; room 12, floor 3.';
     expect(sanitizeAnswer(text)).toBe(text);
+  });
+  it('keeps a #N that names a record on the visited pages, and still redacts refs that are not', () => {
+    const keep = pageNumbers(['https://example.com/records/98', 'https://example.com/list?id=1524&x=1'], ['See item #105 here']);
+    expect(sanitizeAnswer('Earlier: #98 and #1524, also #105', keep)).toBe('Earlier: #98 and #1524, also #105');
+    expect(sanitizeAnswer('Earlier: #98; I clicked #35 then ref=e12', keep)).toBe('Earlier: #98; I clicked then');
+    expect(sanitizeAnswer('Earlier: #98', new Set())).toBe('Earlier:');
+    expect(pageNumbers(['https://example.com/a/9x', 'https://example.com/?page=2.5'], []).has('9')).toBe(false);
   });
   it('collapses the blank space left behind', () => {
     expect(sanitizeAnswer('A\n\nplaywright\n\n\nB')).toBe('A\nB');

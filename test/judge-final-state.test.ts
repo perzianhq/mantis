@@ -183,6 +183,17 @@ describe('blocked verdict and adjusted rate', () => {
     expect(prompt).toContain('An ordinary 404 is not blocked');
   });
 
+  it('defers stop-before-login rules to the task text instead of asserting the agent was told not to log in', () => {
+    const plain = buildJudgePrompt({ task: 'log in with the sandbox account', website: 'https://example.com', finalUrl: null, answer: '', screenshotPath: null });
+    const packet = buildEvidencePrompt(packetInput([frame(1, { final: true })], { task: 'log in with the sandbox account' }));
+    for (const prompt of [plain, packet]) {
+      expect(prompt).not.toMatch(/agent was told not to log in/i);
+      expect(prompt).toContain('Judge against the task text.');
+      expect(prompt).toContain('asks for a sandbox or test-account login');
+      expect(prompt).toContain('If the task says to stop before a login');
+    }
+  });
+
   it('preserves fixed failure for legacy stopped rows and checks new rows for site blocks', () => {
     const old = { task: 't', approach: 'mantis', run: 1, status: 'wrong_answer', toolCalls: 1, totalInputTokens: 10 };
     expect(shouldJudgeNonSuccess(old, 'Stopped at CAPTCHA')).toBe(false);
@@ -198,7 +209,7 @@ const packetInput = (frames: PacketFrame[], extra: Partial<Parameters<typeof bui
   ({ task: 'find item', website: 'https://example.com', finalUrl: 'https://example.com/p3', answer: 'It costs $5.', frames, attached: true, ...extra });
 
 describe('evidence packet prompt', () => {
-  const frames = [frame(1, { text: `${'a'.repeat(1_200)}TAIL-OF-FIRST` }), frame(2), frame(3, { final: true, text: `${'b'.repeat(5_000)}END-OF-FINAL`, forms: [{ label: 'Quantity', value: '2' }, { label: 'Gift', value: 'unchecked' }] })];
+  const frames = [frame(1, { text: `${'a'.repeat(5_000)}TAIL-OF-FIRST` }), frame(2), frame(3, { final: true, text: `${'b'.repeat(5_000)}END-OF-FINAL`, forms: [{ label: 'Quantity', value: '2' }, { label: 'Gift', value: 'unchecked' }] })];
 
   it('lists frames F1..Fn in order with URL, excerpts, the full final text and form values', () => {
     const prompt = buildEvidencePrompt(packetInput(frames));
@@ -210,7 +221,7 @@ describe('evidence packet prompt', () => {
     expect(prompt).toContain('F3 (final, captured after the agent finished)');
     expect(prompt).toContain('Image: f1.png (attached)');
     expect(prompt).toContain('END-OF-FINAL'); // final text in full
-    expect(prompt).not.toContain('TAIL-OF-FIRST'); // earlier frames only get the first ~1,200 characters
+    expect(prompt).not.toContain('TAIL-OF-FIRST'); // earlier frames only get the first ~5,000 characters
     expect(prompt).toContain('Form values:\n- Quantity: 2\n- Gift: unchecked');
     expect(prompt).toContain('Base your verdict on the frames; cite the frame IDs you rely on.');
     expect(prompt).toContain('Missing verification of a required detail');

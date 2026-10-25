@@ -1,0 +1,1701 @@
+{
+  "version": 1,
+  "seed": 1,
+  "target": 168,
+  "selected": [
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-wiki-probes",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 1,
+      "attemptLog": "longlive-wiki-probes--mantis--1--attempt-1-1792868475392-r621nw.jsonl",
+      "gold": "success",
+      "id": "longlive-wiki-probes|mantis|claude-haiku-5-5|1|longlive-wiki-probes--mantis--1--attempt-1-1792868475392-r621nw.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-wiki-probes",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 1,
+      "attemptLog": "longlive-wiki-probes--tree--1--attempt-1-1792868475409-ol8760.jsonl",
+      "gold": "success",
+      "id": "longlive-wiki-probes|tree|claude-haiku-5-5|1|longlive-wiki-probes--tree--1--attempt-1-1792868475409-ol8760.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-wiki-probes",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 2,
+      "attemptLog": "longlive-wiki-probes--mantis--2--attempt-1-1792868475423-uudz86.jsonl",
+      "gold": "success",
+      "id": "longlive-wiki-probes|mantis|claude-haiku-5-5|2|longlive-wiki-probes--mantis--2--attempt-1-1792868475423-uudz86.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-wiki-probes",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 2,
+      "attemptLog": "longlive-wiki-probes--tree--2--attempt-1-1792868475437-jodt29.jsonl",
+      "gold": "success",
+      "id": "longlive-wiki-probes|tree|claude-haiku-5-5|2|longlive-wiki-probes--tree--2--attempt-1-1792868475437-jodt29.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-wiki-probes",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 3,
+      "attemptLog": "longlive-wiki-probes--mantis--3--attempt-1-1792868475456-e227ri.jsonl",
+      "gold": "success",
+      "id": "longlive-wiki-probes|mantis|claude-haiku-5-5|3|longlive-wiki-probes--mantis--3--attempt-1-1792868475456-e227ri.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-wiki-probes",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 3,
+      "attemptLog": "longlive-wiki-probes--tree--3--attempt-1-1792868475470-7xge7y.jsonl",
+      "gold": "success",
+      "id": "longlive-wiki-probes|tree|claude-haiku-5-5|3|longlive-wiki-probes--tree--3--attempt-1-1792868475470-7xge7y.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-wiki-moons",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 1,
+      "attemptLog": "longlive-wiki-moons--mantis--1--attempt-1-1792868475492-bugu6x.jsonl",
+      "gold": "success",
+      "id": "longlive-wiki-moons|mantis|claude-haiku-5-5|1|longlive-wiki-moons--mantis--1--attempt-1-1792868475492-bugu6x.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-wiki-moons",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 1,
+      "attemptLog": "longlive-wiki-moons--tree--1--attempt-1-1792868475508-cbgm2e.jsonl",
+      "gold": "success",
+      "id": "longlive-wiki-moons|tree|claude-haiku-5-5|1|longlive-wiki-moons--tree--1--attempt-1-1792868475508-cbgm2e.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-wiki-moons",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 2,
+      "attemptLog": "longlive-wiki-moons--mantis--2--attempt-1-1792868475572-gdpmw4.jsonl",
+      "gold": "success",
+      "id": "longlive-wiki-moons|mantis|claude-haiku-5-5|2|longlive-wiki-moons--mantis--2--attempt-1-1792868475572-gdpmw4.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-wiki-moons",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 2,
+      "attemptLog": "longlive-wiki-moons--tree--2--attempt-1-1792868475588-670isr.jsonl",
+      "gold": "success",
+      "id": "longlive-wiki-moons|tree|claude-haiku-5-5|2|longlive-wiki-moons--tree--2--attempt-1-1792868475588-670isr.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-wiki-moons",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 3,
+      "attemptLog": "longlive-wiki-moons--mantis--3--attempt-1-1792868475748-d16b0d.jsonl",
+      "gold": "success",
+      "id": "longlive-wiki-moons|mantis|claude-haiku-5-5|3|longlive-wiki-moons--mantis--3--attempt-1-1792868475748-d16b0d.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-wiki-moons",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 3,
+      "attemptLog": "longlive-wiki-moons--tree--3--attempt-1-1792868475768-wibf7c.jsonl",
+      "gold": "success",
+      "id": "longlive-wiki-moons|tree|claude-haiku-5-5|3|longlive-wiki-moons--tree--3--attempt-1-1792868475768-wibf7c.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-gutenberg-novels",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 1,
+      "attemptLog": "longlive-gutenberg-novels--mantis--1--attempt-1-1792868697108-4lqqsi.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-novels|mantis|claude-haiku-5-5|1|longlive-gutenberg-novels--mantis--1--attempt-1-1792868697108-4lqqsi.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-gutenberg-novels",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 1,
+      "attemptLog": "longlive-gutenberg-novels--tree--1--attempt-1-1792868736957-27mw5u.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-novels|tree|claude-haiku-5-5|1|longlive-gutenberg-novels--tree--1--attempt-1-1792868736957-27mw5u.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-gutenberg-novels",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 2,
+      "attemptLog": "longlive-gutenberg-novels--mantis--2--attempt-1-1792868744396-wnyaa1.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-novels|mantis|claude-haiku-5-5|2|longlive-gutenberg-novels--mantis--2--attempt-1-1792868744396-wnyaa1.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-gutenberg-novels",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 2,
+      "attemptLog": "longlive-gutenberg-novels--tree--2--attempt-1-1792868779319-uq4ubd.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-novels|tree|claude-haiku-5-5|2|longlive-gutenberg-novels--tree--2--attempt-1-1792868779319-uq4ubd.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-gutenberg-novels",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 3,
+      "attemptLog": "longlive-gutenberg-novels--mantis--3--attempt-1-1792868798878-n91zv6.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-novels|mantis|claude-haiku-5-5|3|longlive-gutenberg-novels--mantis--3--attempt-1-1792868798878-n91zv6.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-gutenberg-novels",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 3,
+      "attemptLog": "longlive-gutenberg-novels--tree--3--attempt-1-1792868801491-xqdf72.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-novels|tree|claude-haiku-5-5|3|longlive-gutenberg-novels--tree--3--attempt-1-1792868801491-xqdf72.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-gutenberg-gothic",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 1,
+      "attemptLog": "longlive-gutenberg-gothic--mantis--1--attempt-1-1792868813182-dp2c5t.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-gothic|mantis|claude-haiku-5-5|1|longlive-gutenberg-gothic--mantis--1--attempt-1-1792868813182-dp2c5t.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-gutenberg-gothic",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 1,
+      "attemptLog": "longlive-gutenberg-gothic--tree--1--attempt-1-1792868833208-cythq6.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-gothic|tree|claude-haiku-5-5|1|longlive-gutenberg-gothic--tree--1--attempt-1-1792868833208-cythq6.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-gutenberg-gothic",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 2,
+      "attemptLog": "longlive-gutenberg-gothic--mantis--2--attempt-1-1792868842961-bvtl1i.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-gothic|mantis|claude-haiku-5-5|2|longlive-gutenberg-gothic--mantis--2--attempt-1-1792868842961-bvtl1i.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-gutenberg-gothic",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 2,
+      "attemptLog": "longlive-gutenberg-gothic--tree--2--attempt-1-1792868848811-fn9h7w.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-gothic|tree|claude-haiku-5-5|2|longlive-gutenberg-gothic--tree--2--attempt-1-1792868848811-fn9h7w.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-gutenberg-gothic",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 3,
+      "attemptLog": "longlive-gutenberg-gothic--mantis--3--attempt-1-1792868858655-p39fmq.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-gothic|mantis|claude-haiku-5-5|3|longlive-gutenberg-gothic--mantis--3--attempt-1-1792868858655-p39fmq.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-gutenberg-gothic",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 3,
+      "attemptLog": "longlive-gutenberg-gothic--tree--3--attempt-1-1792868860931-1q5600.jsonl",
+      "gold": "failure",
+      "id": "longlive-gutenberg-gothic|tree|claude-haiku-5-5|3|longlive-gutenberg-gothic--tree--3--attempt-1-1792868860931-1q5600.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-met-vangogh",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 1,
+      "attemptLog": "longlive-met-vangogh--mantis--1--attempt-1-1792868873334-zzj5kf.jsonl",
+      "gold": "success",
+      "id": "longlive-met-vangogh|mantis|claude-haiku-5-5|1|longlive-met-vangogh--mantis--1--attempt-1-1792868873334-zzj5kf.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-met-vangogh",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 1,
+      "attemptLog": "longlive-met-vangogh--tree--1--attempt-1-1792868877856-8zd98i.jsonl",
+      "gold": "success",
+      "id": "longlive-met-vangogh|tree|claude-haiku-5-5|1|longlive-met-vangogh--tree--1--attempt-1-1792868877856-8zd98i.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-met-vangogh",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 2,
+      "attemptLog": "longlive-met-vangogh--mantis--2--attempt-1-1792868908441-pfbo1o.jsonl",
+      "gold": "success",
+      "id": "longlive-met-vangogh|mantis|claude-haiku-5-5|2|longlive-met-vangogh--mantis--2--attempt-1-1792868908441-pfbo1o.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-met-vangogh",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 2,
+      "attemptLog": "longlive-met-vangogh--tree--2--attempt-1-1792868911154-kwice0.jsonl",
+      "gold": "success",
+      "id": "longlive-met-vangogh|tree|claude-haiku-5-5|2|longlive-met-vangogh--tree--2--attempt-1-1792868911154-kwice0.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-met-vangogh",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 3,
+      "attemptLog": "longlive-met-vangogh--mantis--3--attempt-1-1792868915532-cz0rye.jsonl",
+      "gold": "success",
+      "id": "longlive-met-vangogh|mantis|claude-haiku-5-5|3|longlive-met-vangogh--mantis--3--attempt-1-1792868915532-cz0rye.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-met-vangogh",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 3,
+      "attemptLog": "longlive-met-vangogh--tree--3--attempt-1-1792868935847-gq59x8.jsonl",
+      "gold": "success",
+      "id": "longlive-met-vangogh|tree|claude-haiku-5-5|3|longlive-met-vangogh--tree--3--attempt-1-1792868935847-gq59x8.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-gutenberg-dickens-search",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 1,
+      "attemptLog": "longlive-gutenberg-dickens-search--mantis--1--attempt-1-1792868941297-0onj9u.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-dickens-search|mantis|claude-haiku-5-5|1|longlive-gutenberg-dickens-search--mantis--1--attempt-1-1792868941297-0onj9u.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-gutenberg-dickens-search",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 1,
+      "attemptLog": "longlive-gutenberg-dickens-search--tree--1--attempt-1-1792868960197-1azq6p.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-dickens-search|tree|claude-haiku-5-5|1|longlive-gutenberg-dickens-search--tree--1--attempt-1-1792868960197-1azq6p.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-gutenberg-dickens-search",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 2,
+      "attemptLog": "longlive-gutenberg-dickens-search--mantis--2--attempt-1-1792868994707-lo26jz.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-dickens-search|mantis|claude-haiku-5-5|2|longlive-gutenberg-dickens-search--mantis--2--attempt-1-1792868994707-lo26jz.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-gutenberg-dickens-search",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 2,
+      "attemptLog": "longlive-gutenberg-dickens-search--tree--2--attempt-1-1792869013466-0x4qjo.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-dickens-search|tree|claude-haiku-5-5|2|longlive-gutenberg-dickens-search--tree--2--attempt-1-1792869013466-0x4qjo.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-gutenberg-dickens-search",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 3,
+      "attemptLog": "longlive-gutenberg-dickens-search--mantis--3--attempt-1-1792869015780-ik7rz3.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-dickens-search|mantis|claude-haiku-5-5|3|longlive-gutenberg-dickens-search--mantis--3--attempt-1-1792869015780-ik7rz3.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-gutenberg-dickens-search",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 3,
+      "attemptLog": "longlive-gutenberg-dickens-search--tree--3--attempt-1-1792869019596-mwi78f.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-dickens-search|tree|claude-haiku-5-5|3|longlive-gutenberg-dickens-search--tree--3--attempt-1-1792869019596-mwi78f.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-gutenberg-shakespeare-search",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 1,
+      "attemptLog": "longlive-gutenberg-shakespeare-search--mantis--1--attempt-1-1792869020839-renee4.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-shakespeare-search|mantis|claude-haiku-5-5|1|longlive-gutenberg-shakespeare-search--mantis--1--attempt-1-1792869020839-renee4.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-gutenberg-shakespeare-search",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 1,
+      "attemptLog": "longlive-gutenberg-shakespeare-search--tree--1--attempt-1-1792869024452-bp7wjq.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-shakespeare-search|tree|claude-haiku-5-5|1|longlive-gutenberg-shakespeare-search--tree--1--attempt-1-1792869024452-bp7wjq.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-gutenberg-shakespeare-search",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 2,
+      "attemptLog": "longlive-gutenberg-shakespeare-search--mantis--2--attempt-1-1792869029172-zribob.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-shakespeare-search|mantis|claude-haiku-5-5|2|longlive-gutenberg-shakespeare-search--mantis--2--attempt-1-1792869029172-zribob.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-gutenberg-shakespeare-search",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 2,
+      "attemptLog": "longlive-gutenberg-shakespeare-search--tree--2--attempt-1-1792869035371-5i2w8x.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-shakespeare-search|tree|claude-haiku-5-5|2|longlive-gutenberg-shakespeare-search--tree--2--attempt-1-1792869035371-5i2w8x.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-gutenberg-shakespeare-search",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 3,
+      "attemptLog": "longlive-gutenberg-shakespeare-search--mantis--3--attempt-1-1792869041228-eqxbt3.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-shakespeare-search|mantis|claude-haiku-5-5|3|longlive-gutenberg-shakespeare-search--mantis--3--attempt-1-1792869041228-eqxbt3.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-gutenberg-shakespeare-search",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 3,
+      "attemptLog": "longlive-gutenberg-shakespeare-search--tree--3--attempt-1-1792869060409-iypdhi.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-shakespeare-search|tree|claude-haiku-5-5|3|longlive-gutenberg-shakespeare-search--tree--3--attempt-1-1792869060409-iypdhi.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-met-monet-search",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 1,
+      "attemptLog": "longlive-met-monet-search--mantis--1--attempt-1-1792869077978-g3m0cu.jsonl",
+      "gold": "success",
+      "id": "longlive-met-monet-search|mantis|claude-haiku-5-5|1|longlive-met-monet-search--mantis--1--attempt-1-1792869077978-g3m0cu.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-met-monet-search",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 1,
+      "attemptLog": "longlive-met-monet-search--tree--1--attempt-1-1792869080731-yqy4y6.jsonl",
+      "gold": "success",
+      "id": "longlive-met-monet-search|tree|claude-haiku-5-5|1|longlive-met-monet-search--tree--1--attempt-1-1792869080731-yqy4y6.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-met-monet-search",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 2,
+      "attemptLog": "longlive-met-monet-search--mantis--2--attempt-1-1792869083266-2moyc1.jsonl",
+      "gold": "success",
+      "id": "longlive-met-monet-search|mantis|claude-haiku-5-5|2|longlive-met-monet-search--mantis--2--attempt-1-1792869083266-2moyc1.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-met-monet-search",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 2,
+      "attemptLog": "longlive-met-monet-search--tree--2--attempt-1-1792869102330-iuts50.jsonl",
+      "gold": "success",
+      "id": "longlive-met-monet-search|tree|claude-haiku-5-5|2|longlive-met-monet-search--tree--2--attempt-1-1792869102330-iuts50.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-met-monet-search",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 3,
+      "attemptLog": "longlive-met-monet-search--mantis--3--attempt-1-1792869122382-digs9t.jsonl",
+      "gold": "success",
+      "id": "longlive-met-monet-search|mantis|claude-haiku-5-5|3|longlive-met-monet-search--mantis--3--attempt-1-1792869122382-digs9t.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-met-monet-search",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 3,
+      "attemptLog": "longlive-met-monet-search--tree--3--attempt-1-1792869128154-phqi59.jsonl",
+      "gold": "success",
+      "id": "longlive-met-monet-search|tree|claude-haiku-5-5|3|longlive-met-monet-search--tree--3--attempt-1-1792869128154-phqi59.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-met-rembrandt-search",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 1,
+      "attemptLog": "longlive-met-rembrandt-search--mantis--1--attempt-1-1792869168695-zhwikv.jsonl",
+      "gold": "success",
+      "id": "longlive-met-rembrandt-search|mantis|claude-haiku-5-5|1|longlive-met-rembrandt-search--mantis--1--attempt-1-1792869168695-zhwikv.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-met-rembrandt-search",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 1,
+      "attemptLog": "longlive-met-rembrandt-search--tree--1--attempt-1-1792869179826-1arqm6.jsonl",
+      "gold": "success",
+      "id": "longlive-met-rembrandt-search|tree|claude-haiku-5-5|1|longlive-met-rembrandt-search--tree--1--attempt-1-1792869179826-1arqm6.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-met-rembrandt-search",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 2,
+      "attemptLog": "longlive-met-rembrandt-search--mantis--2--attempt-1-1792869183980-3mjv0k.jsonl",
+      "gold": "success",
+      "id": "longlive-met-rembrandt-search|mantis|claude-haiku-5-5|2|longlive-met-rembrandt-search--mantis--2--attempt-1-1792869183980-3mjv0k.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-met-rembrandt-search",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 2,
+      "attemptLog": "longlive-met-rembrandt-search--tree--2--attempt-1-1792869187316-12h7gn.jsonl",
+      "gold": "success",
+      "id": "longlive-met-rembrandt-search|tree|claude-haiku-5-5|2|longlive-met-rembrandt-search--tree--2--attempt-1-1792869187316-12h7gn.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-met-rembrandt-search",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 3,
+      "attemptLog": "longlive-met-rembrandt-search--mantis--3--attempt-1-1792869199291-vjo9ug.jsonl",
+      "gold": "success",
+      "id": "longlive-met-rembrandt-search|mantis|claude-haiku-5-5|3|longlive-met-rembrandt-search--mantis--3--attempt-1-1792869199291-vjo9ug.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-met-rembrandt-search",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 3,
+      "attemptLog": "longlive-met-rembrandt-search--tree--3--attempt-1-1792869214072-w0nh9n.jsonl",
+      "gold": "success",
+      "id": "longlive-met-rembrandt-search|tree|claude-haiku-5-5|3|longlive-met-rembrandt-search--tree--3--attempt-1-1792869214072-w0nh9n.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-form-selenium-student",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 1,
+      "attemptLog": "longlive-form-selenium-student--mantis--1--attempt-1-1792869224791-nnxlpe.jsonl",
+      "gold": "success",
+      "id": "longlive-form-selenium-student|mantis|claude-haiku-5-5|1|longlive-form-selenium-student--mantis--1--attempt-1-1792869224791-nnxlpe.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-form-selenium-student",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 1,
+      "attemptLog": "longlive-form-selenium-student--tree--1--attempt-1-1792869226589-iaj3eu.jsonl",
+      "gold": "success",
+      "id": "longlive-form-selenium-student|tree|claude-haiku-5-5|1|longlive-form-selenium-student--tree--1--attempt-1-1792869226589-iaj3eu.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-form-selenium-student",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 2,
+      "attemptLog": "longlive-form-selenium-student--mantis--2--attempt-1-1792869259121-fhjnu1.jsonl",
+      "gold": "success",
+      "id": "longlive-form-selenium-student|mantis|claude-haiku-5-5|2|longlive-form-selenium-student--mantis--2--attempt-1-1792869259121-fhjnu1.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-form-selenium-student",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 2,
+      "attemptLog": "longlive-form-selenium-student--tree--2--attempt-1-1792869263679-l7nykf.jsonl",
+      "gold": "success",
+      "id": "longlive-form-selenium-student|tree|claude-haiku-5-5|2|longlive-form-selenium-student--tree--2--attempt-1-1792869263679-l7nykf.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-form-selenium-student",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 3,
+      "attemptLog": "longlive-form-selenium-student--mantis--3--attempt-1-1792869275500-xvvhxk.jsonl",
+      "gold": "success",
+      "id": "longlive-form-selenium-student|mantis|claude-haiku-5-5|3|longlive-form-selenium-student--mantis--3--attempt-1-1792869275500-xvvhxk.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-form-selenium-student",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 3,
+      "attemptLog": "longlive-form-selenium-student--tree--3--attempt-1-1792869278956-5k8yre.jsonl",
+      "gold": "success",
+      "id": "longlive-form-selenium-student|tree|claude-haiku-5-5|3|longlive-form-selenium-student--tree--3--attempt-1-1792869278956-5k8yre.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-form-selenium-review",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 1,
+      "attemptLog": "longlive-form-selenium-review--mantis--1--attempt-1-1792869307752-x3cg9r.jsonl",
+      "gold": "success",
+      "id": "longlive-form-selenium-review|mantis|claude-haiku-5-5|1|longlive-form-selenium-review--mantis--1--attempt-1-1792869307752-x3cg9r.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-form-selenium-review",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 1,
+      "attemptLog": "longlive-form-selenium-review--tree--1--attempt-1-1792869310531-pdqhq7.jsonl",
+      "gold": "success",
+      "id": "longlive-form-selenium-review|tree|claude-haiku-5-5|1|longlive-form-selenium-review--tree--1--attempt-1-1792869310531-pdqhq7.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-form-selenium-review",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 2,
+      "attemptLog": "longlive-form-selenium-review--mantis--2--attempt-1-1792869324996-f9wq9a.jsonl",
+      "gold": "success",
+      "id": "longlive-form-selenium-review|mantis|claude-haiku-5-5|2|longlive-form-selenium-review--mantis--2--attempt-1-1792869324996-f9wq9a.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-form-selenium-review",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 2,
+      "attemptLog": "longlive-form-selenium-review--tree--2--attempt-1-1792869327462-n4yc8z.jsonl",
+      "gold": "success",
+      "id": "longlive-form-selenium-review|tree|claude-haiku-5-5|2|longlive-form-selenium-review--tree--2--attempt-1-1792869327462-n4yc8z.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-form-selenium-review",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 3,
+      "attemptLog": "longlive-form-selenium-review--mantis--3--attempt-1-1792869329947-72a5oq.jsonl",
+      "gold": "success",
+      "id": "longlive-form-selenium-review|mantis|claude-haiku-5-5|3|longlive-form-selenium-review--mantis--3--attempt-1-1792869329947-72a5oq.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-form-selenium-review",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 3,
+      "attemptLog": "longlive-form-selenium-review--tree--3--attempt-1-1792869331001-0nbqer.jsonl",
+      "gold": "success",
+      "id": "longlive-form-selenium-review|tree|claude-haiku-5-5|3|longlive-form-selenium-review--tree--3--attempt-1-1792869331001-0nbqer.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-form-selenium-select",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 1,
+      "attemptLog": "longlive-form-selenium-select--mantis--1--attempt-1-1792869346656-f11pxq.jsonl",
+      "gold": "failure",
+      "id": "longlive-form-selenium-select|mantis|claude-haiku-5-5|1|longlive-form-selenium-select--mantis--1--attempt-1-1792869346656-f11pxq.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-form-selenium-select",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 1,
+      "attemptLog": "longlive-form-selenium-select--tree--1--attempt-1-1792869350725-ysaitw.jsonl",
+      "gold": "success",
+      "id": "longlive-form-selenium-select|tree|claude-haiku-5-5|1|longlive-form-selenium-select--tree--1--attempt-1-1792869350725-ysaitw.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-form-selenium-select",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 2,
+      "attemptLog": "longlive-form-selenium-select--mantis--2--attempt-1-1792869358225-0fqfbm.jsonl",
+      "gold": "failure",
+      "id": "longlive-form-selenium-select|mantis|claude-haiku-5-5|2|longlive-form-selenium-select--mantis--2--attempt-1-1792869358225-0fqfbm.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-form-selenium-select",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 2,
+      "attemptLog": "longlive-form-selenium-select--tree--2--attempt-1-1792869367307-nfdcfy.jsonl",
+      "gold": "success",
+      "id": "longlive-form-selenium-select|tree|claude-haiku-5-5|2|longlive-form-selenium-select--tree--2--attempt-1-1792869367307-nfdcfy.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-form-selenium-select",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 3,
+      "attemptLog": "longlive-form-selenium-select--mantis--3--attempt-1-1792869369486-ct2okb.jsonl",
+      "gold": "success",
+      "id": "longlive-form-selenium-select|mantis|claude-haiku-5-5|3|longlive-form-selenium-select--mantis--3--attempt-1-1792869369486-ct2okb.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-form-selenium-select",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 3,
+      "attemptLog": "longlive-form-selenium-select--tree--3--attempt-1-1792869371424-nmc9fr.jsonl",
+      "gold": "success",
+      "id": "longlive-form-selenium-select|tree|claude-haiku-5-5|3|longlive-form-selenium-select--tree--3--attempt-1-1792869371424-nmc9fr.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-sauce-cart-revise",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 1,
+      "attemptLog": "longlive-sauce-cart-revise--mantis--1--attempt-1-1792869374398-vvod0j.jsonl",
+      "gold": "success",
+      "id": "longlive-sauce-cart-revise|mantis|claude-haiku-5-5|1|longlive-sauce-cart-revise--mantis--1--attempt-1-1792869374398-vvod0j.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-sauce-cart-revise",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 1,
+      "attemptLog": "longlive-sauce-cart-revise--tree--1--attempt-1-1792869385372-qkk2f7.jsonl",
+      "gold": "success",
+      "id": "longlive-sauce-cart-revise|tree|claude-haiku-5-5|1|longlive-sauce-cart-revise--tree--1--attempt-1-1792869385372-qkk2f7.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-sauce-cart-revise",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 2,
+      "attemptLog": "longlive-sauce-cart-revise--mantis--2--attempt-1-1792869387778-tsfxj3.jsonl",
+      "gold": "success",
+      "id": "longlive-sauce-cart-revise|mantis|claude-haiku-5-5|2|longlive-sauce-cart-revise--mantis--2--attempt-1-1792869387778-tsfxj3.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-sauce-cart-revise",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 2,
+      "attemptLog": "longlive-sauce-cart-revise--tree--2--attempt-1-1792869399155-p14s6m.jsonl",
+      "gold": "success",
+      "id": "longlive-sauce-cart-revise|tree|claude-haiku-5-5|2|longlive-sauce-cart-revise--tree--2--attempt-1-1792869399155-p14s6m.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-sauce-cart-revise",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 3,
+      "attemptLog": "longlive-sauce-cart-revise--mantis--3--attempt-1-1792869405865-c3c3zf.jsonl",
+      "gold": "success",
+      "id": "longlive-sauce-cart-revise|mantis|claude-haiku-5-5|3|longlive-sauce-cart-revise--mantis--3--attempt-1-1792869405865-c3c3zf.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-sauce-cart-revise",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 3,
+      "attemptLog": "longlive-sauce-cart-revise--tree--3--attempt-1-1792869408409-auhh47.jsonl",
+      "gold": "success",
+      "id": "longlive-sauce-cart-revise|tree|claude-haiku-5-5|3|longlive-sauce-cart-revise--tree--3--attempt-1-1792869408409-auhh47.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-sauce-checkout-review",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 1,
+      "attemptLog": "longlive-sauce-checkout-review--mantis--1--attempt-1-1792869412022-emm926.jsonl",
+      "gold": "success",
+      "id": "longlive-sauce-checkout-review|mantis|claude-haiku-5-5|1|longlive-sauce-checkout-review--mantis--1--attempt-1-1792869412022-emm926.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-sauce-checkout-review",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 1,
+      "attemptLog": "longlive-sauce-checkout-review--tree--1--attempt-1-1792869431034-x7ixw3.jsonl",
+      "gold": "success",
+      "id": "longlive-sauce-checkout-review|tree|claude-haiku-5-5|1|longlive-sauce-checkout-review--tree--1--attempt-1-1792869431034-x7ixw3.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-sauce-checkout-review",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 2,
+      "attemptLog": "longlive-sauce-checkout-review--mantis--2--attempt-1-1792869432531-ev0q8m.jsonl",
+      "gold": "success",
+      "id": "longlive-sauce-checkout-review|mantis|claude-haiku-5-5|2|longlive-sauce-checkout-review--mantis--2--attempt-1-1792869432531-ev0q8m.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-sauce-checkout-review",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 2,
+      "attemptLog": "longlive-sauce-checkout-review--tree--2--attempt-1-1792869438433-oyhc6d.jsonl",
+      "gold": "success",
+      "id": "longlive-sauce-checkout-review|tree|claude-haiku-5-5|2|longlive-sauce-checkout-review--tree--2--attempt-1-1792869438433-oyhc6d.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-sauce-checkout-review",
+      "approach": "mantis",
+      "model": "claude-haiku-5-5",
+      "run": 3,
+      "attemptLog": "longlive-sauce-checkout-review--mantis--3--attempt-1-1792869439818-r1qgcs.jsonl",
+      "gold": "success",
+      "id": "longlive-sauce-checkout-review|mantis|claude-haiku-5-5|3|longlive-sauce-checkout-review--mantis--3--attempt-1-1792869439818-r1qgcs.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-haiku",
+      "task": "longlive-sauce-checkout-review",
+      "approach": "tree",
+      "model": "claude-haiku-5-5",
+      "run": 3,
+      "attemptLog": "longlive-sauce-checkout-review--tree--3--attempt-1-1792869453673-y68usc.jsonl",
+      "gold": "success",
+      "id": "longlive-sauce-checkout-review|tree|claude-haiku-5-5|3|longlive-sauce-checkout-review--tree--3--attempt-1-1792869453673-y68usc.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-wiki-probes",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 1,
+      "attemptLog": "longlive-wiki-probes--mantis--1--attempt-1-1792869987036-ofreql.jsonl",
+      "gold": "failure",
+      "id": "longlive-wiki-probes|mantis|gpt-6-luna|1|longlive-wiki-probes--mantis--1--attempt-1-1792869987036-ofreql.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-wiki-probes",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 1,
+      "attemptLog": "longlive-wiki-probes--tree--1--attempt-1-1792869987044-bzco4e.jsonl",
+      "gold": "failure",
+      "id": "longlive-wiki-probes|tree|gpt-6-luna|1|longlive-wiki-probes--tree--1--attempt-1-1792869987044-bzco4e.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-wiki-probes",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 2,
+      "attemptLog": "longlive-wiki-probes--mantis--2--attempt-1-1792869987053-b8c5z4.jsonl",
+      "gold": "success",
+      "id": "longlive-wiki-probes|mantis|gpt-6-luna|2|longlive-wiki-probes--mantis--2--attempt-1-1792869987053-b8c5z4.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-wiki-probes",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 2,
+      "attemptLog": "longlive-wiki-probes--tree--2--attempt-1-1792869987060-k6lw7x.jsonl",
+      "gold": "success",
+      "id": "longlive-wiki-probes|tree|gpt-6-luna|2|longlive-wiki-probes--tree--2--attempt-1-1792869987060-k6lw7x.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-wiki-probes",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 3,
+      "attemptLog": "longlive-wiki-probes--mantis--3--attempt-1-1792869987084-i28aid.jsonl",
+      "gold": "success",
+      "id": "longlive-wiki-probes|mantis|gpt-6-luna|3|longlive-wiki-probes--mantis--3--attempt-1-1792869987084-i28aid.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-wiki-probes",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 3,
+      "attemptLog": "longlive-wiki-probes--tree--3--attempt-1-1792869987092-eci39o.jsonl",
+      "gold": "success",
+      "id": "longlive-wiki-probes|tree|gpt-6-luna|3|longlive-wiki-probes--tree--3--attempt-1-1792869987092-eci39o.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-wiki-moons",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 1,
+      "attemptLog": "longlive-wiki-moons--mantis--1--attempt-1-1792869987103-fft9k1.jsonl",
+      "gold": "failure",
+      "id": "longlive-wiki-moons|mantis|gpt-6-luna|1|longlive-wiki-moons--mantis--1--attempt-1-1792869987103-fft9k1.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-wiki-moons",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 1,
+      "attemptLog": "longlive-wiki-moons--tree--1--attempt-1-1792869987112-z9f7qm.jsonl",
+      "gold": "success",
+      "id": "longlive-wiki-moons|tree|gpt-6-luna|1|longlive-wiki-moons--tree--1--attempt-1-1792869987112-z9f7qm.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-wiki-moons",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 2,
+      "attemptLog": "longlive-wiki-moons--mantis--2--attempt-1-1792869987123-nx4yea.jsonl",
+      "gold": "success",
+      "id": "longlive-wiki-moons|mantis|gpt-6-luna|2|longlive-wiki-moons--mantis--2--attempt-1-1792869987123-nx4yea.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-wiki-moons",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 2,
+      "attemptLog": "longlive-wiki-moons--tree--2--attempt-1-1792869987133-rlgb9w.jsonl",
+      "gold": "success",
+      "id": "longlive-wiki-moons|tree|gpt-6-luna|2|longlive-wiki-moons--tree--2--attempt-1-1792869987133-rlgb9w.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-wiki-moons",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 3,
+      "attemptLog": "longlive-wiki-moons--mantis--3--attempt-1-1792869987147-scukqg.jsonl",
+      "gold": "failure",
+      "id": "longlive-wiki-moons|mantis|gpt-6-luna|3|longlive-wiki-moons--mantis--3--attempt-1-1792869987147-scukqg.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-wiki-moons",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 3,
+      "attemptLog": "longlive-wiki-moons--tree--3--attempt-1-1792869987156-sjw5nm.jsonl",
+      "gold": "success",
+      "id": "longlive-wiki-moons|tree|gpt-6-luna|3|longlive-wiki-moons--tree--3--attempt-1-1792869987156-sjw5nm.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-gutenberg-novels",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 1,
+      "attemptLog": "longlive-gutenberg-novels--mantis--1--attempt-1-1792870056286-e905jy.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-novels|mantis|gpt-6-luna|1|longlive-gutenberg-novels--mantis--1--attempt-1-1792870056286-e905jy.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-gutenberg-novels",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 1,
+      "attemptLog": "longlive-gutenberg-novels--tree--1--attempt-1-1792870075524-xdhmax.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-novels|tree|gpt-6-luna|1|longlive-gutenberg-novels--tree--1--attempt-1-1792870075524-xdhmax.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-gutenberg-novels",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 2,
+      "attemptLog": "longlive-gutenberg-novels--mantis--2--attempt-1-1792870082269-y3vxxl.jsonl",
+      "gold": "failure",
+      "id": "longlive-gutenberg-novels|mantis|gpt-6-luna|2|longlive-gutenberg-novels--mantis--2--attempt-1-1792870082269-y3vxxl.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-gutenberg-novels",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 2,
+      "attemptLog": "longlive-gutenberg-novels--tree--2--attempt-1-1792870085072-3hasyk.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-novels|tree|gpt-6-luna|2|longlive-gutenberg-novels--tree--2--attempt-1-1792870085072-3hasyk.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-gutenberg-novels",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 3,
+      "attemptLog": "longlive-gutenberg-novels--mantis--3--attempt-1-1792870100717-6i07lu.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-novels|mantis|gpt-6-luna|3|longlive-gutenberg-novels--mantis--3--attempt-1-1792870100717-6i07lu.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-gutenberg-novels",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 3,
+      "attemptLog": "longlive-gutenberg-novels--tree--3--attempt-1-1792870101616-g56vso.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-novels|tree|gpt-6-luna|3|longlive-gutenberg-novels--tree--3--attempt-1-1792870101616-g56vso.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-gutenberg-gothic",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 1,
+      "attemptLog": "longlive-gutenberg-gothic--mantis--1--attempt-1-1792870103470-v5xo9k.jsonl",
+      "gold": "failure",
+      "id": "longlive-gutenberg-gothic|mantis|gpt-6-luna|1|longlive-gutenberg-gothic--mantis--1--attempt-1-1792870103470-v5xo9k.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-gutenberg-gothic",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 1,
+      "attemptLog": "longlive-gutenberg-gothic--tree--1--attempt-1-1792870105238-mvaj8o.jsonl",
+      "gold": "failure",
+      "id": "longlive-gutenberg-gothic|tree|gpt-6-luna|1|longlive-gutenberg-gothic--tree--1--attempt-1-1792870105238-mvaj8o.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-gutenberg-gothic",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 2,
+      "attemptLog": "longlive-gutenberg-gothic--mantis--2--attempt-1-1792870111859-2bko90.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-gothic|mantis|gpt-6-luna|2|longlive-gutenberg-gothic--mantis--2--attempt-1-1792870111859-2bko90.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-gutenberg-gothic",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 2,
+      "attemptLog": "longlive-gutenberg-gothic--tree--2--attempt-1-1792870146989-lpgnx1.jsonl",
+      "gold": "failure",
+      "id": "longlive-gutenberg-gothic|tree|gpt-6-luna|2|longlive-gutenberg-gothic--tree--2--attempt-1-1792870146989-lpgnx1.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-gutenberg-gothic",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 3,
+      "attemptLog": "longlive-gutenberg-gothic--mantis--3--attempt-1-1792870148838-devwm5.jsonl",
+      "gold": "failure",
+      "id": "longlive-gutenberg-gothic|mantis|gpt-6-luna|3|longlive-gutenberg-gothic--mantis--3--attempt-1-1792870148838-devwm5.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-gutenberg-gothic",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 3,
+      "attemptLog": "longlive-gutenberg-gothic--tree--3--attempt-1-1792870149750-cohez9.jsonl",
+      "gold": "failure",
+      "id": "longlive-gutenberg-gothic|tree|gpt-6-luna|3|longlive-gutenberg-gothic--tree--3--attempt-1-1792870149750-cohez9.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-met-vangogh",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 1,
+      "attemptLog": "longlive-met-vangogh--mantis--1--attempt-1-1792870153735-6snjux.jsonl",
+      "gold": "success",
+      "id": "longlive-met-vangogh|mantis|gpt-6-luna|1|longlive-met-vangogh--mantis--1--attempt-1-1792870153735-6snjux.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-met-vangogh",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 1,
+      "attemptLog": "longlive-met-vangogh--tree--1--attempt-1-1792870158656-ot00al.jsonl",
+      "gold": "success",
+      "id": "longlive-met-vangogh|tree|gpt-6-luna|1|longlive-met-vangogh--tree--1--attempt-1-1792870158656-ot00al.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-met-vangogh",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 2,
+      "attemptLog": "longlive-met-vangogh--mantis--2--attempt-1-1792870162189-t6x9fe.jsonl",
+      "gold": "success",
+      "id": "longlive-met-vangogh|mantis|gpt-6-luna|2|longlive-met-vangogh--mantis--2--attempt-1-1792870162189-t6x9fe.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-met-vangogh",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 2,
+      "attemptLog": "longlive-met-vangogh--tree--2--attempt-1-1792870164261-5ko1l9.jsonl",
+      "gold": "success",
+      "id": "longlive-met-vangogh|tree|gpt-6-luna|2|longlive-met-vangogh--tree--2--attempt-1-1792870164261-5ko1l9.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-met-vangogh",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 3,
+      "attemptLog": "longlive-met-vangogh--mantis--3--attempt-1-1792870168273-auo96r.jsonl",
+      "gold": "success",
+      "id": "longlive-met-vangogh|mantis|gpt-6-luna|3|longlive-met-vangogh--mantis--3--attempt-1-1792870168273-auo96r.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-met-vangogh",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 3,
+      "attemptLog": "longlive-met-vangogh--tree--3--attempt-1-1792870179991-t7q5o1.jsonl",
+      "gold": "failure",
+      "id": "longlive-met-vangogh|tree|gpt-6-luna|3|longlive-met-vangogh--tree--3--attempt-1-1792870179991-t7q5o1.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-gutenberg-dickens-search",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 1,
+      "attemptLog": "longlive-gutenberg-dickens-search--mantis--1--attempt-1-1792870182570-xui40c.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-dickens-search|mantis|gpt-6-luna|1|longlive-gutenberg-dickens-search--mantis--1--attempt-1-1792870182570-xui40c.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-gutenberg-dickens-search",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 1,
+      "attemptLog": "longlive-gutenberg-dickens-search--tree--1--attempt-1-1792870191540-xgdqfy.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-dickens-search|tree|gpt-6-luna|1|longlive-gutenberg-dickens-search--tree--1--attempt-1-1792870191540-xgdqfy.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-gutenberg-dickens-search",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 2,
+      "attemptLog": "longlive-gutenberg-dickens-search--mantis--2--attempt-1-1792870198107-eiwk1f.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-dickens-search|mantis|gpt-6-luna|2|longlive-gutenberg-dickens-search--mantis--2--attempt-1-1792870198107-eiwk1f.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-gutenberg-dickens-search",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 2,
+      "attemptLog": "longlive-gutenberg-dickens-search--tree--2--attempt-1-1792870199070-tef9ee.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-dickens-search|tree|gpt-6-luna|2|longlive-gutenberg-dickens-search--tree--2--attempt-1-1792870199070-tef9ee.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-gutenberg-dickens-search",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 3,
+      "attemptLog": "longlive-gutenberg-dickens-search--mantis--3--attempt-1-1792870207603-u324m6.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-dickens-search|mantis|gpt-6-luna|3|longlive-gutenberg-dickens-search--mantis--3--attempt-1-1792870207603-u324m6.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-gutenberg-dickens-search",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 3,
+      "attemptLog": "longlive-gutenberg-dickens-search--tree--3--attempt-1-1792870219367-ectycf.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-dickens-search|tree|gpt-6-luna|3|longlive-gutenberg-dickens-search--tree--3--attempt-1-1792870219367-ectycf.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-gutenberg-shakespeare-search",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 1,
+      "attemptLog": "longlive-gutenberg-shakespeare-search--mantis--1--attempt-1-1792870232204-6kqn67.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-shakespeare-search|mantis|gpt-6-luna|1|longlive-gutenberg-shakespeare-search--mantis--1--attempt-1-1792870232204-6kqn67.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-gutenberg-shakespeare-search",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 1,
+      "attemptLog": "longlive-gutenberg-shakespeare-search--tree--1--attempt-1-1792870242116-dy8s6f.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-shakespeare-search|tree|gpt-6-luna|1|longlive-gutenberg-shakespeare-search--tree--1--attempt-1-1792870242116-dy8s6f.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-gutenberg-shakespeare-search",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 2,
+      "attemptLog": "longlive-gutenberg-shakespeare-search--mantis--2--attempt-1-1792870250544-1atwi9.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-shakespeare-search|mantis|gpt-6-luna|2|longlive-gutenberg-shakespeare-search--mantis--2--attempt-1-1792870250544-1atwi9.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-gutenberg-shakespeare-search",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 2,
+      "attemptLog": "longlive-gutenberg-shakespeare-search--tree--2--attempt-1-1792870253401-8uonp3.jsonl",
+      "gold": "failure",
+      "id": "longlive-gutenberg-shakespeare-search|tree|gpt-6-luna|2|longlive-gutenberg-shakespeare-search--tree--2--attempt-1-1792870253401-8uonp3.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-gutenberg-shakespeare-search",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 3,
+      "attemptLog": "longlive-gutenberg-shakespeare-search--mantis--3--attempt-1-1792870256698-jcr1t5.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-shakespeare-search|mantis|gpt-6-luna|3|longlive-gutenberg-shakespeare-search--mantis--3--attempt-1-1792870256698-jcr1t5.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-gutenberg-shakespeare-search",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 3,
+      "attemptLog": "longlive-gutenberg-shakespeare-search--tree--3--attempt-1-1792870261202-nibbw8.jsonl",
+      "gold": "success",
+      "id": "longlive-gutenberg-shakespeare-search|tree|gpt-6-luna|3|longlive-gutenberg-shakespeare-search--tree--3--attempt-1-1792870261202-nibbw8.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-met-monet-search",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 1,
+      "attemptLog": "longlive-met-monet-search--mantis--1--attempt-1-1792870261925-zpiaff.jsonl",
+      "gold": "success",
+      "id": "longlive-met-monet-search|mantis|gpt-6-luna|1|longlive-met-monet-search--mantis--1--attempt-1-1792870261925-zpiaff.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-met-monet-search",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 1,
+      "attemptLog": "longlive-met-monet-search--tree--1--attempt-1-1792870268171-voqbdv.jsonl",
+      "gold": "success",
+      "id": "longlive-met-monet-search|tree|gpt-6-luna|1|longlive-met-monet-search--tree--1--attempt-1-1792870268171-voqbdv.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-met-monet-search",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 2,
+      "attemptLog": "longlive-met-monet-search--mantis--2--attempt-1-1792870276043-1bhefa.jsonl",
+      "gold": "success",
+      "id": "longlive-met-monet-search|mantis|gpt-6-luna|2|longlive-met-monet-search--mantis--2--attempt-1-1792870276043-1bhefa.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-met-monet-search",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 2,
+      "attemptLog": "longlive-met-monet-search--tree--2--attempt-1-1792870278453-gxd6u9.jsonl",
+      "gold": "success",
+      "id": "longlive-met-monet-search|tree|gpt-6-luna|2|longlive-met-monet-search--tree--2--attempt-1-1792870278453-gxd6u9.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-met-monet-search",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 3,
+      "attemptLog": "longlive-met-monet-search--mantis--3--attempt-1-1792870284250-idz57x.jsonl",
+      "gold": "success",
+      "id": "longlive-met-monet-search|mantis|gpt-6-luna|3|longlive-met-monet-search--mantis--3--attempt-1-1792870284250-idz57x.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-met-monet-search",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 3,
+      "attemptLog": "longlive-met-monet-search--tree--3--attempt-1-1792870290288-xdg4eq.jsonl",
+      "gold": "success",
+      "id": "longlive-met-monet-search|tree|gpt-6-luna|3|longlive-met-monet-search--tree--3--attempt-1-1792870290288-xdg4eq.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-met-rembrandt-search",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 1,
+      "attemptLog": "longlive-met-rembrandt-search--mantis--1--attempt-1-1792870295516-r2t8ui.jsonl",
+      "gold": "success",
+      "id": "longlive-met-rembrandt-search|mantis|gpt-6-luna|1|longlive-met-rembrandt-search--mantis--1--attempt-1-1792870295516-r2t8ui.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-met-rembrandt-search",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 1,
+      "attemptLog": "longlive-met-rembrandt-search--tree--1--attempt-1-1792870309681-10j00z.jsonl",
+      "gold": "success",
+      "id": "longlive-met-rembrandt-search|tree|gpt-6-luna|1|longlive-met-rembrandt-search--tree--1--attempt-1-1792870309681-10j00z.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-met-rembrandt-search",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 2,
+      "attemptLog": "longlive-met-rembrandt-search--mantis--2--attempt-1-1792870314903-31a43p.jsonl",
+      "gold": "success",
+      "id": "longlive-met-rembrandt-search|mantis|gpt-6-luna|2|longlive-met-rembrandt-search--mantis--2--attempt-1-1792870314903-31a43p.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-met-rembrandt-search",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 2,
+      "attemptLog": "longlive-met-rembrandt-search--tree--2--attempt-1-1792870326653-6s6wrp.jsonl",
+      "gold": "failure",
+      "id": "longlive-met-rembrandt-search|tree|gpt-6-luna|2|longlive-met-rembrandt-search--tree--2--attempt-1-1792870326653-6s6wrp.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-met-rembrandt-search",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 3,
+      "attemptLog": "longlive-met-rembrandt-search--mantis--3--attempt-1-1792870329503-45me5f.jsonl",
+      "gold": "failure",
+      "id": "longlive-met-rembrandt-search|mantis|gpt-6-luna|3|longlive-met-rembrandt-search--mantis--3--attempt-1-1792870329503-45me5f.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-met-rembrandt-search",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 3,
+      "attemptLog": "longlive-met-rembrandt-search--tree--3--attempt-1-1792870347708-swyhru.jsonl",
+      "gold": "failure",
+      "id": "longlive-met-rembrandt-search|tree|gpt-6-luna|3|longlive-met-rembrandt-search--tree--3--attempt-1-1792870347708-swyhru.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-form-selenium-student",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 1,
+      "attemptLog": "longlive-form-selenium-student--mantis--1--attempt-1-1792870357444-r260nz.jsonl",
+      "gold": "success",
+      "id": "longlive-form-selenium-student|mantis|gpt-6-luna|1|longlive-form-selenium-student--mantis--1--attempt-1-1792870357444-r260nz.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-form-selenium-student",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 1,
+      "attemptLog": "longlive-form-selenium-student--tree--1--attempt-1-1792870380670-2f8gww.jsonl",
+      "gold": "success",
+      "id": "longlive-form-selenium-student|tree|gpt-6-luna|1|longlive-form-selenium-student--tree--1--attempt-1-1792870380670-2f8gww.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-form-selenium-student",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 2,
+      "attemptLog": "longlive-form-selenium-student--mantis--2--attempt-1-1792870382159-dmiucm.jsonl",
+      "gold": "success",
+      "id": "longlive-form-selenium-student|mantis|gpt-6-luna|2|longlive-form-selenium-student--mantis--2--attempt-1-1792870382159-dmiucm.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-form-selenium-student",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 2,
+      "attemptLog": "longlive-form-selenium-student--tree--2--attempt-1-1792870388970-vemg78.jsonl",
+      "gold": "success",
+      "id": "longlive-form-selenium-student|tree|gpt-6-luna|2|longlive-form-selenium-student--tree--2--attempt-1-1792870388970-vemg78.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-form-selenium-student",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 3,
+      "attemptLog": "longlive-form-selenium-student--mantis--3--attempt-1-1792870402926-ou00eb.jsonl",
+      "gold": "success",
+      "id": "longlive-form-selenium-student|mantis|gpt-6-luna|3|longlive-form-selenium-student--mantis--3--attempt-1-1792870402926-ou00eb.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-form-selenium-student",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 3,
+      "attemptLog": "longlive-form-selenium-student--tree--3--attempt-1-1792870406928-361tel.jsonl",
+      "gold": "success",
+      "id": "longlive-form-selenium-student|tree|gpt-6-luna|3|longlive-form-selenium-student--tree--3--attempt-1-1792870406928-361tel.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-form-selenium-review",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 1,
+      "attemptLog": "longlive-form-selenium-review--mantis--1--attempt-1-1792870412509-0xxrxm.jsonl",
+      "gold": "success",
+      "id": "longlive-form-selenium-review|mantis|gpt-6-luna|1|longlive-form-selenium-review--mantis--1--attempt-1-1792870412509-0xxrxm.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-form-selenium-review",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 1,
+      "attemptLog": "longlive-form-selenium-review--tree--1--attempt-1-1792870416484-54w2i1.jsonl",
+      "gold": "success",
+      "id": "longlive-form-selenium-review|tree|gpt-6-luna|1|longlive-form-selenium-review--tree--1--attempt-1-1792870416484-54w2i1.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-form-selenium-review",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 2,
+      "attemptLog": "longlive-form-selenium-review--mantis--2--attempt-1-1792870423687-2neq3l.jsonl",
+      "gold": "success",
+      "id": "longlive-form-selenium-review|mantis|gpt-6-luna|2|longlive-form-selenium-review--mantis--2--attempt-1-1792870423687-2neq3l.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-form-selenium-review",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 2,
+      "attemptLog": "longlive-form-selenium-review--tree--2--attempt-1-1792870428017-49rklf.jsonl",
+      "gold": "success",
+      "id": "longlive-form-selenium-review|tree|gpt-6-luna|2|longlive-form-selenium-review--tree--2--attempt-1-1792870428017-49rklf.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-form-selenium-review",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 3,
+      "attemptLog": "longlive-form-selenium-review--mantis--3--attempt-1-1792870432408-zno965.jsonl",
+      "gold": "success",
+      "id": "longlive-form-selenium-review|mantis|gpt-6-luna|3|longlive-form-selenium-review--mantis--3--attempt-1-1792870432408-zno965.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-form-selenium-review",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 3,
+      "attemptLog": "longlive-form-selenium-review--tree--3--attempt-1-1792870442501-13yksf.jsonl",
+      "gold": "success",
+      "id": "longlive-form-selenium-review|tree|gpt-6-luna|3|longlive-form-selenium-review--tree--3--attempt-1-1792870442501-13yksf.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-form-selenium-select",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 1,
+      "attemptLog": "longlive-form-selenium-select--mantis--1--attempt-1-1792870447582-4wkqob.jsonl",
+      "gold": "success",
+      "id": "longlive-form-selenium-select|mantis|gpt-6-luna|1|longlive-form-selenium-select--mantis--1--attempt-1-1792870447582-4wkqob.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-form-selenium-select",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 1,
+      "attemptLog": "longlive-form-selenium-select--tree--1--attempt-1-1792870454753-w89cxn.jsonl",
+      "gold": "success",
+      "id": "longlive-form-selenium-select|tree|gpt-6-luna|1|longlive-form-selenium-select--tree--1--attempt-1-1792870454753-w89cxn.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-form-selenium-select",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 2,
+      "attemptLog": "longlive-form-selenium-select--mantis--2--attempt-1-1792870458317-ol39ue.jsonl",
+      "gold": "success",
+      "id": "longlive-form-selenium-select|mantis|gpt-6-luna|2|longlive-form-selenium-select--mantis--2--attempt-1-1792870458317-ol39ue.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-form-selenium-select",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 2,
+      "attemptLog": "longlive-form-selenium-select--tree--2--attempt-1-1792870459358-poaq2j.jsonl",
+      "gold": "success",
+      "id": "longlive-form-selenium-select|tree|gpt-6-luna|2|longlive-form-selenium-select--tree--2--attempt-1-1792870459358-poaq2j.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-form-selenium-select",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 3,
+      "attemptLog": "longlive-form-selenium-select--mantis--3--attempt-1-1792870464251-p2j4se.jsonl",
+      "gold": "success",
+      "id": "longlive-form-selenium-select|mantis|gpt-6-luna|3|longlive-form-selenium-select--mantis--3--attempt-1-1792870464251-p2j4se.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-form-selenium-select",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 3,
+      "attemptLog": "longlive-form-selenium-select--tree--3--attempt-1-1792870466420-0xkcv5.jsonl",
+      "gold": "success",
+      "id": "longlive-form-selenium-select|tree|gpt-6-luna|3|longlive-form-selenium-select--tree--3--attempt-1-1792870466420-0xkcv5.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-sauce-cart-revise",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 1,
+      "attemptLog": "longlive-sauce-cart-revise--mantis--1--attempt-1-1792870471840-9jci2n.jsonl",
+      "gold": "success",
+      "id": "longlive-sauce-cart-revise|mantis|gpt-6-luna|1|longlive-sauce-cart-revise--mantis--1--attempt-1-1792870471840-9jci2n.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-sauce-cart-revise",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 1,
+      "attemptLog": "longlive-sauce-cart-revise--tree--1--attempt-1-1792870475098-341oui.jsonl",
+      "gold": "success",
+      "id": "longlive-sauce-cart-revise|tree|gpt-6-luna|1|longlive-sauce-cart-revise--tree--1--attempt-1-1792870475098-341oui.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-sauce-cart-revise",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 2,
+      "attemptLog": "longlive-sauce-cart-revise--mantis--2--attempt-1-1792870476779-4osx1a.jsonl",
+      "gold": "success",
+      "id": "longlive-sauce-cart-revise|mantis|gpt-6-luna|2|longlive-sauce-cart-revise--mantis--2--attempt-1-1792870476779-4osx1a.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-sauce-cart-revise",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 2,
+      "attemptLog": "longlive-sauce-cart-revise--tree--2--attempt-1-1792870482683-knphmm.jsonl",
+      "gold": "success",
+      "id": "longlive-sauce-cart-revise|tree|gpt-6-luna|2|longlive-sauce-cart-revise--tree--2--attempt-1-1792870482683-knphmm.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-sauce-cart-revise",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 3,
+      "attemptLog": "longlive-sauce-cart-revise--mantis--3--attempt-1-1792870487337-dckngb.jsonl",
+      "gold": "success",
+      "id": "longlive-sauce-cart-revise|mantis|gpt-6-luna|3|longlive-sauce-cart-revise--mantis--3--attempt-1-1792870487337-dckngb.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-sauce-cart-revise",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 3,
+      "attemptLog": "longlive-sauce-cart-revise--tree--3--attempt-1-1792870488960-xioo9t.jsonl",
+      "gold": "success",
+      "id": "longlive-sauce-cart-revise|tree|gpt-6-luna|3|longlive-sauce-cart-revise--tree--3--attempt-1-1792870488960-xioo9t.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-sauce-checkout-review",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 1,
+      "attemptLog": "longlive-sauce-checkout-review--mantis--1--attempt-1-1792870496512-zwq5h6.jsonl",
+      "gold": "success",
+      "id": "longlive-sauce-checkout-review|mantis|gpt-6-luna|1|longlive-sauce-checkout-review--mantis--1--attempt-1-1792870496512-zwq5h6.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-sauce-checkout-review",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 1,
+      "attemptLog": "longlive-sauce-checkout-review--tree--1--attempt-1-1792870498251-2pbt2h.jsonl",
+      "gold": "success",
+      "id": "longlive-sauce-checkout-review|tree|gpt-6-luna|1|longlive-sauce-checkout-review--tree--1--attempt-1-1792870498251-2pbt2h.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-sauce-checkout-review",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 2,
+      "attemptLog": "longlive-sauce-checkout-review--mantis--2--attempt-1-1792870500061-6frcbj.jsonl",
+      "gold": "success",
+      "id": "longlive-sauce-checkout-review|mantis|gpt-6-luna|2|longlive-sauce-checkout-review--mantis--2--attempt-1-1792870500061-6frcbj.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-sauce-checkout-review",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 2,
+      "attemptLog": "longlive-sauce-checkout-review--tree--2--attempt-1-1792870506077-y5mi4y.jsonl",
+      "gold": "success",
+      "id": "longlive-sauce-checkout-review|tree|gpt-6-luna|2|longlive-sauce-checkout-review--tree--2--attempt-1-1792870506077-y5mi4y.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-sauce-checkout-review",
+      "approach": "mantis",
+      "model": "gpt-6-luna",
+      "run": 3,
+      "attemptLog": "longlive-sauce-checkout-review--mantis--3--attempt-1-1792870514925-dne5ty.jsonl",
+      "gold": "success",
+      "id": "longlive-sauce-checkout-review|mantis|gpt-6-luna|3|longlive-sauce-checkout-review--mantis--3--attempt-1-1792870514925-dne5ty.jsonl"
+    },
+    {
+      "source": "long-live-v1-final-luna",
+      "task": "longlive-sauce-checkout-review",
+      "approach": "tree",
+      "model": "gpt-6-luna",
+      "run": 3,
+      "attemptLog": "longlive-sauce-checkout-review--tree--3--attempt-1-1792870519660-rczxv3.jsonl",
+      "gold": "success",
+      "id": "longlive-sauce-checkout-review|tree|gpt-6-luna|3|longlive-sauce-checkout-review--tree--3--attempt-1-1792870519660-rczxv3.jsonl"
+    }
+  ],
+  "available": {
+    "packets": 168,
+    "tasks": 14,
+    "successes": 150,
+    "failures": 18,
+    "approaches": [
+      "mantis",
+      "tree"
+    ],
+    "models": [
+      "claude-haiku-5-5",
+      "gpt-6-luna"
+    ]
+  }
+}

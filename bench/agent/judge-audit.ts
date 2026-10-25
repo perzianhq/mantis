@@ -20,8 +20,11 @@ import type { SavedBenchmark, SavedRun, Verdict } from './judge.js';
 
 const REPO = path.resolve(import.meta.dirname, '..', '..');
 const DEFAULT_RESULTS = path.join(REPO, 'bench', 'results');
-const MANIFEST_NAME = 'judge-audit-manifest.json';
-const RUN_NAME = 'judge-audit-run.jsonl';
+// AUDIT_TAG keeps a scoped audit (see AUDIT_PREFIX / AUDIT_ALL below) in its own files.
+const AUDIT_PROVIDER = (process.env.AUDIT_PROVIDER ?? 'codex') as 'codex' | 'claude';
+const TAG = process.env.AUDIT_TAG ? `-${process.env.AUDIT_TAG}` : '';
+const MANIFEST_NAME = `judge-audit${TAG}-manifest.json`;
+const RUN_NAME = `judge-audit${TAG}-run.jsonl`;
 const TARGET = 120;
 const FAILURE_TARGET = Math.round(TARGET * 0.4);
 
@@ -181,10 +184,10 @@ export function loadAvailablePackets(resultsDir = DEFAULT_RESULTS): AuditPacket[
   return [...winners.values()].map((entry) => entry.packet);
 }
 
-export function buildAuditManifest(available: readonly AuditPacket[], seed = 1): AuditManifest {
-  const selected = selectAuditPackets(available, TARGET, seed);
+export function buildAuditManifest(available: readonly AuditPacket[], seed = 1, target = TARGET): AuditManifest {
+  const selected = target >= available.length ? [...available] : selectAuditPackets(available, target, seed);
   return {
-    version: 1, seed, target: TARGET, selected,
+    version: 1, seed, target, selected,
     available: {
       packets: available.length,
       tasks: new Set(available.map((packet) => packet.task)).size,
@@ -282,6 +285,7 @@ export async function runAudit(manifest: AuditManifest, resultsDir = DEFAULT_RES
     return loaded;
   };
   let next = 0;
+  let failed = 0;
   const status = (): void => {
     const runs = [...done.values()];
     const summary = summarizeAudit(manifest, runs);
@@ -293,7 +297,7 @@ export async function runAudit(manifest: AuditManifest, resultsDir = DEFAULT_RES
       let report: Awaited<ReturnType<typeof judgeBenchmark>>;
       try {
         report = await judgeBenchmark(packet.source, {
-        provider: 'codex', model: 'gpt-6.1-sol', reasoning: 'high', resultsDir, saved: getSaved(packet.source),
+        provider: AUDIT_PROVIDER, ...(AUDIT_PROVIDER === 'codex' ? { model: 'gpt-6.1-sol', reasoning: 'high' as const } : {}), resultsDir, saved: getSaved(packet.source),
         runKeys: new Set([`${packet.task}|${packet.approach}|${packet.run}`]), write: false,
         freshScreenshots: false, requireSavedEvidence: true, disableDeterministic: true, disableChecks: true, quiet: true,
         });
@@ -303,6 +307,12 @@ export async function runAudit(manifest: AuditManifest, resultsDir = DEFAULT_RES
       }
       const judged = report.runs[0];
       const skipped = report.skipped[0];
+      if (/^judge error/.test(judged?.reason ?? skipped?.reason ?? '')) {
+        failed += 1; // infrastructure failure (usage limit, missing binary): leave unrecorded so a rerun retries it
+        if (failed === 1 || failed % 20 === 0) console.error(`audit infra error x${failed}: ${(judged?.reason ?? skipped?.reason ?? '').replace(/\s+/g, ' ').slice(-220)}`);
+        if (failed >= 5 && !done.size) { next = pending.length; }
+        continue;
+      }
       const run: AuditRun = {
         ...packet,
         verdict: judged?.verdict ?? 'unsure', reason: judged?.reason ?? skipped?.reason ?? 'Judge returned no verdict.',
@@ -317,8 +327,8 @@ export async function runAudit(manifest: AuditManifest, resultsDir = DEFAULT_RES
 
 export function writeAuditReport(manifest: AuditManifest, runs: readonly AuditRun[], resultsDir = DEFAULT_RESULTS): AuditSummary {
   const report = summarizeAudit(manifest, runs);
-  writeFileSync(path.join(resultsDir, 'judge-audit.json'), JSON.stringify({ manifest, report }, null, 2));
-  writeFileSync(path.join(resultsDir, 'judge-audit.md'), renderReport(manifest, report));
+  writeFileSync(path.join(resultsDir, `judge-audit${TAG}.json`), JSON.stringify({ manifest, report }, null, 2));
+  writeFileSync(path.join(resultsDir, `judge-audit${TAG}.md`), renderReport(manifest, report));
   console.log(`audit ${report.gate.pass ? 'PASS' : 'FAIL'}  packets ${report.packets}/100  tasks ${report.tasks}/30  agreement ${percent(report.agreementRate)}  false-success ${report.falseSuccesses}/${report.goldFailures}`);
   return report;
 }
@@ -331,7 +341,10 @@ async function main(): Promise<void> {
     if (!Number.isInteger(seed)) throw new Error('AUDIT_SEED must be an integer.');
     // Packets of excluded or unknown tasks cannot go through judgeBenchmark, so they are not eligible.
     const judgeable = new Set([...loadRealsiteRows(), ...LIVE_V1_SCORED_ROWS, ...LONG_LIVE_V1_SCORED_ROWS].map((row) => row.task_id));
-    const manifest = buildAuditManifest(loadAvailablePackets(resultsDir).filter((packet) => judgeable.has(packet.task)), seed);
+    const prefix = process.env.AUDIT_PREFIX ?? '';
+    const eligible = loadAvailablePackets(resultsDir).filter((packet) => judgeable.has(packet.task) && packet.task.startsWith(prefix) && (!process.env.AUDIT_SOURCE || packet.source.includes(process.env.AUDIT_SOURCE)));
+    // AUDIT_ALL=1 audits every eligible packet instead of a stratified sample (used to rescore a whole set under the audit judge).
+    const manifest = buildAuditManifest(eligible, seed, process.env.AUDIT_ALL === '1' ? eligible.length : TARGET);
     writeFileSync(manifestPath(resultsDir), JSON.stringify(manifest, null, 2));
     console.log(`audit selected ${manifest.selected.length}/${manifest.target}  available ${manifest.available.packets}  tasks ${manifest.available.tasks}  success ${manifest.available.successes}  failure ${manifest.available.failures}`);
   } else if (command === 'run') {
