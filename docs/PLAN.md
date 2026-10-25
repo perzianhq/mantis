@@ -83,9 +83,9 @@ Verdict (Opus review, 2026-10-24): good enough to launch as a v0.x beta. Accurac
 2. ~~Spot-check about 30 sol verdicts~~ (done, recorded in [RESULTS.md](../bench/RESULTS.md)).
 3. ~~Untrusted-content note; GitHub repo topics~~ (done).
 4. ~~Clean untracked scratch files~~ (done).
-5. ~~Submit listings~~ (Glama and `awesome-mcp-servers` done; Smithery and mcp.so skipped, paid).
+5. ~~Submit listings~~ (official MCP registry, Glama and `awesome-mcp-servers` done; Smithery and mcp.so skipped, paid).
 5b. ~~Finish the two unchecked items in "Before launch, remaining"~~ (done: Haiku re-run and EIA swap, v1.8).
-5c. ~~Write launch drafts~~ (done: [LAUNCH.md](LAUNCH.md#4-drafts); re-check numbers against the README before posting).
+5c. ~~Write launch drafts~~ (done: [LAUNCH.md](LAUNCH.md#4-drafts); re-check numbers against README.md and bench/RESULTS.md before posting).
 6. ~~Record the 30-second video and GIF; README opens with it~~ (done, [video/gif.md](../video/gif.md)).
 7. Not started: Show HN, Tue-Thu 8-10am US Eastern, then X, Reddit and LinkedIn per [LAUNCH.md](LAUNCH.md#3-launch-week).
 
