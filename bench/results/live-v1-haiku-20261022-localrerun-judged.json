@@ -37,19 +37,20 @@
       "toolCalls": 15,
       "totalInputTokens": 296128,
       "wallS": 47.674,
-      "verdict": "failure",
-      "reason": "F5 shows the recommendation title “Web Content Accessibility Guidelines (WCAG) 2.2,” but the agent’s empty final reply did not report it.",
+      "verdict": "success",
+      "reason": "F5 shows the W3C Recommendation at /TR/WCAG22/ with the visible title “Web Content Accessibility Guidelines (WCAG) 2.2”, matching the agent’s report.",
       "evidence": [
         "F5"
       ],
       "frameCount": 5,
       "finalFrame": "F5",
-      "judgeVerdict": "failure",
+      "judgeVerdict": "success",
       "checks": null,
       "deterministic": null,
       "grading": "judge",
       "siteFailure": false,
-      "judgeModel": "gpt-6.1-sol"
+      "judgeModel": "gpt-6.1-sol",
+      "rejudged": "first verdict said the reply was empty although the recorded answer is non-empty; re-judged alone on identical evidence"
     },
     {
       "task": "livev1-standards-wcag-22",

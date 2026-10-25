@@ -29,7 +29,7 @@ Full table: [bench/RESULTS.md](bench/RESULTS.md)
 | Model | Mantis | Accessibility tree | Screenshots |
 |---|---:|---:|---:|
 | `gpt-6-luna` | 89 | **90** | 86 |
-| `claude-haiku-5-5` | 87 | 86 | **89** |
+| `claude-haiku-5-5` | 87 | 87 | **89** |
 
 **Long real-site workflows** (`long-live-v1`: 16 tasks on public sites, 3 runs per approach, judged blind, medians over all 48 runs, failures included). Mantis vs the accessibility tree:
 

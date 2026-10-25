@@ -42,12 +42,12 @@ Keep model, browser, retry policy, timeout, and token budget matched across appr
 3. Preserve the completed 54-case local-v2.1 scorecard; do not replace individual rows.
 4. Preserve the completed live-v1 v1.7 scorecard; see [live-v1](../bench/live-v1.md). Launch steps are below. The gated Online-Mind2Web path ([real-site tasks](../bench/README.md#real-site-tasks-blind-judge)) is a historical pilot.
 
-## Next steps: open-source launch (v0.1.4, public beta)
+## Next steps: open-source launch (v0.1.5, public beta)
 
-Verdict (Opus review, 2026-10-24): good enough to launch as a v0.x beta. Accuracy matches the tree on real sites (Luna 89 vs 90, Haiku 87 vs 86 of 90) and long workflows (48/48 both), with 35–38% fewer input tokens on long tasks. No large live-site expansion before launch; scope the claim as "read/navigate on public sites, 2 models".
+Verdict (Opus review, 2026-10-24): good enough to launch as a v0.x beta. Accuracy matches the tree on real sites (Luna 89 vs 90, Haiku 87 vs 87 of 90) and long workflows (48/48 both), with 35–38% fewer input tokens on long tasks. No large live-site expansion before launch; scope the claim as "read/navigate on public sites, 2 models".
 
 ### Must do before launch
-1. **Release 0.1.4.** npm `mantis-browser@0.1.3` (published 2026-10-19) predates about 20 `src/` commits behind the headline numbers. Bump `package.json` and `server.json` (still 0.1.2) to 0.1.4, tag it from the benchmarked commit, and cite that commit in [RESULTS.md](../bench/RESULTS.md).
+1. **Release 0.1.5 (done when tagged; 0.1.4 was already out).** npm `mantis-browser@0.1.3` (published 2026-10-19) predates about 20 `src/` commits behind the headline numbers. Bump `package.json` and `server.json` (still 0.1.2) to 0.1.4, tag it from the benchmarked commit, and cite that commit in [RESULTS.md](../bench/RESULTS.md).
 2. **Honest claims.** Fix stale numbers in [LAUNCH.md](LAUNCH.md) (90/88 should be 89/87). Limit "~30% fewer" to long tasks. State that the screenshot baseline is our own tool. Publish the swapped-out live-v1 tasks (IMDb, USGS, GPL-3) next to the scores. Freeze the 30 tasks: no more swaps.
 3. **Judge check.** The calibration gate (100 packets, 30 tasks, 95% agreement, at most 2% false successes) is not met; a human spot-checks about 30 sol verdicts.
 4. **Install on fresh Windows, Mac and Linux.** Risk: `npx playwright install chromium` fetches a different Chromium build than the package needs, so the first launch fails. Add a `mantis install` command or a clear error. OCR data downloads on first use; document it.

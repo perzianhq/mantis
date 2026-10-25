@@ -73,7 +73,7 @@ Post-hoc swaps were GPL-3 to RFC 8259, IMDb to TMDB, and USGS to NIST; see the [
 
 | | Mantis | Accessibility tree | Screenshots |
 |---|---:|---:|---:|
-| Success (of 90) | 87 | 86 | **89** |
+| Success (of 90) | 87 | 87 | **89** |
 | Avg input tokens (not comparable, see note) | 77.6k | 116.5k | 53.1k |
 
 Haiku input tokens are not comparable across columns: the tree and screenshot runs used Claude CLI 2.1.308 on cloud, the Mantis re-run used 2.1.161 locally, which sends more input per turn (median 14.5k vs 8.3k). The earlier local rerun of blocked rows inflated all three similarly (Mantis 50.4k to 83.7k, tree 116.5k to 216.8k, screenshots 53.1k to 79.6k, on a different task subset). Mantis page text per call is unchanged (10.2k vs 10.6k chars). Mantis rows are a re-run after `src/` gap fixes (20261023); Haiku includes 6 connection-failure rows re-run alone (6/6 success). Failures: Luna 1 (`rfc-8259`), Haiku 3 (`node-url`, `data-gov-climate` x2), all agent behaviour or site drift; see the [live-v1 changelog](live-v1.md#changelog-and-disclosures).
@@ -126,6 +126,14 @@ Frozen `local-v2`: 48 code-graded local fixture tasks x 3 approaches x 3 runs = 
 14 scripted tasks, no LLM ([results](results/latest.md)). Per step, Mantis returns a median of 28 tokens,
 the tree 131, screenshots about 1,366. All three finish all 14 tasks. Some huge pages drive the total-token gap,
 and on those Mantis shows a trimmed view, so this measures cheap orientation, not reading a whole article.
+
+## Benchmarked source
+
+npm `mantis-browser@0.1.5` is built from `70dbd5f`. The published numbers ran on earlier commits; seven agent-visible `src/` commits separate them from v0.1.4, so v0.1.4 is not what was measured.
+
+- `long-live-v1` Luna and Haiku headline: `416fd28` (Haiku's three `form-selenium-select` rerun cells: `70dbd5f`).
+- `live-v1` v1.7 Mantis cells and `long-local-v1`: `83ebb6a` (an ancestor of v0.1.4, no `src/` change in between).
+- Since v0.1.4: `56048f3` (Chromium failure/version/UA), `373c55b` (multi-select fill), `7bbe75d` (name/id labels), `8742162` (scan reuse, navigation/CAPTCHA retry), `8b4e94f` (action IDs, file names, upload reporting), `416fd28` (URL-only refresh, combobox diagnostics, output sanitization), `70dbd5f` (id/name for look-alike controls). The 0.1.5 build and unit tests pass; the benchmarks were not rerun on `70dbd5f`.
 
 ## Caveats
 

@@ -87,6 +87,10 @@ The excluded GPL-3 row was replaced by `livev1-standards-rfc-8259` (kept GPL-3 a
 
 ### Task and key changes by version
 
+- **v1.7 census key widening** (after seeing the sol review of the judge audit): `livev1-gov-census-about` gained `alsoPaths: ["/about-us/who.html"]` (the official Who We Are page answers the same question). Generic mechanism, tests in `test/fixture-verification.test.ts`. One Luna screenshot row was regraded (85 to 86). New `taskHash` `6b08ef1a6bb21d2065a7f597e68a96e7d1466606b0ae7878dc896ce1cb42c04e`, `sourceFingerprintSetHash` `19beb3d06cedf18d92efae2210b90b9ba32ebd770e01e3066877dada1e41acc7` (manifest and preflight updated). The hashes in the grader-fixes entry below are the pre-widening ones.
+
+- **Haiku WCAG rejudge**: `livev1-standards-wcag-22` tree run 1 was first judged failure on the grounds that the reply was empty, but the recorded answer is non-empty. It was re-judged alone on identical evidence (sol) and is success, so Haiku tree is 87/90 (was 86). The only row re-judged; the first verdict is replaced in `live-v1-haiku-20261022-localrerun-judged.json` (row flagged `rejudged`).
+
 - **v1.7 grader fixes** (after seeing Luna results):
   - `matchesAnswerRequirement` strips markdown backticks and `**` before matching (source, requirement and `with.value`).
   - The Eurostat database key gained `alsoPaths: ["/eurostat/data/database"]`.

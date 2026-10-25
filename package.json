@@ -1,6 +1,6 @@
 {
   "name": "mantis-browser",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "mcpName": "io.github.perzianhq/mantis",
   "description": "A lean browser interface for AI agents: web pages as short numbered text.",
   "type": "module",
