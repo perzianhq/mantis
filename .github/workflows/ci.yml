@@ -28,3 +28,29 @@ jobs:
         if: runner.os != 'Linux'
         run: npx playwright install chromium
       - run: npm test
+
+  install:
+    name: install (packed package, clean directory)
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22.14.0
+          cache: npm
+      - run: npm ci
+      - run: npm pack --pack-destination "${{ runner.temp }}"
+      - name: Install the tarball in an empty project, as a user would
+        shell: bash
+        run: |
+          mkdir "$RUNNER_TEMP/fresh" && cd "$RUNNER_TEMP/fresh"
+          npm init -y >/dev/null
+          npm install "$RUNNER_TEMP"/mantis-browser-*.tgz
+          npx mantis install
+          printf '<title>t</title><button>Go</button>' > page.html
+          npx mantis read "file://$PWD/page.html" | tee out.txt
+          grep -q "Go" out.txt
