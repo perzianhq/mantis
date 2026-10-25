@@ -92,7 +92,7 @@ Verdict (Opus review, 2026-10-24): good enough to launch as a v0.x beta. Accurac
 - Installs that fail on day one.
 - Show HN finding a prompt-injection hole, or calling post-result task swaps cherry-picking.
 
-Not verified in the review: whether the repo is public, npm Trusted Publishing setup, a fresh install, whether tests pass now, and `upload` path limits.
+Not verified in the review: whether the repo is public, npm Trusted Publishing setup, whether tests pass now, and `upload` path limits. Fresh install was checked on Linux (a clean directory, and a bare `node:22-slim` container): `mantis install`, `mantis read` and `mantis-mcp` work, and `--with-deps` is required on bare Linux.
 
 ## Deferred work
 
