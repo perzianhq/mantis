@@ -31,7 +31,6 @@ npx tsx src/cli.ts read https://example.com
 Benchmarks, their settings and how results are graded: [bench/README.md](../bench/README.md).
 
 Sarvam probe, calibration and diagnostics: [bench/README.md](../bench/README.md#sarvam-judge-and-capability-probe).
-Agent rules and model policy: [AGENTS.md](../AGENTS.md).
 
 To use a local build instead of npm: `claude mcp add mantis -- node /abs/path/to/mantis/dist/server.js`.
 

@@ -58,7 +58,7 @@ Verdict (Opus review, 2026-10-24): good enough to launch as a v0.x beta. Accurac
    - `ask_human` needs a display; document it.
 6. **CI.** Only publish workflows exist. Add build and test on Ubuntu, Windows and macOS.
 7. **Repo hygiene.**
-   - Tracked `AGENTS.md`, `CLAUDE.md` and `scripts/codex-*` expose internal policy and local paths: untrack or sanitise.
+   - ~~Tracked internal policy files and Codex helper scripts expose internal policy and local paths: untrack or sanitise.~~ (ignore rules added; owner will remove them from the index)
    - ~~Docs link to the gitignored `.codex-jobs/`~~ (checked: no tracked doc links it).
    - Delete about 145 untracked scratch files at the repo root (`.tmp-*`) and decide which `bench/results/` leftovers to commit or ignore.
 

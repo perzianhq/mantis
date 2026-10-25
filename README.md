@@ -6,6 +6,8 @@
 
 It works with Claude Code, Codex, Cursor or your own agent as an MCP server. [Install in two commands](docs/SETUP.md#install).
 
+Security and threat model: [SECURITY.md](SECURITY.md).
+
 ## How it works
 
 <p align="center"><img src="docs/img/flow.svg" alt="Agent sends open/click to Mantis; Mantis reads the page in Chromium, numbers each control and returns only what changed; CAPTCHA, 2FA and payment go to you" width="100%"></p>

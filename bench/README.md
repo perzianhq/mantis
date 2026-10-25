@@ -46,7 +46,7 @@ targets in each tool's own output, so no model is involved. The method is at the
 
 ## Real-agent eval
 
-Needs a logged-in Codex CLI (`codex login`) by default. `AGENT_PROVIDER=claude` uses Claude Code; `AGENT_PROVIDER=sarvam` calls Sarvam V2 directly. Follow [agent and benchmark rules](../AGENTS.md), including model choice and key storage.
+Needs a logged-in Codex CLI (`codex login`) by default. `AGENT_PROVIDER=claude` uses Claude Code; `AGENT_PROVIDER=sarvam` calls Sarvam V2 directly. Keep API keys in gitignored `.env` files.
 
 ```bash
 npm run bench:agent                                                                   # pilot: 2 tasks x 3 approaches
@@ -83,11 +83,11 @@ Mantis runs set `MANTIS_NO_HUMAN=1` on the MCP server (`ask_human` returns immed
 Categories: `forms`, `reading`, `lists`, `overlays`, `navigation`, `dynamic`, `visual`, and `long`
 (multi-step tasks of 15 to 27 actions).
 
-Sarvam agent models are `gemma-4-31b`, `deepseek-v4.1-flash`, `glm-5.3`, and `sarvam-105b` (the first two can receive image tool results). Follow [Sarvam trial policy](../AGENTS.md#models); confirm consequential findings on Luna/Haiku. Start with repaired live protocol pilots; promote triage to regression screening only after repeated held-out rankings reproduce Luna/Haiku beyond measured noise.
+Sarvam agent models are `gemma-4-31b`, `deepseek-v4.1-flash`, `glm-5.3`, and `sarvam-105b` (the first two can receive image tool results). Confirm consequential findings on Luna/Haiku. Start with repaired live protocol pilots; promote triage to regression screening only after repeated held-out rankings reproduce Luna/Haiku beyond measured noise.
 
 The harness converts MCP schemas to function tools, writes per-attempt JSONL traces/evidence, retries malformed tool arguments once, and uses Sarvam's retry/backoff client. Traces now retain full replies, tool arguments and result text; the judge parses Sarvam traces for the full reply and `FINAL_URL`. Sarvam costs are published-rate INR estimates; USD remains unknown. Summaries include API attempts, response tokens and HTTP 429 counts.
 
-For trace/log analysis and doc-summary trials, follow [source and sampling rules](../AGENTS.md#models). DeepSeek can trial structured extraction, failure clustering and candidate answer-key annotations; sol verifies keys against sources and passing/near-miss graders. `sarvam-105b` drafts summaries with reasoning off. Before relying on analysis, audit flagged and unflagged traces for attribution precision/recall; measure summary omissions, unsupported claims and net reviewer usage/time saved. Outcome-judge calibration does not validate these uses.
+For trace/log analysis and doc-summary trials, use source references and sample outputs for omissions and invented claims. DeepSeek can trial structured extraction, failure clustering and candidate answer-key annotations; sol verifies keys against sources and passing/near-miss graders. `sarvam-105b` drafts summaries with reasoning off. Before relying on analysis, audit flagged and unflagged traces for attribution precision/recall; measure summary omissions, unsupported claims and net reviewer usage/time saved. Outcome-judge calibration does not validate these uses.
 
 ### Real-site tasks (blind judge)
 
@@ -106,7 +106,7 @@ The frozen public live-site cohort, its run plan and preflight status are in [li
 
 ### Sarvam judge and capability probe
 
-`JUDGE_PROVIDER=sarvam` is for calibration/shadow trials until the [judge gate](../AGENTS.md#benchmark-focus) passes. Default judge, model independence and key storage follow [AGENTS.md](../AGENTS.md). Existing environment values take precedence over `.env`. The client never logs keys or raw API response bodies. Run the capability
+`JUDGE_PROVIDER=sarvam` is for calibration/shadow trials until the judge reaches 95% agreement across 100 packets and 30 tasks, with no more than 2% false successes. The judge must differ from the agent under test; keep API keys in gitignored `.env` files. Existing environment values take precedence over `.env`. The client never logs keys or raw API response bodies. Run the capability
 probe first; beta access is granted per API key, so a listed model need not accept requests.
 
 `SARVAM_RPM` (default 50 requests/minute) and 429 cooldowns are shared across agent, judge, probe and calibration processes through a small file in the OS temp directory (times only, no keys). `SARVAM_CONCURRENCY` (default 16 active model API calls per process) is separate from `AGENT_CONCURRENCY` (default 10 scheduled benchmark cases for Sarvam), so run one Sarvam job at a time. The 600s Sarvam active-work timeout pauses during locally measured limiter queue, 429 cooldown, and retry-backoff waits; `AGENT_WALL_TIMEOUT_S=1800` still bounds wall time. Results publish active work, local quota wait, retry/cooldown timing, and wall-cap timeouts. Transient requests retry up to six total attempts with jittered exponential backoff (honoring a longer `Retry-After`). Use `Sarvam execution excl. quota/retry wait` for approach comparisons. `JUDGE_CONCURRENCY` remains 2 for Sarvam. Raise limits only when the key's actual quota permits it.
@@ -226,7 +226,7 @@ Both commands use only saved result JSON and provider traces: they never start a
 
 ### Running in the cloud
 
-Use Sonnet for cloud sessions ([model policy](../AGENTS.md#models)). A fresh clone needs:
+Use Sonnet for cloud sessions. A fresh clone needs:
 
 - **No real-site task file.** `realsite-tasks.json` is gitignored and the Hugging Face download is gated (401 without a token). Never commit it. Put the complete rows the run needs inline in the cloud brief, including each row's `checks` answer key, and tell the session to write them unchanged to `bench/agent/realsite-tasks.json` before running. Do not reconstruct or omit checks in the cloud; the loader flags missing or malformed checks. Without the file there are no real-site tasks, so the run selects nothing.
 - **Root user.** Cloud containers run as root, and Chrome refuses to start as root without `--no-sandbox`. Mantis and screenshot already pass it. For `tree`, `run.ts` adds it to Playwright MCP's args when `process.getuid() === 0`. Any new approach that launches its own browser needs the same flag, or every run of it fails at launch.
@@ -310,6 +310,6 @@ Real-agent tasks live in `agent/tasks.ts`:
 
 - Prefer a local fixture page; add it to `fixtures.ts` (or `fixtures-more.ts`, `fixtures-long.ts`).
 - `expect` must only match a correct answer.
-- When an agent fails somewhere new, turn that page into a task; follow [fixture and grader rules](../AGENTS.md#working).
+- When an agent fails somewhere new, turn that page into a task with a passing case and a near-miss failing grader case.
 
 Token-replay tasks live in `tasks.ts` as scripted steps (`open`, `click`, `type`, `read`, ...).

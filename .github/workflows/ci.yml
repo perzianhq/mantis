@@ -53,5 +53,7 @@ jobs:
           npm install "$RUNNER_TEMP"/mantis-browser-*.tgz
           if [ "$RUNNER_OS" = "Linux" ]; then ./node_modules/.bin/mantis install --with-deps; else ./node_modules/.bin/mantis install; fi
           printf '<title>t</title><button>Go</button>' > page.html
-          ./node_modules/.bin/mantis read "file://$PWD/page.html" | tee out.txt
+          dir=$(pwd -W 2>/dev/null || pwd)
+          case "$dir" in /*) url="file://$dir/page.html" ;; *) url="file:///$dir/page.html" ;; esac
+          ./node_modules/.bin/mantis read "$url" | tee out.txt
           grep -q "Go" out.txt

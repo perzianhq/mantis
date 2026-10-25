@@ -1,0 +1,50 @@
+name: Bug report
+description: Report a problem with Mantis.
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Mantis version
+      description: Run `npm ls mantis-browser` to find it.
+      placeholder: npm ls mantis-browser
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: OS
+      options:
+        - Windows
+        - macOS
+        - Linux
+    validations:
+      required: true
+  - type: input
+    id: node_version
+    attributes:
+      label: Node version
+    validations:
+      required: true
+  - type: input
+    id: mcp_client
+    attributes:
+      label: MCP client
+  - type: textarea
+    id: command
+    attributes:
+      label: What you ran
+      description: Tool call or command.
+    validations:
+      required: true
+  - type: textarea
+    id: expected_actual
+    attributes:
+      label: Expected vs what happened
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Output or error
+      render: text
