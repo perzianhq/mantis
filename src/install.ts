@@ -9,6 +9,7 @@ type Resolve = (id: string) => string;
 
 export interface InstallDependencies {
   execPath?: string;
+  prefetchOcr?: () => Promise<void>;
   resolve?: Resolve;
   spawn?: Spawn;
 }
@@ -33,16 +34,27 @@ export function bundledPlaywrightCli(resolve: Resolve = localRequire.resolve): s
 }
 
 /** Install Chromium through the Playwright version bundled with Mantis. */
-export function installChromium(dependencies: InstallDependencies = {}, withDeps = false): Promise<number> {
+export async function installChromium(dependencies: InstallDependencies = {}, withDeps = false): Promise<number> {
   const command = dependencies.execPath ?? process.execPath;
   const cli = bundledPlaywrightCli(dependencies.resolve);
   const spawn: Spawn = dependencies.spawn ?? ((file, args, options) => nodeSpawn(file, [...args], options));
 
-  return new Promise((resolve, reject) => {
+  const exitCode = await new Promise<number>((resolve, reject) => {
     const child = spawn(command, [cli, 'install', ...(withDeps ? ['--with-deps'] : []), 'chromium'], { stdio: 'inherit' });
     child.once('error', reject);
     child.once('close', (code) => resolve(code ?? 1));
   });
+  if (exitCode !== 0) return exitCode;
+
+  console.log('Fetching OCR language data (optional)...');
+  const prefetchOcr = dependencies.prefetchOcr ?? (async () => (await import('./fallback/ocr.js')).prefetchOcrData());
+  try {
+    await prefetchOcr();
+  } catch (error) {
+    const firstLine = String(error instanceof Error ? error.message : error).split('\n')[0] || 'Unknown error';
+    console.warn(`OCR data not fetched (ocr will download it on first use): ${firstLine}`);
+  }
+  return 0;
 }
 
 /** Handle the install subcommand, returning undefined when another command should handle the arguments. */

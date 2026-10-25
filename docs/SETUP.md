@@ -15,8 +15,8 @@ On a bare Linux server or container, run `npx -y -p mantis-browser mantis instal
 
 Try it without an agent: `npx -y -p mantis-browser mantis read https://example.com`
 
-The first `ocr` call downloads English language data to `~/.cache/mantis/tessdata` (or `MANTIS_TESSDATA`).
-For offline OCR, use it once online first or provide that folder with `eng.traineddata`.
+`mantis install` also fetches English OCR language data to `~/.cache/mantis/tessdata`; a fetch failure is only a warning.
+For offline OCR, provide `MANTIS_TESSDATA` with `eng.traineddata`.
 
 ## Build and test
 
