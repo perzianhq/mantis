@@ -65,22 +65,27 @@ Verdict (Opus review, 2026-10-24): good enough to launch as a v0.x beta. Accurac
 ### Before launch (moved up, 2026-10-24)
 - `long-live-v1`: 16 long real-site tasks (5 multi-entity extraction, 4 search+facets+pagination, 3 form fills without submit, 2 demo-site test-account flows, 2 new-tab/iframe/upload; 10 medium, 6 hard; at most 4 demo sites). Size on the tree walkthrough at 20-40 calls (about 15-30 for Mantis), cap 100 calls and 1200 s. Reviewed deterministic keys and final-state validators; sol only for leftovers. Pilot once per approach and model, replace failures, then freeze (at least 12 must survive). Luna and Haiku, Mantis vs tree, 3 runs each (192 runs, plus 64-run pilot). Report the median paired ratio per task with a bootstrap CI over tasks, on rows where both succeeded. Backs the long-task claim on real sites, which is measured on local fixtures only (`long-local-v1`). Does not block launch if the copy stays scoped to local fixtures; ship as a labelled follow-up within about 2 weeks. Draft: `bench/agent/long-live-v1-draft.json`.
 
-### Within about 2 weeks after launch
-- Re-run tree and screenshots on the frozen commit (also fixes the Haiku token comparability caveat).
-- Replace the fragile `data-gov-climate` task in a v1.8.
+### Before launch, remaining (moved up, 2026-10-25)
+- [x] README opens with the GIF, install and a 3-line example.
+- [x] [CONTRIBUTING.md](../CONTRIBUTING.md) and [CHANGELOG.md](../CHANGELOG.md). Issue templates were done earlier.
+- [ ] Re-run Haiku tree and screenshots on the same CLI build and machine as the Mantis re-run (local CLI 2.1.161), so the live-v1 token and latency columns become comparable. Mantis `src/` is frozen at `v0.1.6` (`059cccf`); since `70dbd5f` it only gained install changes and the MCP note, so Mantis rows stay valid. 180 Haiku runs (30 tasks x 3 x 2 approaches); Luna needs no re-run.
+- [ ] Replace the fragile `data-gov-climate` task (a v1.8, live-v1 only): pick a stable replacement, run all three approaches on it for both models (18 runs), and disclose the swap beside the scores.
+
+### Optional
+- Add Claude's own browser tools (Claude in Chrome, built-in browser pane) as a fourth approach on a few long tasks. Unmeasured; Claude would be the agent, so it is not like-for-like with the Luna/Haiku rows.
 
 ### After launch
-- CONTRIBUTING, CHANGELOG. (Issue templates are done: bug report and "task where Mantis loses".)
 - ~~Add `upload` to the tool table in SETUP.md~~ (done).
-- README GIF and video from the [LAUNCH.md](LAUNCH.md) gate.
+- Integration PRs and guides: [LAUNCH.md](LAUNCH.md#5-after-launch-becoming-the-default).
 
 ### Action plan (remaining)
 1. ~~Cut v0.1.6~~ (done: npm, GitHub tag, MCP Registry).
 2. ~~Spot-check about 30 sol verdicts~~ (done, recorded in [RESULTS.md](../bench/RESULTS.md)).
 3. ~~Untrusted-content note; GitHub repo topics~~ (done).
 4. ~~Clean untracked scratch files~~ (done).
-5. Submit listings: Smithery, mcp.so, Glama, `awesome-mcp-servers` PR.
-6. Record the 30-second video and GIF; README opens with it. Demo task, figures and cross-check: `video/gif.md`.
+5. ~~Submit listings~~ (Glama and `awesome-mcp-servers` done; Smithery and mcp.so skipped, paid).
+5b. Finish the two unchecked items in "Before launch, remaining" above.
+6. ~~Record the 30-second video and GIF; README opens with it~~ (done, [video/gif.md](../video/gif.md)).
 7. Show HN, Tue-Thu 8-10am US Eastern.
 
 ### Biggest risks

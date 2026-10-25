@@ -6,6 +6,14 @@
 
 It works with Claude Code, Codex, Cursor or your own agent as an MCP server. [Install in two commands](docs/SETUP.md#install).
 
+```bash
+npx -y -p mantis-browser mantis install
+claude mcp add mantis -- npx -y -p mantis-browser mantis-mcp
+npx -y -p mantis-browser mantis read https://example.com   # try it without an agent
+```
+
+Windows, Linux servers and other agents: [SETUP](docs/SETUP.md#install).
+
 <p align="center"><img src="video/mantis-demo.gif" alt="Side-by-side replay of the same task with Mantis and Playwright MCP: Mantis finishes in 10 calls and about 292k input tokens, Playwright MCP in 22 calls and about 733k" width="100%"></p>
 
 *One real task (Luna, logged runs replayed): about a third less time, over 2x fewer input tokens, about half the calls. This is a selected example from 16 long tasks; medians across all 16 are in [Results](#results). [Full video](video/mantis-demo.mp4).*
