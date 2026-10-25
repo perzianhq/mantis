@@ -1808,8 +1808,8 @@
       "toolCalls": 24,
       "totalInputTokens": 281000,
       "wallS": 87.16,
-      "verdict": "success",
-      "reason": "The captures support the New Window visit and later recheck, all four correctly associated frame texts, and the final File Uploader with README.md selected; the report distinguishes earlier observations from the final page, and the journal records zero submissions.",
+      "verdict": "failure",
+      "reason": "Manual review override (was success): the agent's own report says it did not visually confirm the selected filename on the final upload page, so the README.md selection is unverified. Frame texts and zero submissions were otherwise correct.",
       "evidence": [
         "F1",
         "F2",
@@ -1823,12 +1823,18 @@
       ],
       "frameCount": 9,
       "finalFrame": "F9",
-      "judgeVerdict": "success",
+      "judgeVerdict": "failure",
       "checks": null,
       "deterministic": null,
       "grading": "judge",
       "siteFailure": false,
-      "judgeModel": "gpt-6.1-sol"
+      "judgeModel": "gpt-6.1-sol",
+      "override": {
+        "from": "success",
+        "to": "failure",
+        "by": "manual review",
+        "why": "filename not visually confirmed (agent admission)"
+      }
     },
     {
       "task": "longlive-internet-window-frames-upload",
