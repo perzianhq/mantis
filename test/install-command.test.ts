@@ -27,3 +27,14 @@ it('does not install for unknown or extra arguments, and the missing-browser hin
   expect(spawn).not.toHaveBeenCalled();
   expect(missingChromiumHint(new Error("Executable doesn't exist"))).toContain('mantis install');
 });
+
+it('passes --with-deps through for Linux system libraries and rejects other flags', async () => {
+  const child = new EventEmitter();
+  const spawn = vi.fn(() => child);
+  const result = runInstallCommand(['install', '--with-deps'], { execPath: '/node', resolve: () => '/p/playwright/cli.js', spawn });
+  child.emit('close', 0);
+  await expect(result).resolves.toBe(0);
+  expect(spawn).toHaveBeenCalledWith('/node', ['/p/playwright/cli.js', 'install', '--with-deps', 'chromium'], { stdio: 'inherit' });
+  await expect(runInstallCommand(['install', '--force'], { spawn })).resolves.toBe(2);
+  expect(spawn).toHaveBeenCalledTimes(1);
+});

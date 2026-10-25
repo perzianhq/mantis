@@ -11,6 +11,8 @@ claude mcp add mantis -- npx -y -p mantis-browser mantis-mcp
 
 On native Windows: `claude mcp add mantis -- cmd /c npx -y -p mantis-browser mantis-mcp`
 
+On a bare Linux server or container, run `npx -y -p mantis-browser mantis install --with-deps` instead; it also fetches Chromium's system libraries (needs sudo).
+
 Try it without an agent: `npx -y -p mantis-browser mantis read https://example.com`
 
 The first `ocr` call downloads English language data to `~/.cache/mantis/tessdata` (or `MANTIS_TESSDATA`).

@@ -33,13 +33,13 @@ export function bundledPlaywrightCli(resolve: Resolve = localRequire.resolve): s
 }
 
 /** Install Chromium through the Playwright version bundled with Mantis. */
-export function installChromium(dependencies: InstallDependencies = {}): Promise<number> {
+export function installChromium(dependencies: InstallDependencies = {}, withDeps = false): Promise<number> {
   const command = dependencies.execPath ?? process.execPath;
   const cli = bundledPlaywrightCli(dependencies.resolve);
   const spawn: Spawn = dependencies.spawn ?? ((file, args, options) => nodeSpawn(file, [...args], options));
 
   return new Promise((resolve, reject) => {
-    const child = spawn(command, [cli, 'install', 'chromium'], { stdio: 'inherit' });
+    const child = spawn(command, [cli, 'install', ...(withDeps ? ['--with-deps'] : []), 'chromium'], { stdio: 'inherit' });
     child.once('error', reject);
     child.once('close', (code) => resolve(code ?? 1));
   });
@@ -48,9 +48,10 @@ export function installChromium(dependencies: InstallDependencies = {}): Promise
 /** Handle the install subcommand, returning undefined when another command should handle the arguments. */
 export async function runInstallCommand(args: readonly string[], dependencies?: InstallDependencies): Promise<number | undefined> {
   if (args[0] !== 'install') return undefined;
-  if (args.length !== 1) {
-    console.error('usage: mantis install');
+  const withDeps = args[1] === '--with-deps';
+  if (args.length > 2 || (args.length === 2 && !withDeps)) {
+    console.error('usage: mantis install [--with-deps]');
     return 2;
   }
-  return installChromium(dependencies);
+  return installChromium(dependencies, withDeps);
 }
