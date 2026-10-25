@@ -8,7 +8,8 @@ import { pathToFileURL } from 'node:url';
 import { applyRunStatus, buildEvidencePacket, buildEvidencePrompt, buildJudgePrompt, deterministicGradeForRun, isAccessBlockText, isEvidenceRun, parseJudgeOutput, relocateSavedPath, prepareFrameImage, renderJudgedMarkdown, selectJudgeScreenshot, shouldJudgeNonSuccess, universallyBlockedTasks } from '../bench/agent/judge.js';
 import type { JudgedRun, PacketFrame } from '../bench/agent/judge.js';
 import { decodePng, encodePng } from '../bench/agent/png.js';
-import { PAGE_STATE_FUNCTION, parsePageState } from '../bench/agent/evidence.js';
+import { MAX_FRAMES, PAGE_STATE_FUNCTION, packEvidence, parsePageState } from '../bench/agent/evidence.js';
+import type { CapturedFrame } from '../bench/agent/evidence.js';
 import { chromiumForMcp } from '../bench/adapters.js';
 
 const dirs: string[] = [];
@@ -221,7 +222,7 @@ describe('evidence packet prompt', () => {
     expect(prompt).toContain('F3 (final, captured after the agent finished)');
     expect(prompt).toContain('Image: f1.png (attached)');
     expect(prompt).toContain('END-OF-FINAL'); // final text in full
-    expect(prompt).not.toContain('TAIL-OF-FIRST'); // earlier frames only get the first ~5,000 characters
+    expect(prompt).not.toContain('TAIL-OF-FIRST'); // earlier frames only get the first ~3,000 characters
     expect(prompt).toContain('Form values:\n- Quantity: 2\n- Gift: unchecked');
     expect(prompt).toContain('Base your verdict on the frames; cite the frame IDs you rely on.');
     expect(prompt).toContain('Missing verification of a required detail');
@@ -295,6 +296,33 @@ describe('evidence packet files', () => {
     return { logs, sidecar, dest };
   };
   const size = (file: string): [number, number] => { const img = decodePng(readFileSync(file)); return [img.width, img.height]; };
+
+  it('keeps each distinct URL through the expanded cap and removes the oldest duplicate before the final frame', () => {
+    const writeRun = (urls: string[]) => {
+      const logs = path.join(dir(), 'logs');
+      const dest = dir();
+      mkdirSync(logs);
+      const png = solid(2, 2);
+      const captured: CapturedFrame[] = urls.map((url, i) => ({ step: i, url, text: `entry ${i}`, forms: [], png, thumb: new Uint8Array([i * 3]), ...(i === urls.length - 1 ? { final: true } : {}) }));
+      const packed = packEvidence(captured, 'run', 0);
+      for (const file of packed.pngs) writeFileSync(path.join(logs, file.file), file.png);
+      const sidecar = path.join(logs, 'run.evidence.json');
+      writeFileSync(sidecar, JSON.stringify(packed.sidecar));
+      return buildEvidencePacket(sidecar, logs, dest);
+    };
+
+    const distinct = Array.from({ length: MAX_FRAMES }, (_, i) => `https://example.com/entry-${i}`);
+    const packet = writeRun(distinct);
+    expect(packet.frames).toHaveLength(MAX_FRAMES);
+    expect(packet.frames.map((frame) => frame.url)).toEqual(distinct);
+    expect(packet.frames.at(-1)).toMatchObject({ final: true, text: `entry ${MAX_FRAMES - 1}` });
+
+    const nearMiss = writeRun(['https://example.com/repeated', 'https://example.com/repeated', ...Array.from({ length: MAX_FRAMES - 1 }, (_, i) => `https://example.com/entry-${i}`)]);
+    expect(nearMiss.frames).toHaveLength(MAX_FRAMES);
+    expect(nearMiss.frames.map((frame) => frame.text)).not.toContain('entry 0');
+    expect(nearMiss.frames.map((frame) => frame.text)).toContain('entry 1');
+    expect(nearMiss.frames.at(-1)).toMatchObject({ final: true, text: `entry ${MAX_FRAMES}` });
+  });
 
   it('finds a recorded foreign-machine evidence path by basename in the log folder, and keeps unknown paths unchanged', () => {
     const { logs, sidecar, dest } = setup([{ file: 'a.final.png', png: solid(100, 80), final: true }]);

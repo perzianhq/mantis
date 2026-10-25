@@ -1153,20 +1153,21 @@ it('always keeps the final frame and drops the earlier near-duplicate of it', ()
   expect(selectFrames([])).toEqual([]);
 });
 
-it('caps at 12 keeping the first, the last and the biggest changes in chronological order', () => {
+it('keeps runs below the expanded cap and, at a smaller cap, retains the newest high-signal frames', () => {
   const jumps = new Set([5, 9, 14]);
   let value = 10;
   const frames = Array.from({ length: 20 }, (_, i) => { value += i === 0 ? 0 : jumps.has(i) ? 40 : 3; return fr(`f${i}`, value); });
-  const kept = selectFrames(frames);
+  expect(selectFrames(frames)).toEqual(frames); // below the expanded default cap
+  const kept = selectFrames(frames, 12);
   expect(kept).toHaveLength(12);
-  // The three big jumps are kept; the rest of the slots go to the earliest of the equally small changes.
-  expect(names(kept)).toEqual(['f0', 'f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8', 'f9', 'f14', 'f19']);
-  expect(names(selectFrames(frames))).toEqual(names(kept)); // deterministic
-  expect(names(selectFrames(frames, 12).slice(0, 1))).toEqual(['f0']);
+  // The three big jumps are kept; ties prefer newer frames so stale duplicates are removed first.
+  expect(names(kept)).toEqual(['f5', 'f9', 'f10', 'f11', 'f12', 'f13', 'f14', 'f15', 'f16', 'f17', 'f18', 'f19']);
+  expect(names(selectFrames(frames, 12))).toEqual(names(kept)); // deterministic
+  expect(names(selectFrames(frames, 12).slice(0, 1))).toEqual(['f5']);
   expect(selectFrames(frames.slice(0, 12))).toHaveLength(12); // at the cap: nothing dropped
-  // A URL change outranks a bigger pixel change.
+  // The newest frame per URL is kept, then a URL change outranks a bigger pixel change for the spare slot.
   const mixed = [fr('a', 10), fr('b', 60), fr('c', 63, 'https://example.com/other'), fr('d', 66, 'https://example.com/other'), fr('e', 69, 'https://example.com/other'), fr('final', 72, 'https://example.com/other')];
-  expect(names(selectFrames(mixed, 3))).toEqual(['a', 'c', 'final']);
+  expect(names(selectFrames(mixed, 3))).toEqual(['b', 'c', 'final']);
 });
 
 it('round-trips PNGs, rejects unsupported ones, and resizes by area averaging', () => {

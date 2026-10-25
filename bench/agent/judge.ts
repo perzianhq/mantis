@@ -183,7 +183,8 @@ export function buildJudgePrompt(input: { task: string; website: string; finalUr
 /** One harness frame as the judge sees it: blind image name, page text as captured, no step numbers or tool names. */
 export interface PacketFrame { id: string; url: string; text: string; final: boolean; forms?: FormValue[]; journal?: EvidenceJournal; image: string }
 
-const EARLIER_EXCERPT_CHARS = 5_000;
+// At most 23 earlier frames plus a 30k final-state excerpt stays comfortably within the judge context budget.
+const EARLIER_EXCERPT_CHARS = 3_000;
 const FINAL_EXCERPT_CHARS = 30_000;
 const EARLIER_FRAME_MAX = { width: 640, height: 400 };
 

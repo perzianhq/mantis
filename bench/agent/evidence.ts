@@ -54,7 +54,8 @@ export function evidenceShowsOnlySiteErrors(frames: readonly Pick<EvidenceFrame,
 
 export const FINAL_TEXT_CAP = 30_000;
 export const STEP_TEXT_CAP = 8_000;
-export const MAX_FRAMES = 12;
+/** 24 entries retain multi-result research evidence while fitting the judge packet budget. */
+export const MAX_FRAMES = 24;
 
 /**
  * Arrow function source evaluated in the page (Playwright `page.evaluate(string)` or Playwright MCP
@@ -167,8 +168,9 @@ export function parsePageState(text: string): PageState | null {
  * Drop near-duplicate frames and cap the count. Input is chronological; the last element is the final frame.
  * A frame is dropped when it is within `threshold` of the previous kept frame, on the same URL, and has unchanged
  * form values (if the frame before the final one is a near-duplicate of the final, that earlier one goes instead).
- * Above `max`, the first and last stay and the frames with the biggest visual, URL, or form-state change from their
- * predecessor fill the rest, in chronological order.
+ * Above `max`, the final frame and the newest frame for each URL stay where possible; the frames with the biggest
+ * visual or form-state change from their predecessor fill the remaining slots. Ties prefer newer frames, so stale
+ * duplicates are removed before the terminal state.
  */
 const sameForm = (a: FormValue, b: FormValue): boolean =>
   a.label === b.label && a.id === b.id && a.name === b.name && a.occurrence === b.occurrence
@@ -195,11 +197,24 @@ export function selectFrames<T extends { thumb: Uint8Array; url: string; forms?:
   if (last && last.url === final.url && thumbDiff(last.thumb, final.thumb) < threshold && !formsChanged(last.forms, final.forms)) seq.pop();
   seq.push(final);
   if (seq.length <= max) return seq;
-  const score = (i: number): number => thumbDiff(seq[i - 1]!.thumb, seq[i]!.thumb)
+  const score = (i: number): number => i === 0 ? 0 : thumbDiff(seq[i - 1]!.thumb, seq[i]!.thumb)
     + (seq[i - 1]!.url !== seq[i]!.url ? 50 : 0)
     + (formsChanged(seq[i - 1]!.forms, seq[i]!.forms) ? 10_000 : 0);
-  const middle = Array.from({ length: seq.length - 2 }, (_, k) => k + 1).sort((a, b) => score(b) - score(a) || a - b).slice(0, max - 2);
-  const keep = new Set([0, seq.length - 1, ...middle]);
+  // One most-recent representative per URL makes a multi-entry traversal survive the cap.  The final capture is
+  // always represented, even if it shares a URL with an earlier frame.
+  const required = new Set<number>();
+  const urls = new Set<string>();
+  for (let i = seq.length - 1; i >= 0; i--) {
+    if (!urls.has(seq[i]!.url)) {
+      urls.add(seq[i]!.url);
+      required.add(i);
+    }
+  }
+  required.add(seq.length - 1);
+  const ranked = (indices: number[]) => indices.sort((a, b) => score(b) - score(a) || b - a);
+  const keep = required.size <= max
+    ? new Set([...required, ...ranked(Array.from({ length: seq.length - 1 }, (_, i) => i).filter((i) => !required.has(i))).slice(0, max - required.size)])
+    : new Set([seq.length - 1, ...ranked([...required].filter((i) => i !== seq.length - 1)).slice(0, max - 1)]);
   return seq.filter((_, i) => keep.has(i));
 }
 

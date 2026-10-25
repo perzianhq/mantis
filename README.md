@@ -20,16 +20,9 @@ Same tasks, same pass criteria, three ways to browse. Mantis vs the accessibilit
 
 **Long multi-step workflows** (`long-local-v1`: 16 local tasks with in-page hazards, 3 runs per approach, code-graded). Score is out of 48; time is mean agent execution per run.
 
-| Model | | Mantis | Accessibility tree | Screenshots |
-|---|---|---:|---:|---:|
-| `gpt-6-luna` | Correct | **48/48** | **48/48** | 42/48 |
-| | Time | **103s** | 132s | 163s |
-| | Input tokens | **17.3M** | 28.0M | 31.0M |
-| | Tool calls | **1190** | 1685 | 2774 |
-| `claude-haiku-5-5` | Correct | **48/48** | **48/48** | **48/48** |
-| | Time | **42s** | 59s | 64s |
-| | Input tokens | **12.1M** | 18.7M | 27.1M |
-| | Tool calls | **1501** | 1827 | 2876 |
+**Headline (Mantis / tree / screenshots):** Luna **48/48 / 48/48 / 42/48**; Haiku **48/48 / 48/48 / 48/48**. Mantis is 22–29% faster with 35–38% fewer input tokens than the tree.
+
+Full table: [bench/RESULTS.md](bench/RESULTS.md)
 
 **Real sites** (`live-v1` v1.7: 30 tasks, 3 runs per approach, judged blind). Success out of 90:
 
