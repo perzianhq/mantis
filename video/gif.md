@@ -1,6 +1,6 @@
 # Demo task for the video and README GIF
 
-One real task, same prompt for both tools, shown side by side with a live token counter. Record on **Luna** (steadier across reruns than Haiku).
+One real task, same prompt for both tools, shown side by side with an estimated replay token counter. Record on **Luna** (steadier across reruns than Haiku).
 
 **Task:** `longlive-gutenberg-dickens-search` (from `long-live-v1`). On Project Gutenberg, run Advanced Search for author Charles Dickens, language English, LoC class PR. Inspect result page one, follow next to page two, then look up #98 and #1400 through separate Quick searches, report `eBook number | title | release date | LoC class`, and return to page two of the original search. About 11 to 30 tool calls, 1 to 2 minutes.
 
@@ -17,7 +17,7 @@ Luna (`gpt-6-luna`, local). Published run and an independent rerun on the same c
 | Tool calls, published | 11 | 22 | -50% |
 | Tool calls, rerun | 14 | 29 | -52% |
 
-Mantis is stable across the two runs (about 290k tokens, 47-50 s). The tree varies more (733k to 1.12M tokens). Quote the range: **about 3x to 4x fewer input tokens, about a third less time, about half the calls.** Luna reports tokens only, so no dollar figure is claimed for it.
+Mantis is stable across the two runs (about 290k tokens, 47-50 s). The tree varies more (733k to 1.12M tokens). Quote the range: **about 2.5x to 4x fewer input tokens, about a third less time, about half the calls.** Luna reports tokens only, so no dollar figure is claimed for it.
 
 Haiku 5.5 (`claude-haiku-5-5`) is less steady on this task: Mantis 315k tokens published vs 417k on the rerun (the rerun took a longer path with a full-page read), tree 761k vs 738k.
 
@@ -47,8 +47,8 @@ Haiku on the same task (published / rerun): tokens -59% / -69%, time -41% / -58%
 
 ## Honesty note
 
-This is the most favourable of the 16 long tasks, picked for the demo because short tasks tie. Across all long-live-v1 tasks the medians are smaller: wall time -33% on both models, input tokens -28% (Luna) and -42% (Haiku), and total Haiku cost -26%. Say so in the caption. Full results and failures: `bench/RESULTS.md`.
+This is a selected example from the 16 long tasks, picked for the demo because short tasks tie. Across all long-live-v1 tasks the medians are smaller: wall time -33% on both models, input tokens -28% (Luna) and -42% (Haiku), and total Haiku cost -26%. Say so in the caption. Full results and failures: `bench/RESULTS.md`.
 
 ## Recording tips
 
-Fresh browser profile, same model, show the per-call token counter. Last frame, safe to claim: "about a third less time, 3x or more fewer input tokens, half the calls". Do not put a single exact number on screen.
+Fresh browser profile, same model, show the per-call token counter. Last frame, safe to claim: "about a third less time, over 2x fewer input tokens, about half the calls". Show exact final totals; label intermediate estimates.
