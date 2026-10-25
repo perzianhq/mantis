@@ -75,7 +75,7 @@ Verdict (Opus review, 2026-10-24): good enough to launch as a v0.x beta. Accurac
 - README GIF and video from the [LAUNCH.md](LAUNCH.md) gate.
 
 ### Action plan (remaining)
-1. Cut v0.1.6 (bump `package.json` and `server.json`, tag, publish, registry job).
+1. ~~Cut v0.1.6~~ (done: npm, GitHub tag, MCP Registry).
 2. Spot-check about 30 sol verdicts (owner), recorded in [RESULTS.md](../bench/RESULTS.md).
 3. ~~Untrusted-content note; GitHub repo topics~~ (done).
 4. ~~Clean untracked scratch files~~ (done).
