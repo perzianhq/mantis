@@ -7,7 +7,7 @@
 | Approach | Runs | Success | Failure | Unsure | Blocked | Site broken | Overall success rate | Success rate excluding universally blocked / site-broken tasks | Avg tool calls | Avg input tokens | Avg time (s) |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | mantis | 48 | 45 | 3 | 0 | 0 | 0 | 93.8% | 93.8% | 27.8 | 544,594 | 120.9 |
-| tree | 48 | 45 | 3 | 0 | 0 | 0 | 93.8% | 93.8% | 33.4 | 857,916 | 147.5 |
+| tree | 48 | 44 | 4 | 0 | 0 | 0 | 91.7% | 91.7% | 33.4 | 857,916 | 147.5 |
 
 Universally blocked tasks: none. Site-broken tasks: none.
 
@@ -29,7 +29,7 @@ Universally blocked tasks: none. Site-broken tasks: none.
 | `longlive` medium: Prepare Selenium's Multiple Selection test page without submitting. Controls have | failure, failure, success | success, success, success |
 | `longlive` medium: This is Sauce Demo, an explicit test-account sandbox. Log in with its displayed st | success, success, success | success, success, success |
 | `longlive` hard: On Sauce Demo only, log in with displayed test credentials standard_user / secret_sa | success, success, success | success, success, success |
-| `longlive` medium: Perform one browser handoff check on The Internet demo. On Multiple Windows, click | success, success, failure | failure, success, failure |
+| `longlive` medium: Perform one browser handoff check on The Internet demo. On Multiple Windows, click | success, success, failure | failure, failure, failure |
 | `longlive` medium: On Selenium's XHTML test page, click 'Open new window'. Switch to the named result | success, success, success | success, success, success |
 
 ## Evidence and checks
