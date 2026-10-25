@@ -12,7 +12,7 @@ The supported release line is **0.1.x beta**. Security fixes are made against th
 
 Mantis automates a browser for an agent. It reduces page content to text, but it is not a security boundary around that content.
 
-- Page text is untrusted input that reaches the agent. Prompt injection is possible: Mantis does not sanitise page text or mark it as untrusted.
+- Page text is untrusted input that reaches the agent. Prompt injection is possible: Mantis does not sanitise page text. It tells the MCP client once, at initialise, that tool output is untrusted data; that is a hint to the model, not a guarantee.
 - `upload` resolves and reads local paths, then attaches the selected files to the current page. It accepts existing regular files from any location; it rejects missing paths and directories, but it does not restrict uploads to a working-directory allowlist. Only upload files you intend to disclose to that page.
 - Site memory is stored locally. By default it is in `~/.cache/mantis/sites` (or `MANTIS_MEMORY_DIR`) and persists hashes of rendered regions, item counts, and timestamps per origin; it does not persist page text, names, values, or URLs. Set `MANTIS_MEMORY=0` to disable it.
 - `ask_human` opens a headed browser window and requires a display. CAPTCHA, 2FA, payment, login, and comparable confirmation steps are handed to the human; Mantis does not solve CAPTCHAs.
