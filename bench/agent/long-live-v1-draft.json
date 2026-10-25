@@ -1456,6 +1456,10 @@
           "value": "Taller: 437133"
         }
       ],
+      "answerExcludes": [
+        "\\bof\\s+\\d",
+        "\\b\\d[\\d,]*\\s+(results|objects|works|records|matches)\\b"
+      ],
       "final": {
         "url": {
           "origin": "https://www.metmuseum.org",
@@ -1660,6 +1664,10 @@
           "type": "text",
           "value": "Taller: 437394"
         }
+      ],
+      "answerExcludes": [
+        "\\bof\\s+\\d",
+        "\\b\\d[\\d,]*\\s+(results|objects|works|records|matches)\\b"
       ],
       "final": {
         "url": {

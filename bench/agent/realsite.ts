@@ -54,6 +54,8 @@ export interface FormHistory {
 export interface DeterministicGrader {
   kind: 'fact' | 'form' | 'state';
   answerIncludes: MatchPredicate[];
+  /** Case-insensitive regular expressions the reply must not match (e.g. a live total the task forbids reporting). */
+  answerExcludes?: string[];
   final: {
     url: UrlPredicate;
     textIncludes: MatchPredicate[];
@@ -201,12 +203,16 @@ export function validateChecks(value: unknown): string | null {
   return null;
 }
 
+function compilesAsRegExp(source: string): boolean {
+  try { new RegExp(source, 'i'); return true; } catch { return false; }
+}
+
 /** Null for an absent or complete deterministic opt-in; otherwise a stable validation message. */
 export function validateDeterministicGrader(value: unknown): string | null {
   if (value === undefined) return null;
   if (!value || typeof value !== 'object' || Array.isArray(value)) return 'deterministic must be an object';
   const o = value as Record<string, unknown>;
-  if (Object.keys(o).some((key) => !['kind', 'answerIncludes', 'final', 'orderedStates', 'history'].includes(key))) return 'deterministic contains an unknown field';
+  if (Object.keys(o).some((key) => !['kind', 'answerIncludes', 'answerExcludes', 'final', 'orderedStates', 'history'].includes(key))) return 'deterministic contains an unknown field';
   if (o.kind !== 'fact' && o.kind !== 'form' && o.kind !== 'state') return 'deterministic.kind must be fact, form or state';
   if (!o.final || typeof o.final !== 'object' || Array.isArray(o.final)) return 'deterministic.final must be an object';
   const final = o.final as Record<string, unknown>;
@@ -219,6 +225,7 @@ export function validateDeterministicGrader(value: unknown): string | null {
     return scalar && (item.with === undefined || predicate(item.with));
   };
   if (!Array.isArray(o.answerIncludes) || !o.answerIncludes.every(predicate)) return 'deterministic.answerIncludes must be typed predicates';
+  if (o.answerExcludes !== undefined && (!Array.isArray(o.answerExcludes) || !o.answerExcludes.length || !o.answerExcludes.every((p) => typeof p === 'string' && p.trim() && compilesAsRegExp(p)))) return 'deterministic.answerExcludes must be non-empty valid regular expression strings';
   if (!final.url || typeof final.url !== 'object' || Array.isArray(final.url)) return 'deterministic.final.url must be an origin/path predicate';
   const url = final.url as Record<string, unknown>;
   if (Object.keys(url).some((key) => !['origin', 'path', 'alsoPaths', 'query'].includes(key)) || typeof url.origin !== 'string' || !url.origin.trim() || typeof url.path !== 'string' || !url.path.startsWith('/')) return 'deterministic.final.url must contain an origin and absolute path';
@@ -281,6 +288,7 @@ function parseDeterministicGrader(value: unknown): DeterministicGrader | undefin
   return {
     kind: o.kind,
     answerIncludes: predicates(o.answerIncludes),
+    ...(o.answerExcludes ? { answerExcludes: [...o.answerExcludes] } : {}),
     final: {
       url: { origin: o.final.url.origin.trim(), path: o.final.url.path, ...(o.final.url.alsoPaths ? { alsoPaths: [...o.final.url.alsoPaths] } : {}), ...(o.final.url.query ? { query: { ...o.final.url.query } } : {}) },
       textIncludes: predicates(o.final.textIncludes),
@@ -354,6 +362,7 @@ export function evaluateDeterministicGrader(grader: DeterministicGrader | undefi
   ) && Object.entries(grader.final.url.query ?? {}).every(([key, value]) => parsed!.searchParams.get(key) === value);
   const failed = [
     ...grader.answerIncludes.filter((item) => !matchesPredicate(answer, item)).map((item) => `answer lacks "${predicateLabel(item)}"`),
+    ...(grader.answerExcludes ?? []).filter((source) => new RegExp(source, 'i').test(answer.replace(/\s+/g, ' '))).map((source) => `answer contains forbidden pattern ${JSON.stringify(source)}`),
     ...(!urlMatches ? ['final URL does not match the required origin/path'] : []),
     ...(!matchingPathHeading ? ['final URL has no matching path-specific heading'] : []),
     ...(pathHeading && !matchesPredicate(answer, pathHeading.heading) ? [`answer lacks heading "${predicateLabel(pathHeading.heading)}" for the final path`] : []),
@@ -443,17 +452,29 @@ const COORDS = /\bat\s+[xy]\s*[=:]\s*\d{1,4}(?:\s*,\s*[xy]\s*[=:]\s*\d{1,4})?\b|
 const REF_TOKENS = /(?<![\w$.])e\d{1,5}\b|(?<![\w&])#\d{1,5}\b|\[?\bref(?:\s*[=:]\s*|\s+)\[?\w*\d+\]?/gi;
 
 /**
+ * Numbers that belong to the visited pages (a whole URL path segment or query value, or a `#N` written in page text), so
+ * an answer's `#98` that names a record is not mistaken for an element ref and redacted.
+ */
+export function pageNumbers(urls: readonly (string | null | undefined)[], texts: readonly string[]): Set<string> {
+  const numbers = new Set<string>();
+  for (const url of urls) for (const m of (url ?? '').matchAll(/[/=](\d{1,5})(?=[/?&#.]|$)/g)) numbers.add(m[1]!);
+  for (const text of texts) for (const m of text.matchAll(/(?<![\w&])#(\d{1,5})\b/g)) numbers.add(m[1]!);
+  return numbers;
+}
+
+/**
  * The final reply with anything that could reveal the browsing tool removed, so a judge cannot tell which
  * approach produced it: tool identifiers, numbered element refs (e42, #12, ref=...), and pixel coordinates
- * are redacted in place; FINAL_URL lines are omitted because that value is passed separately.
+ * are redacted in place; FINAL_URL lines are omitted because that value is passed separately. A `#N` whose N is in
+ * `keepNumbers` (see `pageNumbers`) is a value from the pages, not a ref, and stays.
  */
-export function sanitizeAnswer(text: string): string {
+export function sanitizeAnswer(text: string, keepNumbers?: ReadonlySet<string>): string {
   const kept = text.split(/\r?\n/).flatMap((line) => {
     if (/^\s*FINAL_URL:/i.test(line)) return [];
     const redacted = line
       .replace(TOOL_IDENTIFIERS, '')
       .replace(COORDS, '')
-      .replace(REF_TOKENS, '')
+      .replace(REF_TOKENS, (token) => (keepNumbers && /^#\d{1,5}$/.test(token) && keepNumbers.has(token.slice(1)) ? token : ''))
       .replace(/[ \t]{2,}/g, ' ')
       .replace(/\(\s*\)/g, '')
       .replace(/\s+([,.;:!?])/g, '$1')

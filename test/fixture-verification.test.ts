@@ -150,6 +150,25 @@ it('long-live-v1 deterministic contracts accept reviewed keys and reject an asso
   }
 });
 
+it('answerExcludes rejects replies that report a forbidden live total and validates its patterns', () => {
+  const grader = {
+    kind: 'fact' as const, answerIncludes: [{ type: 'text' as const, value: 'Taller: B' }],
+    answerExcludes: ['\\bof\\s+\\d', '\\b\\d[\\d,]*\\s+(results|objects)\\b'],
+    final: { url: { origin: 'https://fixture.test', path: '/list' }, textIncludes: [{ type: 'entity' as const, value: '1-10 of' }] },
+  };
+  expect(validateDeterministicGrader(grader)).toBeNull();
+  const frames = [{ final: true, url: 'https://fixture.test/list', text: 'Showing 1-10 of 244 results' }];
+  // Passing: reply states the answer and no live total (a page range alone is not a count).
+  expect(evaluateDeterministicGrader(grader, 'A | Pond of Water Lilies | 92.7 x 73.7 cm\nTaller: B\nShowing 1-10.', frames)?.pass).toBe(true);
+  // Near misses: the right answer plus a live total, in two phrasings, fails.
+  expect(evaluateDeterministicGrader(grader, 'Taller: B\nShowing 1-10 of 244.', frames)?.pass).toBe(false);
+  expect(evaluateDeterministicGrader(grader, 'Taller: B\nThe search has 4,025 results.', frames)?.failed.join()).toContain('forbidden pattern');
+  // Invalid or empty exclusion lists are rejected at load time.
+  expect(validateDeterministicGrader({ ...grader, answerExcludes: ['('] })).not.toBeNull();
+  expect(validateDeterministicGrader({ ...grader, answerExcludes: [] })).not.toBeNull();
+  expect(validateDeterministicGrader({ ...grader, answerExcludes: [''] })).not.toBeNull();
+});
+
 it('form-history graders require an ordered, redacted journal and exact control identity', () => {
   const grader = {
     kind: 'form' as const,
