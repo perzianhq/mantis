@@ -9,12 +9,12 @@ cheap orientation, not reading a whole article.
 ## 2. Gate: don't launch until all of these are done
 
 - [x] Freeze the evaluated source version (v0.1.5 = `70dbd5f`; headline runs: `416fd28`, `83ebb6a`, differences in [RESULTS.md](../bench/RESULTS.md)) and complete the [planned evaluations](PLAN.md#current-sequence).
-- [ ] Make a 30-second side-by-side video of the same task, with a live token counter; export a README GIF.
+- [ ] Make a 30-second side-by-side video of the same task, with a live token counter; export a README GIF. Task, figures and cross-check: [video/gif.md](../video/gif.md) (record on Luna).
 - [ ] Open the README with the GIF, measured claim, [install](SETUP.md#install) and a 3-line example.
 - [x] Configure npm Trusted Publishing for `perzianhq/mantis` and `.github/workflows/publish-npm.yml`.
 - [x] Publish a matching GitHub release (v0.1.5).
 - [x] CI green on Ubuntu, Windows and macOS (tests plus a packed-install check); issue templates and `SECURITY.md` in place.
-- [x] v0.1.6 cut (install, OCR prefetch, CI, untrusted-data note). [ ] Submit directory listings.
+- [x] v0.1.6 cut (install, OCR prefetch, CI, untrusted-data note); judge spot-check recorded. [ ] Submit directory listings.
 
 ## 3. Launch week
 
