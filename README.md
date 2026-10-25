@@ -6,6 +6,14 @@
 
 It works with Claude Code, Codex, Cursor or your own agent as an MCP server. [Install in two commands](docs/SETUP.md#install).
 
+```bash
+npx -y -p mantis-browser mantis install
+claude mcp add mantis -- npx -y -p mantis-browser mantis-mcp
+npx -y -p mantis-browser mantis read https://example.com   # try it without an agent
+```
+
+Windows, Linux servers and other agents: [SETUP](docs/SETUP.md#install).
+
 <p align="center"><img src="video/mantis-demo.gif" alt="Side-by-side replay of the same task with Mantis and Playwright MCP: Mantis finishes in 10 calls and about 292k input tokens, Playwright MCP in 22 calls and about 733k" width="100%"></p>
 
 *One real task (Luna, logged runs replayed): about a third less time, over 2x fewer input tokens, about half the calls. This is a selected example from 16 long tasks; medians across all 16 are in [Results](#results). [Full video](video/mantis-demo.mp4).*
@@ -35,25 +43,24 @@ Same tasks, same pass criteria, three ways to browse: Mantis, the accessibility 
 | Input tokens | **262k** | 362k | **432k** | 746k |
 | Tool calls | **18** | 25 | **26** | 32 |
 
-**Short real-site tasks** (`live-v1` v1.7: 30 tasks, 90 runs per cell, blind judge or validators):
+**Short real-site tasks** (`live-v1` v1.8: 30 tasks, 90 runs per cell, blind judge or validators):
 
 | | Luna Mantis | Luna tree | Luna shots | Haiku Mantis | Haiku tree | Haiku shots |
 |---|---:|---:|---:|---:|---:|---:|
-| Success /90 | 89 | **90** | 86 | 87 | 87 | **89** |
-| Tool calls (median) | **4** | **4** | 6 | **4** | 7 | 8 |
-| Input tokens (mean) | **88k** | 123k | 123k | 78k* | 117k* | 53k* |
-| Tool output (median chars) | 9.3k | 54.9k | **0.1k** | 9.6k | 29.0k | **0.6k** |
-| Time (median) | 44s | **23s** | 29s | 46s* | **18s*** | **18s*** |
+| Success /90 | 89 | **90** | 86 | 89 | 89 | **90** |
+| Tool calls (median) | **3** | 4 | 6 | **4** | 7 | 7.5 |
+| Input tokens (mean) | **87k** | 122k | 122k | **72k** | 142k | 75k |
+| Tool output (median chars) | 9.2k | 54.9k | **0.1k** | 9.5k | 27.0k | **0.1k** |
+| Time (median) | 44s | **23s** | 28s | 45s | 43s | **33s** |
 
-\*Haiku tokens and time are not comparable across columns: tree and screenshot runs used a different CLI build and machine than the later Mantis re-run. The screenshot baseline is our own minimal tool, not a product's.
+Haiku tree and screenshot runs were redone on the same CLI build (2.1.161, local) as the Mantis re-run, so tokens are comparable; their times come from a 16-way parallel run and may be inflated. The screenshot baseline is our own minimal tool, not a product's.
 
 **Reading it:**
 - **Long tasks:** about a third less time, 28-42% fewer input tokens, 19-28% fewer calls, with accuracy equal or better.
-- **Short tasks:** accuracy ties; Mantis returns about 3-6x less page text than the tree, but is not faster. The Mantis rows are a later re-run, and the original Haiku run had equal medians across approaches (17.5-17.9s). The slowdown's cause is not isolated.
-- **Luna's lead is narrow:** 3 of its 4 net wins come from one iframe task where Playwright MCP misses frame contents ([playwright#43628](https://github.com/microsoft/playwright/issues/43628)). Without it: 38/45 vs 37/45.
-- **Haiku's lead (+3):** 2 from the Internet window/frames task, 1 from one `gutenberg-gothic` run. One Mantis fix landed after a failure (that cell was rerun).
+- **Short tasks:** accuracy is within one task of the tree on both models (Luna 89 vs 90, Haiku 89 vs 89; Luna screenshots trail at 86, Haiku screenshots lead at 90); Mantis returns about 3-6x less page text than the tree and uses 28-49% fewer input tokens (Haiku screenshots are close, 75k vs 72k), but is not faster: on Haiku it is about even with the tree (45s vs 43s) and slower than screenshots (33s).
+- **Task swap:** v1.8 replaced data-gov-climate with EIA About after scoring. It removed 7 Haiku failures (Mantis 2, tree 3, screenshots 2) and none for Luna, so Haiku was 87 / 86 / 88 in v1.7 and is 89 / 89 / 90 now; Mantis no longer leads the tree on Haiku.
 - **The judge is not calibrated:** 79% agreement and 6/48 false successes against deterministic keys, so treat model-judged rows as indicative ([details](bench/RESULTS.md#long-real-site-tasks-long-live-v1)).
-- **Scope:** read/navigate tasks on public sites, two models. The long-live-v1 task set was adjusted before scoring; swaps are listed in [bench/RESULTS.md](bench/RESULTS.md).
+- **Scope:** read/navigate tasks on public sites, two models; live-v1 swapped one task (data-gov-climate to eia-about) in v1.8. The long-live-v1 task set was adjusted before scoring; swaps are listed in [bench/RESULTS.md](bench/RESULTS.md) and [bench/live-v1.md](bench/live-v1.md#changelog-and-disclosures).
 
 ## Learn more
 

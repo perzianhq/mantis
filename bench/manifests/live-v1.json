@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "id": "live-v1.7",
-  "version": "1.7",
+  "id": "live-v1.8",
+  "version": "1.8",
   "selector": "live-v1",
   "kind": "frozen-public-read-only-live-evaluation-config",
   "status": "configured-unverified-preflight",
@@ -11,14 +11,14 @@
   "documentedTaskCount": 31,
   "excludedTasks": {"livev1-standards-gpl-3": "The live GNU host timed out for every approach in the captured 20261022 run; archive.org cannot satisfy the required live-origin contract."},
   "taskHashAlgorithm": "sha256(canonical sorted task contracts)",
-  "taskHash": "6b08ef1a6bb21d2065a7f597e68a96e7d1466606b0ae7878dc896ce1cb42c04e",
+  "taskHash": "38f2b0990c5f48b59621e4913f0b91092cfe5ff3b6db0c1a9719ce17590d9f15",
   "sourceFingerprintAlgorithm": "sha256(canonical URL + task-specific grading contract)",
-  "sourceFingerprintSetHash": "19beb3d06cedf18d92efae2210b90b9ba32ebd770e01e3066877dada1e41acc7",
+  "sourceFingerprintSetHash": "0394da5494d8ddead2d92f5fbaf3dccd81d5cb6fc49e4aa789f59c02a8d27c59",
   "tasks": [
     "livev1-standards-gpl-3", "livev1-standards-rfc-8259", "livev1-standards-wcag-22", "livev1-standards-rfc-9110", "livev1-standards-openapi-31", "livev1-standards-css-color-4",
     "livev1-docs-python-json", "livev1-docs-mdn-http-overview", "livev1-docs-node-url", "livev1-docs-django-overview", "livev1-docs-postgresql-types",
     "livev1-civic-loc-about", "livev1-civic-nasa-missions", "livev1-civic-census-about", "livev1-civic-nist-about", "livev1-civic-archives-about",
-    "livev1-data-world-bank-population", "livev1-data-ourworldindata-co2", "livev1-data-data-gov-climate", "livev1-data-eurostat-database", "livev1-data-oecd-data-explorer",
+    "livev1-data-world-bank-population", "livev1-data-ourworldindata-co2", "livev1-data-eia-about", "livev1-data-eurostat-database", "livev1-data-oecd-data-explorer",
     "livev1-navigation-wikipedia-ada", "livev1-navigation-merriam-serendipity", "livev1-navigation-smithsonian-aircraft", "livev1-navigation-gutenberg-search", "livev1-navigation-met-collection",
     "livev1-interactive-openlibrary-subject", "livev1-interactive-github-issues", "livev1-interactive-openstreetmap-eiffel", "livev1-interactive-tmdb-search", "livev1-interactive-arxiv-search"
   ],

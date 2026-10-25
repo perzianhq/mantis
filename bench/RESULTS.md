@@ -56,35 +56,35 @@ Means give smaller gaps (wall time -22% Luna, -18% Haiku; input tokens -40% Luna
 - Case replacement was reviewed and rejected for v1: contracts stay frozen. For a future v2, reword `gutenberg-gothic`, `wiki-probes`, `met-rembrandt-search`, `internet-window-frames-upload` (accept equivalent name forms, thousands separators, header units, combined frame reads), frozen before any scored run.
 - For the tree upload harness, the fixture is written to `<attempt dir>/tree-output`, because tree can upload only from its output directory or the repo.
 
-## Live-site scorecard (live-v1 v1.7)
+## Live-site scorecard (live-v1 v1.8)
 
-Frozen [live-v1](live-v1.md) v1.7: 30 real-site tasks x 3 approaches x 3 runs = 90 runs per approach and model, judged blind by Codex `gpt-6.1-sol`. Task changes, regrades and run notes are in the [live-v1 changelog](live-v1.md#changelog-and-disclosures).
+Frozen [live-v1](live-v1.md) v1.8: 30 real-site tasks x 3 approaches x 3 runs = 90 runs per approach and model, judged blind by Codex `gpt-6.1-sol`. Task changes, regrades and run notes are in the [live-v1 changelog](live-v1.md#changelog-and-disclosures).
 
-Post-hoc swaps were GPL-3 to RFC 8259, IMDb to TMDB, and USGS to NIST; see the [changelog and disclosures](live-v1.md#changelog-and-disclosures). The 30 tasks are now frozen with no further swaps. The blind judge (`gpt-6.1-sol`) has not passed its calibration gate: 100 packets, 30 tasks, 95% agreement, and <=2% false successes.
+Post-hoc swaps were GPL-3 to RFC 8259, IMDb to TMDB, USGS to NIST, and data-gov-climate to EIA About; the v1.8 EIA replacement ran 18 times, all passing deterministic validation. The data-gov-climate swap was made after scoring and removed 7 Haiku failures (Mantis 2, tree 3, screenshots 2) and no Luna failures: v1.7 Haiku was 87 / 86 / 88, v1.8 is 89 / 89 / 90; Luna is 89 / 90 / 86 in both. The 30-task v1.8 set is frozen with no further swaps. The blind judge (`gpt-6.1-sol`) has not passed its calibration gate: 100 packets, 30 tasks, 95% agreement, and <=2% false successes.
 
 **Luna (`gpt-6-luna`)**
 
 | | Mantis | Accessibility tree | Screenshots |
 |---|---:|---:|---:|
 | Success (of 90) | 89 | **90** | 86 |
-| Avg input tokens | **88.1k** | 123.1k | 122.7k |
-| Median tool calls | **4** | **4** | 6 |
-| Median wall time (s) | 43.7 | **23.4** | 28.5 |
-| Median tool output (chars) | 9.3k | 54.9k | **0.1k** |
-| Median output tokens | **347** | 364 | 647 |
+| Avg input tokens | **87.2k** | 122.1k | 122.0k |
+| Median tool calls | **3** | 4 | 6 |
+| Median wall time (s) | 43.7 | **22.8** | 28.0 |
+| Median tool output (chars) | 9.2k | 54.9k | **0.1k** |
+| Median output tokens | **342** | 362 | 650 |
 
 **Haiku (`claude-haiku-5-5`)**
 
 | | Mantis | Accessibility tree | Screenshots |
 |---|---:|---:|---:|
-| Success (of 90) | 87 | 87 | **89** |
-| Avg input tokens (not comparable, see note) | 77.6k | 116.5k | 53.1k |
-| Median tool calls | **4** | 7 | 8 |
-| Median wall time (s, not comparable) | 46.4 | **17.9** | **17.9** |
-| Median tool output (chars) | 9.6k | 29.0k | **0.6k** |
-| Median output tokens | **890** | 1076 | 1149 |
+| Success (of 90) | 89 | 89 | **90** |
+| Avg input tokens | **72.1k** | 141.9k | 74.6k |
+| Median tool calls | **4** | 7 | 7.5 |
+| Median wall time (s, see note) | 45.4 | 43.1 | **33.0** |
+| Median tool output (chars) | 9.5k | 27.0k | **0.1k** |
+| Median output tokens | **874** | 1096 | 1490 |
 
-Haiku input tokens are not comparable across columns: the tree and screenshot runs used Claude CLI 2.1.308 on cloud, the Mantis re-run used 2.1.161 locally, which sends more input per turn (median 14.5k vs 8.3k). The earlier local rerun of blocked rows inflated all three similarly (Mantis 50.4k to 83.7k, tree 116.5k to 216.8k, screenshots 53.1k to 79.6k, on a different task subset). Mantis page text per call is unchanged (10.2k vs 10.6k chars). On short tasks Mantis saves tokens and tool output but is not faster in the merged set: Luna median wall time is 43.7s vs 23.4s for the tree, and in the original Haiku run the medians were equal (17.5-17.9s) while the re-run is slower. The cause is not isolated; the Mantis rows are a later re-run, so latency is not like-for-like. Haiku cost is not shown because the CLI builds differ. Mantis rows are a re-run after `src/` gap fixes (20261023); Haiku includes 6 connection-failure rows re-run alone (6/6 success). Failures: Luna 1 (`rfc-8259`), Haiku 3 (`node-url`, `data-gov-climate` x2), all agent behaviour or site drift; see the [live-v1 changelog](live-v1.md#changelog-and-disclosures).
+Haiku tree and screenshot rows are a local re-run on Claude CLI 2.1.161 (the same build as the Mantis re-run), 180 runs, judged blind by sol with the same deterministic-first gate (57 validator-graded, 33 judge-graded per cell, 0 unsure, 0 blocked). Tokens and tool output are now comparable across columns; the earlier cloud-CLI-2.1.308 numbers are superseded. Latency is less reliable: the re-run used concurrency 16 (4 contention-damaged rows were re-run at concurrency 4), so tree and screenshot times may be inflated by machine contention; Mantis's concurrency was not recorded. On short tasks Mantis saves tokens and tool output (about 49% fewer input tokens than the tree, about even with screenshots) but is not faster: Haiku medians are 45.4s Mantis, 43.1s tree, 33.0s screenshots; Luna 43.7s vs 22.8s vs 28.0s. Haiku cost is not shown because Mantis cost was not recomputed on this build. Mantis rows are a re-run after `src/` gap fixes (20261023); Haiku includes 6 connection-failure rows re-run alone (6/6 success). The removed `data-gov-climate` row was fragile: its strict `/climate/1/` URL contract and site drift caused two Haiku Mantis failures, three tree failures, and two screenshot failures (7 of the 9 v1.7 Haiku failures), plus Mantis misses. Its EIA About replacement passed deterministic validation in all 18 runs, so the v1.8 composition has no failures. See the [live-v1 changelog](live-v1.md#changelog-and-disclosures).
 
 ## Side scorecards (DeepSeek only, local fixtures)
 
@@ -148,5 +148,5 @@ npm `mantis-browser@0.1.5` is built from `70dbd5f`. The published numbers ran on
 - Local-v2 and local-v2.1 are code-graded fixture suites with different step caps (35 and 50); do not merge them with each other or with the other suites.
 - The screenshot baseline is our own minimal tool, not a product's.
 - Live sites change; real-site numbers are a snapshot.
-- Judge spot-check: a reproducible raw-evidence spot-check of 30 published live-v1 v1.7 and long-live-v1 verdicts across 18 tasks found 27 agreements, two false successes, zero false failures, and one ambiguous deterministic success. Both false successes were Luna nested-frame workflows (one Mantis, one tree) that used combined observations instead of the required separate frame reads; the ambiguous row retained English search results while its language selector recorded Any. The auditor is an AI from the same GPT-6 model family as the `gpt-6.1-sol` judge, so this is not an independent human audit and does not establish the calibration gate.
+- Judge spot-check: a reproducible raw-evidence spot-check of 30 historical live-v1 v1.7 and long-live-v1 verdicts across 18 tasks found 27 agreements, two false successes, zero false failures, and one ambiguous deterministic success. Both false successes were Luna nested-frame workflows (one Mantis, one tree) that used combined observations instead of the required separate frame reads; the ambiguous row retained English search results while its language selector recorded Any. The auditor is an AI from the same GPT-6 model family as the `gpt-6.1-sol` judge, so this is not an independent human audit and does not establish the calibration gate.
 - Nested-frames contract wording: the Internet window-frames task text asks for separate frame reads. That wording was not enforced on any run: the blind judge sees captures and the final reply, not the operation sequence. A full audit found 6 of its 12 Luna and Haiku rows used one combined frame view yet reported correct answers and final states. Five stay published as successes (Luna Mantis 2 and 3, Luna tree 1, 2 and 3). The sixth, Haiku tree run 2, is published as a failure after manual review, because the agent admitted it did not visually confirm the selected filename (an outcome problem, not the wording). Read strictly, Luna would be Mantis 39/48 vs tree 34/48; Haiku is already 47/48 vs 44/48. Mantis leads either way. Time, token and cost figures do not change. The contract was not changed after the fact.
