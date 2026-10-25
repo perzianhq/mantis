@@ -5,7 +5,7 @@
 Requires Node 20+.
 
 ```bash
-npx playwright install chromium
+npx -y -p mantis-browser mantis install
 claude mcp add mantis -- npx -y -p mantis-browser mantis-mcp
 ```
 
@@ -13,11 +13,14 @@ On native Windows: `claude mcp add mantis -- cmd /c npx -y -p mantis-browser man
 
 Try it without an agent: `npx -y -p mantis-browser mantis read https://example.com`
 
+The first `ocr` call downloads English language data to `~/.cache/mantis/tessdata` (or `MANTIS_TESSDATA`).
+For offline OCR, use it once online first or provide that folder with `eng.traineddata`.
+
 ## Build and test
 
 ```bash
 npm install
-npx playwright install chromium
+npx tsx src/cli.ts install
 npm run build
 npm test             # includes a check that nothing in Chrome's accessibility tree is lost
 npx tsx src/cli.ts read https://example.com

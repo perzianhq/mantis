@@ -138,7 +138,17 @@ server.registerTool('computer', {
     if (action === 'mouse_move') { const at = coordinate(input.coordinate); if (typeof at === 'string') return error(at); cursor = at; return act(async (active) => { await active.mouse.move(...at); return `moved to (${at.join(', ')})`; }); }
     if (action === 'left_mouse_down' || action === 'left_mouse_up') return act(async (active) => { if (action === 'left_mouse_down') await active.mouse.down(); else await active.mouse.up(); return action.replaceAll('_', ' '); });
     if (action === 'type') { if (input.text === undefined) return error('text is required for type'); return act(async (active) => { await active.keyboard.type(input.text); return `typed ${JSON.stringify(input.text)}`; }); }
-    if (action === 'key') { if (!input.text) return error('text is required for key'); const keys = resolveScreenshotKeySequence(input.text); if ('error' in keys) return error(keys.error); return act(async (active) => { for (const key of keys.keys) await active.keyboard.press(key); return `pressed ${keys.keys.join(' ')}`; }); }
+    if (action === 'key') {
+      if (!input.text) return error('text is required for key');
+      const resolved = resolveScreenshotKeySequence(input.text);
+      if ('error' in resolved) return error(resolved.error);
+      // The tool accepts xdotool-style Ctrl chords; macOS browsers use Command for
+      // the equivalent editing shortcuts.
+      const keys = process.platform === 'darwin'
+        ? resolved.keys.map((key) => key.replaceAll('Control', 'Meta'))
+        : resolved.keys;
+      return act(async (active) => { for (const key of keys) await active.keyboard.press(key); return `pressed ${keys.join(' ')}`; });
+    }
     if (action === 'hold_key') {
       if (!input.text || input.duration === undefined) return error('text and duration are required for hold_key');
       const keys = resolveScreenshotKeySequence(input.text); if ('error' in keys) return error(keys.error); if (keys.keys.length !== 1) return error('hold_key accepts one key or chord');

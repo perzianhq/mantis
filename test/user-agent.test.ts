@@ -30,7 +30,7 @@ it('stripHeadless only renames the product token', () => {
 
 it('missingChromiumHint explains a missing download and ignores other launch errors', () => {
   const missing = new Error("browserType.launch: Executable doesn't exist at /x/chrome");
-  expect(missingChromiumHint(missing)).toMatch(/npx playwright install chromium/);
+  expect(missingChromiumHint(missing)).toMatch(/npx -y -p mantis-browser mantis install/);
   expect(missingChromiumHint(missing)).toMatch(/MANTIS_CHROMIUM/);
   expect(missingChromiumHint(new Error('Target page, context or browser has been closed'))).toBeUndefined();
 });

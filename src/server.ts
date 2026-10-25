@@ -6,6 +6,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod';
 import { MantisBrowser } from './browser.js';
 import { noHuman } from './fallback/captcha.js';
+import { runInstallCommand } from './install.js';
 
 const reply = (text: string) => ({
   content: [{ type: 'text' as const, text }],
@@ -239,7 +240,10 @@ async function main(): Promise<void> {
 // Run only when executed directly (not when imported by tests).
 const entry = process.argv[1];
 if (entry && import.meta.url === pathToFileURL(realpathSync(entry)).href) {
-  main().catch((e) => {
+  runInstallCommand(process.argv.slice(2)).then((installCode) => {
+    if (installCode !== undefined) process.exit(installCode);
+    return main();
+  }).catch((e) => {
     console.error(e);
     process.exit(1);
   });
