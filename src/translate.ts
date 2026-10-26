@@ -347,6 +347,9 @@ function renderBody(nodes: RawNode[], lvl: Level, ctx: Ctx): { lines: string[]; 
   const line = (n: RawNode, o: LineOpts = {}): string => interactiveLine(n, { ...o, showHref: showHref(n) });
 
   const survives = (n: RawNode): boolean => {
+    // Detail fields are compact, actionable facts. Do not discard them before prose merely
+    // because they are below the viewport.
+    if (n.labelled) return true;
     if (n.kind === 'region' || n.inViewport) return true;
     if (lvl.dropOffscreenAll || (lvl.dropOffscreenText && n.kind === 'text')) {
       dropped++;
@@ -469,7 +472,7 @@ function renderBody(nodes: RawNode[], lvl: Level, ctx: Ctx): { lines: string[]; 
         let j = k + 1;
         while (j < items.length && nodes[items[j]].inline) j++;
         const links = items.slice(k + 1, j).filter((ix) => nodes[ix].kind === 'interactive');
-        if (ctx.full || lvl.allProse || (n.inViewport && proseShown < PROSE_MAX)) {
+        if (ctx.full || lvl.allProse || n.labelled || (n.inViewport && proseShown < PROSE_MAX)) {
           proseShown++;
           out.push(`${pad}"${quote(ctx.full || lvl.allProse ? n.name : clip(n.name, PROSE_CHARS))}"`);
           if (links.length) {
@@ -716,7 +719,7 @@ export function findInSnapshot(snap: Snapshot, query: string, max = 20, contextC
   const nodes = deriveRegions(snap);
   const hits = nodes
     .map((n, i) => ({ n, i }))
-    .filter(({ n }) => n.kind !== 'region' && (n.name.toLowerCase().includes(q) || (!n.secret && !!n.value?.toLowerCase().includes(q))))
+    .filter(({ n }) => n.kind !== 'region' && (n.name.toLowerCase().includes(q) || n.href?.toLowerCase().includes(q) || (!n.secret && !!n.value?.toLowerCase().includes(q))))
     .sort((a, b) =>
       Number(norm(b.n.name) === q) - Number(norm(a.n.name) === q) ||
       Number(b.n.kind === 'interactive') - Number(a.n.kind === 'interactive') ||

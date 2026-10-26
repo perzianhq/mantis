@@ -48,7 +48,7 @@ export function createServer(browser: MantisBrowser = new MantisBrowser()): McpS
         'Numbered text; act by #number. ~"x" names are guesses. ' +
         '"Same as before" retains #numbers; region/full/fresh expands it; full is paged with offset. ' +
         'Verify the entity identity before editing. Before finishing, re-read and visibly verify every task constraint (filters, sort, size, quantity, date range). After an action confirms completion, stop and report it rather than re-inspecting. ' +
-        'If #number is stale, read() and retry; if on the wrong page, back() and keep searching.',
+        'If #number is stale, read() and retry; if on the wrong page, back() and keep searching. open(url) returns to an earlier results page; back() can lose its query string.',
       inputSchema: {
         region: z.string().optional().describe('Label substring, e.g. "nav"; if none matches, text inside a region also works'),
         full: z.boolean().optional().describe('Untrimmed bounded excerpt; use offset for the next excerpt'),

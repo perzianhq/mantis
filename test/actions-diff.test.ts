@@ -129,7 +129,7 @@ describe('action diffs: new document', () => {
 
   it('back also returns the full view of the page we return to', async () => {
     const res = await b.back();
-    expect(res).toMatch(/^went back\nurl: \/.*login\.html → \/.*nav\.html\ntitle: "Login — Acme" → "Nav"\npage loaded: Nav\nPage: Nav/);
+    expect(res).toMatch(/^went back to \S*nav\.html\nurl: \/.*login\.html → \/.*nav\.html\ntitle: "Login — Acme" → "Nav"\npage loaded: Nav\nPage: Nav/);
     expect(res).toContain('link "Go to login"');
   });
 });

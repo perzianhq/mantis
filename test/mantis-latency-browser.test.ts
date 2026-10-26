@@ -45,6 +45,24 @@ describe('read capture reuse and timing', () => {
 });
 
 describe('settle busy work grace', () => {
+  it('stops an open after a quiet self-rearming timer chain', async () => {
+    const { ms } = await elapsed(() => browser.open(dataPage(`
+      <main>Ready</main><script>
+        const poll = () => setTimeout(poll, 40);
+        poll();
+      </script>
+    `)));
+    expect(ms).toBeLessThan(timingCap(1800));
+  });
+
+  it('keeps waiting for a late one-shot result during open (near miss)', async () => {
+    const { text, ms } = await elapsed(() => browser.open(dataPage(`
+      <main>Ready</main><script>setTimeout(() => document.body.append('Late open result'), 1500)</script>
+    `)));
+    expect(text).toContain('Late open result');
+    expect(ms).toBeGreaterThan(1200);
+  });
+
   it('does not let a never-ending action poll consume the full settle cap', async () => {
     const view = await browser.open(dataPage('<button onclick="setInterval(() => {}, 50)">Begin poll</button>'));
     const { text, ms } = await elapsed(() => browser.click(idOf(view, 'Begin poll')));
@@ -52,11 +70,27 @@ describe('settle busy work grace', () => {
     expect(ms).toBeLessThan(timingCap(2400));
   });
 
-  it('keeps waiting for a 500ms delayed DOM result (near miss)', async () => {
-    const view = await browser.open(dataPage('<button onclick="setTimeout(() => document.body.append(\'Delayed result\'), 500)">Delay result</button>'));
+  it('stops a click after a quiet pending request', async () => {
+    const view = await browser.open(dataPage('<button onclick="fetch(\'https://pending.test/click\')">Start request</button>'));
+    const page = await pageOf();
+    await page.route('https://pending.test/**', async (route) => {
+      await new Promise((done) => setTimeout(done, 2000));
+      await route.fulfill({ status: 200, body: '{}' }).catch(() => undefined);
+    });
+    try {
+      const { text, ms } = await elapsed(() => browser.click(idOf(view, 'Start request')));
+      expect(text).toContain('clicked');
+      expect(ms).toBeLessThan(timingCap(1800));
+    } finally {
+      await page.unroute('https://pending.test/**');
+    }
+  });
+
+  it('keeps waiting for a 1500ms delayed DOM result from an action (near miss)', async () => {
+    const view = await browser.open(dataPage('<button onclick="setTimeout(() => document.body.append(\'Delayed result\'), 1500)">Delay result</button>'));
     const { text, ms } = await elapsed(() => browser.click(idOf(view, 'Delay result')));
     expect(text).toContain('Delayed result');
-    expect(ms).toBeGreaterThan(400);
+    expect(ms).toBeGreaterThan(1200);
   });
 });
 
@@ -137,6 +171,14 @@ describe('type request grace', () => {
 });
 
 describe('navigation completion', () => {
+  it('keeps a click watcher through settle and returns the navigated view', async () => {
+    const view = await browser.open(dataPage('<button onclick="history.pushState({}, \'\', \'#after\'); document.body.innerHTML=\'<main>New click page</main>\'">Go</button>'));
+    const text = await browser.click(idOf(view, 'Go'));
+    expect(text).toContain('New click page');
+    expect(text).not.toMatch(/\n#\d+ button "Go"/);
+    expect((await pageOf()).url()).toMatch(/#after$/);
+  });
+
   it('uses submit wording for an unfinished submit, but accepts a committed URL change (near miss)', async () => {
     const internals = browser as unknown as { waitForInFlightNavigation(watch: unknown): Promise<void> };
     const incomplete = { remainingMs: () => 0, hasCommitted: () => false, failureMessage: 'submit was dispatched, but the navigation did not finish in time' };

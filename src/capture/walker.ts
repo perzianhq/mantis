@@ -56,6 +56,8 @@ export interface RawNode {
   live?: 'alert' | 'status';
   /** Inside a prose paragraph (an inline link in running text). */
   inline?: boolean;
+  /** A definition-list or header-cell field; keep it ahead of ordinary prose when trimming. */
+  labelled?: boolean;
   /** Interactive only: a text-entry field that has keyboard focus (site memory never hides it). */
   focused?: boolean;
   /** Control found only by the empty-page screen-reader-content pass. */
@@ -159,6 +161,22 @@ export function walker(includeSrOnly = false): WalkResult {
     let style = styles.get(el);
     if (!style) { style = getComputedStyle(el); styles.set(el, style); }
     return style;
+  };
+  // A walk is synchronous, so repeated geometry and selector probes cannot become stale.
+  const rects = new WeakMap<Element, DOMRect>();
+  const rectOf = (el: Element): DOMRect => {
+    let rect = rects.get(el);
+    if (!rect) { rect = el.getBoundingClientRect(); rects.set(el, rect); }
+    return rect;
+  };
+  const queries = new WeakMap<object, Map<string, Element | null>>();
+  const query = (root: ParentNode, selector: string): Element | null => {
+    let cache = queries.get(root);
+    if (!cache) queries.set(root, cache = new Map());
+    if (cache.has(selector)) return cache.get(selector)!;
+    const found = root.querySelector(selector);
+    cache.set(selector, found);
+    return found;
   };
   // Bound pathological DOMs even when their visible node count remains low. Check periodically
   // so ordinary captures pay only a cheap counter increment.
@@ -305,21 +323,21 @@ export function walker(includeSrOnly = false): WalkResult {
   /** Repeated short pointer-styled leaves are usually choices rather than ordinary table data. */
   function repeatedPointerLeaf(el: Element, cs: CSSStyleDeclaration): boolean {
     const text = collapse(el.textContent || '');
-    if (cs.cursor !== 'pointer' || !text || text.length > 12 || el.querySelector(INTERACTIVE_SEL)) return false;
+    if (cs.cursor !== 'pointer' || !text || text.length > 12 || query(el, INTERACTIVE_SEL)) return false;
     const parent = el.parentElement;
     if (!parent) return false;
     const peers = Array.from(parent.children).filter((peer) =>
       peer.localName === el.localName &&
       styleOf(peer).cursor === 'pointer' &&
       !!collapse(peer.textContent || '') && collapse(peer.textContent || '').length <= 12 &&
-      !peer.querySelector(INTERACTIVE_SEL),
+      !query(peer, INTERACTIVE_SEL),
     );
     return peers.length >= 4;
   }
 
   function repeatedDateLeaf(el: Element): boolean {
     const text = collapse(el.textContent || '');
-    if (!text || text.length > 12 || el.querySelector(INTERACTIVE_SEL)) return false;
+    if (!text || text.length > 12 || query(el, INTERACTIVE_SEL)) return false;
     const row = el.parentElement;
     if (!row) return false;
     const peers = Array.from(row.children).filter((peer) => peer.localName === el.localName && hasDateData(peer));
@@ -342,7 +360,7 @@ export function walker(includeSrOnly = false): WalkResult {
     // The ARIA container still establishes that its immediate items are choices.
     const parentRole = el.parentElement ? explicitRole(el.parentElement) : '';
     if ((parentRole === 'listbox' || parentRole === 'menu') &&
-      (t === 'li' || t === 'div') && !el.querySelector(INTERACTIVE_SEL) &&
+      (t === 'li' || t === 'div') && !query(el, INTERACTIVE_SEL) &&
       collapse(el.textContent || '') && cs.pointerEvents !== 'none') {
       return parentRole === 'listbox' ? 'option' : 'menuitem';
     }
@@ -363,11 +381,11 @@ export function walker(includeSrOnly = false): WalkResult {
     const clickish =
       el.hasAttribute('onclick') ||
       (el.hasAttribute('tabindex') && (el as HTMLElement).tabIndex >= 0 && cs.cursor === 'pointer');
-    if (clickish && !el.querySelector(INTERACTIVE_SEL)) return 'clickable';
+    if (clickish && !query(el, INTERACTIVE_SEL)) return 'clickable';
     // Made clickable only by script (no role, link or tabindex; invisible to the accessibility tree):
     // a click listener on the element itself, or where a pointer cursor starts (frameworks that
     // listen once at the root). Only small elements with content and nothing interactive inside.
-    if (SCRIPT_CLICK_NEVER.has(t) || el.querySelector(INTERACTIVE_SEL)) return '';
+    if (SCRIPT_CLICK_NEVER.has(t) || query(el, INTERACTIVE_SEL)) return '';
     const listener = clickListeners?.has(el) === true;
     const pointerStart = cs.cursor === 'pointer' && (!el.parentElement || styleOf(el.parentElement).cursor !== 'pointer');
     if (!listener && !pointerStart) return '';
@@ -376,9 +394,9 @@ export function walker(includeSrOnly = false): WalkResult {
     if (listener && cs.cursor !== 'pointer') {
       for (const d of Array.from(el.querySelectorAll('*')).slice(0, 60)) if (styleOf(d).cursor === 'pointer') return '';
     }
-    const b = el.getBoundingClientRect();
+    const b = rectOf(el);
     if (b.width * b.height > 0.25 * vw * vh || b.width < 4 || b.height < 4) return '';
-    if (!collapse(el.textContent || '') && !el.querySelector('img,svg,i,[class*=icon]')) return '';
+    if (!collapse(el.textContent || '') && !query(el, 'img,svg,i,[class*=icon]')) return '';
     return 'clickable';
   }
 
@@ -736,7 +754,7 @@ export function walker(includeSrOnly = false): WalkResult {
     try { if (el.matches(':modal')) return true; } catch { /* :modal unsupported */ }
     if (overlapArea(r) >= 0.5 * vw * vh) return true;
     for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) {
-      if (styleOf(a).position === 'fixed' && overlapArea(a.getBoundingClientRect()) >= 0.9 * vw * vh) return true;
+      if (styleOf(a).position === 'fixed' && overlapArea(rectOf(a)) >= 0.9 * vw * vh) return true;
     }
     return false;
   }
@@ -770,7 +788,7 @@ export function walker(includeSrOnly = false): WalkResult {
     }
     for (const label of Array.from(labels)) {
       const style = styleOf(label);
-      const rect = label.getBoundingClientRect();
+      const rect = rectOf(label);
       if (style.display !== 'none' && style.visibility === 'visible' && effectiveOpacity(label) > 0 &&
           rect.width >= 4 && rect.height >= 4 && inDoc(rect)) return { label, rect };
     }
@@ -913,7 +931,7 @@ export function walker(includeSrOnly = false): WalkResult {
   function isVisibleBox(e: Element): boolean {
     const cs = styleOf(e);
     if (cs.display === 'none' || cs.visibility === 'hidden') return false;
-    const b = e.getBoundingClientRect();
+    const b = rectOf(e);
     return b.width > 0 && b.height > 0;
   }
   const ERROR_CLASS = /(^|[\s_-])(error|errors|invalid|danger|err|err-msg|field-error|form-error|help-block|validation)([\s_-]|$)/i;
@@ -1190,7 +1208,7 @@ export function walker(includeSrOnly = false): WalkResult {
     if (el.getAttribute('aria-hidden') === 'true') return;
     const cs = styleOf(el);
     if (cs.display === 'none' || cs.visibility !== 'visible' || parseFloat(cs.opacity) === 0) return;
-    const r = el.getBoundingClientRect();
+    const r = rectOf(el);
     if (r.width < 80 || r.height < 40 || !inDoc(r)) return;
     const id = idFor(el);
     if (id === undefined) return;
@@ -1204,7 +1222,7 @@ export function walker(includeSrOnly = false): WalkResult {
     if (el.getAttribute('aria-hidden') === 'true') return;
     const cs = styleOf(el);
     if (cs.display === 'none' || cs.visibility !== 'visible' || parseFloat(cs.opacity) === 0) return;
-    const r = el.getBoundingClientRect();
+    const r = rectOf(el);
     if (r.width < 20 || r.height < 20 || !inDoc(r)) return;
     const id = idFor(el);
     if (id === undefined) return;
@@ -1257,7 +1275,7 @@ export function walker(includeSrOnly = false): WalkResult {
       if (c.closest('[aria-hidden="true"],[inert]')) continue;
       const cs = styleOf(c);
       if (cs.visibility !== 'visible' || cs.pointerEvents === 'none' || cs.display === 'none' || (c !== root && parseFloat(cs.opacity) === 0)) continue;
-      const r = c.getBoundingClientRect();
+      const r = rectOf(c);
       if (r.width <= 0 || r.height <= 0 || !inDoc(r)) continue;
       const labelTarget = labelPointerTarget(c, r);
       const hitRect = labelTarget?.rect ?? r;
@@ -1318,7 +1336,7 @@ export function walker(includeSrOnly = false): WalkResult {
       if (SKIP.has(el.localName) || el.getAttribute('aria-hidden') === 'true' || (el as HTMLElement).inert) continue;
       const cs = styleOf(el);
       if (cs.display === 'none' || cs.contentVisibility === 'hidden') continue;
-      const r = el.getBoundingClientRect();
+      const r = rectOf(el);
       const escapes = (cs.position === 'fixed' || cs.position === 'absolute') && cs.visibility === 'visible' &&
         r.width > 0 && r.height > 0 &&
         ((cs.position === 'fixed' && !blockedForFixed) || (cs.position === 'absolute' && !blockedForAbsolute));
@@ -1338,7 +1356,7 @@ export function walker(includeSrOnly = false): WalkResult {
     return pending.length === 0 && foundEscape;
   }
 
-  function visit(el: Element, parent: number, depth: number, box: DOMRect, inheritedSr = false, inheritedOpen?: { id: number; name: string }): void {
+  function visit(el: Element, parent: number, depth: number, box: DOMRect, inheritedSr = false, inheritedOpen?: { id: number; name: string }, inheritedLabelled = false): void {
     if (nodes.length >= WALK_LIMIT || outOfTime()) { truncated = true; return; }
     if (el.localName === 'canvas') { canvasMark(el, parent, depth); return; }
     if (SKIP.has(el.localName)) return;
@@ -1349,7 +1367,7 @@ export function walker(includeSrOnly = false): WalkResult {
     if (parseFloat(cs.opacity) === 0) { rescueControls(el, parent, depth); return; }
 
     const contents = cs.display === 'contents';
-    const r = contents ? box : el.getBoundingClientRect();
+    const r = contents ? box : rectOf(el);
     const requiresOpen = inheritedOpen ?? closedControllerFor(el);
     const clips = cs.overflowX !== 'visible' || cs.overflowY !== 'visible';
     if (!includeSrOnly && !contents && (r.width === 0 || r.height === 0) && clips && !hasPositionedEscape(el)) return; // e.g. collapsed accordion panel
@@ -1361,6 +1379,8 @@ export function walker(includeSrOnly = false): WalkResult {
       (contents || (r.width > 0 && r.height > 0 && inDoc(r)));
 
     const explicit = explicitRole(el);
+    const labelled = inheritedLabelled || el.localName === 'dt' || el.localName === 'dd' || el.localName === 'th' ||
+      (el.localName === 'td' && !!el.parentElement?.querySelector(':scope > th'));
     const role = interactiveRole(el, explicit, cs);
     if (role) {
       if (shown) emitInteractive(el, role, parent, depth, r, srOnly, requiresOpen);
@@ -1372,7 +1392,7 @@ export function walker(includeSrOnly = false): WalkResult {
       if (shown && !native && el.querySelector(INTERACTIVE_SEL)) {
         const prevSuppress = suppressText;
         suppressText = true;
-        visitChildren(el, parent, depth, r, false, childSr, requiresOpen);
+        visitChildren(el, parent, depth, r, false, childSr, requiresOpen, labelled);
         suppressText = prevSuppress;
       }
       return;
@@ -1457,6 +1477,7 @@ export function walker(includeSrOnly = false): WalkResult {
       const collapsedHiddenLabel = !!requiresOpen && tag === 'label';
       if (t && t.length <= 80 && !el.shadowRoot && (!el.querySelector(LEAF_BLOCKER) || collapsedHiddenLabel)) {
         const node = stamp({ kind: isProseTag && t.length >= 40 ? 'prose' : 'text', role: 'text', name: t, states: [], parent, depth, inViewport: inView(r), covered: false }, r);
+        if (labelled) node.labelled = true;
         if (requiresOpen) node.requiresOpen = requiresOpen;
         nodes.push(node);
         return;
@@ -1473,6 +1494,7 @@ export function walker(includeSrOnly = false): WalkResult {
         const plain = full.length - linkLen;
         if (plain >= 40 && plain >= full.length * 0.5) {
           const node = stamp({ kind: 'prose', role: 'text', name: full, states: [], parent, depth, inViewport: inView(r), covered: false }, r);
+          if (labelled) node.labelled = true;
           if (requiresOpen) node.requiresOpen = requiresOpen;
           nodes.push(node);
           proseHere = true;
@@ -1483,13 +1505,13 @@ export function walker(includeSrOnly = false): WalkResult {
     const prevProse = inProse;
     const prevSuppress = suppressText;
     if (proseHere) { inProse = true; suppressText = true; }
-    visitChildren(el, childParent, childDepth, r, shown, childSr, requiresOpen);
+    visitChildren(el, childParent, childDepth, r, shown, childSr, requiresOpen, labelled);
     inProse = prevProse;
     suppressText = prevSuppress;
   }
 
   /** Visit child nodes of `el`, tagging repeated sibling rows; text nodes become `text` nodes. */
-  function visitChildren(el: Element, parent: number, depth: number, r: DOMRect, textShown = false, inheritedSr = false, inheritedOpen?: { id: number; name: string }): void {
+  function visitChildren(el: Element, parent: number, depth: number, r: DOMRect, textShown = false, inheritedSr = false, inheritedOpen?: { id: number; name: string }, inheritedLabelled = false): void {
     const kids = childrenOf(el);
     const rows = curRow < 0 ? detectRows(kids.filter((c): c is Element => c.nodeType === 1)) : null;
     for (const c of kids) {
@@ -1497,6 +1519,7 @@ export function walker(includeSrOnly = false): WalkResult {
         const t = collapse(c.nodeValue ?? '');
         if (textShown && !suppressText && t.length <= 80 && /[\p{L}\p{N}]/u.test(t)) {
           const node = stamp({ kind: 'text', role: 'text', name: t, states: [], parent, depth, inViewport: inView(r), covered: false }, r);
+          if (inheritedLabelled) node.labelled = true;
           if (inheritedOpen) node.requiresOpen = inheritedOpen;
           nodes.push(node);
         }
@@ -1505,10 +1528,10 @@ export function walker(includeSrOnly = false): WalkResult {
         if (info) {
           curRow = info.row;
           curGroup = info.group;
-          visit(c as Element, parent, depth, r, inheritedSr, inheritedOpen);
+          visit(c as Element, parent, depth, r, inheritedSr, inheritedOpen, inheritedLabelled);
           curRow = curGroup = -1;
         } else {
-          visit(c as Element, parent, depth, r, inheritedSr, inheritedOpen);
+          visit(c as Element, parent, depth, r, inheritedSr, inheritedOpen, inheritedLabelled);
         }
       }
     }
@@ -1516,7 +1539,7 @@ export function walker(includeSrOnly = false): WalkResult {
 
   const rootEl = document.body ?? document.documentElement;
   if (!rootEl) return { url: location.href, title: document.title, nodes: [], truncated, page: { vw, vh, docW, docH } };
-  visit(rootEl, -1, 0, rootEl.getBoundingClientRect());
+  visit(rootEl, -1, 0, rectOf(rootEl));
 
   markPrimary();
 

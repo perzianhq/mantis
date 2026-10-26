@@ -50,7 +50,15 @@ type NavigationWatch = {
   cancel: () => void;
 };
 
-type ToolTiming = { tool: string; start: number; phases: Map<string, number>; settle?: string };
+type ToolTiming = {
+  tool: string;
+  start: number;
+  /** Exclusive durations: nested work is charged to its own phase, not its caller. */
+  phases: Map<string, number>;
+  scans?: Map<string, number>;
+  stack?: { phase: string; start: number; children: number }[];
+  settle?: string;
+};
 
 /** Live count badges and durations may tick without changing a persisted control's identity. */
 function sameIdentity(
@@ -90,21 +98,27 @@ const TRACKER = `(() => {
   // (a timer re-arming itself) keeps its first origin forever and is told apart from what an action
   // started. settle() only waits for work whose origin is at or after the action.
   let currentOrigin = null;
-  const live = new Map(); // timer id -> {origin, interval, delay}
+  const live = new Map(); // timer id -> {origin, interval, delay, chained}
   const reqs = new Set(); // one entry {origin} per in-flight request
   const originNow = () => (currentOrigin !== null ? currentOrigin : performance.now());
+  // A timeout scheduled from another timeout callback is a polling chain. Keep that
+  // distinction so settle can treat it like an interval without hiding a one-shot result.
+  let currentTimerChain = false;
   window.__mantisSetTimeout = st.bind(window);
   window.setTimeout = function (fn, ms, ...rest) {
     if (typeof fn !== 'function') return st.call(this, fn, ms, ...rest);
     const origin = originNow();
+    const chained = currentTimerChain;
     let id;
     id = st.call(this, function () {
       live.delete(id);
       const prev = currentOrigin;
+      const prevChain = currentTimerChain;
       currentOrigin = origin;
-      try { return fn.apply(this, arguments); } finally { currentOrigin = prev; }
+      currentTimerChain = true;
+      try { return fn.apply(this, arguments); } finally { currentOrigin = prev; currentTimerChain = prevChain; }
     }, ms, ...rest);
-    live.set(id, { origin, interval: false, delay: Number.isFinite(Number(ms)) ? Math.max(0, Number(ms)) : 0 });
+    live.set(id, { origin, interval: false, delay: Number.isFinite(Number(ms)) ? Math.max(0, Number(ms)) : 0, chained });
     return id;
   };
   window.clearTimeout = function (id) { live.delete(id); return ct.call(this, id); };
@@ -113,10 +127,12 @@ const TRACKER = `(() => {
     const origin = originNow();
     const id = si.call(this, function () {
       const prev = currentOrigin;
+      const prevChain = currentTimerChain;
       currentOrigin = origin;
-      try { return fn.apply(this, arguments); } finally { currentOrigin = prev; }
+      currentTimerChain = false;
+      try { return fn.apply(this, arguments); } finally { currentOrigin = prev; currentTimerChain = prevChain; }
     }, ms, ...rest);
-    live.set(id, { origin, interval: true, delay: Number.isFinite(Number(ms)) ? Math.max(0, Number(ms)) : 0 });
+    live.set(id, { origin, interval: true, delay: Number.isFinite(Number(ms)) ? Math.max(0, Number(ms)) : 0, chained: false });
     return id;
   };
   window.clearInterval = function (id) { live.delete(id); return ci.call(this, id); };
@@ -147,12 +163,15 @@ const TRACKER = `(() => {
   };
   window.__mantisBusyKinds = (since, includeIntervals = false, maxDelay = Infinity, minIntervalDelay = 0) => {
     const from = since === undefined ? -Infinity : since;
-    const kinds = { timer: false, interval: false, request: false };
+    const kinds = { timer: false, chained: false, interval: false, request: false };
     for (const timer of live.values()) {
       if (timer.origin < from || timer.delay > maxDelay) continue;
       if (timer.interval) {
         if (includeIntervals && timer.delay >= minIntervalDelay) kinds.interval = true;
-      } else kinds.timer = true;
+      } else {
+        kinds.timer = true;
+        if (timer.chained) kinds.chained = true;
+      }
     }
     for (const req of reqs) if (req.origin >= from) kinds.request = true;
     return kinds;
@@ -283,8 +302,6 @@ const COVERED_CLICK_TIMEOUT = 600;
 
 /** Navigation gets its own budget after a click has dispatched. */
 const NAVIGATION_TIMEOUT = 5000;
-/** A main-frame request starts immediately for ordinary document navigations. */
-const NAVIGATION_START_TIMEOUT = 100;
 /** A brief, bounded chance for a non-interactive painted veil to finish clearing. */
 const VEIL_CLEAR_TIMEOUT = 1500;
 const VEIL_RECHECK_MS = 100;
@@ -378,6 +395,8 @@ export class MantisBrowser {
   private readonly memory: SiteMemory;
   /** Present only while MANTIS_TIMING is enabled; normal calls do no timing work. */
   private timing: ToolTiming | null = null;
+  /** A target's mandatory live validation can also be the action's before snapshot. */
+  private actionBefore: { page: Page; snap: Snapshot; doc: string | null } | null = null;
 
   constructor(private readonly opts: MantisOptions = {}) {
     this.actionTimeout = opts.actionTimeoutMs ?? 5000;
@@ -438,7 +457,7 @@ export class MantisBrowser {
           throw new ActionError(`could not open ${target}: ${brief(e)}`);
         }
       }
-      await this.timed('wait', () => this.settle(page));
+      await this.timed('wait', () => this.settle(page, false, null, true));
       // A navigation starts a new page-scoped number registry. Identities from the previous
       // document must never be mistaken for a newly allocated media/control number.
       this.labels.clear();
@@ -553,12 +572,12 @@ export class MantisBrowser {
         await el.dispose();
       }
       if (dispatched && navigation) {
-        // Fast document navigations get their own completion budget. Keep the watcher alive for
-        // the subsequent settle window when a timer, interval, or refresh starts navigation later.
-        if (!(await this.timed('navigation', () => this.waitForTriggeredNavigation(navigation)))) this.pendingNavigation = navigation;
+        // Keep the watcher through settle. It observes immediate and delayed navigations there,
+        // avoiding a fixed start race on actions that stay in the current document.
+        this.pendingNavigation = navigation;
       } else navigation?.cancel();
       return `clicked ${label}`;
-    });
+    }, { targetScan: true });
   }
 
   async type(id: number, text: string, submit = false): Promise<string> {
@@ -576,12 +595,10 @@ export class MantisBrowser {
       } finally {
         await el.dispose();
       }
-      if (navigation) {
-        if (!(await this.timed('navigation', () => this.waitForTriggeredNavigation(navigation)))) this.pendingNavigation = navigation;
-      }
+      if (navigation) this.pendingNavigation = navigation;
       const shown = label.includes('(password)') ? '•••' : `"${text.length > 40 ? text.slice(0, 39) + '…' : text}"`;
       return `typed ${shown} into ${label.replace(' (password)', '')}${submit ? ' and pressed Enter' : ''}`;
-    }, { requestGrace: !submit });
+    }, { targetScan: true });
   }
 
   async select(id: number, option: string | string[]): Promise<string> {
@@ -598,7 +615,7 @@ export class MantisBrowser {
       } finally {
         await el.dispose();
       }
-    });
+    }, { targetScan: true });
   }
 
   /** Custom comboboxes choose one option per call; a one-element list is accepted. */
@@ -797,7 +814,7 @@ export class MantisBrowser {
         }
       }
       return `filled ${parts.length} field${parts.length === 1 ? '' : 's'}: ${parts.join('; ')}`;
-    });
+    }, { targetScan: true });
   }
 
   async press(key: string): Promise<string> {
@@ -862,7 +879,7 @@ export class MantisBrowser {
       return r.moved
         ? `scrolled ${target} inside ${where}; now at ${r.pct}% of it`
         : `scroll ${target} inside ${where}: already at the ${target === 'down' ? 'bottom' : target === 'up' ? 'top' : target === 'right' ? 'right edge' : 'left edge'} of it`;
-    }, { quiet: true });
+    }, { quiet: true, targetScan: typeof target === 'number' || inside !== undefined });
   }
 
   /** Scroll the page, or its largest inner scroll container when the page itself cannot scroll. */
@@ -906,7 +923,12 @@ export class MantisBrowser {
     return this.act('back', async (page) => {
       const from = page.url();
       await page.goBack({ waitUntil: 'domcontentloaded', timeout: 15_000 }).catch(() => null);
-      return page.url() !== from ? 'went back' : 'cannot go back: no earlier page';
+      const landed = page.url();
+      if (landed === from) return 'cannot go back: no earlier page';
+      const note = this.lostQueryOnBack(from, landed)
+        ? `\nnote: the query string of the earlier page was not restored; open(${from}) returns to it`
+        : '';
+      return `went back to ${landed}${note}`;
     }, { quiet: true });
   }
 
@@ -972,7 +994,7 @@ export class MantisBrowser {
       } finally {
         await el.dispose();
       }
-    });
+    }, { targetScan: true });
   }
 
   /** Set local files on a file input, its label, or a control which opens a file chooser. */
@@ -1019,7 +1041,7 @@ export class MantisBrowser {
       } finally {
         await el.dispose();
       }
-    });
+    }, { targetScan: true });
   }
 
   /** List tabs, switch the active tab, or close one. */
@@ -1248,17 +1270,27 @@ export class MantisBrowser {
       if (!outer && this.timing) {
         const timing = this.timing;
         this.timing = null;
-        const phases = ['action', 'navigate', 'navigation', 'wait', 'dialog', 'captcha', 'capture', 'translate', 'diff']
+        const phases = ['action', 'navigate', 'navigation', 'wait', 'dialog', 'captcha', 'capture', 'scan-before', 'scan-target', 'scan-after', 'translate', 'diff']
           .map((name) => `${name}=${Math.round(timing.phases.get(name) ?? 0)}ms`).join(' ');
-        process.stderr.write(`mantis timing tool=${timing.tool} ${phases}${timing.settle ? ` settle=${timing.settle}` : ''} total=${Math.round(performance.now() - timing.start)}ms\n`);
+        const scans = ['before', 'target', 'after'].map((name) => `${name}:${timing.scans?.get(name) ?? 0}`).join(',');
+        process.stderr.write(`mantis timing tool=${timing.tool} ${phases} scans=${scans}${timing.settle ? ` settle=${timing.settle}` : ''} total=${Math.round(performance.now() - timing.start)}ms\n`);
       }
     }
   }
 
   private async timed<T>(phase: string, fn: () => Promise<T>): Promise<T> {
     if (!this.timing) return fn();
+    const timing = this.timing;
     const start = performance.now();
-    try { return await fn(); } finally { this.timing.phases.set(phase, (this.timing.phases.get(phase) ?? 0) + performance.now() - start); }
+    const stack = timing.stack ??= [];
+    const frame = { phase, start, children: 0 };
+    stack.push(frame);
+    try { return await fn(); } finally {
+      const elapsed = performance.now() - start;
+      stack.pop();
+      timing.phases.set(phase, (timing.phases.get(phase) ?? 0) + elapsed - frame.children);
+      if (stack.length) stack[stack.length - 1]!.children += elapsed;
+    }
   }
 
   private timedSync<T>(phase: string, fn: () => T): T {
@@ -1271,12 +1303,16 @@ export class MantisBrowser {
    * Run an action, wait for the page to settle, and report what changed: a diff
    * when the same document is still showing, the full view after a navigation.
    */
-  private act(tool: string, fn: (page: Page) => Promise<string>, opts: { quiet?: boolean; requestGrace?: boolean } = {}): Promise<string> {
+  private act(tool: string, fn: (page: Page) => Promise<string>, opts: { quiet?: boolean; requestGrace?: boolean; targetScan?: boolean } = {}): Promise<string> {
     return this.guard(async () => {
       this.pendingNavigation?.cancel();
       this.pendingNavigation = null;
       const page = await this.activePage();
-      const before = (await this.unchanged(page)) ?? (await this.timed('capture', () => this.observe(page)).catch(() => null));
+      let before = await this.unchanged(page);
+      // Targeted actions always validate live state before dispatch. That scan is also a valid
+      // before snapshot, so do not perform a redundant walk first.
+      if (!before && !opts.targetScan) before = await this.scan(page, 'before').catch(() => null);
+      this.actionBefore = null;
       // Do not refresh issued identities from this scan. A SPA can recycle the same DOM element
       // between the agent's read and its action; the target guard compares against that last read.
       // Stamp the action's start in-page so settle() ignores timers/requests that were already running.
@@ -1289,6 +1325,7 @@ export class MantisBrowser {
       let msg: string;
       try {
         msg = await this.timed('action', () => fn(page));
+        before ??= this.actionBefore;
       } catch (e) {
         if (e instanceof NavigatedError) return this.navigatedObservation(page);
         throw e;
@@ -1307,8 +1344,8 @@ export class MantisBrowser {
         lines.push('opened in a new tab (now active)');
       }
       const captchaPromise = detectCaptcha(now);
-      const after = await this.timed('capture', () => this.observe(now)).catch(() => null);
-      if (before && after && now === page && before.doc !== null && before.doc === after.doc) {
+      const after = await this.scan(now, 'after').catch(() => null);
+      if (before && after && now === page && before.doc !== null && before.doc === after.doc && !this.needsPageView(before.snap, after.snap)) {
         this.remember(after.snap, after.doc);
         const cue = answerReadyCue(before.snap, after.snap);
         if (cue) lines.push(cue);
@@ -1332,6 +1369,34 @@ export class MantisBrowser {
       lines.push(...this.notes.splice(0));
       return lines.join('\n');
     }, tool);
+  }
+
+  private async scan(page: Page, kind: 'before' | 'target' | 'after'): Promise<{ snap: Snapshot; doc: string | null }> {
+    if (this.timing) {
+      const scans = this.timing.scans ??= new Map();
+      scans.set(kind, (scans.get(kind) ?? 0) + 1);
+    }
+    return this.timed(`scan-${kind}`, () => this.observe(page));
+  }
+
+  /** A route/title change is a new agent-facing page even when a client router retained its document. */
+  private needsPageView(before: Snapshot, after: Snapshot): boolean {
+    if (before.title !== after.title) return true;
+    try {
+      return new URL(before.url).pathname !== new URL(after.url).pathname;
+    } catch {
+      return before.url !== after.url;
+    }
+  }
+
+  private lostQueryOnBack(from: string, landed: string): boolean {
+    try {
+      const left = new URL(from);
+      const earlier = new URL(landed);
+      return left.search.length > 1 && earlier.search.length < left.search.length;
+    } catch {
+      return false;
+    }
   }
 
   /** Scan the page; remembered so the next action can skip its "before" scan if nothing changed. */
@@ -1432,7 +1497,12 @@ export class MantisBrowser {
     const found = await resolve(page, id);
     if (!found.ok) {
       const again = found.reason === 'gone' ? await this.rematch(page, id) : null;
-      if (again) return again;
+      if (again) {
+        // A rematched control still needs a before side for the action diff. This uncommon
+        // replacement path cannot reuse its rematch scan because that scan lacks page state.
+        if (!this.actionBefore) this.actionBefore = { page, ...(await this.scan(page, 'target')) };
+        return again;
+      }
       throw new ActionError(
         found.reason === 'unknown'
           ? `no element #${id} on this page; call read() to see current numbers`
@@ -1442,7 +1512,10 @@ export class MantisBrowser {
     if (issued) {
       // Always walk immediately before dispatch. The document MutationObserver does not see
       // mutations inside an already-open shadow root, so a cached page snapshot is insufficient.
-      const current = (await capture(page)).nodes.find((n) => n.kind === 'interactive' && n.id === id);
+      const validation = await this.scan(page, 'target');
+      // Retain the fresh live guard; only the redundant action-before walk is removed.
+      if (!this.actionBefore) this.actionBefore = { page, ...validation };
+      const current = validation.snap.nodes.find((n) => n.kind === 'interactive' && n.id === id);
       // A connected element that the visible capture no longer represents should retain the
       // normal actionability error (for example, "is not visible"), rather than being called a
       // semantic identity change. Guard only a newly captured, meaningfully different target.
@@ -1741,24 +1814,6 @@ export class MantisBrowser {
     };
   }
 
-  private async waitForTriggeredNavigation(navigation: NavigationWatch): Promise<boolean> {
-    let startTimer: ReturnType<typeof setTimeout> | undefined;
-    const started = await Promise.race([
-      navigation.started,
-      new Promise<false>((resolve) => { startTimer = setTimeout(() => resolve(false), NAVIGATION_START_TIMEOUT); }),
-    ]);
-    if (startTimer) clearTimeout(startTimer);
-    if (!started) {
-      return false;
-    }
-    try {
-      await this.waitForInFlightNavigation(navigation);
-    } finally {
-      navigation.cancel();
-    }
-    return true;
-  }
-
   /** Complete an observed request within the one budget that began when it started. */
   private async waitForInFlightNavigation(navigation: NavigationWatch): Promise<void> {
     const remaining = navigation.remainingMs();
@@ -2027,7 +2082,7 @@ export class MantisBrowser {
               const w = window as unknown as {
                 __mantisSetTimeout?: typeof setTimeout;
                 __mantisBusy?: (since?: number, includeIntervals?: boolean, maxDelay?: number, minIntervalDelay?: number) => boolean;
-                __mantisBusyKinds?: (since?: number, includeIntervals?: boolean, maxDelay?: number, minIntervalDelay?: number) => { timer: boolean; interval: boolean; request: boolean };
+                __mantisBusyKinds?: (since?: number, includeIntervals?: boolean, maxDelay?: number, minIntervalDelay?: number) => { timer: boolean; chained: boolean; interval: boolean; request: boolean };
                 __mantisEpoch?: number;
                 __mantisDocStart?: number;
                 __mantisDomChanges?: number;
@@ -2049,7 +2104,7 @@ export class MantisBrowser {
               let lastMutation = start;
               let timer: ReturnType<typeof setTimeout>;
               let unwatchShadows: (() => void) | undefined;
-              const busyKinds = () => w.__mantisBusyKinds?.(since, ownIntervals, busyMax) ?? { timer: false, interval: false, request: false };
+              const busyKinds = () => w.__mantisBusyKinds?.(since, ownIntervals, busyMax) ?? { timer: false, chained: false, interval: false, request: false };
               const capReason = (): string => {
                 const busy = busyKinds();
                 return busy.request ? 'cap-request' : busy.timer ? 'cap-timer' : busy.interval ? 'cap-interval' : 'cap-timer';
@@ -2066,11 +2121,12 @@ export class MantisBrowser {
                 if (elapsed < metaRefreshMs) timer = st(check, Math.min(50, metaRefreshMs - elapsed));
                 // An action's own interval can lead to a navigation, but an interval installed
                 // while a destination document loads is background work and must not hold settle.
-                // A fast recurring interval that leaves the DOM quiet is a poll, not a pending result, so it
-                // only gets a short grace; one-shot timers, requests and slow intervals keep the full cap.
+                // A quiet request, interval, or self-rearming timeout is a poll, not a pending result.
+                // Keep one-shot timers in the normal window: they can still render a late result.
                 else if (requestGrace && elapsed >= requestMax && Date.now() - lastMutation >= requestQuiet) {
                   const busy = busyKinds();
                   if (busy.request && !busy.timer && !busy.interval) finish('cap-request');
+                  else if (busy.chained && busy.timer) finish('cap-timer');
                   else if (w.__mantisBusy?.(since, ownIntervals, busyMax, 500) && elapsed < busyMax) timer = st(check, 50);
                   else if (w.__mantisBusy?.(since, ownIntervals, busyMax) && elapsed < intervalMax) timer = st(check, 50);
                   else finish(reason && (busy.request || busy.timer || busy.interval) ? capReason() : 'quiet');
@@ -2146,7 +2202,7 @@ export class MantisBrowser {
               timer = st(check, idle ? idleGrace : quiet);
               const cap = st(() => finish(reason ? (sawMutation ? 'cap-mutations' : capReason()) : 'quiet'), max);
             }),
-          { quiet: 150, idleGrace: 60, max: 3000, busyMax: 3000, intervalMax: 1000, useEpoch: afterAction, reason: !!this.timing, requestGrace, requestMax: 1000, requestQuiet: 300 },
+          { quiet: 150, idleGrace: 60, max: 3000, busyMax: 3000, intervalMax: 1000, useEpoch: afterAction, reason: !!this.timing, requestGrace: requestGrace || afterAction, requestMax: 1000, requestQuiet: 300 },
         );
         if (stop && this.timing) this.timing.settle = stop;
         // A timer can start a main-frame request after its own pending entry has fired. Do not
