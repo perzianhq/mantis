@@ -1,0 +1,28 @@
+{
+  "suite": "long-live-v1",
+  "taskCount": 14,
+  "runsPerApproach": 42,
+  "paired": [
+    {
+      "approach": "mantis",
+      "luna": "35/42",
+      "haiku": "42/42"
+    },
+    {
+      "approach": "tree",
+      "luna": "34/42",
+      "haiku": "41/42"
+    }
+  ],
+  "reproducedExistingVerdicts": 171,
+  "excludedTasks": [
+    {
+      "task": "longlive-internet-window-frames-upload",
+      "reason": "not deterministically gradable"
+    },
+    {
+      "task": "longlive-selenium-window-frames-upload",
+      "reason": "not deterministically gradable"
+    }
+  ]
+}
