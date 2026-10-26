@@ -44,13 +44,13 @@ Mantis vs the accessibility tree (Playwright MCP) on public sites, medians, `gpt
 
 | | Luna Mantis | Luna tree | Haiku Mantis | Haiku tree |
 |---|---:|---:|---:|---:|
-| Success | 89/90 | **90/90** | 89/90 | 89/90 |
-| Input tokens (mean) | **87k** | 122k | **72k** | 142k |
-| Time | 44s | **23s** | 45s | 43s |
+| Success | **88/90** | 86/90 | **90/90** | 88/90 |
+| Input tokens (mean) | **77k** | 114k | **47k** | 96k |
+| Time | **27s** | 31s | **24s** | 31s |
 
-Long tasks: about a third less time and 28-42% fewer input tokens, accuracy equal or better. Short tasks: accuracy within one task of the tree and 28-49% fewer tokens, but not faster (timings are being re-measured under cleaner conditions).
+Long tasks: about a third less time and 28-42% fewer input tokens, accuracy equal or better. Short tasks (clean re-run, one build, all approaches interleaved): accuracy equal or better, 32-51% fewer input tokens and 13-22% less time than the tree.
 
-Judge is uncalibrated (79% agreement with deterministic keys), so model-judged rows are indicative; one short task was swapped after scoring. Screenshot baseline, local workflows, method and all caveats: [bench/RESULTS.md](bench/RESULTS.md).
+Short-task scores are graded by deterministic answer keys on the captured final state. Long-task rows are model-judged by an uncalibrated judge (79% agreement with deterministic keys), so they are indicative; one short task was swapped after scoring. Screenshot baseline, local workflows, method and all caveats: [bench/RESULTS.md](bench/RESULTS.md).
 
 ## Learn more
 

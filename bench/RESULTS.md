@@ -21,7 +21,7 @@ Formerly named `live-long-fixtures` (the tasks run on local fixtures, not live s
 
 - Mantis vs tree: Luna 22% less time, 38% fewer input tokens, 29% fewer calls; Haiku 29% less time, 35% fewer input tokens, 18% fewer calls. Scores are equal.
 - Luna's screenshot approach failed 6 of 48 rows; Mantis and the tree failed none.
-- Luna ran locally on Windows (concurrency 30) and Haiku on cloud Linux (concurrency 12), so compare approaches within a model, not times across models. Rows that needed a retry are best-of-two.
+- Luna ran locally on Windows and Haiku on cloud Linux; concurrency was not reliably recorded for these runs, so compare approaches within a model, not times across models. Rows that needed a retry are best-of-two.
 - A later Mantis-only full run (20261023, final fixtures and graders) scored 48/48 for both models (`results/live-long-fixtures-{luna,haiku}-mantis-final-20261023.md`); the table keeps the same-condition three-way run so approaches stay comparable.
 - Basket and retention rows were rerun after two fixture fixes (history restore, unsaved retention summary); other rows were regraded offline with the current graders from the same runs. Merged files: `results/live-long-fixtures-{luna,haiku}-merged-20261023.md`.
 
@@ -84,6 +84,17 @@ Post-hoc swaps were GPL-3 to RFC 8259, IMDb to TMDB, USGS to NIST, and data-gov-
 | Median tool output (chars) | 9.5k | 27.0k | **0.1k** |
 | Median output tokens | **874** | 1096 | 1490 |
 
+**Clean short re-run (20261026, supersedes the timings below).** All 30 tasks, 3 approaches, 3 runs per cell, one build, approaches interleaved, 6 concurrent runs per model (12 total), 270 runs per model. Success is graded by the deterministic answer keys (`npm run bench:regrade:deterministic`, offline replay of the saved final frames); the earlier model-judged Luna scores were Mantis 86, tree 85 (screenshot 90 and all Haiku scores unchanged). Mean input tokens, median time, mean tool calls:
+
+| | Luna Mantis | Luna tree | Luna screenshot | Haiku Mantis | Haiku tree | Haiku screenshot |
+|---|---:|---:|---:|---:|---:|---:|
+| Success | 88/90 | 86/90 | 90/90 | 90/90 | 88/90 | 88/90 |
+| Input tokens | 77k | 114k | 114k | 47k | 96k | 42k |
+| Time (median) | 27.2s | 31.2s | 35.1s | 23.9s | 30.5s | 22.9s |
+| Tool calls | 3.3 | 5.0 | 7.3 | 3.8 | 6.2 | 7.9 |
+
+Historical model-judging mix (not used for the scores above): the first pass (gpt-6.1-sol) timed out on 169 runs, which were re-judged. Sol re-judged the first 21 of them and claude-sonnet-5-5 (high effort, `JUDGE_PROVIDER=claude`) the other 148, because sol stalled under sustained load; `judgeModel` is recorded per run in `results/live-v1-{luna,haiku}-clean-20261026-final.json`. Sonnet is a different model from both agents under test (Luna, Haiku), but Sonnet-judged rows have not passed the calibration gate. The earlier short timings and the claim that Mantis was slower than the tree came from runs with unequal concurrency and different hosts, and are not reproduced here.
+
 Haiku tree and screenshot rows are a local re-run on Claude CLI 2.1.161 (the same build as the Mantis re-run), 180 runs, judged blind by sol with the same deterministic-first gate (57 validator-graded, 33 judge-graded per cell, 0 unsure, 0 blocked). Tokens and tool output are now comparable across columns; the earlier cloud-CLI-2.1.308 numbers are superseded. Latency is less reliable: the re-run used concurrency 16 (4 contention-damaged rows were re-run at concurrency 4), so tree and screenshot times may be inflated by machine contention; Mantis's concurrency was not recorded. On short tasks Mantis saves tokens and tool output (about 49% fewer input tokens than the tree, about even with screenshots) but is not faster: Haiku medians are 45.4s Mantis, 43.1s tree, 33.0s screenshots; Luna 43.7s vs 22.8s vs 28.0s. Haiku cost is not shown because Mantis cost was not recomputed on this build. Mantis rows are a re-run after `src/` gap fixes (20261023); Haiku includes 6 connection-failure rows re-run alone (6/6 success). The removed `data-gov-climate` row was fragile: its strict `/climate/1/` URL contract and site drift caused two Haiku Mantis failures, three tree failures, and two screenshot failures (7 of the 9 v1.7 Haiku failures), plus Mantis misses. Its EIA About replacement passed deterministic validation in all 18 runs, so the v1.8 composition has no failures. See the [live-v1 changelog](live-v1.md#changelog-and-disclosures).
 
 ## Side scorecards (DeepSeek only, local fixtures)
@@ -134,6 +145,15 @@ Frozen `local-v2`: 48 code-graded local fixture tasks x 3 approaches x 3 runs = 
 14 scripted tasks, no LLM ([results](results/latest.md)). Per step, Mantis returns a median of 28 tokens,
 the tree 131, screenshots about 1,366. All three finish all 14 tasks. Some huge pages drive the total-token gap,
 and on those Mantis shows a trimmed view, so this measures cheap orientation, not reading a whole article.
+
+## Mantis latency replay (no model)
+
+Model-free replay of recorded Luna `open`/`read`/`find` calls against two Mantis builds: 15201a2 (new) and 181ce0c (fix: late-dialog gate, `type` request grace). 30 tasks, 6 reps per build, 180 arms per build, concurrency 3, build order rotated per rep, timing off. Results: `results/latency-replay-new-fix.{json,md}`.
+
+- `open` median 3.22s to 2.79s (fix/new 0.86, bootstrap 95% CI 0.69-1.01, not significant); p90 flat (6.69s vs 6.61s).
+- `read` (1.04) and `find` (0.97) are unchanged; no tool regressed more than 15%.
+- Per task: 8 tasks 20-40% faster, one slower (`navigation-gutenberg-search`, 1.34x), which did not reproduce in a 12-rep rerun (1.02x, `results/latency-replay-gutenberg.md`).
+- Not covered: click/type/select (element ids drift between builds), so the `type` settle-cap change is untested here.
 
 ## Benchmarked source
 
