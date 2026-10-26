@@ -74,6 +74,8 @@ export interface WalkResult {
   truncated: boolean;
   /** Viewport and document size in px (used to derive regions on landmark-less pages). */
   page?: { vw: number; vh: number; docW: number; docH: number };
+  /** One or more reachable child frames could not be included before capture's deadline. */
+  framesSkipped?: boolean;
 }
 
 export function walker(includeSrOnly = false): WalkResult {

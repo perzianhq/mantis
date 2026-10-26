@@ -2,7 +2,7 @@ import { existsSync, statSync } from 'node:fs';
 import { basename, resolve as resolvePath } from 'node:path';
 import { chromium } from 'playwright';
 import type { Browser, BrowserContext, ElementHandle, Frame, Page } from 'playwright';
-import { capture, resolve } from './capture/index.js';
+import { bounded, capture, resolve } from './capture/index.js';
 import type { RawNode, Snapshot } from './capture/index.js';
 import { findInSnapshot, translate } from './translate.js';
 import type { ReadOptions } from './translate.js';
@@ -35,6 +35,8 @@ class ActionError extends Error {}
 
 /** An issued number belongs to a document that has since been replaced. */
 class NavigatedError extends Error {}
+
+const FRAME_OPERATION_MS = 1_500;
 
 type NavigationWatch = {
   page: Page;
@@ -1337,7 +1339,7 @@ export class MantisBrowser {
     const before = await this.pageState(page); // read first: a change during the scan must not be missed
     const snap = await capture(page);
     // Changes inside an iframe don't move the page's counter, so pages with frames are always rescanned.
-    const reusable = before.doc && before.mut >= 0 && !snap.nodes.some((n) => n.frame !== undefined);
+    const reusable = before.doc && before.mut >= 0 && !snap.framesSkipped && !snap.nodes.some((n) => n.frame !== undefined);
     this.last = reusable ? { page, doc: before.doc!, mut: before.mut, snap } : null;
     return { snap, doc: before.doc };
   }
@@ -1954,13 +1956,17 @@ export class MantisBrowser {
       // document-local scope, so the first match follows the same main-frame-first order as
       // ordinary page.$(), while still reaching cross-origin frames through Playwright.
       try {
-        await page.evaluate((selector) => void document.querySelector(selector), t.selector);
+        const valid = await bounded(
+          page.evaluate((selector) => void document.querySelector(selector), t.selector).then(() => true).catch(() => false),
+          FRAME_OPERATION_MS,
+        );
+        if (valid !== true) throw new Error('selector did not validate');
       } catch {
         throw new ActionError(`invalid CSS selector "${t.selector}"`);
       }
       let el: ElementHandle<Element> | null = null;
       for (const frame of page.frames()) {
-        el = await frame.$(t.selector).catch(() => null);
+        el = await bounded(frame.$(t.selector).catch(() => null), FRAME_OPERATION_MS);
         if (el) break;
       }
       if (!el) throw new ActionError(`nothing matches selector "${t.selector}"; call media() to list images and charts`);

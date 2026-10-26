@@ -1,4 +1,5 @@
 import type { Frame, Page } from 'playwright';
+import { bounded } from '../capture/index.js';
 
 export const CAPTCHA_WARNING = '⚠ CAPTCHA detected — call ask_human("captcha")';
 const CAPTCHA_WARNING_NO_HUMAN = '⚠ CAPTCHA detected — Mantis cannot solve it; choose another route or report blocked';
@@ -230,20 +231,37 @@ async function detectVerificationGateInFrame(frame: Frame): Promise<boolean> {
   }).catch(() => false);
 }
 
+/** A frame that does not answer (an embed still loading or stalled) must not hold up every action. */
+const FRAME_SCAN_MS = 1_500;
+const SCAN_BUDGET_MS = 4_000;
+const scanning = new WeakSet<Frame>();
+
+async function detectVerificationGateBounded(frame: Frame, ms: number): Promise<boolean> {
+  if (scanning.has(frame)) return false;
+  scanning.add(frame);
+  return (await bounded(detectVerificationGateInFrame(frame).finally(() => scanning.delete(frame)), ms)) ?? false;
+}
+
 async function detectVerificationGate(page: Page): Promise<boolean> {
+  const deadline = performance.now() + SCAN_BUDGET_MS;
   for (const frame of page.frames()) {
     try {
+      const remaining = (): number => Math.max(0, deadline - performance.now());
+      if (!remaining()) return false;
+      const frameDeadline = performance.now() + Math.min(FRAME_SCAN_MS, remaining());
+      const frameRemaining = (): number => Math.max(0, frameDeadline - performance.now());
       // A hidden embedded document is not a visible gate, even if its contents match.
       if (frame !== page.mainFrame()) {
-        const element = await frame.frameElement().catch(() => null);
+        const element = await bounded(frame.frameElement().catch(() => null), frameRemaining());
         if (!element) continue;
         try {
-          if (!await element.evaluate(renderedElement)) continue;
+          if (await bounded(element.evaluate(renderedElement).catch(() => false), frameRemaining()) !== true) continue;
         } finally {
           await element.dispose();
         }
       }
-      if (await detectVerificationGateInFrame(frame)) return true;
+      const ms = Math.min(frameRemaining(), remaining());
+      if (ms > 0 && await detectVerificationGateBounded(frame, ms)) return true;
     } catch {
       // Cross-origin or detached frames are not enough evidence by themselves.
     }

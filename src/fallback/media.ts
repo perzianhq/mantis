@@ -1,5 +1,5 @@
 import type { ElementHandle, Page } from 'playwright';
-import { hasCaptureFrameRange } from '../capture/index.js';
+import { bounded, hasCaptureFrameRange } from '../capture/index.js';
 import { makeProbe } from './probe.js';
 import type { ChartData, DataItem, MediaList } from './probe.js';
 
@@ -16,6 +16,7 @@ export const DATA_CHARS = 1500;
 const DESCRIBE = new Function('el', `return (${makeProbe.toString()})().describe(el)`) as (el: Element) => DataItem[];
 const DESCRIBE_BOUNDED = new Function('el', 'chartPointLimit', `return (${makeProbe.toString()})(chartPointLimit).describe(el)`) as (el: Element, chartPointLimit: number) => DataItem[];
 const INSTALL = `(${makeProbe.toString()})()`;
+const FRAME_MEDIA_MS = 1_500;
 
 /** Visible images / canvases / chart-like SVGs, each with a number from the shared registry. */
 export async function listMedia(page: Page): Promise<string> {
@@ -26,7 +27,7 @@ export async function listMedia(page: Page): Promise<string> {
   // actually represented, so every advertised child-frame id remains resolvable.
   const frames = page.frames().filter((frame) => frame === page.mainFrame() || hasCaptureFrameRange(frame));
   const lists = await Promise.all(frames.map((frame) =>
-    frame.evaluate(`${INSTALL}.list()`).catch(() => null) as Promise<MediaList | null>,
+    bounded(frame.evaluate(`${INSTALL}.list()`).catch(() => null), FRAME_MEDIA_MS) as Promise<MediaList | null>,
   ));
   const entries = lists.flatMap((res) => res?.entries ?? []);
   const more = lists.reduce((total, res) => total + (res?.more ?? 0), 0);

@@ -1,5 +1,5 @@
 import type { Page } from 'playwright';
-import { capture } from '../capture/index.js';
+import { bounded, capture } from '../capture/index.js';
 
 /** What ends a human hand-off. */
 export type Until =
@@ -41,14 +41,18 @@ async function signature(page: Page): Promise<Set<string>> {
   return new Set(snap.nodes.filter((n) => n.kind === 'interactive').map((n) => `${n.role}|${n.name}`));
 }
 
-async function selectorVisible(page: Page, selector: string): Promise<boolean> {
+const FRAME_VISIBILITY_MS = 1_500;
+
+async function selectorVisible(page: Page, selector: string, deadline: number): Promise<boolean | null> {
   for (const frame of page.frames()) {
-    const visible = await frame.evaluate((sel) => {
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) return null;
+    const visible = await bounded(frame.evaluate((sel) => {
       const el = document.querySelector(sel);
       if (!el) return false;
       const cs = getComputedStyle(el);
       return cs.display !== 'none' && cs.visibility !== 'hidden';
-    }, selector).catch(() => false);
+    }, selector).catch(() => false), Math.min(FRAME_VISIBILITY_MS, remaining));
     if (visible) return true;
   }
   return false;
@@ -79,10 +83,10 @@ export async function waitForHuman(page: Page, until: Until, opts: WaitOptions):
           if (page.url() !== startUrl) return true;
           break;
         case 'selector_gone':
-          if (!(await selectorVisible(page, until.selector))) return true;
+          if (await selectorVisible(page, until.selector, deadline) === false) return true;
           break;
         case 'selector_present':
-          if (await selectorVisible(page, until.selector)) return true;
+          if (await selectorVisible(page, until.selector, deadline) === true) return true;
           break;
         default: {
           if (page.url() !== startUrl) return true;

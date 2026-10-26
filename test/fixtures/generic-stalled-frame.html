@@ -1,0 +1,21 @@
+<!doctype html>
+<title>Frame resilience</title>
+<main>
+  <button id="primary" onclick="document.querySelector('#result').textContent = 'Primary action complete'">Primary action</button>
+  <output id="result">Primary action waiting</output>
+  <iframe id="child" title="Embedded panel" style="width: 320px; height: 120px"></iframe>
+  <div style="height: 1600px"></div>
+</main>
+<script>
+  const params = new URLSearchParams(location.search);
+  const child = params.get('child');
+  const delayed = Number(params.get('delayed'));
+  const frame = document.querySelector('#child');
+  if (Number.isFinite(delayed) && delayed > 0) {
+    setTimeout(() => {
+      frame.srcdoc = '<!doctype html><title>Delayed frame</title><main>Delayed frame contents</main>';
+    }, delayed);
+  } else if (child) {
+    frame.src = child;
+  }
+</script>

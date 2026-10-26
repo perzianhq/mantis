@@ -16,6 +16,11 @@ const WALK = (includeSrOnly: boolean): string => `JSON.stringify((${walker.toStr
 const FRAME_STEP = 10_000;
 const MAX_FRAME_DEPTH = 3;
 const MAX_FRAMES = 20;
+/** A child frame that does not answer (an unloaded or stalled embed) must not stall the whole page view. */
+const CHILD_WALK_MS = 2_000;
+const STALL_BUDGET_MS = 4_000;
+const walking = new WeakSet<Frame>();
+const lookingUp = new WeakMap<Frame, Map<number, Promise<Frame | null>>>();
 const frameBase = new WeakMap<Frame, number>();
 const frameByBase = new Map<number, WeakRef<Frame>>();
 
@@ -66,8 +71,49 @@ async function childFrame(frame: Frame, id: number): Promise<Frame | null> {
   return child;
 }
 
+/** Resolve with the promise's value, or null once `ms` pass (the promise itself keeps running). */
+export async function bounded<T>(promise: Promise<T>, ms: number): Promise<T | null> {
+  let timer: NodeJS.Timeout | undefined;
+  const timeout = new Promise<null>((resolve) => { timer = setTimeout(() => resolve(null), ms); });
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function remainingMs(deadline: number): number {
+  return Math.max(0, deadline - performance.now());
+}
+
+/** Share an unresolved lookup so repeated captures do not queue more protocol work for one iframe. */
+function pendingChildFrame(frame: Frame, id: number): Promise<Frame | null> {
+  let pending = lookingUp.get(frame);
+  if (!pending) lookingUp.set(frame, pending = new Map());
+  const existing = pending.get(id);
+  if (existing) return existing;
+  const lookup = childFrame(frame, id).finally(() => pending!.delete(id));
+  pending.set(id, lookup);
+  return lookup;
+}
+
+/**
+ * Walk a child frame, giving up when it does not answer in time. The unanswered evaluate stays queued
+ * in that frame, so the frame is skipped until it settles instead of piling up another walk behind it.
+ */
+async function walkChild(child: Frame, deadline: number): Promise<Snapshot | null> {
+  if (walking.has(child)) return null;
+  const remaining = remainingMs(deadline);
+  if (!remaining) return null;
+  walking.add(child);
+  return bounded(
+    walk(child, baseOf(child)).catch(() => null).finally(() => walking.delete(child)),
+    Math.min(CHILD_WALK_MS, remaining),
+  );
+}
+
 /** Fill each iframe placeholder with the frame's own nodes (numbers from the frame's own range). */
-async function fillFrames(frame: Frame, snap: Snapshot, depth: number, budget: { frames: number }): Promise<void> {
+async function fillFrames(frame: Frame, snap: Snapshot, depth: number, budget: { frames: number; deadline: number }): Promise<void> {
   if (!snap.nodes.some((n) => n.frame !== undefined)) return;
   const out: RawNode[] = [];
   const remap: number[] = [];
@@ -76,12 +122,26 @@ async function fillFrames(frame: Frame, snap: Snapshot, depth: number, budget: {
     out.push({ ...n, parent: n.parent >= 0 ? remap[n.parent]! : -1 });
     if (n.frame === undefined) continue;
     const at = out.length - 1;
-    const child = depth <= MAX_FRAME_DEPTH && budget.frames > 0 ? await childFrame(frame, n.frame) : null;
-    if (!child) continue;
+    if (depth > MAX_FRAME_DEPTH || budget.frames <= 0 || !remainingMs(budget.deadline)) {
+      snap.framesSkipped = true;
+      continue;
+    }
     budget.frames--;
-    const inner = await walk(child, baseOf(child)).catch(() => null);
-    if (!inner) continue;
+    const child = await bounded(pendingChildFrame(frame, n.frame), Math.min(CHILD_WALK_MS, remainingMs(budget.deadline)));
+    if (!child) {
+      snap.framesSkipped = true;
+      continue;
+    }
+    const inner = await walkChild(child, budget.deadline);
+    if (!inner) {
+      snap.framesSkipped = true;
+      continue;
+    }
     await fillFrames(child, inner, depth + 1, budget);
+    snap.framesSkipped ||= inner.framesSkipped;
+    // A still-loading iframe can briefly expose an empty initial document. It has no nodes to
+    // splice, but must still prevent a frameless snapshot from being reused after it loads.
+    if (!inner.nodes.length) snap.framesSkipped = true;
     if (!out[at]!.name && inner.title) out[at]!.name = inner.title.slice(0, 60);
     const [fx, fy] = n.box ?? [0, 0];
     const start = out.length;
@@ -110,11 +170,12 @@ async function fillFrames(frame: Frame, snap: Snapshot, depth: number, budget: {
 
 /** Run the DOM walker in the page and its visible iframes, and return the raw node list. */
 export async function capture(page: Page): Promise<Snapshot> {
+  const deadline = performance.now() + STALL_BUDGET_MS;
   const snap = await walk(page.mainFrame(), 0);
-  await fillFrames(page.mainFrame(), snap, 1, { frames: MAX_FRAMES });
+  await fillFrames(page.mainFrame(), snap, 1, { frames: MAX_FRAMES, deadline });
   if (!snap.nodes.length) {
     const fallback = await walk(page.mainFrame(), 0, true);
-    await fillFrames(page.mainFrame(), fallback, 1, { frames: MAX_FRAMES });
+    await fillFrames(page.mainFrame(), fallback, 1, { frames: MAX_FRAMES, deadline });
     // A canvas marker or empty frame is not enough evidence of readable page content.
     if (fallback.nodes.some((n) =>
       (n.kind === 'heading' || n.kind === 'interactive' || n.kind === 'prose' ||
