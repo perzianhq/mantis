@@ -306,7 +306,10 @@ export function deterministicGradeForRun(row: RealsiteRow, status: string, evide
   // "403 Forbidden" table-of-contents entry) as a refusal page.
   const accessBlock = finalFrames.some((frame) => isAccessBlockText(frame.text));
   // A block is a model-adjudicated outcome, not an answer-key failure.
-  return evidenceRun && status === 'success' && finalFrames.length === 1 && !accessBlock
+  // A state task is keyed on the captured final frame, not the transport line, so a completed
+  // run that only omitted that line (wrong_answer) is graded on its frame like any other.
+  const completed = status === 'success' || (status === 'wrong_answer' && row.deterministic?.kind === 'state');
+  return evidenceRun && completed && finalFrames.length === 1 && !accessBlock
     ? evaluateDeterministicGrader(row.deterministic, answer, frames)
     : null;
 }

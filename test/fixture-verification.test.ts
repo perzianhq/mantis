@@ -443,6 +443,14 @@ it('grades complete opted-in real-site validators against one final captured sta
   expect(deterministicGradeForRun(row, 'success', true, 'The Blue collection is selected.', frames)?.pass).toBe(true);
   expect(deterministicGradeForRun(row, 'timeout', true, 'The Blue collection is selected.', frames)).toBeNull();
   expect(deterministicGradeForRun(row, 'success', false, 'The Blue collection is selected.', frames)).toBeNull();
+
+  // A completed state task whose only miss is the transport line is graded on its captured frame.
+  expect(deterministicGradeForRun(row, 'wrong_answer', true, 'The Blue collection is selected.', frames)?.pass).toBe(true);
+  const wrongFrames = [{ ...frames[0]!, url: 'https://fixture.test/catalog' }];
+  expect(deterministicGradeForRun(row, 'wrong_answer', true, 'The Blue collection is selected.', wrongFrames)?.pass).toBe(false);
+  const factRow = { ...row, deterministic: { kind: 'fact' as const, answerIncludes: [{ type: 'entity' as const, value: 'Cedar' }], final: { url: { origin: 'https://fixture.test', path: '/reference' }, textIncludes: [{ type: 'entity' as const, value: 'Cedar' }] } } };
+  const factFrames = [{ id: 'F1', image: 'f1.png', final: true, url: 'https://fixture.test/reference', text: 'Cedar is available.' }];
+  expect(deterministicGradeForRun(factRow, 'wrong_answer', true, 'Cedar', factFrames)).toBeNull();
 });
 
 it('accepts alternate canonical paths and trailing slashes without accepting other pages', () => {
