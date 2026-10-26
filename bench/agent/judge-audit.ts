@@ -66,7 +66,7 @@ export interface AuditSummary {
   falseSuccessOfFailures: number | null;
   falseSuccessOfAll: number;
   confusion: Record<GoldVerdict, Record<'success' | 'failure' | 'other', number>>;
-  outcomes: Record<'success' | 'failure' | 'unsure' | 'blocked' | 'site_broken', number>;
+  outcomes: Record<'success' | 'failure' | 'unsure' | 'blocked' | 'site_broken' | 'judge_error', number>;
   wilson95: { low: number; high: number };
   gate: { pass: boolean; packets: boolean; tasks: boolean; agreement: boolean; falseSuccess: boolean };
   disagreements: { task: string; approach: string; model: string; gold: GoldVerdict; verdict: Verdict; reason: string }[];
@@ -175,7 +175,7 @@ export function loadAvailablePackets(resultsDir = DEFAULT_RESULTS): AuditPacket[
       if (result.grading !== 'deterministic' || !validGold(result.verdict) || typeof result.task !== 'string' || typeof result.approach !== 'string' || !Number.isInteger(result.run)) continue;
       const savedRun = saved.results.find((run) => run.task === result.task && run.approach === result.approach && run.run === result.run);
       if (!savedRun || !hasCompleteSavedEvidence(savedRun, logs)) continue;
-      const packetBase = { source, task: result.task, approach: result.approach, model: modelFor(saved, savedRun), run: result.run, attemptLog: logNameFor(savedRun), gold: result.verdict };
+      const packetBase = { source, task: result.task, approach: result.approach, model: modelFor(saved, savedRun), run: result.run!, attemptLog: logNameFor(savedRun), gold: result.verdict };
       const packet: AuditPacket = { ...packetBase, id: packetId(packetBase) };
       const previous = winners.get(packet.id);
       if (!previous || mtime > previous.mtime || (mtime === previous.mtime && source.localeCompare(previous.source) > 0)) winners.set(packet.id, { packet, mtime, source });
@@ -216,7 +216,7 @@ export function summarizeAudit(manifest: AuditManifest, completed: readonly Audi
   const latest = new Map<string, AuditRun>();
   for (const run of completed) if (expected.has(run.id)) latest.set(run.id, run);
   const runs = [...latest.values()];
-  const outcomes: AuditSummary['outcomes'] = { success: 0, failure: 0, unsure: 0, blocked: 0, site_broken: 0 };
+  const outcomes: AuditSummary['outcomes'] = { success: 0, failure: 0, unsure: 0, blocked: 0, site_broken: 0, judge_error: 0 };
   const confusion: AuditSummary['confusion'] = { success: { success: 0, failure: 0, other: 0 }, failure: { success: 0, failure: 0, other: 0 } };
   const disagreements: AuditSummary['disagreements'] = [];
   let agreement = 0;
@@ -258,7 +258,7 @@ const renderReport = (manifest: AuditManifest, report: AuditSummary): string => 
     '| Gold | Sol success | Sol failure | Sol other |', '| --- | ---: | ---: | ---: |',
     `| success | ${report.confusion.success.success} | ${report.confusion.success.failure} | ${report.confusion.success.other} |`,
     `| failure | ${report.confusion.failure.success} | ${report.confusion.failure.failure} | ${report.confusion.failure.other} |`, '',
-    `Other outcomes: unsure ${report.outcomes.unsure}, blocked ${report.outcomes.blocked}, site_broken ${report.outcomes.site_broken}. These are disagreements.`, '',
+    `Other outcomes: unsure ${report.outcomes.unsure}, blocked ${report.outcomes.blocked}, site_broken ${report.outcomes.site_broken}, judge_error ${report.outcomes.judge_error}. These are disagreements.`, '',
     '## Disagreements by task / approach / model', '',
     '| Task | Approach | Model | Gold | Sol | Reason |', '| --- | --- | --- | --- | --- | --- |', rows, '',
     `Gate checks: packets ${report.gate.packets ? 'PASS' : 'FAIL'}; tasks ${report.gate.tasks ? 'PASS' : 'FAIL'}; agreement ${report.gate.agreement ? 'PASS' : 'FAIL'}; false successes ${report.gate.falseSuccess ? 'PASS' : 'FAIL'}.`, '',
@@ -307,7 +307,7 @@ export async function runAudit(manifest: AuditManifest, resultsDir = DEFAULT_RES
       }
       const judged = report.runs[0];
       const skipped = report.skipped[0];
-      if (/^judge error/.test(judged?.reason ?? skipped?.reason ?? '')) {
+      if (judged?.verdict === 'judge_error' || /^judge error/.test(judged?.reason ?? skipped?.reason ?? '')) {
         failed += 1; // infrastructure failure (usage limit, missing binary): leave unrecorded so a rerun retries it
         if (failed === 1 || failed % 20 === 0) console.error(`audit infra error x${failed}: ${(judged?.reason ?? skipped?.reason ?? '').replace(/\s+/g, ' ').slice(-220)}`);
         if (failed >= 5 && !done.size) { next = pending.length; }

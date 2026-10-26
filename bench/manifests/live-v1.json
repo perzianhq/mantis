@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "id": "live-v1.8",
-  "version": "1.8",
+  "id": "live-v1.9",
+  "version": "1.9",
   "selector": "live-v1",
   "kind": "frozen-public-read-only-live-evaluation-config",
   "status": "configured-unverified-preflight",
@@ -11,9 +11,9 @@
   "documentedTaskCount": 31,
   "excludedTasks": {"livev1-standards-gpl-3": "The live GNU host timed out for every approach in the captured 20261022 run; archive.org cannot satisfy the required live-origin contract."},
   "taskHashAlgorithm": "sha256(canonical sorted task contracts)",
-  "taskHash": "38f2b0990c5f48b59621e4913f0b91092cfe5ff3b6db0c1a9719ce17590d9f15",
+  "taskHash": "e12d5a169cd10150bbf79220505fb3adadc1373ad1333dab71f11c01875e864f",
   "sourceFingerprintAlgorithm": "sha256(canonical URL + task-specific grading contract)",
-  "sourceFingerprintSetHash": "0394da5494d8ddead2d92f5fbaf3dccd81d5cb6fc49e4aa789f59c02a8d27c59",
+  "sourceFingerprintSetHash": "907c383b3b8fe96ea477c6481fb2ca0a8f4b75ade89206e15bd5ccd944e84e8f",
   "tasks": [
     "livev1-standards-gpl-3", "livev1-standards-rfc-8259", "livev1-standards-wcag-22", "livev1-standards-rfc-9110", "livev1-standards-openapi-31", "livev1-standards-css-color-4",
     "livev1-docs-python-json", "livev1-docs-mdn-http-overview", "livev1-docs-node-url", "livev1-docs-django-overview", "livev1-docs-postgresql-types",
@@ -23,7 +23,7 @@
     "livev1-interactive-openlibrary-subject", "livev1-interactive-github-issues", "livev1-interactive-openstreetmap-eiffel", "livev1-interactive-tmdb-search", "livev1-interactive-arxiv-search"
   ],
   "families": {"standards": 5, "documentation": 5, "civic-reference": 5, "open-data": 5, "site-navigation": 5, "interactive-exploration": 5},
-  "grading": {"deterministic": 20, "judge": 10},
+  "grading": {"deterministic": 30, "judge": 0},
   "difficulty": {"easy": 8, "medium": 14, "hard": 8},
   "sitePolicy": {"maxTasksPerSite": 3, "minimumIndependentSites": 15, "access": "public-read-only"},
   "approaches": ["mantis", "tree", "screenshot"],

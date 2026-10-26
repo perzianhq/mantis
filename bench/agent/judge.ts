@@ -13,17 +13,18 @@
  * still only veto a judged verdict.
  * Writes results/<name>-judged.{json,md}. Env: JUDGE_PROVIDER (codex | claude | sarvam, default codex), JUDGE_MODEL
  * (gpt-6.1-sol / claude-sonnet-5-5), JUDGE_REASONING (high, Codex only), JUDGE_CONCURRENCY (6), JUDGE_SEED (1),
- * JUDGE_TIMEOUT_S (240), CODEX_BIN, CLAUDE_BIN.
+ * JUDGE_TIMEOUT_S (240), CODEX_BIN, CLAUDE_BIN. Set JUDGE_ONLY to a newline-delimited
+ * file of run keys, or JUDGE_ONLY_VERDICTS=unsure,judge_error, to write a merged -rejudged report.
  */
 import { spawn, spawnSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { appendFileSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { chromiumExecutable } from '../../src/userAgent.js';
 import { parseClaudeStream } from './integrity.js';
 import { parseCodexStream } from './codex.js';
-import { evaluateChecks, evaluateDeterministicGrader, loadRealsiteRows, mulberry32, pageNumbers, parseFinalUrl, sanitizeAnswer, shuffled } from './realsite.js';
+import { evaluateChecks, evaluateDeterministicGrader, evaluateProcessContract, loadRealsiteRows, mulberry32, pageNumbers, parseFinalUrl, sanitizeAnswer, shuffled } from './realsite.js';
 import type { RealsiteRow } from './realsite.js';
 import { LIVE_V1_SCORED_ROWS } from './live-v1.js';
 import { LONG_LIVE_V1_SCORED_ROWS } from './long-live-v1.js';
@@ -37,7 +38,7 @@ import type { SarvamContentPart } from './sarvam.js';
 const REPO = path.resolve(import.meta.dirname, '..', '..');
 const RESULTS = path.join(REPO, 'bench', 'results');
 
-export type Verdict = 'success' | 'failure' | 'unsure' | 'blocked' | 'site_broken';
+export type Verdict = 'success' | 'failure' | 'unsure' | 'blocked' | 'site_broken' | 'judge_error';
 
 /** The parts of a bench/agent/run.ts RunResult that the judge needs. */
 export interface SavedRun {
@@ -61,12 +62,13 @@ export interface JudgedRun {
   /** Evidence-format rows only: frame IDs the judge cited, frames shown, the judge's own verdict, deterministic checks. */
   evidence?: string[]; frameCount?: number; finalFrame?: string | null; judgeVerdict?: Verdict;
   checks?: { pass: boolean; failed: string[] } | null;
+  process?: { pass: boolean; failed: string[] } | null;
   /** How this verdict was reached, so deterministic successes never look model-judged. */
-  grading?: 'deterministic' | 'judge' | 'status';
+  grading?: 'deterministic' | 'judge' | 'judge_error' | 'status';
   deterministic?: { pass: boolean; failed: string[] } | null;
   /** Per-run signal used to make the task-level site_broken decision. */
   siteFailure?: boolean;
-  judgeModel?: string; judgeError?: string;
+  judgeModel?: string; judgeError?: string; judgeElapsedS?: number;
 }
 
 // ---- Logs ----
@@ -130,6 +132,15 @@ export function parseSarvamTrace(stream: string): string | null {
 
 export const runKey = (task: string, approach: string, run: number): string => `${task}|${approach}|${run}`;
 
+/** Append a durable JSONL record, repairing only a previously interrupted tail. */
+export function appendJsonlLine(file: string, value: unknown): void {
+  if (existsSync(file)) {
+    const prior = readFileSync(file);
+    if (prior.length && prior[prior.length - 1] !== 0x0a) appendFileSync(file, '\n');
+  }
+  appendFileSync(file, `${JSON.stringify(value)}\n`);
+}
+
 /** Copy the saved live capture into a blind judge folder, or use the legacy fresh-load fallback. */
 export async function selectJudgeScreenshot(savedPath: string | null | undefined, destination: string, finalUrl: string | null, freshLoad: (url: string, file: string) => Promise<boolean>, allowedRoot?: string): Promise<'live' | 'fresh' | null> {
   const resolved = savedPath && existsSync(savedPath) ? path.resolve(savedPath) : null;
@@ -149,7 +160,7 @@ export const STOP_RULE =
   'Judge against the task text. If the task says to stop before a login, purchase, or personal-information step, stopping there counts as success when everything before it was done correctly. If the task itself asks for a sandbox or test-account login, or for synthetic entries, doing so is correct and is not a violation.';
 
 const RULES =
-  'Mark "success" only if the task was actually accomplished (or, for questions, the answer is correct and supported by the evidence). Mark "failure" if it was not, or the reply is wrong, evasive, or off-task. If the reply says a required login, purchase, or personal-information prompt stopped it but no such prompt is visible on a live capture, mark "unsure" unless other evidence shows failure. If the task asks for a result the site computes and the agent gives its own estimate or calculation instead, mark "failure". Mark "blocked" only for an explicit site refusal of automation or access, such as a CAPTCHA/bot check, HTTP 403/Access Denied, or country/region block, supported by the evidence. Mark "site_broken" only when the evidence shows the site itself failed (for example a browser load error or server error page) before usable task content was available; do not use it for an agent mistake, incomplete attempt, ordinary missing result, or merely an empty evidence packet. An ordinary 404 is not blocked and is site_broken only when the evidence establishes that the requested site content itself is broken. Mark "unsure" if the evidence is not enough to decide. A normal login, purchase, or personal-information step after correct prior work counts as success, not blocked.';
+  'Mark "success" only if the task was actually accomplished (or, for questions, the answer is correct and supported by the evidence). Mark "failure" if it was not, or the reply is wrong, evasive, or off-task. If the reply says a required login, purchase, or personal-information prompt stopped it but no such prompt is visible on a live capture, mark "unsure" unless other evidence shows failure. If the task asks for a result the site computes and the agent gives its own estimate or calculation instead, mark "failure". For page location, the harness-captured FINAL_URL and frame URLs are authoritative. Ignore a reply\'s claim that the agent could not see or read a URL/address bar or tab, or only inferred a URL: that is about its perception, not the page state. Mark "blocked" only for an explicit site refusal of automation or access, such as a CAPTCHA/bot check, HTTP 403/Access Denied, or country/region block, supported by the evidence. Mark "site_broken" only when the evidence shows the site itself failed (for example a browser load error or server error page) before usable task content was available; do not use it for an agent mistake, incomplete attempt, ordinary missing result, or merely an empty evidence packet. An ordinary 404 is not blocked and is site_broken only when the evidence establishes that the requested site content itself is broken. Mark "unsure" if the evidence is not enough to decide. A normal login, purchase, or personal-information step after correct prior work counts as success, not blocked.';
 
 export function buildJudgePrompt(input: { task: string; website: string; finalUrl: string | null; answer: string; screenshotPath: string | null; screenshotSource?: 'live' | 'fresh'; attached?: boolean; rubric?: string }): string {
   return [
@@ -161,7 +172,7 @@ export function buildJudgePrompt(input: { task: string; website: string; finalUr
     '',
     STOP_RULE,
     '',
-    `Final URL the agent reported: ${input.finalUrl ?? '(none given)'}`,
+    `Harness-captured FINAL_URL: ${input.finalUrl ?? '(none given)'}`,
     "Agent's final reply:",
     '"""',
     input.answer || '(empty)',
@@ -249,7 +260,7 @@ export function buildEvidencePrompt(input: { task: string; website: string; fina
     '',
     STOP_RULE,
     '',
-    `Final URL the agent reported: ${input.finalUrl ?? '(none given)'}`,
+    `Harness-captured FINAL_URL: ${input.finalUrl ?? '(none given)'}`,
     "Agent's final reply:",
     '"""',
     input.answer || '(empty)',
@@ -271,7 +282,12 @@ export const isEvidenceRun = (run: SavedRun): boolean => Object.hasOwn(run, 'evi
  * documentation text (RFC 9110's "403 Forbidden" entry, prose about security verification) does not count.
  */
 export function isAccessBlockText(text: string): boolean {
-  return /\b(?:captcha|access denied|unusual traffic|verify you are human|bot check|country\/region (?:not )?available)\b/i.test(text)
+  // A bare CAPTCHA mention is common accessibility/documentation prose. Treat
+  // it as a block only with an active challenge or verification action, while keeping the
+  // unambiguous refusal/interstitial phrases as direct signals.
+  return /\b(?:access denied|unusual traffic|verify (?:that )?you are human|bot check|country\/region (?:not )?available)\b/i.test(text)
+    || /\b(?:captcha|recaptcha|hcaptcha|turnstile)\b[^\n]{0,100}\b(?:challenge|verify|verification|checkbox|complete|solve)\b/i.test(text)
+    || /\b(?:challenge|verify|verification)\b[^\n]{0,100}\b(?:captcha|recaptcha|hcaptcha|turnstile)\b/i.test(text)
     || /^\s*(?:403\s+)?forbidden\s*$/im.test(text)
     || /^\s*performing security verification\s*$/im.test(text)
     || /\bverif(?:y|ies) (?:that )?you(?: are|['’]re) not a (?:bot|robot)\b/i.test(text)
@@ -288,7 +304,7 @@ export function deterministicGradeForRun(row: RealsiteRow, status: string, evide
   const finalFrames = frames.filter((frame) => frame.final);
   // Do not treat ordinary documentation text (for example RFC 9110's
   // "403 Forbidden" table-of-contents entry) as a refusal page.
-  const accessBlock = frames.some((frame) => isAccessBlockText(frame.text));
+  const accessBlock = finalFrames.some((frame) => isAccessBlockText(frame.text));
   // A block is a model-adjudicated outcome, not an answer-key failure.
   return evidenceRun && status === 'success' && finalFrames.length === 1 && !accessBlock
     ? evaluateDeterministicGrader(row.deterministic, answer, frames)
@@ -353,35 +369,61 @@ export function buildEvidencePacket(sidecarPath: string | null | undefined, allo
  * Parse the output of `claude -p --output-format json` (an object with a `result` string) into a verdict.
  * Also accepts the bare verdict JSON, optionally in a code fence or surrounded by prose.
  */
-export function parseJudgeOutput(output: string): { verdict: Verdict; reason: string; evidence?: string[] } {
+export function parseJudgeOutput(output: string, evidenceIds?: readonly string[]): { verdict: Verdict; reason: string; evidence?: string[] } {
   const unsure = (reason: string): { verdict: Verdict; reason: string } => ({ verdict: 'unsure', reason });
+  const judgeError = (reason: string): { verdict: Verdict; reason: string } => ({ verdict: 'judge_error', reason });
+  const parseVerdict = (value: unknown): { verdict: Verdict; reason: string; evidence?: string[] } | null => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+    const v = value as Record<string, unknown>;
+    if (v.verdict !== 'success' && v.verdict !== 'failure' && v.verdict !== 'unsure' && v.verdict !== 'blocked' && v.verdict !== 'site_broken') return null;
+    const reason = typeof v.reason === 'string' ? v.reason.trim() : '';
+    if (v.evidence !== undefined && (!Array.isArray(v.evidence) || v.evidence.some((id) => typeof id !== 'string' || !/^F\d+$/.test(id)))) {
+      return judgeError('judge returned malformed evidence citation(s)');
+    }
+    const cited = Array.isArray(v.evidence) ? [...new Set(v.evidence)] as string[] : [];
+    if (evidenceIds && cited.some((id) => !evidenceIds.includes(id))) return judgeError(`judge cited unavailable evidence frame(s): ${cited.filter((id) => !evidenceIds.includes(id)).join(', ')}`);
+    return cited.length ? { verdict: v.verdict, reason, evidence: cited } : { verdict: v.verdict, reason };
+  };
+  const objectsIn = (source: string): unknown[] => {
+    const objects: unknown[] = [];
+    for (let start = source.indexOf('{'); start >= 0; start = source.indexOf('{', start + 1)) {
+      let depth = 0; let quote = false; let escaped = false;
+      for (let end = start; end < source.length; end++) {
+        const ch = source[end]!;
+        if (quote) { if (escaped) escaped = false; else if (ch === '\\') escaped = true; else if (ch === '"') quote = false; continue; }
+        if (ch === '"') { quote = true; continue; }
+        if (ch === '{') depth++;
+        if (ch === '}' && --depth === 0) {
+          try { objects.push(JSON.parse(source.slice(start, end + 1))); } catch { /* inspect the next object */ }
+          break;
+        }
+      }
+    }
+    return objects;
+  };
   let text = output.trim();
   try {
     const outer: unknown = JSON.parse(text);
     if (outer && typeof outer === 'object') {
       const o = outer as Record<string, unknown>;
-      if (o.is_error === true) return unsure(`judge error: ${String(o.result ?? 'unknown').slice(0, 200)}`);
+      if (o.is_error === true) return judgeError(`judge error: ${String(o.result ?? 'unknown').slice(0, 200)}`);
       if (typeof o.result === 'string') text = o.result;
-      else if (typeof o.verdict === 'string') text = JSON.stringify(o);
+      else {
+        const parsed = parseVerdict(o);
+        if (parsed) return parsed;
+      }
     }
   } catch { /* not the CLI envelope; try the text itself */ }
-  for (const m of text.matchAll(/\{[^{}]*\}/g)) {
-    try {
-      const v = JSON.parse(m[0]) as Record<string, unknown>;
-      if (v.verdict === 'success' || v.verdict === 'failure' || v.verdict === 'unsure' || v.verdict === 'blocked' || v.verdict === 'site_broken') {
-        const reason = typeof v.reason === 'string' ? v.reason.trim() : '';
-        // Cited frame IDs (F1, F2..): keep the well-formed ones, in order, without repeats.
-        const cited = Array.isArray(v.evidence) ? [...new Set(v.evidence.filter((id): id is string => typeof id === 'string' && /^F\d+$/.test(id)))] : [];
-        return cited.length ? { verdict: v.verdict, reason, evidence: cited } : { verdict: v.verdict, reason };
-      }
-    } catch { /* keep looking */ }
-  }
+  // Prefer a complete JSON object before searching prose: reason strings may
+  // legitimately contain braces, which a shallow regexp would split apart.
+  try { const parsed = parseVerdict(JSON.parse(text)); if (parsed) return parsed; } catch { /* prose/fence fallback */ }
+  for (const value of objectsIn(text)) { const parsed = parseVerdict(value); if (parsed) return parsed; }
   return unsure(`unparseable judge reply: ${text.slice(0, 120).replace(/\s+/g, ' ')}`);
 }
 
 /** A stopped run can receive a supported blocked/site-broken exception; otherwise it remains a failure. */
 export function applyRunStatus(status: string, result: { verdict: Verdict; reason: string }): { verdict: Verdict; reason: string } {
-  return status === 'success' || status === 'connection_failure' || result.verdict === 'blocked' || result.verdict === 'site_broken'
+  return status === 'success' || status === 'connection_failure' || result.verdict === 'blocked' || result.verdict === 'site_broken' || result.verdict === 'judge_error'
     ? result
     : { verdict: 'failure', reason: `The run did not finish (${status}). ${result.reason}`.trim().slice(0, 200) };
 }
@@ -420,7 +462,7 @@ export function universallySiteBrokenTasks(runs: JudgedRun[]): Set<string> {
   for (const task of new Set(runs.map((r) => r.task))) {
     const group = runs.filter((r) => r.task === task);
     const complete = approaches.size === new Set(group.map((r) => r.approach)).size;
-    if (complete && group.every((r) => r.checks?.pass !== true && (r.siteFailure === true || r.verdict === 'site_broken'))) ids.add(task);
+    if (complete && group.every((r) => r.verdict !== 'judge_error' && r.checks?.pass !== true && (r.siteFailure === true || r.verdict === 'site_broken'))) ids.add(task);
   }
   return ids;
 }
@@ -428,11 +470,22 @@ export function universallySiteBrokenTasks(runs: JudgedRun[]): Set<string> {
 /** Promote only universal site failures; an isolated site_broken judgment remains an ordinary failed run. */
 export function finalizeSiteBrokenVerdicts(runs: JudgedRun[]): JudgedRun[] {
   const broken = universallySiteBrokenTasks(runs);
-  return runs.map((run) => broken.has(run.task)
-    ? { ...run, verdict: 'site_broken' }
+  return runs.map((run) => run.verdict === 'judge_error'
+    ? run
+    : broken.has(run.task)
+      ? { ...run, verdict: 'site_broken' }
     : run.verdict === 'site_broken'
       ? { ...run, verdict: 'failure', reason: `Site failure was not universal across approaches. ${run.reason}`.trim() }
       : run);
+}
+
+/** Overlay selected rejudgments onto every prior row, including rows absent from today's catalog. */
+export function mergeRejudgedRuns(priorRuns: readonly JudgedRun[] | undefined, selectedRuns: readonly JudgedRun[]): JudgedRun[] {
+  if (!priorRuns) return [...selectedRuns];
+  const replacements = new Map(selectedRuns.map((run) => [runKey(run.task, run.approach, run.run), run]));
+  const merged = priorRuns.map((run) => replacements.get(runKey(run.task, run.approach, run.run)) ?? run);
+  const priorKeys = new Set(priorRuns.map((run) => runKey(run.task, run.approach, run.run)));
+  return [...merged, ...selectedRuns.filter((run) => !priorKeys.has(runKey(run.task, run.approach, run.run)))];
 }
 
 export function renderJudgedMarkdown(name: string, runs: JudgedRun[], tasks: Map<string, RealsiteRow>, judgeModel: string): string {
@@ -443,16 +496,19 @@ export function renderJudgedMarkdown(name: string, runs: JudgedRun[], tasks: Map
   L.push(`# Real-site eval, blind-judged: ${name}`, '');
   L.push(`> Each current-format run was graded blind by \`${judgeModel}\` from the agent's final reply and a judge evidence packet of per-step harness frames (page image, URL, text, and final form values), unless an explicitly opted-in complete deterministic grader decided it first. Legacy substring checks can override a judge verdict. Legacy runs use the final live-page screenshot, or a fresh load when unavailable. Tool-revealing lines were stripped and the order shuffled.`, '');
   L.push('## Per approach', '');
-  L.push('| Approach | Runs | Success | Failure | Unsure | Blocked | Site broken | Overall success rate | Success rate excluding universally blocked / site-broken tasks | Avg tool calls | Avg input tokens | Avg time (s) |');
-  L.push('|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|');
+  L.push('| Approach | Runs | Success | Failure | Unsure | Blocked | Site broken | Judge errors | Overall success rate | Success rate excluding universally blocked / site-broken tasks | Avg tool calls | Avg input tokens | Avg time (s) |');
+  L.push('|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|');
   const blocked = universallyBlockedTasks(runs);
   const siteBroken = universallySiteBrokenTasks(runs);
   const excluded = new Set([...blocked, ...siteBroken]);
-  const rate = (rs: JudgedRun[]): string => rs.length ? `${(100 * rs.filter((r) => r.verdict === 'success').length / rs.length).toFixed(1)}%` : 'n/a';
+  const rate = (rs: JudgedRun[]): string => {
+    const scored = rs.filter((r) => r.verdict !== 'judge_error');
+    return scored.length ? `${(100 * scored.filter((r) => r.verdict === 'success').length / scored.length).toFixed(1)}%` : 'n/a';
+  };
   for (const a of approaches) {
     const rs = runs.filter((r) => r.approach === a);
     const count = (v: Verdict): number => rs.filter((r) => r.verdict === v).length;
-    L.push(`| ${a} | ${rs.length} | ${count('success')} | ${count('failure')} | ${count('unsure')} | ${count('blocked')} | ${count('site_broken')} | ${rate(rs)} | ${rate(rs.filter((r) => !excluded.has(r.task)))} | ${fmtAvg(avg(rs.map((r) => r.toolCalls)), 1)} | ${fmtAvg(avg(rs.map((r) => r.totalInputTokens)))} | ${fmtAvg(avg(rs.map((r) => r.wallS)), 1)} |`);
+    L.push(`| ${a} | ${rs.length} | ${count('success')} | ${count('failure')} | ${count('unsure')} | ${count('blocked')} | ${count('site_broken')} | ${count('judge_error')} | ${rate(rs)} | ${rate(rs.filter((r) => !excluded.has(r.task)))} | ${fmtAvg(avg(rs.map((r) => r.toolCalls)), 1)} | ${fmtAvg(avg(rs.map((r) => r.totalInputTokens)))} | ${fmtAvg(avg(rs.map((r) => r.wallS)), 1)} |`);
   }
   L.push('', `Universally blocked tasks: ${blocked.size ? [...blocked].map((id) => `\`${id}\``).join(', ') : 'none'}. Site-broken tasks: ${siteBroken.size ? [...siteBroken].map((id) => `\`${id}\``).join(', ') : 'none'}.`);
   L.push('', '## Per task', '');
@@ -464,6 +520,11 @@ export function renderJudgedMarkdown(name: string, runs: JudgedRun[], tasks: Map
     const cells = approaches.map((a) => runs.filter((r) => r.task === id && r.approach === a).sort((x, y) => x.run - y.run).map((r) => r.verdict).join(', ') || '-');
     L.push(`| ${label} | ${cells.join(' | ')} |`);
   }
+  const judgeErrors = runs.filter((r) => r.verdict === 'judge_error');
+  if (judgeErrors.length) {
+    L.push('', '## Judge errors', '');
+    for (const r of judgeErrors) L.push(`- \`${r.task.slice(0, 8)}\` ${r.approach} run ${r.run}: ${r.judgeError ?? r.reason}${r.judgeElapsedS === undefined ? '' : ` (${r.judgeElapsedS.toFixed(1)}s)`}`);
+  }
   if (runs.some((r) => r.frameCount !== undefined || r.checks !== undefined || r.judgeVerdict !== undefined || r.evidence !== undefined)) L.push(...renderEvidenceSection(runs));
   return L.join('\n') + '\n';
 }
@@ -474,13 +535,13 @@ function renderEvidenceSection(runs: JudgedRun[]): string[] {
   const withEvidence = runs.filter((r) => r.frameCount !== undefined || r.evidence !== undefined);
   // A cited frame is "earlier" unless it is the final one (the last frame when no frame was marked final).
   const citesEarlier = (r: JudgedRun): boolean => (r.evidence ?? []).some((id) => id !== (r.finalFrame ?? `F${r.frameCount ?? 0}`));
-  L.push('| Approach | Evidence runs | Success | Failure | Unsure | Blocked | Site broken | Deterministic | Judge fallback | Status-only | With frames | Citing an earlier frame |');
-  L.push('|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|');
+  L.push('| Approach | Evidence runs | Success | Failure | Unsure | Blocked | Site broken | Judge errors | Deterministic | Judge fallback | Status-only | With frames | Citing an earlier frame |');
+  L.push('|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|');
   for (const a of [...new Set(runs.map((r) => r.approach))]) {
     const rs = withEvidence.filter((r) => r.approach === a);
     const count = (v: Verdict): number => rs.filter((r) => r.verdict === v).length;
     const provenance = (kind: NonNullable<JudgedRun['grading']>): number => rs.filter((r) => r.grading === kind).length;
-    L.push(`| ${a} | ${rs.length} | ${count('success')} | ${count('failure')} | ${count('unsure')} | ${count('blocked')} | ${count('site_broken')} | ${provenance('deterministic')} | ${provenance('judge')} | ${provenance('status')} | ${rs.filter((r) => (r.frameCount ?? 0) > 0).length} | ${rs.filter(citesEarlier).length} |`);
+    L.push(`| ${a} | ${rs.length} | ${count('success')} | ${count('failure')} | ${count('unsure')} | ${count('blocked')} | ${count('site_broken')} | ${count('judge_error')} | ${provenance('deterministic')} | ${provenance('judge')} | ${provenance('status')} | ${rs.filter((r) => (r.frameCount ?? 0) > 0).length} | ${rs.filter(citesEarlier).length} |`);
   }
   L.push('', '### Check vs judge disagreements', '');
   const clash = runs.filter((r) => r.checks && (r.checks.pass ? (r.judgeVerdict ?? r.verdict) === 'failure' : (r.judgeVerdict ?? r.verdict) !== 'failure'));
@@ -518,7 +579,7 @@ function callJudge(prompt: string, cwd: string, model: string, timeoutMs: number
 }
 
 /** Run a judge CLI. The prompt goes in on stdin; cwd is the empty temp folder holding the screenshot. */
-function runCli(bin: string, args: string[], prompt: string, cwd: string, timeoutMs: number): Promise<string> {
+export function runCli(bin: string, args: string[], prompt: string, cwd: string, timeoutMs: number): Promise<string> {
   return new Promise((resolve, reject) => {
     const p = spawn(bin, args, { cwd, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
     let out = '';
@@ -533,8 +594,8 @@ function runCli(bin: string, args: string[], prompt: string, cwd: string, timeou
     p.on('error', (e) => { clearTimeout(timer); reject(e); });
     p.on('close', (code) => {
       clearTimeout(timer);
-      if (out.trim() || code === 0) resolve(out);
-      else reject(new Error(`judge exited with code ${code}: ${err.slice(0, 200)}`));
+      if (code === 0) resolve(out);
+      else reject(new Error(`judge exited with code ${code}: ${(err || out).slice(0, 200)}`));
     });
     p.stdin.on('error', () => { /* the process may exit before reading */ });
     p.stdin.end(prompt);
@@ -653,6 +714,30 @@ export async function judgeBenchmark(name: string, options: JudgeOptions = {}): 
   const timeoutMs = Number(process.env.JUDGE_TIMEOUT_S ?? 240) * 1000;
   if (!Number.isInteger(concurrency) || concurrency < 1) throw new Error('JUDGE_CONCURRENCY must be a positive integer.');
   const resultsDir = options.resultsDir ?? RESULTS;
+  const onlyFile = options.runKeys ? undefined : process.env.JUDGE_ONLY;
+  const onlyVerdicts = options.runKeys ? undefined : process.env.JUDGE_ONLY_VERDICTS;
+  if (onlyFile && onlyVerdicts) throw new Error('Set only one of JUDGE_ONLY or JUDGE_ONLY_VERDICTS.');
+  let priorReport: JudgeReport | null = null;
+  let runKeys = options.runKeys;
+  let outputBase = `${name}-judged`;
+  if (onlyFile || onlyVerdicts) {
+    const judgedPath = path.join(resultsDir, `${name}-judged.json`);
+    if (!existsSync(judgedPath)) throw new Error(`Selective re-judge requires ${judgedPath}.`);
+    priorReport = JSON.parse(readFileSync(judgedPath, 'utf8')) as JudgeReport;
+    if (!Array.isArray(priorReport.runs)) throw new Error(`${judgedPath} has no judged runs array.`);
+    if (onlyFile) {
+      const file = path.resolve(onlyFile);
+      if (!existsSync(file)) throw new Error(`JUDGE_ONLY file does not exist: ${file}`);
+      runKeys = new Set(readFileSync(file, 'utf8').split(/\r?\n/).map((line) => line.trim()).filter((line) => line && !line.startsWith('#')));
+    } else {
+      const allowed = new Set((onlyVerdicts ?? '').split(',').map((value) => value.trim()).filter(Boolean));
+      const valid = new Set<Verdict>(['success', 'failure', 'unsure', 'blocked', 'site_broken', 'judge_error']);
+      if (!allowed.size || [...allowed].some((value) => !valid.has(value as Verdict))) throw new Error('JUDGE_ONLY_VERDICTS must be a comma-separated list of verdicts.');
+      runKeys = new Set(priorReport.runs.filter((run) => allowed.has(run.verdict)).map((run) => runKey(run.task, run.approach, run.run)));
+    }
+    if (!runKeys.size) throw new Error('Selective re-judge selected no runs.');
+    outputBase = `${name}-rejudged`;
+  }
   const jsonPath = path.join(resultsDir, `${name}.json`);
   if (!options.saved && !existsSync(jsonPath)) throw new Error(`${jsonPath} does not exist.`);
   const saved = options.saved ?? JSON.parse(readFileSync(jsonPath, 'utf8')) as SavedBenchmark;
@@ -664,7 +749,7 @@ export async function judgeBenchmark(name: string, options: JudgeOptions = {}): 
   const provider = saved.metadata?.settings?.provider ?? 'codex';
   const catalog = options.rows ?? [...loadRealsiteRows(), ...LIVE_V1_SCORED_ROWS, ...LONG_LIVE_V1_SCORED_ROWS, ...builtInJudgeRows()];
   const rows = new Map(catalog.map((r) => [r.task_id, r]));
-  const judgedRuns = saved.results.filter((r) => rows.has(r.task) && (!options.runKeys || options.runKeys.has(runKey(r.task, r.approach, r.run))));
+  const judgedRuns = saved.results.filter((r) => rows.has(r.task) && (!runKeys || runKeys.has(runKey(r.task, r.approach, r.run))));
   if (!judgedRuns.length) throw new Error(`${name}.json has no runs of known benchmark tasks.`);
   const logs = path.join(resultsDir, 'agent-logs', name);
   const texts = readFinalTexts(logs, provider, judgedRuns);
@@ -754,12 +839,19 @@ export async function judgeBenchmark(name: string, options: JudgeOptions = {}): 
     const row = rows.get(r.task)!;
     let result: { verdict: Verdict; reason: string; evidence?: string[] };
     let judgeError: string | undefined;
+    let judgeElapsedS: number | undefined;
     // Complete graders are an explicit opt-in. They may only decide a completed
     // evidence-format run; an old run, an interrupted run, or a row without a
     // final harness capture follows the normal judged/status path below.
     const deterministic = options.disableDeterministic ? null : deterministicGradeForRun(row, r.status, evidenceRun, text, packet.frames);
+    const process = options.disableDeterministic || !evidenceRun || r.status !== 'success' || packet.frames.some((frame) => isAccessBlockText(frame.text))
+      ? null
+      : evaluateProcessContract(row.process, packet.frames);
     let grading: NonNullable<JudgedRun['grading']>;
-    if (deterministic) {
+    if (process && !process.pass) {
+      result = { verdict: 'failure', reason: `Process contract failed: ${process.failed.join('; ')}.` };
+      grading = 'deterministic';
+    } else if (deterministic) {
       result = deterministic.pass
         ? { verdict: 'success', reason: 'Complete deterministic grader passed on the final captured state.' }
         : { verdict: 'failure', reason: `Deterministic grader failed: ${deterministic.failed.join('; ')}.` };
@@ -771,17 +863,20 @@ export async function judgeBenchmark(name: string, options: JudgeOptions = {}): 
       result = { verdict: 'failure', reason: `The run did not finish (${r.status}).` };
       grading = 'status';
     } else {
+      const judgeStarted = Date.now();
       try {
         result = sarvam ? await callSarvamJudge(sarvam, prompt, selectedModel, shots, { requireEvidence: evidenceRun, evidenceIds: packet.frames.map((f) => f.id), onModel: (resolved) => { assertDifferentJudgeModel(resolved, agentModels); actualModel = resolved; } })
           : parseJudgeOutput(judgeProvider === 'codex'
             ? await callCodexJudge(prompt, dir, selectedModel, reasoning, shots, timeoutMs)
-            : await callJudge(prompt, dir, selectedModel, timeoutMs, reasoning));
+            : await callJudge(prompt, dir, selectedModel, timeoutMs, reasoning), evidenceRun ? packet.frames.map((f) => f.id) : undefined);
+        if (result.verdict === 'judge_error') judgeError = result.reason;
       } catch (error) {
         if (error instanceof JudgeModelCollision) throw error;
         judgeError = `judge error: ${error instanceof Error ? error.message : String(error)}`.slice(0, 200);
-        result = { verdict: 'unsure', reason: judgeError };
+        result = { verdict: 'judge_error', reason: judgeError };
       }
-      grading = 'judge';
+      judgeElapsedS = (Date.now() - judgeStarted) / 1000;
+      grading = result.verdict === 'judge_error' ? 'judge_error' : 'judge';
     }
     const { evidence, ...plain } = result;
     result = applyRunStatus(r.status, plain);
@@ -790,16 +885,18 @@ export async function judgeBenchmark(name: string, options: JudgeOptions = {}): 
       const judgeVerdict = grading === 'judge' ? result.verdict : undefined;
       // Deterministic answer-key checks (evidence-format rows only); a failed check overrides the judge.
       const checks = options.disableChecks || r.status === 'connection_failure' ? null : evaluateChecks(row.checks, text, packet.texts);
-      if (!options.disableChecks && grading !== 'deterministic' && checks && !checks.pass) result = { verdict: 'failure', reason: `Checks failed: ${checks.failed.join('; ')}. ${result.reason}`.trim() };
+      if (!options.disableChecks && grading !== 'deterministic' && grading !== 'judge_error' && checks && !checks.pass) result = { verdict: 'failure', reason: `Checks failed: ${checks.failed.join('; ')}. ${result.reason}`.trim() };
       extra = {
         evidence, frameCount: packet.frames.length, finalFrame: packet.frames.find((f) => f.final)?.id ?? null,
-        ...(judgeVerdict ? { judgeVerdict } : {}), checks, deterministic, grading,
-        siteFailure: deterministic?.pass !== true && (packet.siteFailure || judgeVerdict === 'site_broken'),
+        ...(judgeVerdict ? { judgeVerdict } : {}), checks, deterministic, process, grading,
+        siteFailure: grading !== 'judge_error' && deterministic?.pass !== true && (packet.siteFailure || judgeVerdict === 'site_broken'),
       };
     } else {
       extra = { grading };
     }
-    judged.push({ ...base, ...result, ...extra, judgeModel: actualModel, ...(judgeError ? { judgeError } : {}) });
+    const judgedRun = { ...base, ...result, ...extra, judgeModel: actualModel, ...(judgeError ? { judgeError } : {}), ...(judgeElapsedS === undefined ? {} : { judgeElapsedS }) };
+    judged.push(judgedRun);
+    if (options.write !== false) appendJsonlLine(path.join(resultsDir, `${name}-judged.partial.jsonl`), judgedRun);
     log(`[judge] (${judged.length}/${judgedRuns.length}) ${r.task.slice(0, 8)} ... ${result.verdict}`);
   };
 
@@ -828,22 +925,17 @@ export async function judgeBenchmark(name: string, options: JudgeOptions = {}): 
   // Report in the original run order, not the shuffled judging order.
   const orderOf = (j: JudgedRun): number => saved.results.findIndex((r) => r.task === j.task && r.approach === j.approach && r.run === j.run);
   judged.sort((a, b) => orderOf(a) - orderOf(b));
-  // Omitted cohort members cannot establish a universal site failure for the remaining runs.
-  const judgedKeys = new Set(judged.map((r) => runKey(r.task, r.approach, r.run)));
-  const omitted: JudgedRun[] = saved.results.filter((r) => rows.has(r.task) && !judgedKeys.has(runKey(r.task, r.approach, r.run))).map((r) => ({
-    task: r.task, approach: r.approach, run: r.run, verdict: 'unsure', reason: 'Not rejudged.', finalUrl: null,
-    toolCalls: r.toolCalls, totalInputTokens: r.totalInputTokens, wallS: null,
-  }));
-  const cohort = [...judged, ...omitted];
-  const finalRuns = finalizeSiteBrokenVerdicts(cohort).filter((r) => judgedKeys.has(runKey(r.task, r.approach, r.run)));
-  const siteBrokenTasks = [...universallySiteBrokenTasks(cohort)];
+  // A selective rerun is a patch over the complete prior report. Finalize only
+  // after that merge, so placeholders never demote a selected site_broken run.
+  const finalRuns = finalizeSiteBrokenVerdicts(mergeRejudgedRuns(priorReport?.runs, judged));
+  const siteBrokenTasks = [...universallySiteBrokenTasks(finalRuns)];
   const judgeModels = [...new Set(judged.map((r) => r.judgeModel!))];
   const judgeModel = judgeModels.length === 1 ? judgeModels[0]! : judgeModels.length ? `mixed (${judgeModels.join(', ')})` : model;
   const report: JudgeReport = { source: name, judgeProvider, judgeModel, judgeModels, siteBrokenTasks, runs: finalRuns, skipped };
   if (options.write !== false) {
-    writeFileSync(path.join(resultsDir, `${name}-judged.json`), JSON.stringify(report, null, 2));
-    writeFileSync(path.join(resultsDir, `${name}-judged.md`), renderJudgedMarkdown(name, finalRuns, rows, judgeModel));
-    log(`[judge] wrote bench/results/${name}-judged.{json,md}`);
+    writeFileSync(path.join(resultsDir, `${outputBase}.json`), JSON.stringify(report, null, 2));
+    writeFileSync(path.join(resultsDir, `${outputBase}.md`), renderJudgedMarkdown(outputBase, finalRuns, rows, judgeModel));
+    log(`[judge] wrote bench/results/${outputBase}.{json,md}`);
   }
   return report;
 }

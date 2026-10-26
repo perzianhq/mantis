@@ -7,6 +7,7 @@
     "bench:offline-metrics": "tsx offline-metrics.ts",
     "bench:judge-audit": "tsx judge-audit.ts",
     "bench:regrade": "tsx regrade.ts",
+    "bench:regrade:deterministic": "tsx deterministic-regrade.ts",
     "bench:sarvam-probe": "tsx sarvam-probe.ts",
     "bench:sarvam-calibrate": "tsx sarvam-calibrate.ts"
   }

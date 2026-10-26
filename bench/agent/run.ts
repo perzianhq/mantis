@@ -39,13 +39,13 @@ import { LONG_LIVE_V1_MANIFEST_FILE, LONG_LIVE_V1_SUITE, LONG_LIVE_V1_TASKS } fr
 import { aggregateUsage, assertCompatibleResume, classifyAttempt, extractGradedAnswer, hashSources, isHarnessFailure, isSarvamStepLimit, makeMetadata, nextHarnessFailureStreak, parseClaudeStream, validateFlag, validatePositiveInt, wrongAnswerDetail } from './integrity.js';
 import type { AttemptStatus, RunMetadata, StreamUsage } from './integrity.js';
 import { codexArgs, rawMcpToolName } from './codex-config.js';
-import { PAGE_STATE_FUNCTION, journalFromPageStates, packEvidence, parsePageState, toCapturedFrame } from './evidence.js';
+import { PAGE_STATE_FUNCTION, journalFromPageStates, packEvidence, parsePageState, scopedObservationFromToolCall, toCapturedFrame } from './evidence.js';
 import type { CapturedFrame } from './evidence.js';
 import { retainFinalAnswer } from './final-answer.js';
 import { createMcpProxy } from './mcp-proxy.js';
 import type { McpProxy } from './mcp-proxy.js';
 import { ToolCallCap, createLongTelemetry } from './long-telemetry.js';
-import type { LongTelemetry } from './long-telemetry.js';
+import type { LongTelemetry, ToolCallEvent } from './long-telemetry.js';
 import { parseCodexStream } from './codex.js';
 import type { ParsedCodexStream } from './codex.js';
 import { SarvamClient, loadSarvamEnv, sarvamModelSupportsImages } from './sarvam.js';
@@ -422,7 +422,21 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
   const longTelemetry: LongTelemetry | null = SUITE === LONG_LOCAL_V1_SUITE || SUITE === LONG_LIVE_V1_SUITE
     ? createLongTelemetry({ cap: toolCap, path: path.join(logDir, `${unique}.long.jsonl`), identity: { suite: SUITE, task: task.id, approach, run, attempt, model: MODEL, provider: PROVIDER } })
     : null;
-  const toolControl = { cap: toolCap, hooks: longTelemetry?.hooks ?? null };
+  const scopedObservations: { scope: string }[] = [];
+  const telemetryHooks = longTelemetry?.hooks;
+  const toolControl = {
+    cap: toolCap,
+    hooks: {
+      onToolCall(event: ToolCallEvent): void {
+        telemetryHooks?.onToolCall?.(event);
+        if (event.phase === 'result' && !event.isError) {
+          const observation = scopedObservationFromToolCall(event.name, event.arguments);
+          if (observation) scopedObservations.push(observation);
+        }
+      },
+      ...(telemetryHooks?.onCompletion ? { onCompletion: telemetryHooks.onCompletion } : {}),
+    },
+  };
   try {
     const cfg = path.join(dir, 'mcp.json');
     const uploadFixture = uploadFixturePath(approach, dir, task.uploadFixture);
@@ -593,7 +607,7 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
       const journal = journalFromPageStates(raw.flatMap((capture) => {
         const state = capture.state === null ? null : parsePageState(capture.state);
         return state ? [{ ...state, step: capture.step }] : [];
-      }));
+      }), [], scopedObservations);
       const { sidecar, pngs } = packEvidence(frames, unique, captureMs, journal);
       try {
         for (const { file, png } of pngs) writeFileSync(path.join(logDir, file), png);

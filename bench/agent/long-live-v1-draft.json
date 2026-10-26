@@ -2790,6 +2790,16 @@
     "task_id": "longlive-internet-window-frames-upload",
     "family": "interactive-exploration",
     "grading": "judge",
+    "process": {
+      "separateScopedObservations": {
+        "scopes": [
+          "frame-left",
+          "frame-middle",
+          "frame-right"
+        ],
+        "before": "frame-bottom"
+      }
+    },
     "level": "medium",
     "website": "https://the-internet.herokuapp.com/windows",
     "uploadFixture": "README.md",

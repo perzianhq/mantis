@@ -1,6 +1,8 @@
 # live-v1: frozen public live-site benchmark
 
-`live-v1` is a 30-scored-task (v1.8), public, read-only live-site cohort. It retains one excluded task in the public catalog for documentation. It is separate from every local suite and from the gated Online-Mind2Web `realsite-tasks.json` source.
+`live-v1` is a 30-scored-task (v1.9), public, read-only live-site cohort. It retains one excluded task in the public catalog for documentation. It is separate from every local suite and from the gated Online-Mind2Web `realsite-tasks.json` source.
+
+v1.9 drops model judging: every scored row has a deterministic final-state key, replayed only from saved captured evidence (no network or provider calls).
 
 The documented allocation is six families of five tasks: standards, documentation, civic reference, open data, site navigation, and interactive exploration. At v1.3 the 29 scored rows had 19 deterministic terminal-state contracts and 10 task-specific blind-judge contracts, with 7 easy, 14 medium, and 8 hard tasks. The catalog spans more than 15 independent sites; no site has more than three rows.
 
@@ -44,6 +46,16 @@ Review changed redirects, access blocks, and page text before changing a catalog
 ## Changelog and disclosures
 
 Final scores are in [RESULTS.md](RESULTS.md#live-site-scorecard-live-v1-v18). Everything below was changed or disclosed after seeing results; it is kept here so the headline tables stay short. Entries run newest first.
+
+### v1.9 deterministic regrade (20261026)
+
+All 540 clean short-run rows now use saved terminal evidence only; no model-judge verdict remains in the scorecard. Final deterministic counts: Luna: Mantis 86/90, tree 86/90, screenshots 90/90. Haiku: Mantis 90/90, tree 88/90, screenshots 88/90. The retained failures are destination, terminal-evidence, or access-block failures documented in `.codex-jobs/graders2.out.md`.
+
+The four task-derived key corrections accept Open Library's results ordering evidence, TMDB's `/search/movie` alias with its query, arXiv advanced-search's term field, and OpenAPI 3.1's `/oas/v3.1.0` alias. Each has a synthetic passing and near-miss fixture test. The v1.9 contract hash is `e12d5a169cd10150bbf79220505fb3adadc1373ad1333dab71f11c01875e864f`; source fingerprint set hash is `907c383b3b8fe96ea477c6481fb2ca0a8f4b75ade89206e15bd5ccd944e84e8f`.
+
+### Clean short re-run (20261026, historical judge pass)
+
+Re-ran all 30 short tasks for Luna and Haiku: 3 approaches interleaved, 3 runs, one build, 6 concurrent runs per model. The first judging pass left 169 judge-timeout rows; they were re-judged (gpt-6.1-sol for 21, claude-sonnet-5-5 for the rest; per-run `judgeModel` in `results/live-v1-{luna,haiku}-clean-20261026-final.json`). Result: Mantis 86/90 (Luna) and 90/90 (Haiku), tree 85/90 and 88/90, screenshots 90/90 and 88/90. Mantis median time was below the tree for both models. This replaces the earlier short-task timing comparison, which mixed concurrency levels and hosts.
 
 ### v1.8 task swap: data.gov climate to EIA About
 

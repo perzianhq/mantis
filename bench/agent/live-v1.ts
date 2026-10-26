@@ -14,7 +14,7 @@ export const LIVE_V1_FILE = path.join(import.meta.dirname, 'live-v1-tasks.json')
 export const LIVE_V1_MANIFEST_FILE = path.join(import.meta.dirname, '..', 'manifests', 'live-v1.json');
 export const LIVE_V1_FAMILIES = ['standards', 'documentation', 'civic-reference', 'open-data', 'site-navigation', 'interactive-exploration'] as const;
 export type LiveV1Family = typeof LIVE_V1_FAMILIES[number];
-export type LiveV1Grading = 'deterministic' | 'judge';
+export type LiveV1Grading = 'deterministic';
 
 export interface LiveV1Source {
   canonicalUrl: string;
@@ -68,13 +68,12 @@ export function validateLiveV1Rows(rows: readonly LiveV1Row[]): void {
   if (rows.some((row) => !LIVE_V1_FAMILIES.includes(row.family))) fail('contains an unknown family');
   for (const family of LIVE_V1_FAMILIES) if (count(families, family) !== 5) fail(`family ${family} must contain exactly five scored tasks`);
   const gradings = scored.map((row) => row.grading);
-  if (count(gradings, 'deterministic') !== 20 || count(gradings, 'judge') !== 10) fail('requires 20 deterministic and 10 judged scored tasks');
+  if (count(gradings, 'deterministic') !== 30) fail('requires 30 deterministic scored tasks');
   for (const row of rows) {
     if (row.excluded && !row.exclusionReason?.trim()) fail(`${row.task_id} is excluded without an exclusion reason`);
     if (!row.excluded && row.exclusionReason !== undefined) fail(`${row.task_id} has an exclusion reason but is not excluded`);
     if (row.grading === 'deterministic' && !row.deterministic) fail(`${row.task_id} is deterministic without a terminal-state contract`);
-    if (row.grading === 'judge' && row.deterministic) fail(`${row.task_id} is judge-graded but contains a deterministic contract`);
-    if (row.grading === 'judge' && !row.judgeRubric) fail(`${row.task_id} is judge-graded without a task-specific rubric`);
+    if (row.grading !== 'deterministic') fail(`${row.task_id} must use deterministic grading`);
     if (!row.source.canonicalUrl.startsWith('https://') || row.source.fingerprintBasis !== 'canonical-url-and-contract') fail(`${row.task_id} has no canonical HTTPS source fingerprint basis`);
     if (!['unverified-offline', 'reachable', 'blocked', 'changed'].includes(row.source.preflight)) fail(`${row.task_id} has an invalid preflight status`);
   }

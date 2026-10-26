@@ -24,6 +24,8 @@ export interface EvidenceJournal {
   states: { name?: string; step?: number; url?: string; forms: FormValue[] }[];
   transitions: { kind: 'document' | 'tab' | 'frame'; url: string }[];
   uploads: string[];
+  /** Ordered, redacted scopes from successful agent observation calls. */
+  observations?: { scope: string }[];
 }
 export interface EvidenceFrame {
   id: string; /** F1.. in chronological order */
@@ -115,7 +117,7 @@ export const PAGE_STATE_FUNCTION = `() => {
 export interface PageState { url: string; title: string; text: string; forms: FormValue[]; submissions?: { method: string; url: string }[] }
 
 /** Build the redacted, retained history from synchronous harness captures. */
-export function journalFromPageStates(states: readonly (PageState & { step?: number })[], submissions: { method: string; url: string }[] = []): EvidenceJournal {
+export function journalFromPageStates(states: readonly (PageState & { step?: number })[], submissions: { method: string; url: string }[] = [], observations: readonly { scope: string }[] = []): EvidenceJournal {
   const transitions = states.flatMap((state, index) => !index || states[index - 1]!.url !== state.url ? [{ kind: 'document' as const, url: state.url }] : []);
   const uploads = [...new Set(states.flatMap((state) => state.forms.filter((form) => /file|upload/i.test(`${form.label} ${form.name ?? ''} ${form.id ?? ''}`) && form.value).map((form) => form.value.split(/[\\/]/).pop()!)))];
   const observedSubmissions = [...submissions];
@@ -133,7 +135,24 @@ export function journalFromPageStates(states: readonly (PageState & { step?: num
     states: states.map((state) => ({ ...(state.step === undefined ? {} : { step: state.step }), url: state.url, forms: state.forms })),
     transitions,
     uploads,
+    observations: observations.map((observation) => ({ scope: observation.scope })),
   };
+}
+
+/**
+ * Keep only the scope of an explicit observation call.  The journal never
+ * retains arbitrary tool arguments (which may contain typed values or file
+ * paths), and actions whose response happens to show a scoped page do not
+ * count as observations.
+ */
+export function scopedObservationFromToolCall(name: string, args: unknown): { scope: string } | null {
+  if (!/(?:^|[_-])(?:read|snapshot|screenshot|observe)(?:$|[_-])/i.test(name) || !args || typeof args !== 'object' || Array.isArray(args)) return null;
+  const record = args as Record<string, unknown>;
+  for (const key of ['scope', 'region', 'frame', 'tab']) {
+    const value = record[key];
+    if (typeof value === 'string' && value.trim()) return { scope: value.trim() };
+  }
+  return null;
 }
 
 /** Parse PAGE_STATE_FUNCTION output: the raw JSON, or the Playwright MCP "### Result" wrapper around it. */

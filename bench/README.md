@@ -1,5 +1,7 @@
 # Benchmarks
 
+Live-v1.9 grades only saved terminal evidence deterministically; model judging is historical. Regrade with `npm run bench:regrade:deterministic -- live-v1-<model>-clean-20261026`.
+
 > Casework contract note (2026-10-23): results recorded before this date used the prior prompt, which did not require a Back/Forward history traversal.
 
 Two benchmarks compare Mantis with the accessibility tree (Playwright MCP) and with screenshots.
@@ -102,7 +104,7 @@ The agent ends with a `FINAL_URL:` line, so the usual grading only checks that i
 
 The "298 rows missing answer-key checks" warning is an annotation gap: the local catalog has 300 rows, only two with checks. The loader warns across the whole catalog before sampling and still loads the rows; `checks` is a repo extension, not supplied by the imported dataset.
 
-The frozen public live-site cohort (`live-v1` v1.8), its run plan and preflight status are in [live-v1.md](live-v1.md); it does not alter the gated source above.
+The frozen public live-site cohort (`live-v1` v1.9) grades saved terminal evidence deterministically only; its run plan, preflight status, and final Luna/Haiku counts are in [live-v1.md](live-v1.md). It does not alter the gated source above.
 
 ### Sarvam judge and capability probe
 

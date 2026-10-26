@@ -47,8 +47,15 @@ const numericPattern = (raw: string | number): string => {
 const textPattern = (value: string | number, bounded: boolean): string => {
   // Page text may use non-breaking spaces in headings. Treat every whitespace
   // run in a text contract as equivalent while preserving word boundaries.
-  const body = esc(String(value).replace(/\s+/g, ' ').trim()).replace(/ /g, '\\s+');
-  return bounded ? `(?<![\\p{L}\\p{N}])${body}(?![\\p{L}\\p{N}])` : body;
+  const raw = String(value).replace(/\s+/g, ' ').trim();
+  // Published versions commonly spell the same semantic version with or
+  // without a leading "v" (v3.1.0 / 3.1.0). Apply that only to a dotted
+  // numeric component, including a component within a longer heading.
+  const compatible = raw.split(/(v?\d+(?:\.\d+)+)/i).map((part) => {
+    const version = /^v?(\d+(?:\.\d+)+)$/i.exec(part);
+    return version ? `v?${esc(version[1]!)}` : esc(part);
+  }).join('').replace(/ /g, '\\s+');
+  return bounded ? `(?<![\\p{L}\\p{N}])${compatible}(?![\\p{L}\\p{N}])` : compatible;
 };
 
 const patternFor = (requirement: Pick<AnswerRequirement, 'type' | 'value'>): RegExp =>
@@ -67,14 +74,26 @@ const isNegated = (source: string, at: number, end = at): boolean => {
 const matches = (source: string, requirement: Pick<AnswerRequirement, 'type' | 'value'>): RegExpMatchArray[] =>
   [...source.matchAll(patternFor(requirement))];
 
+const clauseBefore = (source: string, end: number): string => {
+  const prefix = source.slice(0, end);
+  // Decimal points and dotted versions remain within their clause; a full stop
+  // only splits prose when a capitalized sentence follows.
+  return prefix.split(/[;!\n]|\.(?=\s+[A-Z])/u).at(-1) ?? '';
+};
+
+const clauseAfter = (source: string, start: number): string =>
+  source.slice(start).split(/[;!\n]|\.(?=\s+[A-Z])/u)[0] ?? '';
+
 const isConflicted = (source: string, match: RegExpMatchArray, type: AnswerFactType): boolean => {
   if (type === 'text') return false;
   const start = match.index!;
   const end = start + match[0].length;
+  const tail = clauseAfter(source, end);
+  const before = clauseBefore(source, start);
   // A direct "X or Y" answer is an unresolved alternative, not a confident
-  // claim. Do not try to infer conflict from arbitrary prose elsewhere.
-  return /\s+(?:or|either)\s+(?:[\p{Sc}$€£₹]?\s*)?[\p{L}\p{N}_-]+/iu.test(source.slice(end, end + 32)) ||
-    /(?:[\p{Sc}$€£₹]?\s*)?[\p{L}\p{N}_-]+\s+(?:or|either)\s*$/iu.test(source.slice(Math.max(0, start - 32), start));
+  // claim. Do not let a later sentence's "or" contradict a valid answer.
+  return /\s+(?:or|either)\s+(?:[\p{Sc}$€£₹]?\s*)?[\p{L}\p{N}_-]+/iu.test(tail) ||
+    /(?:[\p{Sc}$€£₹]?\s*)?[\p{L}\p{N}_-]+\s+(?:or|either)\s*$/iu.test(before);
 };
 
 const sameClause = (source: string, a: RegExpMatchArray, b: RegExpMatchArray): boolean => {
@@ -91,14 +110,19 @@ const sameClause = (source: string, a: RegExpMatchArray, b: RegExpMatchArray): b
 };
 
 /** Compatibility-normalise (CO₂ vs CO2, ligatures, full-width digits) and drop markdown code/bold wrappers so formatting never decides a match. */
-const canonical = (value: string): string => value.normalize('NFKC').replace(/`+/g, '').replace(/\*\*/g, '');
+export const stripAnswerMetadata = (value: string): string => value.split(/\r?\n/).filter((line) =>
+  !/^\s*(?:\*\*)?FINAL_URL(?:\*\*)?\s*:/i.test(line) &&
+  !/^\s*(?:`|<)?https?:\/\/\S+(?:`|>)?\s*$/i.test(line)).join('\n');
+
+const canonical = (value: string, metadata = true): string => (metadata ? stripAnswerMetadata(value) : value).normalize('NFKC')
+  .replace(/`+/g, '').replace(/\*\*/g, '');
 
 export function matchesAnswerRequirement(rawSource: string, rawRequirement: AnswerRequirement): boolean {
   const source = canonical(rawSource);
   const requirement: AnswerRequirement = {
     ...rawRequirement,
-    value: typeof rawRequirement.value === 'string' ? canonical(rawRequirement.value) : rawRequirement.value,
-    ...(rawRequirement.with ? { with: { ...rawRequirement.with, value: typeof rawRequirement.with.value === 'string' ? canonical(rawRequirement.with.value) : rawRequirement.with.value } } : {}),
+    value: typeof rawRequirement.value === 'string' ? canonical(rawRequirement.value, false) : rawRequirement.value,
+    ...(rawRequirement.with ? { with: { ...rawRequirement.with, value: typeof rawRequirement.with.value === 'string' ? canonical(rawRequirement.with.value, false) : rawRequirement.with.value } } : {}),
   };
   const primary = matches(source, requirement).filter((match) => !isNegated(source, match.index!, match.index! + match[0].length) && !isConflicted(source, match, requirement.type));
   if (!primary.length) return false;

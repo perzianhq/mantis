@@ -5,7 +5,8 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { applyRunStatus, buildEvidencePacket, buildEvidencePrompt, buildJudgePrompt, deterministicGradeForRun, isAccessBlockText, isEvidenceRun, parseJudgeOutput, relocateSavedPath, prepareFrameImage, renderJudgedMarkdown, selectJudgeScreenshot, shouldJudgeNonSuccess, universallyBlockedTasks } from '../bench/agent/judge.js';
+import { appendJsonlLine, applyRunStatus, buildEvidencePacket, buildEvidencePrompt, buildJudgePrompt, deterministicGradeForRun, finalizeSiteBrokenVerdicts, isAccessBlockText, isEvidenceRun, mergeRejudgedRuns, parseJudgeOutput, relocateSavedPath, prepareFrameImage, renderJudgedMarkdown, runCli, selectJudgeScreenshot, shouldJudgeNonSuccess, universallyBlockedTasks } from '../bench/agent/judge.js';
+import { summarizeAudit } from '../bench/agent/judge-audit.js';
 import type { JudgedRun, PacketFrame } from '../bench/agent/judge.js';
 import { decodePng, encodePng } from '../bench/agent/png.js';
 import { MAX_FRAMES, PAGE_STATE_FUNCTION, packEvidence, parsePageState } from '../bench/agent/evidence.js';
@@ -37,6 +38,9 @@ describe('final-page screenshot evidence', () => {
     expect(isAccessBlockText('The security checkpoint at the airport screens passengers.')).toBe(false);
     expect(isAccessBlockText('A validator verifies the user is not a robot arm.')).toBe(false);
     expect(isAccessBlockText('HTTP Semantics\n15.5.4 403 Forbidden')).toBe(false);
+    expect(isAccessBlockText('WCAG discusses CAPTCHA alternatives for people with disabilities.')).toBe(false);
+    expect(isAccessBlockText('The CAPTCHA widget provides accessible alternatives.')).toBe(false);
+    expect(isAccessBlockText('Complete the CAPTCHA challenge to continue.')).toBe(true);
   });
   it('prefers the saved live capture and keeps the identifying filename out of the judge prompt', async () => {
     const folder = dir();
@@ -163,14 +167,37 @@ describe('final-page screenshot evidence', () => {
 });
 
 describe('blocked verdict and adjusted rate', () => {
+  it('lists judge infrastructure errors without counting them as unsure or failures', () => {
+    const rows = [run('t', 'mantis', 'success'), { ...run('u', 'mantis', 'judge_error'), reason: 'judge timed out', judgeError: 'judge timed out', judgeElapsedS: 240 }];
+    const report = renderJudgedMarkdown('x', rows, new Map(), 'judge');
+    expect(report).toContain('| mantis | 2 | 1 | 0 | 0 | 0 | 0 | 1 | 100.0% |');
+    expect(report).toContain('## Judge errors');
+    expect(report).toContain('judge timed out (240.0s)');
+  });
+
+  it('keeps judge errors out of site-broken promotion and audit outcome counts', () => {
+    const rows = [{ ...run('broken', 'mantis', 'judge_error'), siteFailure: true }, { ...run('broken', 'tree', 'site_broken'), siteFailure: true }];
+    expect(finalizeSiteBrokenVerdicts(rows).map((item) => item.verdict)).toEqual(['judge_error', 'failure']);
+    const manifest = { version: 1 as const, seed: 1, target: 1, selected: [{ id: 'p', source: 's', task: 't', approach: 'a', model: 'm', run: 1, attemptLog: 'x', gold: 'success' as const }], available: { packets: 1, tasks: 1, successes: 1, failures: 0, approaches: ['a'], models: ['m'] } };
+    expect(summarizeAudit(manifest, [{ ...manifest.selected[0]!, verdict: 'judge_error', reason: 'timeout', completedAt: 'now' }]).outcomes).toMatchObject({ judge_error: 1, unsure: 0 });
+  });
+
+  it('merges selected rejudgments against the full prior report before finalizing', () => {
+    const prior = [run('broken', 'mantis', 'site_broken'), run('broken', 'tree', 'site_broken'), { ...run('retained', 'tree', 'success'), reason: 'outside current catalog' }];
+    const selected = [{ ...run('broken', 'mantis', 'site_broken'), reason: 'rejudged' }];
+    const final = finalizeSiteBrokenVerdicts(mergeRejudgedRuns(prior, selected));
+    expect(final.map((item) => item.verdict)).toEqual(['site_broken', 'site_broken', 'success']);
+    expect(renderJudgedMarkdown('x', final, new Map(), 'judge')).toContain('| `broken` | site_broken | site_broken |');
+  });
+
   it('parses blocked and excludes only tasks blocked across every approach and run', () => {
     expect(parseJudgeOutput('{"verdict":"blocked","reason":"CAPTCHA"}')).toEqual({ verdict: 'blocked', reason: 'CAPTCHA' });
     const rows = [run('all-blocked', 'mantis', 'blocked'), run('all-blocked', 'tree', 'blocked'),
       run('mixed', 'mantis', 'blocked'), run('mixed', 'mantis', 'success', 2), run('mixed', 'tree', 'success')];
     expect([...universallyBlockedTasks(rows)]).toEqual(['all-blocked']);
     const report = renderJudgedMarkdown('x', rows, new Map(), 'judge');
-    expect(report).toContain('| Blocked | Site broken | Overall success rate | Success rate excluding universally blocked / site-broken tasks |');
-    expect(report).toContain('| mantis | 3 | 1 | 0 | 0 | 2 | 0 | 33.3% | 50.0% |');
+    expect(report).toContain('| Blocked | Site broken | Judge errors | Overall success rate | Success rate excluding universally blocked / site-broken tasks |');
+    expect(report).toContain('| mantis | 3 | 1 | 0 | 0 | 2 | 0 | 0 | 33.3% | 50.0% |');
   });
 
   it('keeps a task with missing approaches or a nonblocked run in the denominator', () => {
@@ -192,6 +219,16 @@ describe('blocked verdict and adjusted rate', () => {
       expect(prompt).toContain('Judge against the task text.');
       expect(prompt).toContain('asks for a sandbox or test-account login');
       expect(prompt).toContain('If the task says to stop before a login');
+    }
+  });
+
+  it('treats harness-captured URLs as authoritative over URL-bar perception hedges', () => {
+    const plain = buildJudgePrompt({ task: 'find item', website: 'https://example.com', finalUrl: 'https://example.com/final', answer: 'I cannot read the URL bar; my URL is inferred.', screenshotPath: null });
+    const packet = buildEvidencePrompt(packetInput([frame(1, { final: true, url: 'https://example.com/final' })], { finalUrl: 'https://example.com/final', answer: 'I cannot read the URL bar; my URL is inferred.' }));
+    for (const prompt of [plain, packet]) {
+      expect(prompt).toContain('Harness-captured FINAL_URL: https://example.com/final');
+      expect(prompt).toContain('harness-captured FINAL_URL and frame URLs are authoritative');
+      expect(prompt).toContain('could not see or read a URL/address bar or tab');
     }
   });
 
@@ -276,12 +313,27 @@ describe('evidence packet prompt', () => {
     expect(prompt.split('\n').at(-1)).toBe('Reply with only strict JSON, no code fence: {"verdict":"success"|"failure"|"unsure"|"blocked"|"site_broken","reason":"<one sentence>"}');
   });
 
-  it('parses cited frame IDs and ignores junk', () => {
+  it('parses cited frame IDs and rejects malformed citations', () => {
     expect(parseJudgeOutput('{"verdict":"success","reason":"ok","evidence":["F2","F10","F2"]}')).toEqual({ verdict: 'success', reason: 'ok', evidence: ['F2', 'F10'] });
-    expect(parseJudgeOutput('{"verdict":"success","reason":"ok","evidence":["F2","frame 3","f4",7,"F"]}').evidence).toEqual(['F2']);
-    expect(parseJudgeOutput('{"verdict":"success","reason":"ok","evidence":"F2"}')).toEqual({ verdict: 'success', reason: 'ok' });
-    expect(parseJudgeOutput('{"verdict":"success","reason":"ok","evidence":["x"]}')).toEqual({ verdict: 'success', reason: 'ok' });
+    expect(parseJudgeOutput('{"verdict":"success","reason":"ok","evidence":["F2","frame 3","f4",7,"F"]}')).toMatchObject({ verdict: 'judge_error' });
+    expect(parseJudgeOutput('{"verdict":"success","reason":"ok","evidence":"F2"}')).toMatchObject({ verdict: 'judge_error' });
+    expect(parseJudgeOutput('{"verdict":"success","reason":"ok","evidence":["F999 "]}')).toMatchObject({ verdict: 'judge_error' });
     expect(parseJudgeOutput('{"verdict":"success","reason":"ok"}')).toEqual({ verdict: 'success', reason: 'ok' });
+    expect(parseJudgeOutput('{"verdict":"success","reason":"The page shows {x} correctly.","evidence":["F1"]}', ['F1'])).toEqual({ verdict: 'success', reason: 'The page shows {x} correctly.', evidence: ['F1'] });
+    expect(parseJudgeOutput('{"verdict":"success","reason":"ok","evidence":["F999"]}', ['F1'])).toMatchObject({ verdict: 'judge_error' });
+  });
+});
+
+describe('judge process and durable partial output', () => {
+  it('treats a nonzero CLI exit with stdout as an infrastructure error', async () => {
+    await expect(runCli(process.execPath, ['-e', 'process.stdout.write("diagnostic"); process.exit(1)'], '', dir(), 5_000)).rejects.toThrow(/exited with code 1/);
+  });
+
+  it('separates a torn JSONL tail before appending the next verdict', () => {
+    const file = path.join(dir(), 'partial.jsonl');
+    writeFileSync(file, '{"partial":true}');
+    appendJsonlLine(file, { complete: true });
+    expect(readFileSync(file, 'utf8')).toBe('{"partial":true}\n{"complete":true}\n');
   });
 });
 

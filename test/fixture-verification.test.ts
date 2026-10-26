@@ -54,6 +54,20 @@ it('requires an audit to meet both the agreement and false-success calibration g
   expect(summarizeAudit(manifest, verdicts(3)).gate.pass).toBe(false);
 });
 
+it('grades generic navigation alternatives from the terminal captured state', () => {
+  const grader = { kind: 'state' as const, answerIncludes: [], final: { url: [
+    { origin: 'https://fixture.test', path: '/article/*', textIncludes: [{ type: 'entity' as const, value: 'Rendered record' }] },
+    { origin: 'https://fixture.test', path: '/search', query: { q: 'target phrase' }, queryExcludes: { q: 'closed' }, textIncludes: [{ type: 'entity' as const, value: 'Result card' }] },
+  ], textIncludes: [] } };
+  const grade = (url: string, text: string) => evaluateDeterministicGrader(grader, '', [{ final: true, url, text }])!.pass;
+  expect(grade('https://fixture.test/article/42', 'Rendered record')).toBe(true); // article, entry, object, selected-place pattern
+  expect(grade('https://fixture.test/search?q=target+phrase', 'Result card')).toBe(true); // query / results pattern
+  expect(grade('https://fixture.test/search?q=other', 'Result card')).toBe(false); // other query / zero-result near miss
+  expect(grade('https://fixture.test/search?q=target%20phrase%20closed', 'Result card')).toBe(false); // excluded filter
+  expect(grade('https://fixture.test/search?q=target+phrase', 'typed target phrase')).toBe(false); // query echo alone
+  expect(grade('https://fixture.test/article/99/other', 'Rendered record')).toBe(false); // wrong object path
+});
+
 it('keeps tool-neutral answer facts and provisions upload fixtures in the permitted root', () => {
   const answer = sanitizeAnswer('File selected: README.md (#9) with mcp__playwright__browser_click.');
   expect(answer).toContain('README.md');
@@ -480,6 +494,28 @@ it('live-v1.1 contracts accept the legitimate page variants the 20261021 run rea
   expect(grade('rfc-9110', 'https://www.rfc-editor.org/rfc/rfc9110.html', 'HTTP Semantics', 'HTTP Semantics')).toBe(true);
   expect(grade('rfc-9110', 'https://www.rfc-editor.org/info/rfc9110/', 'RFC 9110: HTTP Semantics', 'HTTP Semantics')).toBe(true);
   expect(grade('rfc-9110', 'https://www.rfc-editor.org/info/rfc9111/', 'RFC 9111: HTTP Caching', 'HTTP Semantics')).toBe(false);
+});
+
+it('live-v1.9 interactive key fixes accept requested alternatives and reject their near misses', () => {
+  const grader = (suffix: string) => LIVE_V1_ROWS.find((row) => row.task_id.endsWith(suffix))!.deterministic!;
+  const grade = (suffix: string, url: string, text: string, answer = '') =>
+    evaluateDeterministicGrader(grader(suffix), answer, [{ final: true, url, text }])?.pass;
+
+  // The advanced arXiv form preserves the term under its own control name; an empty form is not a retained search.
+  expect(grade('arxiv-search', 'https://arxiv.org/search/advanced?terms-0-term=attention+is+all+you+need', 'Authors:')).toBe(true);
+  expect(grade('arxiv-search', 'https://arxiv.org/search/advanced', 'Authors:')).toBe(false);
+
+  // TMDB's movie-search alias is valid only when it keeps the requested title query.
+  expect(grade('tmdb-search', 'https://www.themoviedb.org/search/movie?query=Spirited+Away', 'Spirited Away')).toBe(true);
+  expect(grade('tmdb-search', 'https://www.themoviedb.org/search/movie', 'Spirited Away')).toBe(false);
+
+  // A real Open Library results page exposes the ordering control; an empty result page does not.
+  expect(grade('openlibrary-subject', 'https://openlibrary.org/search?q=machine+learning', 'Relevance')).toBe(true);
+  expect(grade('openlibrary-subject', 'https://openlibrary.org/search?q=machine+learning', 'No results found')).toBe(false);
+
+  // The documented OpenAPI 3.1 alias is acceptable, while a different specification version is not.
+  expect(grade('openapi-31', 'https://spec.openapis.org/oas/v3.1.0', 'OpenAPI Specification v3.1.0', '3.1.0')).toBe(true);
+  expect(grade('openapi-31', 'https://spec.openapis.org/oas/v3.0.0', 'OpenAPI Specification v3.1.0', '3.1.0')).toBe(false);
 });
 
 it('Mantis follows a verified label but rejects a covered control', async () => {

@@ -71,6 +71,13 @@ Verdict (Opus review, 2026-10-24): good enough to launch as a v0.x beta. Accurac
 - [x] Re-run Haiku tree and screenshots on the same CLI build and machine as the Mantis re-run (local CLI 2.1.161), so the live-v1 token and latency columns become comparable. Mantis `src/` is frozen at `v0.1.6` (`059cccf`); since `70dbd5f` it only gained install changes and the MCP note, so Mantis rows stay valid. 180 Haiku runs (30 tasks x 3 x 2 approaches); Luna needs no re-run.
 - [x] Replace the fragile `data-gov-climate` task (v1.8, live-v1 only) with EIA About; all 18 runs succeeded and the swap is disclosed beside the scores.
 
+### Next: drop the judge, speed up Mantis (2026-10-26)
+1. **Deterministic grading.** Drop the model judge for live-v1. Key the 10 state tasks, take the URL and text from the harness-captured final frame, and fail runs that end on an access-block page. Regrade both clean campaigns from saved evidence with no model calls, check every disagreement, and review the saved frames of every failure plus one passing frame per task. (In progress: Codex terra.)
+2. **Mantis speed.** Add per-phase timing. Fix the stale page after a navigating click, `type` with submit, and sequential `open()`. Ship the walker memoization fix. Each fix gets a fixture with a passing case and a near miss, and nothing site-specific in `src/`.
+3. **Verify and commit.** tsc and tests, then commit to a feature branch in separate commits (graders, Mantis, docs).
+4. **Rerun.** Mantis only, 180 runs with a fresh build, graded by the new rules. Rerun all three approaches only if load makes the timings look unfair.
+5. **Only if the gap remains.** Fewer double captures, and trimming the first-render tokens. Luna result-list hints only as a generic page-structure signal.
+
 ### Optional
 - Add Claude's own browser tools (Claude in Chrome, built-in browser pane) as a fourth approach on a few long tasks. Unmeasured; Claude would be the agent, so it is not like-for-like with the Luna/Haiku rows.
 

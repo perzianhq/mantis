@@ -10,7 +10,7 @@
  */
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import { matchesAnswerRequirement } from './grading.js';
+import { matchesAnswerRequirement, stripAnswerMetadata } from './grading.js';
 import type { AnswerFactType } from './grading.js';
 import type { AgentTask } from './tasks.js';
 
@@ -21,7 +21,13 @@ export interface MatchPredicate { type: AnswerFactType; value: string | number; 
  * `path` is the canonical pathname; `alsoPaths` lists other pathnames of the same page that the site legitimately
  * serves or redirects to (a `*` segment matches exactly one non-empty path segment).  A trailing slash never matters.
  */
-export interface UrlPredicate { origin: string; path: string; alsoPaths?: string[]; query?: Record<string, string> }
+export interface UrlPredicate {
+  origin: string; path: string; alsoPaths?: string[]; query?: Record<string, string>;
+  /** Query values matched as normalized human input; keys are exact. */
+  queryExcludes?: Record<string, string>;
+  /** Evidence that must be rendered by this particular accepted destination. */
+  textIncludes?: MatchPredicate[];
+}
 /** A heading whose required answer and visible text are bound to one final URL. */
 export interface PathHeadingPredicate { origin?: string; path: string; heading: MatchPredicate }
 
@@ -45,6 +51,9 @@ export interface FormHistory {
   /** Do not silently accept a final snapshot when the workflow needs history. */
   requireJournal?: true;
 }
+/** Require individually scoped observation calls before one later scoped observation. */
+export interface ScopedObservationSequence { scopes: string[]; before: string }
+export interface ProcessContract { separateScopedObservations?: ScopedObservationSequence }
 
 /**
  * Explicit opt-in for answer keys that are safe to grade without a model.  All
@@ -57,7 +66,7 @@ export interface DeterministicGrader {
   /** Case-insensitive regular expressions the reply must not match (e.g. a live total the task forbids reporting). */
   answerExcludes?: string[];
   final: {
-    url: UrlPredicate;
+    url: UrlPredicate | UrlPredicate[];
     textIncludes: MatchPredicate[];
     /** Optional path-specific heading variants. Existing contracts keep their single shared heading checks. */
     pathHeadings?: PathHeadingPredicate[];
@@ -75,13 +84,14 @@ export interface DeterministicEvidence {
   forms?: FormValue[];
   final?: boolean;
   /** Redacted harness history; imported structurally to keep this module pure. */
-  journal?: { complete?: boolean; submissions?: unknown[]; states?: Array<{ name?: string; step?: number; url?: string; forms?: FormValue[] }> };
+  journal?: { complete?: boolean; submissions?: unknown[]; states?: Array<{ name?: string; step?: number; url?: string; forms?: FormValue[] }>; observations?: Array<{ scope?: string }> };
 }
 
 export interface RealsiteRow {
   task_id: string; website: string; task: string; level: string;
   checks?: RealsiteChecks;
   deterministic?: DeterministicGrader;
+  process?: ProcessContract;
   /** Narrow opt-in for a published disposable demonstration account. */
   sandboxLogin?: { username: string; password: string };
   uploadFixture?: string;
@@ -169,6 +179,8 @@ export function loadRealsiteRows(file: string = REALSITE_FILE, reportIssues: (me
     if (!task_id || !website || !task) return [];
     const deterministicIssue = validateDeterministicGrader(o.deterministic);
     const deterministic = parseDeterministicGrader(o.deterministic);
+    const processIssue = validateProcessContract(o.process);
+    const process = parseProcessContract(o.process);
     const checksIssue = validateChecks(o.checks);
     const judgeRubric = text(o.judgeRubric);
     const sandbox = o.sandboxLogin;
@@ -178,10 +190,11 @@ export function loadRealsiteRows(file: string = REALSITE_FILE, reportIssues: (me
     const uploadFixture = text(o.uploadFixture);
     // A complete deterministic grader is itself the explicit answer-key opt-in;
     // legacy substring checks remain optional for those rows.
-    if (checksIssue && !deterministic && !judgeRubric) issues.push(`${task_id}: ${checksIssue}`);
+    if (checksIssue && !deterministic && !process && !judgeRubric) issues.push(`${task_id}: ${checksIssue}`);
     if (deterministicIssue) issues.push(`${task_id}: ${deterministicIssue}`);
+    if (processIssue) issues.push(`${task_id}: ${processIssue}`);
     const checks = parseChecks(o.checks);
-    return [{ task_id, website, task, level: text(o.level) ?? 'unknown', ...(checks ? { checks } : {}), ...(deterministic ? { deterministic } : {}), ...(judgeRubric ? { judgeRubric } : {}), ...(sandboxLogin ? { sandboxLogin } : {}), ...(uploadFixture ? { uploadFixture } : {}) }];
+    return [{ task_id, website, task, level: text(o.level) ?? 'unknown', ...(checks ? { checks } : {}), ...(deterministic ? { deterministic } : {}), ...(process ? { process } : {}), ...(judgeRubric ? { judgeRubric } : {}), ...(sandboxLogin ? { sandboxLogin } : {}), ...(uploadFixture ? { uploadFixture } : {}) }];
   });
   if (issues.length) {
     const shown = issues.slice(0, 10).join('; ');
@@ -226,12 +239,18 @@ export function validateDeterministicGrader(value: unknown): string | null {
   };
   if (!Array.isArray(o.answerIncludes) || !o.answerIncludes.every(predicate)) return 'deterministic.answerIncludes must be typed predicates';
   if (o.answerExcludes !== undefined && (!Array.isArray(o.answerExcludes) || !o.answerExcludes.length || !o.answerExcludes.every((p) => typeof p === 'string' && p.trim() && compilesAsRegExp(p)))) return 'deterministic.answerExcludes must be non-empty valid regular expression strings';
-  if (!final.url || typeof final.url !== 'object' || Array.isArray(final.url)) return 'deterministic.final.url must be an origin/path predicate';
-  const url = final.url as Record<string, unknown>;
-  if (Object.keys(url).some((key) => !['origin', 'path', 'alsoPaths', 'query'].includes(key)) || typeof url.origin !== 'string' || !url.origin.trim() || typeof url.path !== 'string' || !url.path.startsWith('/')) return 'deterministic.final.url must contain an origin and absolute path';
-  if (url.alsoPaths !== undefined && (!Array.isArray(url.alsoPaths) || !url.alsoPaths.length || !url.alsoPaths.every((p) => typeof p === 'string' && p.startsWith('/')))) return 'deterministic.final.url.alsoPaths must be absolute path strings';
-  if (url.query !== undefined && (!url.query || typeof url.query !== 'object' || Array.isArray(url.query) || !Object.values(url.query as Record<string, unknown>).every((v) => typeof v === 'string'))) return 'deterministic.final.url.query must map names to strings';
-  if (!Array.isArray(final.textIncludes) || !final.textIncludes.length || !final.textIncludes.every(predicate)) return 'deterministic.final.textIncludes must be non-empty typed predicates';
+  const validUrl = (candidate: unknown): boolean => {
+    if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) return false;
+    const url = candidate as Record<string, unknown>;
+    if (Object.keys(url).some((key) => !['origin', 'path', 'alsoPaths', 'query', 'queryExcludes', 'textIncludes'].includes(key)) || typeof url.origin !== 'string' || !url.origin.trim() || typeof url.path !== 'string' || !url.path.startsWith('/')) return false;
+    if (url.alsoPaths !== undefined && (!Array.isArray(url.alsoPaths) || !url.alsoPaths.length || !url.alsoPaths.every((p) => typeof p === 'string' && p.startsWith('/')))) return false;
+    if (url.query !== undefined && (!url.query || typeof url.query !== 'object' || Array.isArray(url.query) || !Object.values(url.query as Record<string, unknown>).every((v) => typeof v === 'string'))) return false;
+    if (url.queryExcludes !== undefined && (!url.queryExcludes || typeof url.queryExcludes !== 'object' || Array.isArray(url.queryExcludes) || !Object.values(url.queryExcludes as Record<string, unknown>).every((v) => typeof v === 'string' && compilesAsRegExp(v)))) return false;
+    return url.textIncludes === undefined || (Array.isArray(url.textIncludes) && url.textIncludes.length > 0 && url.textIncludes.every(predicate));
+  };
+  if (!(Array.isArray(final.url) ? final.url.length > 0 && final.url.every(validUrl) : validUrl(final.url))) return 'deterministic.final.url must be an origin/path predicate or non-empty alternatives';
+  const urlHasText = (Array.isArray(final.url) ? final.url : [final.url]).some((url) => !!url && typeof url === 'object' && Array.isArray((url as Record<string, unknown>).textIncludes) && ((url as Record<string, unknown>).textIncludes as unknown[]).length > 0);
+  if (!Array.isArray(final.textIncludes) || !final.textIncludes.every(predicate) || (!final.textIncludes.length && !urlHasText)) return 'deterministic.final.textIncludes must be typed predicates and non-empty unless a URL alternative supplies text';
   const headings = final.pathHeadings;
   if (headings !== undefined && (!Array.isArray(headings) || !headings.length || !headings.every((entry) => {
     if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return false;
@@ -240,7 +259,8 @@ export function validateDeterministicGrader(value: unknown): string | null {
       (heading.origin === undefined || (typeof heading.origin === 'string' && Boolean(heading.origin.trim()))) &&
       typeof heading.path === 'string' && heading.path.startsWith('/') && predicate(heading.heading);
   }))) return 'deterministic.final.pathHeadings must be non-empty path/heading predicates';
-  if (!o.answerIncludes.length && !headings?.length) return 'deterministic.answerIncludes must be non-empty unless final.pathHeadings supplies headings';
+  const stateOnly = o.kind === 'state' && !o.answerIncludes.length;
+  if (!o.answerIncludes.length && !headings?.length && !stateOnly) return 'deterministic.answerIncludes must be non-empty unless final.pathHeadings supplies headings or this is a state grader';
   const values = final.formValues;
   const validFormValue = (entry: unknown): entry is FormValue => {
     if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return false;
@@ -251,7 +271,7 @@ export function validateDeterministicGrader(value: unknown): string | null {
       (form.occurrence === undefined || (Number.isInteger(form.occurrence) && (form.occurrence as number) >= 0));
   };
   const validForms = Array.isArray(values) && values.length > 0 && values.every(validFormValue);
-  if ((o.kind === 'form' || o.kind === 'state') && !validForms) return 'deterministic.final.formValues must be a non-empty label/value array for form or state graders';
+  if (o.kind === 'form' && !validForms) return 'deterministic.final.formValues must be a non-empty label/value array for form graders';
   if (o.kind === 'fact' && values !== undefined && !validForms) return 'deterministic.final.formValues must be a non-empty label/value array when supplied';
   const ordered = o.orderedStates;
   if (ordered !== undefined && (!Array.isArray(ordered) || !ordered.length || !ordered.every((entry) => {
@@ -270,6 +290,21 @@ export function validateDeterministicGrader(value: unknown): string | null {
   return null;
 }
 
+/** Null for an absent or complete process-only opt-in. */
+export function validateProcessContract(value: unknown): string | null {
+  if (value === undefined) return null;
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return 'process must be an object';
+  const o = value as Record<string, unknown>;
+  if (Object.keys(o).some((key) => key !== 'separateScopedObservations')) return 'process contains an unknown field';
+  const sequence = o.separateScopedObservations;
+  if (!sequence || typeof sequence !== 'object' || Array.isArray(sequence)) return 'process.separateScopedObservations must be an object';
+  const s = sequence as Record<string, unknown>;
+  if (Object.keys(s).some((key) => key !== 'scopes' && key !== 'before') || !Array.isArray(s.scopes) || !s.scopes.length || !s.scopes.every((scope) => typeof scope === 'string' && scope.trim()) || typeof s.before !== 'string' || !s.before.trim()) return 'process.separateScopedObservations must name non-empty scopes and a later scope';
+  const names = [...s.scopes, s.before].map((scope) => (scope as string).trim().toLowerCase());
+  if (new Set(names).size !== names.length) return 'process.separateScopedObservations scopes must be distinct';
+  return null;
+}
+
 /** `checks` objects keep only the lists that are non-empty arrays of non-empty strings; anything else is ignored. */
 function parseChecks(value: unknown): RealsiteChecks | undefined {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
@@ -285,12 +320,13 @@ function parseDeterministicGrader(value: unknown): DeterministicGrader | undefin
   if (value === undefined || validateDeterministicGrader(value) !== null) return undefined;
   const o = value as DeterministicGrader;
   const predicates = (items: MatchPredicate[]): MatchPredicate[] => items.map((item) => ({ type: item.type, value: typeof item.value === 'string' ? item.value.trim() : item.value, ...(item.with ? { with: { type: item.with.type, value: typeof item.with.value === 'string' ? item.with.value.trim() : item.with.value } } : {}) }));
+  const url = (item: UrlPredicate): UrlPredicate => ({ origin: item.origin.trim(), path: item.path, ...(item.alsoPaths ? { alsoPaths: [...item.alsoPaths] } : {}), ...(item.query ? { query: { ...item.query } } : {}), ...(item.queryExcludes ? { queryExcludes: { ...item.queryExcludes } } : {}), ...(item.textIncludes ? { textIncludes: predicates(item.textIncludes) } : {}) });
   return {
     kind: o.kind,
     answerIncludes: predicates(o.answerIncludes),
     ...(o.answerExcludes ? { answerExcludes: [...o.answerExcludes] } : {}),
     final: {
-      url: { origin: o.final.url.origin.trim(), path: o.final.url.path, ...(o.final.url.alsoPaths ? { alsoPaths: [...o.final.url.alsoPaths] } : {}), ...(o.final.url.query ? { query: { ...o.final.url.query } } : {}) },
+      url: Array.isArray(o.final.url) ? o.final.url.map(url) : url(o.final.url),
       textIncludes: predicates(o.final.textIncludes),
       ...(o.final.pathHeadings ? { pathHeadings: o.final.pathHeadings.map((entry) => ({ ...(entry.origin ? { origin: entry.origin.trim() } : {}), path: entry.path, heading: predicates([entry.heading])[0]! })) } : {}),
       ...(o.final.formValues ? { formValues: o.final.formValues.map((entry) => ({ label: entry.label.trim(), value: entry.value, ...(entry.id !== undefined ? { id: entry.id } : {}), ...(entry.name !== undefined ? { name: entry.name } : {}), ...(entry.occurrence !== undefined ? { occurrence: entry.occurrence } : {}) })) } : {}),
@@ -300,11 +336,23 @@ function parseDeterministicGrader(value: unknown): DeterministicGrader | undefin
   };
 }
 
-const trimSlash = (p: string): string => (p.length > 1 ? p.replace(/\/+$/, '') || '/' : p);
+function parseProcessContract(value: unknown): ProcessContract | undefined {
+  if (value === undefined || validateProcessContract(value) !== null) return undefined;
+  const sequence = (value as ProcessContract).separateScopedObservations!;
+  return { separateScopedObservations: { scopes: sequence.scopes.map((scope) => scope.trim()), before: sequence.before.trim() } };
+}
+
+/** Treat common static-site aliases as one destination without task-specific lists. */
+const normalizePath = (p: string): string => {
+  let value = p.length > 1 ? p.replace(/\/+$/, '') || '/' : p;
+  value = value.replace(/\/index\.html?$/i, '/') || '/';
+  value = value.replace(/\.html?$/i, '') || '/';
+  return value.length > 1 ? value.replace(/\/+$/, '') || '/' : value;
+};
 function urlPathMatches(actual: string, predicate: UrlPredicate): boolean {
-  const got = trimSlash(actual);
+  const got = normalizePath(actual);
   return [predicate.path, ...(predicate.alsoPaths ?? [])].some((allowed) => {
-    const want = trimSlash(allowed);
+    const want = normalizePath(allowed);
     if (!want.includes('*')) return got === want;
     const a = got.split('/'); const w = want.split('/');
     return a.length === w.length && w.every((seg, i) => (seg === '*' ? Boolean(a[i]) : seg === a[i]));
@@ -312,9 +360,12 @@ function urlPathMatches(actual: string, predicate: UrlPredicate): boolean {
 }
 
 const norm = (s: string): string => s.replace(/\s+/g, ' ').trim().toLowerCase();
+const normQuery = (s: string): string => norm(s.replace(/\+/g, ' '));
 const predicateLabel = (predicate: MatchPredicate): string => String(predicate.value);
 const matchesPredicate = (source: string, predicate: MatchPredicate): boolean =>
   matchesAnswerRequirement(source, { id: 'realsite', ...predicate });
+/** FINAL_URL is transport metadata, never evidence that the reply answered a key. */
+const answerContent = (answer: string): string => stripAnswerMetadata(answer);
 const formMatches = (actual: FormValue, wanted: FormValue): boolean =>
   norm(actual.label) === norm(wanted.label) && actual.value === wanted.value &&
   (wanted.id === undefined || actual.id === wanted.id) && (wanted.name === undefined || actual.name === wanted.name) &&
@@ -327,7 +378,7 @@ const formMatches = (actual: FormValue, wanted: FormValue): boolean =>
  */
 export function evaluateChecks(checks: RealsiteChecks | undefined, answer: string, frameTexts: string[]): { pass: boolean; failed: string[] } | null {
   if (!checks || (!checks.answerIncludes?.length && !checks.evidenceIncludes?.length)) return null;
-  const reply = norm(answer);
+  const reply = norm(answerContent(answer));
   const texts = frameTexts.map(norm);
   const failed = [
     ...(checks.answerIncludes ?? []).filter((x) => !reply.includes(norm(x))).map((x) => `answer lacks "${x}"`),
@@ -353,20 +404,25 @@ export function evaluateDeterministicGrader(grader: DeterministicGrader | undefi
   try { parsed = new URL(final.url); } catch { /* reported below as an unmatched URL predicate */ }
   const text = final.text;
   const forms = final.forms ?? [];
+  const alternatives = Array.isArray(grader.final.url) ? grader.final.url : [grader.final.url];
+  const taskOrigin = alternatives[0]!.origin;
   const pathHeading = parsed && grader.final.pathHeadings?.find((entry) =>
-    (!entry.origin || entry.origin === parsed!.origin) && trimSlash(entry.path) === trimSlash(parsed!.pathname));
+    (entry.origin ?? taskOrigin) === parsed!.origin && normalizePath(entry.path) === normalizePath(parsed!.pathname));
   const matchingPathHeading = !grader.final.pathHeadings?.length || Boolean(pathHeading);
-  const urlMatches = parsed && (
-    (parsed.origin === grader.final.url.origin && urlPathMatches(parsed.pathname, grader.final.url)) ||
-    Boolean(pathHeading)
-  ) && Object.entries(grader.final.url.query ?? {}).every(([key, value]) => parsed!.searchParams.get(key) === value);
+  const matchingUrl = parsed && alternatives.find((candidate) =>
+    parsed!.origin === candidate.origin && urlPathMatches(parsed!.pathname, candidate) &&
+    Object.entries(candidate.query ?? {}).every(([key, value]) => normQuery(parsed!.searchParams.get(key) ?? '') === normQuery(value)) &&
+    Object.entries(candidate.queryExcludes ?? {}).every(([key, source]) => !new RegExp(source, 'i').test(normQuery(parsed!.searchParams.get(key) ?? '')))
+  );
+  const urlMatches = Boolean(matchingUrl || pathHeading);
   const failed = [
-    ...grader.answerIncludes.filter((item) => !matchesPredicate(answer, item)).map((item) => `answer lacks "${predicateLabel(item)}"`),
-    ...(grader.answerExcludes ?? []).filter((source) => new RegExp(source, 'i').test(answer.replace(/\s+/g, ' '))).map((source) => `answer contains forbidden pattern ${JSON.stringify(source)}`),
+    ...grader.answerIncludes.filter((item) => !matchesPredicate(answerContent(answer), item)).map((item) => `answer lacks "${predicateLabel(item)}"`),
+    ...(grader.answerExcludes ?? []).filter((source) => new RegExp(source, 'i').test(answerContent(answer).replace(/\s+/g, ' '))).map((source) => `answer contains forbidden pattern ${JSON.stringify(source)}`),
     ...(!urlMatches ? ['final URL does not match the required origin/path'] : []),
     ...(!matchingPathHeading ? ['final URL has no matching path-specific heading'] : []),
     ...(pathHeading && !matchesPredicate(answer, pathHeading.heading) ? [`answer lacks heading "${predicateLabel(pathHeading.heading)}" for the final path`] : []),
     ...grader.final.textIncludes.filter((item) => !matchesPredicate(text, item)).map((item) => `final frame lacks "${predicateLabel(item)}"`),
+    ...(matchingUrl?.textIncludes ?? []).filter((item) => !matchesPredicate(text, item)).map((item) => `final frame lacks destination text "${predicateLabel(item)}"`),
     ...(pathHeading && !matchesPredicate(text, pathHeading.heading) ? [`final frame lacks heading "${predicateLabel(pathHeading.heading)}" for the final path`] : []),
     ...(grader.final.formValues ?? []).filter((wanted) => !forms.some((actual) => formMatches(actual, wanted))).map((wanted) => `final form lacks ${JSON.stringify(wanted.label)}=${JSON.stringify(wanted.value)}`),
     ...(() => {
@@ -389,6 +445,33 @@ export function evaluateDeterministicGrader(grader: DeterministicGrader | undefi
       ];
     })(),
   ];
+  return { pass: failed.length === 0, failed };
+}
+
+/**
+ * A process contract can prove a violation, but cannot establish task success:
+ * a complete matching ledger therefore leaves factual grading to the judge.
+ * Older/incomplete sidecars omit `observations` and also fall back to the judge.
+ */
+export function evaluateProcessContract(contract: ProcessContract | undefined, frames: DeterministicEvidence[]): { pass: boolean; failed: string[] } | null {
+  const sequence = contract?.separateScopedObservations;
+  if (!sequence) return null;
+  const final = frames.filter((frame) => frame.final);
+  const observations = final.length === 1 ? final[0]!.journal?.observations : undefined;
+  if (!observations) return null;
+  let cursor = -1;
+  const missing = sequence.scopes.find((scope) => {
+    const found = observations.findIndex((observation, index) => index > cursor && norm(observation.scope ?? '') === norm(scope));
+    if (found < 0) return true;
+    cursor = found;
+    return false;
+  });
+  const later = !missing && observations.findIndex((observation, index) => index > cursor && norm(observation.scope ?? '') === norm(sequence.before));
+  const failed = missing
+    ? [`missing separate scoped observation ${JSON.stringify(missing)} before ${JSON.stringify(sequence.before)}`]
+    : later === -1
+      ? [`missing later scoped observation ${JSON.stringify(sequence.before)}`]
+      : [];
   return { pass: failed.length === 0, failed };
 }
 
@@ -471,6 +554,9 @@ export function pageNumbers(urls: readonly (string | null | undefined)[], texts:
 export function sanitizeAnswer(text: string, keepNumbers?: ReadonlySet<string>): string {
   const kept = text.split(/\r?\n/).flatMap((line) => {
     if (/^\s*FINAL_URL:/i.test(line)) return [];
+    // These are statements about an agent's own browser chrome, not page content.
+    // Keep this deliberately line-scoped and specific so an answer about a page is not removed.
+    if (/^\s*(?:(?:note|disclaimer|caveat)\s*:\s*)?(?:(?:i|we)\s+(?:cannot|can't|could not|couldn't|(?:am|are|was|were) unable to)\s+(?:read|see|view|access|inspect|verify)\s+(?:the\s+)?(?:(?:url|address)\s*bar|(?:browser\s+)?tab(?:\s+(?:url|address))?)(?:[,:;]\s*(?:(?:so\s+)?(?:my|the)\s+)?(?:url|location)\s+(?:is|was)\s+(?:only\s+)?(?:inferred|guessed|estimated))?|(?:the\s+)?(?:(?:url|address)\s*bar|(?:browser\s+)?tab(?:\s+(?:url|address))?)\s+(?:is|was)\s+(?:not\s+)?(?:visible|readable|available|accessible|shown|displayed|legible)(?:[,:;]\s*(?:(?:so\s+)?(?:my|the)\s+)?(?:url|location)\s+(?:is|was)\s+(?:only\s+)?(?:inferred|guessed|estimated))?)[.!?]*\s*$/i.test(line)) return [];
     const redacted = line
       .replace(TOOL_IDENTIFIERS, '')
       .replace(COORDS, '')

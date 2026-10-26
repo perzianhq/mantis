@@ -2,16 +2,17 @@
 // do not need grader cases in test/fixture-verification.test.ts. This file covers the pieces around the judge:
 // the seeded stratified sampler, the task loader, the reply sanitiser, FINAL_URL parsing, and the judge's
 // log/verdict parsing and report (the `claude -p` call itself needs real results and is not run here).
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { evaluateChecks, evaluateDeterministicGrader, loadRealsiteRows, loadRealsiteTasks, mulberry32, parseFinalUrl, realsitePrompt, pageNumbers, sampleRealsite, sanitizeAnswer } from '../bench/agent/realsite.js';
 import type { RealsiteRow } from '../bench/agent/realsite.js';
-import { buildEvidencePrompt, buildJudgePrompt, parseJudgeOutput, parseSarvamTrace, readFinalTexts, renderJudgedMarkdown, runKey } from '../bench/agent/judge.js';
+import { buildEvidencePrompt, buildJudgePrompt, judgeBenchmark, parseJudgeOutput, parseSarvamTrace, readFinalTexts, renderJudgedMarkdown, runKey } from '../bench/agent/judge.js';
 import type { JudgedRun } from '../bench/agent/judge.js';
 import { journalFromPageStates, selectFrames } from '../bench/agent/evidence.js';
 import { retainFinalAnswer } from '../bench/agent/final-answer.js';
+import { matchesAnswerRequirement } from '../bench/agent/grading.js';
 
 const FIXTURE = path.join(import.meta.dirname, 'fixtures', 'realsite');
 
@@ -170,6 +171,20 @@ describe('sanitizeAnswer', () => {
   it('collapses the blank space left behind', () => {
     expect(sanitizeAnswer('A\n\nplaywright\n\n\nB')).toBe('A\nB');
   });
+  it('removes standalone URL-bar perception hedges without removing page-content answers', () => {
+    const text = [
+      'The page says the address bar is not visible.',
+      'The URL bar accessory costs $12.',
+      'I cannot read the URL bar, so my URL is inferred.',
+      'The browser tab was not visible; the location was guessed.',
+      'The selected product is Blue Mug.',
+    ].join('\n');
+    expect(sanitizeAnswer(text)).toBe([
+      'The page says the address bar is not visible.',
+      'The URL bar accessory costs $12.',
+      'The selected product is Blue Mug.',
+    ].join('\n'));
+  });
   it('keeps filename and frame facts when nearby tokens identify a tool', () => {
     const answer = sanitizeAnswer('File selected: README.md (temp path #9) via mcp__playwright__browser_click.\nIntro text, One, Eggs; both snapshots look identical.');
     expect(answer).toContain('README.md');
@@ -260,7 +275,7 @@ describe('judge helpers', () => {
   it('turns a fixture log into a clean, blind judge prompt', () => {
     const text = readFinalTexts(path.join(FIXTURE, 'logs'), 'codex').get(runKey('rs-1', 'mantis', 1))!;
     const prompt = buildJudgePrompt({ task: 'Find the cheapest mug', website: 'https://example.com', finalUrl: parseFinalUrl(text), answer: sanitizeAnswer(text), screenshotPath: null });
-    expect(prompt).toContain('Final URL the agent reported: https://example.com/mugs?sort=price');
+    expect(prompt).toContain('Harness-captured FINAL_URL: https://example.com/mugs?sort=price');
     expect(prompt).toContain('The cheapest listed item is $12.99.');
     expect(prompt).not.toMatch(/mantis|e42|mcp/i);
     expect(prompt).toContain('No screenshot is available');
@@ -280,7 +295,7 @@ describe('judge helpers', () => {
   it('maps bad judge output to unsure', () => {
     expect(parseJudgeOutput(JSON.stringify({ result: 'I think it worked.' })).verdict).toBe('unsure');
     expect(parseJudgeOutput(JSON.stringify({ result: '{"verdict":"maybe","reason":"x"}' })).verdict).toBe('unsure');
-    expect(parseJudgeOutput(JSON.stringify({ is_error: true, result: 'rate limited' }))).toMatchObject({ verdict: 'unsure' });
+    expect(parseJudgeOutput(JSON.stringify({ is_error: true, result: 'rate limited' }))).toMatchObject({ verdict: 'judge_error' });
     expect(parseJudgeOutput('not json at all').verdict).toBe('unsure');
   });
 
@@ -292,8 +307,8 @@ describe('judge helpers', () => {
       run('easy-0', 'mantis', 'success', 4, 1000, 10), run('easy-1', 'mantis', 'failure', 6, null, 20),
       run('easy-0', 'tree', 'success', 10, 5000, 30), run('easy-1', 'tree', 'unsure', 12, 7000, 50),
     ], rows, 'claude-sonnet-5-5');
-    expect(md).toContain('| mantis | 2 | 1 | 1 | 0 | 0 | 0 | 50.0% | 50.0% | 5.0 | 1,000 | 15.0 |');
-    expect(md).toContain('| tree | 2 | 1 | 0 | 1 | 0 | 0 | 50.0% | 50.0% | 11.0 | 6,000 | 40.0 |');
+    expect(md).toContain('| mantis | 2 | 1 | 1 | 0 | 0 | 0 | 0 | 50.0% | 50.0% | 5.0 | 1,000 | 15.0 |');
+    expect(md).toContain('| tree | 2 | 1 | 0 | 1 | 0 | 0 | 0 | 50.0% | 50.0% | 11.0 | 6,000 | 40.0 |');
     expect(md).toContain('| Task | mantis | tree |');
     expect(md).toMatch(/easy-0.*\| success \| success \|/);
     expect(md).toMatch(/easy-1.*\| failure \| unsure \|/);
@@ -359,6 +374,30 @@ describe('complete deterministic graders', () => {
     expect(numeric?.pass).toBe(false);
     expect(evaluateDeterministicGrader(grader, 'North Harbor has 18 entries.', [{ final: true, url: 'https://not-example.test/results?page=1', text: '18 entries' }])?.failed).toContain('final URL does not match the required origin/path');
   });
+  it('normalizes static-page aliases while preserving the task origin for path headings', () => {
+    const openapi = {
+      kind: 'fact' as const,
+      answerIncludes: [{ type: 'entity' as const, value: '3.1.0' }],
+      final: {
+        url: { origin: 'https://spec.openapis.org', path: '/oas/v3.1.0' }, textIncludes: [],
+        pathHeadings: [{ path: '/oas/v3.1.0.html', heading: { type: 'entity' as const, value: 'Version 3.1.0' } }],
+      },
+    };
+    expect(evaluateDeterministicGrader(openapi, 'Version v3.1.0.', [{ final: true, url: 'https://spec.openapis.org/oas/v3.1.0.html', text: 'Version 3.1.0' }])).toEqual({ pass: true, failed: [] });
+    expect(evaluateDeterministicGrader(openapi, 'Version 3.1.0.', [{ final: true, url: 'https://unrelated.invalid/oas/v3.1.0.html', text: 'Version 3.1.0' }])?.pass).toBe(false);
+  });
+  it('does not grade URL-only protocol metadata as an answer', () => {
+    const node = { kind: 'fact' as const, answerIncludes: [{ type: 'entity' as const, value: 'URL' }], final: { url: { origin: 'https://nodejs.org', path: '/api/url.html' }, textIncludes: [] } };
+    expect(evaluateDeterministicGrader(node, 'Banana\nFINAL_URL: https://nodejs.org/api/url.html', [{ final: true, url: 'https://nodejs.org/api/url.html', text: '' }])?.pass).toBe(false);
+    expect(evaluateDeterministicGrader(node, 'Banana\nhttps://nodejs.org/api/url.html', [{ final: true, url: 'https://nodejs.org/api/url.html', text: '' }])?.pass).toBe(false);
+    expect(evaluateDeterministicGrader(node, 'Banana\n**FINAL_URL:** https://nodejs.org/api/url.html', [{ final: true, url: 'https://nodejs.org/api/url.html', text: '' }])?.pass).toBe(false);
+  });
+  it('rejects ambiguous alternatives but bounds conflicts to their sentence', () => {
+    const key = { id: 'answer', type: 'number' as const, value: 18 };
+    expect(matchesAnswerRequirement('18 or nineteen', key)).toBe(false);
+    expect(matchesAnswerRequirement('18 or 19; inputs or outputs', key)).toBe(false);
+    expect(matchesAnswerRequirement('Version 3.1.0. No inputs or site generated results were needed.', { id: 'version', type: 'entity', value: '3.1.0' })).toBe(true);
+  });
 });
 
 describe('judged report with evidence and checks', () => {
@@ -381,8 +420,8 @@ describe('judged report with evidence and checks', () => {
     ], rows, 'judge');
     const section = md.slice(md.indexOf('## Evidence and checks'));
     expect(md.indexOf('## Per task')).toBeLessThan(md.indexOf('## Evidence and checks'));
-    expect(section).toContain('| mantis | 2 | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 2 | 1 |');
-    expect(section).toContain('| tree | 2 | 0 | 2 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 |');
+    expect(section).toContain('| mantis | 2 | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 2 | 1 |');
+    expect(section).toContain('| tree | 2 | 0 | 2 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 0 |');
     expect(section).toContain('- `easy-0` mantis run 1: judge success; checks failed (answer lacks "30,887")');
     expect(section).toContain('- `easy-2` tree run 1: judge failure; checks passed');
     expect(section).not.toContain('easy-1` mantis'); // check and judge agree
@@ -393,5 +432,36 @@ describe('judged report with evidence and checks', () => {
   it('says None. when checks and judge agree', () => {
     const md = renderJudgedMarkdown('demo', [withEvidence('easy-0', 'mantis', 'success', { judgeVerdict: 'success', checks: { pass: true, failed: [] } })], rows, 'judge');
     expect(md).toContain('### Check vs judge disagreements\n\nNone.');
+  });
+
+  it('selectively retries judge errors into a merged rejudged artifact', async () => {
+    const results = mkdtempSync(path.join(tmpdir(), 'judge-only-'));
+    const saved = { results: [
+      { task: 'a', approach: 'mantis', run: 1, status: 'wrong_answer', toolCalls: 0, totalInputTokens: null },
+      { task: 'b', approach: 'mantis', run: 1, status: 'wrong_answer', toolCalls: 0, totalInputTokens: null },
+    ] };
+    const previous: { source: string; judgeProvider: 'codex'; judgeModel: string; judgeModels: string[]; siteBrokenTasks: string[]; runs: JudgedRun[]; skipped: [] } = {
+      source: 'sample', judgeProvider: 'codex', judgeModel: 'old', judgeModels: ['old'], siteBrokenTasks: [], skipped: [],
+      runs: [
+        { task: 'a', approach: 'mantis', run: 1, verdict: 'success', reason: 'old a', finalUrl: null, toolCalls: 0, totalInputTokens: null, wallS: null },
+        { task: 'b', approach: 'mantis', run: 1, verdict: 'judge_error', reason: 'old b', finalUrl: null, toolCalls: 0, totalInputTokens: null, wallS: null, judgeError: 'old b' },
+      ],
+    };
+    writeFileSync(path.join(results, 'sample-judged.json'), JSON.stringify(previous));
+    const oldVerdicts = process.env.JUDGE_ONLY_VERDICTS;
+    try {
+      process.env.JUDGE_ONLY_VERDICTS = 'judge_error';
+      const report = await judgeBenchmark('sample', { saved, rows: [
+        { task_id: 'a', website: 'https://example.test', task: 'a', level: 'easy' },
+        { task_id: 'b', website: 'https://example.test', task: 'b', level: 'easy' },
+      ], resultsDir: results, freshScreenshots: false, quiet: true });
+      expect(report.runs.find((run) => run.task === 'a')?.reason).toBe('old a');
+      expect(report.runs.find((run) => run.task === 'b')?.verdict).toBe('failure');
+      expect(existsSync(path.join(results, 'sample-rejudged.json'))).toBe(true);
+      expect(existsSync(path.join(results, 'sample-judged.json'))).toBe(true);
+      expect(existsSync(path.join(results, 'sample-judged.partial.jsonl'))).toBe(true);
+    } finally {
+      if (oldVerdicts === undefined) delete process.env.JUDGE_ONLY_VERDICTS; else process.env.JUDGE_ONLY_VERDICTS = oldVerdicts;
+    }
   });
 });
