@@ -60,6 +60,82 @@ describe('settle busy work grace', () => {
   });
 });
 
+describe('open late-dialog gate', () => {
+  it('does not wait for incidental covered or screen-reader-only links', async () => {
+    const { ms } = await elapsed(() => browser.open(dataPage(`
+      <style>.bar { position: fixed; inset: 0 0 auto; height: 48px; width: 100%; z-index: 2 }</style>
+      <a href="#one" style="position:absolute;top:12px;left:20px">Covered once</a>
+      <a href="#skip" style="position:absolute;left:-10000px">Skip hidden content</a>
+      <div class="bar"></div>
+    `)));
+    expect(ms).toBeLessThan(timingCap(1100));
+  });
+
+  it('waits for a late dialog behind a multi-control backdrop (near miss)', async () => {
+    const text = await browser.open(dataPage(`
+      <style>.backdrop { position: fixed; inset: 0; z-index: 2 }</style>
+      <button>First</button><button>Second</button><button>Third</button><div class="backdrop"></div>
+      <script>setTimeout(() => document.body.insertAdjacentHTML('beforeend', '<div role="dialog" style="position:fixed;z-index:3">Late dialog</div>'), 800)</script>
+    `));
+    expect(text).toContain('Late dialog');
+  });
+});
+
+describe('settle timing reasons', () => {
+  const timed = (): { timing: { tool: string; start: number; phases: Map<string, number>; settle?: string } | null } =>
+    browser as unknown as { timing: { tool: string; start: number; phases: Map<string, number>; settle?: string } | null };
+
+  it('reports mutation, request, and quiet stop reasons', async () => {
+    let view = await browser.open(dataPage('<button onclick="setInterval(() => document.body.append(document.createTextNode(\'x\')), 40)">Mutate forever</button>'));
+    timed().timing = { tool: 'click', start: performance.now(), phases: new Map() };
+    await browser.click(idOf(view, 'Mutate forever'));
+    expect(timed().timing?.settle).toBe('cap-mutations');
+    timed().timing = null;
+
+    view = await browser.open(dataPage('<input aria-label="Lookup" oninput="fetch(\'https://pending.test/value\')">'));
+    const page = await pageOf();
+    await page.route('https://pending.test/**', async (route) => {
+      await new Promise((done) => setTimeout(done, 2000));
+      await route.fulfill({ status: 200, body: '{}' }).catch(() => undefined);
+    });
+    timed().timing = { tool: 'type', start: performance.now(), phases: new Map() };
+    await browser.type(idOf(view, 'textbox "Lookup"'), 'value');
+    expect(timed().timing?.settle).toBe('cap-request');
+    timed().timing = null;
+    await page.unroute('https://pending.test/**');
+
+    await browser.open(dataPage('<main>Still</main>'));
+    timed().timing = { tool: 'read', start: performance.now(), phases: new Map() };
+    await (browser as unknown as { settle(page: Page): Promise<void> }).settle(await pageOf());
+    expect(timed().timing?.settle).toBe('quiet');
+    timed().timing = null;
+  });
+});
+
+describe('type request grace', () => {
+  it('stops after a quiet second for a pending typeahead request, but keeps a fast rendered result (near miss)', async () => {
+    let view = await browser.open(dataPage('<input aria-label="Search" oninput="fetch(\'https://typeahead.test/slow\')">'));
+    let page = await pageOf();
+    await page.route('https://typeahead.test/slow', async (route) => {
+      await new Promise((done) => setTimeout(done, 2000));
+      await route.fulfill({ status: 200, body: '{}' }).catch(() => undefined);
+    });
+    const slow = await elapsed(() => browser.type(idOf(view, 'textbox "Search"'), 'slow'));
+    expect(slow.ms).toBeLessThanOrEqual(timingCap(1200));
+    await page.unroute('https://typeahead.test/slow');
+
+    view = await browser.open(dataPage('<input aria-label="Search" oninput="fetch(\'https://typeahead.test/fast\').then(() => document.body.append(\'Suggestions ready\'))">'));
+    page = await pageOf();
+    await page.route('https://typeahead.test/fast', async (route) => {
+      await new Promise((done) => setTimeout(done, 300));
+      await route.fulfill({ status: 200, body: '{}' }).catch(() => undefined);
+    });
+    const fast = await browser.type(idOf(view, 'textbox "Search"'), 'fast');
+    expect(fast).toContain('Suggestions ready');
+    await page.unroute('https://typeahead.test/fast');
+  });
+});
+
 describe('navigation completion', () => {
   it('uses submit wording for an unfinished submit, but accepts a committed URL change (near miss)', async () => {
     const internals = browser as unknown as { waitForInFlightNavigation(watch: unknown): Promise<void> };

@@ -48,7 +48,7 @@ type NavigationWatch = {
   cancel: () => void;
 };
 
-type ToolTiming = { tool: string; start: number; phases: Map<string, number> };
+type ToolTiming = { tool: string; start: number; phases: Map<string, number>; settle?: string };
 
 /** Live count badges and durations may tick without changing a persisted control's identity. */
 function sameIdentity(
@@ -142,6 +142,18 @@ const TRACKER = `(() => {
     for (const timer of live.values()) if (timer.origin >= from && timer.delay <= maxDelay && (timer.interval ? includeIntervals && timer.delay >= minIntervalDelay : true)) return true;
     for (const req of reqs) if (req.origin >= from) return true;
     return false;
+  };
+  window.__mantisBusyKinds = (since, includeIntervals = false, maxDelay = Infinity, minIntervalDelay = 0) => {
+    const from = since === undefined ? -Infinity : since;
+    const kinds = { timer: false, interval: false, request: false };
+    for (const timer of live.values()) {
+      if (timer.origin < from || timer.delay > maxDelay) continue;
+      if (timer.interval) {
+        if (includeIntervals && timer.delay >= minIntervalDelay) kinds.interval = true;
+      } else kinds.timer = true;
+    }
+    for (const req of reqs) if (req.origin >= from) kinds.request = true;
+    return kinds;
   };
   // Elements given a click-type listener in script: clickable even without a role, link or tabindex.
   const clicky = new WeakSet();
@@ -433,19 +445,20 @@ export class MantisBrowser {
       let observed = await this.timed('capture', () => this.observe(page));
       const controls = observed.snap.nodes.filter((n) => n.kind === 'interactive');
       const disabled = controls.filter((n) => n.states.includes('disabled') || n.states.includes('looks disabled'));
-      const blocked = controls.filter((n) => n.covered || disabled.includes(n));
+      const covered = controls.filter((n) => n.covered && n.inViewport && !n.srOnly);
+      const blocked = controls.filter((n) => disabled.includes(n) || covered.includes(n));
       const dialogAlreadyShown = observed.snap.nodes.some((n) => n.kind === 'region' && n.role === 'dialog' && n.inViewport);
-      // A majority of controls being blocked is a meaningful late-dialog signal. A single
-      // covered control can also signal a backdrop, even before the dialog is represented.
+      // Several covered controls in view indicate a page layer. A lone covered control is often
+      // a sticky bar or a screen-reader-only link, neither of which merits the late-dialog wait.
       // Several truly disabled controls on first load usually mean the page is still hydrating.
       const hydrating = this.hasDisabledControls(observed.snap);
-      const gated = !dialogAlreadyShown && (hydrating || blocked.some((n) => n.covered) || (blocked.length >= 2 && blocked.length * 2 >= controls.length));
-      if (gated && await this.waitForLateDialog(page, disabled.map((n) => n.id!).filter((id) => id !== undefined))) {
+      const gated = !dialogAlreadyShown && (hydrating || covered.length >= 2 || (blocked.length >= 2 && blocked.length * 2 >= controls.length));
+      if (gated && await this.timed('dialog', () => this.waitForLateDialog(page, disabled.map((n) => n.id!).filter((id) => id !== undefined)))) {
         observed = await this.timed('capture', () => this.observe(page));
       }
       const snap = observed.snap;
       let text = this.timedSync('translate', () => this.render(snap, {}, observed.doc));
-      const captcha = await captchaPromise;
+      const captcha = await this.timed('captcha', () => captchaPromise);
       if (captcha) text += `\n${captcha}`;
       if (hydrating && this.hasDisabledControls(snap)) text += `\n${this.hydrationNote()}`;
       return this.notes.length ? `${text}\n${this.notes.splice(0).join('\n')}` : text;
@@ -469,7 +482,7 @@ export class MantisBrowser {
       const { snap } = observed;
       this.remember(snap, observed.doc);
       const text = findInSnapshot(snap, query, 20, contextChars);
-      const captcha = await captchaPromise;
+      const captcha = await this.timed('captcha', () => captchaPromise);
       return captcha ? `${text}\n${captcha}` : text;
     }, 'find');
   }
@@ -540,7 +553,7 @@ export class MantisBrowser {
       if (dispatched && navigation) {
         // Fast document navigations get their own completion budget. Keep the watcher alive for
         // the subsequent settle window when a timer, interval, or refresh starts navigation later.
-        if (!(await this.waitForTriggeredNavigation(navigation))) this.pendingNavigation = navigation;
+        if (!(await this.timed('navigation', () => this.waitForTriggeredNavigation(navigation)))) this.pendingNavigation = navigation;
       } else navigation?.cancel();
       return `clicked ${label}`;
     });
@@ -562,11 +575,11 @@ export class MantisBrowser {
         await el.dispose();
       }
       if (navigation) {
-        if (!(await this.waitForTriggeredNavigation(navigation))) this.pendingNavigation = navigation;
+        if (!(await this.timed('navigation', () => this.waitForTriggeredNavigation(navigation)))) this.pendingNavigation = navigation;
       }
       const shown = label.includes('(password)') ? '•••' : `"${text.length > 40 ? text.slice(0, 39) + '…' : text}"`;
       return `typed ${shown} into ${label.replace(' (password)', '')}${submit ? ' and pressed Enter' : ''}`;
-    });
+    }, { requestGrace: !submit });
   }
 
   async select(id: number, option: string | string[]): Promise<string> {
@@ -1053,7 +1066,7 @@ export class MantisBrowser {
       // the shared registry. That keeps embedded visual ids resolvable by data()/look().
       await this.observe(page);
       const text = await listMedia(page);
-      const captcha = await detectCaptcha(page);
+      const captcha = await this.timed('captcha', () => detectCaptcha(page));
       return captcha ? `${text}\n${captcha}` : text;
     }, 'media');
   }
@@ -1233,9 +1246,9 @@ export class MantisBrowser {
       if (!outer && this.timing) {
         const timing = this.timing;
         this.timing = null;
-        const phases = ['navigate', 'wait', 'capture', 'translate', 'diff']
+        const phases = ['action', 'navigate', 'navigation', 'wait', 'dialog', 'captcha', 'capture', 'translate', 'diff']
           .map((name) => `${name}=${Math.round(timing.phases.get(name) ?? 0)}ms`).join(' ');
-        process.stderr.write(`mantis timing tool=${timing.tool} ${phases} total=${Math.round(performance.now() - timing.start)}ms\n`);
+        process.stderr.write(`mantis timing tool=${timing.tool} ${phases}${timing.settle ? ` settle=${timing.settle}` : ''} total=${Math.round(performance.now() - timing.start)}ms\n`);
       }
     }
   }
@@ -1256,7 +1269,7 @@ export class MantisBrowser {
    * Run an action, wait for the page to settle, and report what changed: a diff
    * when the same document is still showing, the full view after a navigation.
    */
-  private act(tool: string, fn: (page: Page) => Promise<string>, opts: { quiet?: boolean } = {}): Promise<string> {
+  private act(tool: string, fn: (page: Page) => Promise<string>, opts: { quiet?: boolean; requestGrace?: boolean } = {}): Promise<string> {
     return this.guard(async () => {
       this.pendingNavigation?.cancel();
       this.pendingNavigation = null;
@@ -1273,14 +1286,14 @@ export class MantisBrowser {
       }).catch(() => undefined);
       let msg: string;
       try {
-        msg = await fn(page);
+        msg = await this.timed('action', () => fn(page));
       } catch (e) {
         if (e instanceof NavigatedError) return this.navigatedObservation(page);
         throw e;
       }
       const navigation = this.pendingNavigation as NavigationWatch | null;
       try {
-        await this.timed('wait', () => this.settle(page, true, navigation));
+        await this.timed('wait', () => this.settle(page, true, navigation, opts.requestGrace));
       } finally {
         navigation?.cancel();
         if (this.pendingNavigation === navigation) this.pendingNavigation = null;
@@ -1312,7 +1325,7 @@ export class MantisBrowser {
           if (this.hasDisabledControls(after.snap)) lines.push(this.hydrationNote());
         }
       }
-      const captcha = await captchaPromise;
+      const captcha = await this.timed('captcha', () => captchaPromise);
       if (captcha) lines.push(captcha);
       lines.push(...this.notes.splice(0));
       return lines.join('\n');
@@ -1356,7 +1369,7 @@ export class MantisBrowser {
     this.labels.clear();
     this.known.clear();
     let text = `page navigated; showing the current page\n${this.render(after.snap, {}, after.doc)}`;
-    const captcha = await captchaPromise;
+    const captcha = await this.timed('captcha', () => captchaPromise);
     if (captcha) text += `\n${captcha}`;
     return text;
   }
@@ -1365,7 +1378,7 @@ export class MantisBrowser {
     const captchaPromise = detectCaptcha(page);
     const observed = (await this.unchanged(page)) ?? (await this.timed('capture', () => this.observe(page)));
     let text = this.render(observed.snap, opts, observed.doc);
-    const captcha = await captchaPromise;
+    const captcha = await this.timed('captcha', () => captchaPromise);
     if (captcha) text += `\n${captcha}`;
     return this.notes.length ? `${text}\n${this.notes.splice(0).join('\n')}` : text;
   }
@@ -1995,19 +2008,20 @@ export class MantisBrowser {
    * After an action only work begun since it counts (not background polling), and attributes that
    * keep changing on one element (animation) stop resetting the quiet timer.
    */
-  private async settle(page: Page, afterAction = false, navigation: NavigationWatch | null = null): Promise<void> {
+  private async settle(page: Page, afterAction = false, navigation: NavigationWatch | null = null, requestGrace = false): Promise<void> {
     const initialUrl = page.url();
     // An action begins on an already-loaded document. Skipping this independent load wait
     // leaves a started navigation to the watcher's single bounded completion budget.
     if (!afterAction) await page.waitForLoadState('domcontentloaded', { timeout: 5000 }).catch(() => undefined);
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        await page.evaluate(
-          ({ quiet, idleGrace, max, busyMax, intervalMax, useEpoch }) =>
-            new Promise<void>((done) => {
+        const stop = await page.evaluate(
+          ({ quiet, idleGrace, max, busyMax, intervalMax, useEpoch, reason, requestGrace, requestMax, requestQuiet }) =>
+            new Promise<string | undefined>((done) => {
               const w = window as unknown as {
                 __mantisSetTimeout?: typeof setTimeout;
                 __mantisBusy?: (since?: number, includeIntervals?: boolean, maxDelay?: number, minIntervalDelay?: number) => boolean;
+                __mantisBusyKinds?: (since?: number, includeIntervals?: boolean, maxDelay?: number, minIntervalDelay?: number) => { timer: boolean; interval: boolean; request: boolean };
                 __mantisEpoch?: number;
                 __mantisDocStart?: number;
                 __mantisDomChanges?: number;
@@ -2025,14 +2039,21 @@ export class MantisBrowser {
               const since = useEpoch ? (w.__mantisEpoch ?? 0) : 0;
               const start = Date.now();
               const ownIntervals = useEpoch && (w.__mantisEpoch ?? 0) > (w.__mantisDocStart ?? Infinity);
+              let sawMutation = false;
+              let lastMutation = start;
               let timer: ReturnType<typeof setTimeout>;
               let unwatchShadows: (() => void) | undefined;
-              const finish = (): void => {
+              const busyKinds = () => w.__mantisBusyKinds?.(since, ownIntervals, busyMax) ?? { timer: false, interval: false, request: false };
+              const capReason = (): string => {
+                const busy = busyKinds();
+                return busy.request ? 'cap-request' : busy.timer ? 'cap-timer' : busy.interval ? 'cap-interval' : 'cap-timer';
+              };
+              const finish = (why = 'quiet'): void => {
                 obs.disconnect();
                 unwatchShadows?.();
                 clearTimeout(timer);
                 clearTimeout(cap);
-                done();
+                done(reason ? why : undefined);
               };
               const check = (): void => {
                 const elapsed = Date.now() - start;
@@ -2041,9 +2062,15 @@ export class MantisBrowser {
                 // while a destination document loads is background work and must not hold settle.
                 // A fast recurring interval that leaves the DOM quiet is a poll, not a pending result, so it
                 // only gets a short grace; one-shot timers, requests and slow intervals keep the full cap.
-                else if (w.__mantisBusy?.(since, ownIntervals, busyMax, 500) && elapsed < busyMax) timer = st(check, 50);
+                else if (requestGrace && elapsed >= requestMax && Date.now() - lastMutation >= requestQuiet) {
+                  const busy = busyKinds();
+                  if (busy.request && !busy.timer && !busy.interval) finish('cap-request');
+                  else if (w.__mantisBusy?.(since, ownIntervals, busyMax, 500) && elapsed < busyMax) timer = st(check, 50);
+                  else if (w.__mantisBusy?.(since, ownIntervals, busyMax) && elapsed < intervalMax) timer = st(check, 50);
+                  else finish(reason && (busy.request || busy.timer || busy.interval) ? capReason() : 'quiet');
+                } else if (w.__mantisBusy?.(since, ownIntervals, busyMax, 500) && elapsed < busyMax) timer = st(check, 50);
                 else if (w.__mantisBusy?.(since, ownIntervals, busyMax) && elapsed < intervalMax) timer = st(check, 50);
-                else finish();
+                else finish(reason && elapsed >= busyMax ? capReason() : 'quiet');
               };
               // An element whose same attribute keeps changing (carousel, spinner, ticker) is an animation:
               // after its 3rd change it no longer resets the quiet timer. New or removed content always does.
@@ -2093,6 +2120,10 @@ export class MantisBrowser {
                 let real = false;
                 for (const m of records) if (!animated(m)) real = true;
                 if (!real) return;
+                if (reason || requestGrace) {
+                  sawMutation = true;
+                  lastMutation = Date.now();
+                }
                 clearTimeout(timer);
                 timer = st(check, quiet);
               });
@@ -2107,19 +2138,20 @@ export class MantisBrowser {
                 && w.__mantisDomChanges === w.__mantisEpochDomChanges
                 && !w.__mantisBusy?.(since, (w.__mantisEpoch ?? 0) > (w.__mantisDocStart ?? Infinity), busyMax);
               timer = st(check, idle ? idleGrace : quiet);
-              const cap = st(finish, max);
+              const cap = st(() => finish(reason ? (sawMutation ? 'cap-mutations' : capReason()) : 'quiet'), max);
             }),
-          { quiet: 150, idleGrace: 60, max: 3000, busyMax: 3000, intervalMax: 1000, useEpoch: afterAction },
+          { quiet: 150, idleGrace: 60, max: 3000, busyMax: 3000, intervalMax: 1000, useEpoch: afterAction, reason: !!this.timing, requestGrace, requestMax: 1000, requestQuiet: 300 },
         );
+        if (stop && this.timing) this.timing.settle = stop;
         // A timer can start a main-frame request after its own pending entry has fired. Do not
         // cancel that request's watcher just because the old document has become quiet.
-        if (navigation?.hasStarted()) await this.waitForInFlightNavigation(navigation);
+        if (navigation?.hasStarted()) await this.timed('navigation', () => this.waitForInFlightNavigation(navigation));
         return;
       } catch (e) {
         if (e instanceof ActionError) throw e;
         // Do not spend a second load-state timeout after a request has started. In particular,
         // a timer-triggered navigation that never commits has exactly the watcher's budget.
-        if (navigation?.hasStarted()) await this.waitForInFlightNavigation(navigation);
+        if (navigation?.hasStarted()) await this.timed('navigation', () => this.waitForInFlightNavigation(navigation));
         // A navigation replaced the document under us; wait for it and try once more.
         // A committed navigation has already replaced the document. Retrying its load wait here
         // duplicates the watcher budget and can add five seconds to a page we can already read.
