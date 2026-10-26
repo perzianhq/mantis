@@ -927,8 +927,16 @@ export async function judgeBenchmark(name: string, options: JudgeOptions = {}): 
   judged.sort((a, b) => orderOf(a) - orderOf(b));
   // A selective rerun is a patch over the complete prior report. Finalize only
   // after that merge, so placeholders never demote a selected site_broken run.
-  const finalRuns = finalizeSiteBrokenVerdicts(mergeRejudgedRuns(priorReport?.runs, judged));
-  const siteBrokenTasks = [...universallySiteBrokenTasks(finalRuns)];
+  const merged = mergeRejudgedRuns(priorReport?.runs, judged);
+  // Omitted cohort members cannot establish a universal site failure for the remaining runs.
+  const mergedKeys = new Set(merged.map((r) => runKey(r.task, r.approach, r.run)));
+  const omitted: JudgedRun[] = saved.results.filter((r) => rows.has(r.task) && !mergedKeys.has(runKey(r.task, r.approach, r.run))).map((r) => ({
+    task: r.task, approach: r.approach, run: r.run, verdict: 'unsure', reason: 'Not rejudged.', finalUrl: null,
+    toolCalls: r.toolCalls, totalInputTokens: r.totalInputTokens, wallS: null,
+  }));
+  const cohort = [...merged, ...omitted];
+  const finalRuns = finalizeSiteBrokenVerdicts(cohort).filter((r) => mergedKeys.has(runKey(r.task, r.approach, r.run)));
+  const siteBrokenTasks = [...universallySiteBrokenTasks(cohort)];
   const judgeModels = [...new Set(judged.map((r) => r.judgeModel!))];
   const judgeModel = judgeModels.length === 1 ? judgeModels[0]! : judgeModels.length ? `mixed (${judgeModels.join(', ')})` : model;
   const report: JudgeReport = { source: name, judgeProvider, judgeModel, judgeModels, siteBrokenTasks, runs: finalRuns, skipped };
