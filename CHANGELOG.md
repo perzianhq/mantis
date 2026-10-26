@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.8 (2026-10-26)
+- Fixed a stale page view after a click that navigates, `type` with submit, and back-to-back `open()` calls.
+- `type` no longer waits the full settle time for a typeahead request that never changes the page: 2.9s to 1.1s on a hanging request. A result that renders within 600ms is still shown; plain inputs are unchanged.
+- Faster page capture (memoized DOM walker) and per-phase timing in the benchmark logs.
+- A stalled or slow iframe no longer hangs a page read, action, CAPTCHA check, media list or `ask_human` wait: frames get a time budget (2s each, 4s per page) and are skipped, and the page is rescanned instead of cached without them.
+
 ## 0.1.7 (2026-10-25)
 - `mantis install` no longer prints Playwright's "run npm install first" warning under `npx`, and reports `OCR data ready.`.
 - OCR language data is now cached in `~/.cache/mantis/tessdata` (the folder was never created, so it was re-downloaded on every first `ocr` call and failed offline).
