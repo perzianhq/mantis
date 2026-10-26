@@ -56,7 +56,7 @@ describe('settle busy work grace', () => {
     const view = await browser.open(dataPage('<button onclick="setTimeout(() => document.body.append(\'Delayed result\'), 500)">Delay result</button>'));
     const { text, ms } = await elapsed(() => browser.click(idOf(view, 'Delay result')));
     expect(text).toContain('Delayed result');
-    expect(ms).toBeGreaterThan(timingCap(400));
+    expect(ms).toBeGreaterThan(400);
   });
 });
 
