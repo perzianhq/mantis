@@ -32,11 +32,11 @@ Security and threat model: [SECURITY.md](SECURITY.md).
 
 Mantis vs the accessibility tree (Playwright MCP) on public sites, `gpt-6-luna` and `claude-haiku-5-5`. Every cell is a per-run median; time is end-to-end wall time per run:
 
-**Long tasks** (16 tasks, 48 runs per cell):
+**Long tasks** (correct: 14 tasks, 42 runs per cell, deterministic answer keys; medians: all 16 tasks, 48 runs per cell):
 
 | | Luna Mantis | Luna tree | Haiku Mantis | Haiku tree |
 |---|---:|---:|---:|---:|
-| Correct | **41/48** | 37/48 | **47/48** | 44/48 |
+| Correct | **35/42** | 34/42 | **42/42** | 41/42 |
 | Input tokens (median) | **262k** | 362k | **432k** | 746k |
 | Tool calls (median) | **18** | 25 | **26** | 32 |
 | Time (median) | **50s** | 75s | **90s** | 135s |
@@ -50,16 +50,16 @@ Mantis vs the accessibility tree (Playwright MCP) on public sites, `gpt-6-luna` 
 | Tool calls (median) | **2** | 4 | 7 | **3** | 5 | 6 |
 | Time (median) | **27s** | 31s | 35s | 24s | 31s | **23s** |
 
-Long tasks: about a third less time and 28-42% fewer input tokens, accuracy equal or better. Short tasks (clean re-run, one build, all approaches interleaved): accuracy equal or better than the tree, 37-51% fewer input tokens and 13-22% less time than the tree. Against screenshots: Luna screenshots score 2 runs higher and use 67% more tokens and 29% more time; Haiku screenshots use about 22% fewer tokens and are about even on time, with 2x the tool calls.
+Long tasks: about a third less time and 28-42% fewer input tokens, accuracy within one run of the tree (Luna +1, Haiku +1 of 42). Short tasks (clean re-run, one build, all approaches interleaved): accuracy equal or better than the tree, 37-51% fewer input tokens and 13-22% less time than the tree. Against screenshots: Luna screenshots score 2 runs higher and use 67% more tokens and 29% more time; Haiku screenshots use about 22% fewer tokens and are about even on time, with 2x the tool calls.
 
-Short-task scores are graded by deterministic answer keys on the captured final state. Long-task rows are model-judged by an uncalibrated judge (79% agreement with deterministic keys), so they are indicative; one short task was swapped after scoring. Screenshot baseline, local workflows, method and all caveats: [bench/RESULTS.md](bench/RESULTS.md).
+Short-task and long-task scores are graded by deterministic answer keys on the captured final state. Two of the 16 long tasks (iframe and tab chains) cannot be keyed from saved evidence and are left out of the correct counts, so those counts do not match the earlier model-judged table (Luna 41/48 vs 37/48, Haiku 47/48 vs 44/48 over 16 tasks, kept in RESULTS only for reproduction). The 1-run gaps are within noise. One short task was swapped after scoring. Screenshot baseline, local workflows, method and all caveats: [bench/RESULTS.md](bench/RESULTS.md).
 
 ## Limitations
 
 - Canvas and WebGL apps, including drawing tools, maps and charts, are described only as canvas. `data`, `ocr` and `look` are available, but there is no coordinate click, drag or draw tool.
 - Login and bot walls need `ask_human`, which needs a display.
 - Benchmarks cover read, navigate and form-fill tasks on public and demo sites with Luna and Haiku; production authenticated and write-heavy workflows are not measured.
-- Long real-site rows were judged by an uncalibrated judge (79% agreement). `long-local-v1` measures local fixtures with a deterministic full-ledger grader; `long-live-v1` measures real sites with that judge.
+- Long real-site correctness is graded by deterministic final-state keys on 14 of 16 tasks; process rules (on-site search, visit order) are not checked, and the two iframe/tab chain tasks are excluded. `long-local-v1` measures local fixtures with a deterministic full-ledger grader.
 - The screenshot baseline is this project's own tool, not a third-party product.
 - Some live-v1 tasks were swapped after results; this is disclosed in [bench/RESULTS.md](bench/RESULTS.md).
 - Page content is untrusted data; see [SECURITY.md](SECURITY.md).

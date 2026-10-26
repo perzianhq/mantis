@@ -25,9 +25,26 @@ Formerly named `live-long-fixtures` (the tasks run on local fixtures, not live s
 - A later Mantis-only full run (20261023, final fixtures and graders) scored 48/48 for both models (`results/live-long-fixtures-{luna,haiku}-mantis-final-20261023.md`); the table keeps the same-condition three-way run so approaches stay comparable.
 - Basket and retention rows were rerun after two fixture fixes (history restore, unsaved retention summary); other rows were regraded offline with the current graders from the same runs. Merged files: `results/live-long-fixtures-{luna,haiku}-merged-20261023.md`.
 
-## Long real-site tasks (long-live-v1)
+## Long real-site tasks (long-live-v1), deterministic regrade (current)
 
-16 real-site tasks x {Mantis, tree} x 3 runs = 48 runs per approach and model, judged blind by Codex `gpt-6.1-sol`. Final scores come from one clean run per model (`long-live-v1-final-{luna,haiku}`) rejudged with attempt-bound transcripts and upload chronology. No row is selected by outcome.
+The same saved runs regraded offline with reviewed deterministic answer keys, no model calls and no reruns ([report](results/long-live-v1-deterministic-regrade.md), [Luna](results/long-live-v1-deterministic-regrade-luna.md), [Haiku](results/long-live-v1-deterministic-regrade-haiku.md)). 14 tasks x {Mantis, tree} x 3 runs = 42 runs per cell. The regrade reproduced all 171 earlier deterministic verdicts, and the saved frames of all 16 failures plus one passing run per task were reviewed; no key was found over-strict.
+
+| Agent | Mantis | Tree (Playwright MCP) |
+|---|---:|---:|
+| Luna (`gpt-6-luna`) | **35/42 (83%)** | 34/42 (81%) |
+| Haiku (`claude-haiku-5-5`) | **42/42 (100%)** | 41/42 (98%) |
+
+Disclosures:
+
+- Two tasks are excluded: `internet-window-frames-upload` and `selenium-window-frames-upload`. The saved evidence has no leaf-frame text, frame path or tab identity, so their central requirements cannot be graded from the final state. They need a redesign and a new versioned campaign. On the 14 keyed tasks the Luna gap is one run, against four in the earlier judged 16-task table.
+- Keys check final state (URL, page text, form values, the full reply), not process: "use the on-site search", visit order and no-login are not graded.
+- Result rows truncate answers to 160 characters; the full replies were recovered from the attempt transcripts. The three Haiku `form-selenium-select` re-runs after the id/name fix replace that cell, with provenance recorded in the report.
+- The 16 failures are all Luna except one Haiku tree run, and were kept as failures: `gutenberg-gothic` (Luna Mantis 1 and 3, Luna tree 1, 2 and 3, Haiku tree 3: author shortened to "Mary Wollstonecraft Shelley" instead of the displayed catalogue string), `wiki-probes` (Luna Mantis and tree 1: thousands separators where ungrouped numbers were required, and a Galileo mass mismatch), `wiki-moons` (Luna Mantis 1 and 3: only one moon inspected), `gutenberg-novels` (Luna Mantis 2: correct list, final page is not #105), `met-vangogh` (Luna tree 3: fields unverified), `met-rembrandt-search` (Luna tree 2 and 3 incomplete; Luna Mantis 3 had the right state but dropped the literal "cm" the format requires), `gutenberg-shakespeare-search` (Luna tree 2: the site returned a 504 gateway time-out; kept as a failure, not excluded).
+- Efficiency medians in the README are the 16-task, 48-run figures below. They were not recomputed on the 14-task subset.
+
+## Long real-site tasks (long-live-v1), model-judged (historical)
+
+Kept to reproduce the earlier numbers; the uncalibrated judge is superseded by the section above. 16 real-site tasks x {Mantis, tree} x 3 runs = 48 runs per approach and model, judged blind by Codex `gpt-6.1-sol`. Final scores come from one clean run per model (`long-live-v1-final-{luna,haiku}`) rejudged with attempt-bound transcripts and upload chronology. No row is selected by outcome.
 
 | Agent | Mantis | Tree (Playwright MCP) |
 |---|---:|---:|

@@ -63,7 +63,7 @@ Verdict (Opus review, 2026-10-24): good enough to launch as a v0.x beta. Accurac
    - Delete about 145 untracked scratch files at the repo root (`.tmp-*`) and decide which `bench/results/` leftovers to commit or ignore.
 
 ### Before launch (moved up, 2026-10-24)
-- `long-live-v1` follow-up: re-grade its published 16-task, 48-run-per-cell Luna and Haiku real-site result with reviewed deterministic keys, replacing the uncalibrated judge. Non-blocking.
+- **Done:** `long-live-v1` regraded offline with reviewed deterministic keys, replacing the uncalibrated judge: 14 tasks, 42 runs per cell, Luna Mantis 35 vs tree 34, Haiku 42 vs 41 (171/171 earlier deterministic verdicts reproduced, every failure's frames reviewed). The two iframe/tab chain tasks cannot be keyed and need a redesign in a new versioned campaign. See [RESULTS.md](../bench/RESULTS.md#long-real-site-tasks-long-live-v1-deterministic-regrade-current).
 
 ### Before launch, remaining (moved up, 2026-10-25)
 - [x] README opens with the GIF, install and a 3-line example.
