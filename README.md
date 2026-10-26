@@ -50,7 +50,7 @@ Mantis vs the accessibility tree (Playwright MCP) on public sites, `gpt-6-luna` 
 | Tool calls (median) | **2** | 4 | 7 | **3** | 5 | 6 |
 | Time (median) | **27s** | 31s | 35s | 24s | 31s | **23s** |
 
-Long tasks: about a third less time and 28-42% fewer input tokens than the tree, with accuracy within one run. Short tasks: accuracy equal or better than the tree, 37-51% fewer input tokens and 13-22% less time. Screenshots score 2 runs higher on Luna but use more tokens and time there; on Haiku they use fewer tokens.
+Long tasks: about a third less time and 28-42% fewer input tokens than the tree, with accuracy within one run. Short tasks: accuracy equal or better than the tree, 36-51% fewer input tokens and 13-22% less time. Screenshots score 2 runs higher on Luna but use more tokens and time there; on Haiku they use fewer tokens.
 
 Scores come from deterministic answer keys on the final page state. Two long iframe/tab tasks can't be keyed and are left out of the long-task counts. Method, screenshot baseline and caveats: [bench/RESULTS.md](bench/RESULTS.md).
 
