@@ -50,20 +50,17 @@ Mantis vs the accessibility tree (Playwright MCP) on public sites, `gpt-6-luna` 
 | Tool calls (median) | **2** | 4 | 7 | **3** | 5 | 6 |
 | Time (median) | **27s** | 31s | 35s | 24s | 31s | **23s** |
 
-Long tasks: about a third less time and 28-42% fewer input tokens, accuracy within one run of the tree (Luna +1, Haiku +1 of 42). Short tasks (clean re-run, one build, all approaches interleaved): accuracy equal or better than the tree, 37-51% fewer input tokens and 13-22% less time than the tree. Against screenshots: Luna screenshots score 2 runs higher and use 67% more tokens and 29% more time; Haiku screenshots use about 22% fewer tokens and are about even on time, with 2x the tool calls.
+Long tasks: about a third less time and 28-42% fewer input tokens than the tree, with accuracy within one run. Short tasks: accuracy equal or better than the tree, 37-51% fewer input tokens and 13-22% less time. Screenshots score 2 runs higher on Luna but use more tokens and time there; on Haiku they use fewer tokens.
 
-Short-task and long-task scores are graded by deterministic answer keys on the captured final state. Two of the 16 long tasks (iframe and tab chains) cannot be keyed from saved evidence and are left out of the correct counts, so those counts do not match the earlier model-judged table (Luna 41/48 vs 37/48, Haiku 47/48 vs 44/48 over 16 tasks, kept in RESULTS only for reproduction). The 1-run gaps are within noise. One short task was swapped after scoring. Screenshot baseline, local workflows, method and all caveats: [bench/RESULTS.md](bench/RESULTS.md).
+Scores come from deterministic answer keys on the final page state. Two long iframe/tab tasks can't be keyed and are left out of the long-task counts. Method, screenshot baseline and caveats: [bench/RESULTS.md](bench/RESULTS.md).
 
 ## Limitations
 
-- Canvas and WebGL apps, including drawing tools, maps and charts, are described only as canvas. `data`, `ocr` and `look` are available, but there is no coordinate click, drag or draw tool.
+- No canvas input: canvas, WebGL, maps and drawing apps are described only as canvas, with no coordinate click or draw tool.
 - Login and bot walls need `ask_human`, which needs a display.
-- Benchmarks cover read, navigate and form-fill tasks on public and demo sites with Luna and Haiku; production authenticated and write-heavy workflows are not measured.
-- Long real-site correctness is graded by deterministic final-state keys on 14 of 16 tasks; process rules (on-site search, visit order) are not checked, and the two iframe/tab chain tasks are excluded. `long-local-v1` measures local fixtures with a deterministic full-ledger grader.
-- The screenshot baseline is this project's own tool, not a third-party product.
-- Some live-v1 tasks were swapped after results; this is disclosed in [bench/RESULTS.md](bench/RESULTS.md).
+- Benchmarked only on read, navigate and form-fill tasks on public sites, with two models. The screenshot baseline is this project's own tool, and a few tasks were swapped after results ([disclosed](bench/RESULTS.md)).
 - Page content is untrusted data; see [SECURITY.md](SECURITY.md).
-- This is a small v0.1.x beta project.
+- Small v0.1.x beta.
 
 ## Learn more
 
