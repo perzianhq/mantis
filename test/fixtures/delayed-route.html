@@ -1,0 +1,25 @@
+<!doctype html>
+<title>Starting view</title>
+<main>
+  <button id="route">Open delayed route</button>
+  <button id="nothing">Do nothing</button>
+  <form id="search"><label>Query <input></label></form>
+</main>
+<script>
+  const replaceLater = (path, title, content) => {
+    history.pushState({}, '', path);
+    const started = performance.now();
+    const paint = (now) => {
+      if (now - started < 600) return requestAnimationFrame(paint);
+      document.title = title;
+      document.body.innerHTML = `<main><h1>${title}</h1><p>${content}</p></main>`;
+    };
+    requestAnimationFrame(paint);
+  };
+  document.querySelector('#route').onclick = () => replaceLater('delayed-route-destination', 'Delayed destination', 'Rendered after route change');
+  document.querySelector('#search').onsubmit = (event) => {
+    event.preventDefault();
+    event.target.reset();
+    replaceLater('delayed-submit-destination', 'Submitted destination', 'Rendered after submit');
+  };
+</script>

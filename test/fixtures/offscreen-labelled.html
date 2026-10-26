@@ -1,0 +1,24 @@
+<!doctype html>
+<style>.below { margin-top: 900px } .filler { display: block }</style>
+<main>
+  <div class="below">
+    <dl>
+      <dt>Detail 1</dt><dd>Value 1</dd><dt>Detail 2</dt><dd>Value 2</dd>
+      <dt>Detail 3</dt><dd>Value 3</dd><dt>Detail 4</dt><dd>Value 4</dd>
+      <dt>Detail 5</dt><dd>Value 5</dd><dt>Detail 6</dt><dd>Value 6</dd>
+    </dl>
+    <table>
+      <thead><tr><th>Repeated table header</th><th>Repeated table header</th></tr></thead>
+      <tbody>
+        <tr><th>Metric 1</th><td>Amount 1</td></tr><tr><th>Metric 2</th><td>Amount 2</td></tr>
+        <tr><th>Metric 3</th><td>Amount 3</td></tr><tr><th>Metric 4</th><td>Amount 4</td></tr>
+        <tr><th>Metric 5</th><td>Amount 5</td></tr><tr><th>Metric 6</th><td>Amount 6</td></tr>
+        <tr><th>Metric 7</th><td>Amount 7</td></tr><tr><th>Metric 8</th><td>Amount 8</td></tr>
+      </tbody>
+    </table>
+    <div id="filler"></div>
+  </div>
+</main>
+<script>
+  document.querySelector('#filler').innerHTML = Array.from({ length: 220 }, (_, i) => `<span class="filler">Offscreen filler text ${i} that makes the compact view trim ordinary text.</span>`).join('');
+</script>
