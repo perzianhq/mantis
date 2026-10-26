@@ -14,7 +14,7 @@ npx -y -p mantis-browser mantis read https://example.com   # try it without an a
 
 Windows, Linux servers and other agents: [SETUP](docs/SETUP.md#install).
 
-<p align="center"><img src="video/mantis-demo.gif" alt="Side-by-side replay of the same task with Mantis and Playwright MCP: Mantis finishes in 10 calls and about 292k input tokens, Playwright MCP in 22 calls and about 733k" width="100%"></p>
+<p align="center"><img src="video/mantis-demo.gif" alt="Side-by-side replay of the same task with Mantis and Playwright MCP: Mantis finishes in 11 calls and about 292k input tokens, Playwright MCP in 22 calls and about 733k" width="100%"></p>
 
 *One real task (Luna, logged runs replayed): about a third less time, over 2x fewer input tokens, about half the calls. This is a selected example from 16 long tasks; medians across all 16 are in [Results](#results). [Full video](video/mantis-demo.mp4).*
 
@@ -30,25 +30,27 @@ Security and threat model: [SECURITY.md](SECURITY.md).
 
 ## Results
 
-Mantis vs the accessibility tree (Playwright MCP) on public sites, medians, `gpt-6-luna` and `claude-haiku-5-5`:
+Mantis vs the accessibility tree (Playwright MCP) on public sites, `gpt-6-luna` and `claude-haiku-5-5`. Every cell is a per-run median; time is end-to-end wall time per run:
 
 **Long tasks** (16 tasks, 48 runs per cell):
 
 | | Luna Mantis | Luna tree | Haiku Mantis | Haiku tree |
 |---|---:|---:|---:|---:|
 | Correct | **41/48** | 37/48 | **47/48** | 44/48 |
-| Time | **50s** | 75s | **90s** | 135s |
-| Input tokens | **262k** | 362k | **432k** | 746k |
+| Input tokens (median) | **262k** | 362k | **432k** | 746k |
+| Tool calls (median) | **18** | 25 | **26** | 32 |
+| Time (median) | **50s** | 75s | **90s** | 135s |
 
 **Short tasks** (30 tasks, 90 runs per cell):
 
 | | Luna Mantis | Luna tree | Luna screenshot | Haiku Mantis | Haiku tree | Haiku screenshot |
 |---|---:|---:|---:|---:|---:|---:|
-| Success | 88/90 | 86/90 | **90/90** | **90/90** | 88/90 | 88/90 |
-| Input tokens (mean) | **77k** | 114k | 114k | 47k | 96k | **42k** |
+| Correct | 88/90 | 86/90 | **90/90** | **90/90** | 88/90 | 88/90 |
+| Input tokens (median) | **63k** | 99k | 104k | 43k | 88k | **33k** |
+| Tool calls (median) | **2** | 4 | 7 | **3** | 5 | 6 |
 | Time (median) | **27s** | 31s | 35s | 24s | 31s | **23s** |
 
-Long tasks: about a third less time and 28-42% fewer input tokens, accuracy equal or better. Short tasks (clean re-run, one build, all approaches interleaved): accuracy equal or better than the tree, 32-51% fewer input tokens and 13-22% less time than the tree. Against screenshots: Luna screenshots score 2 runs higher and use 48% more tokens and 30% more time; Haiku screenshots use about 10% fewer tokens and are about even on time, with 2x the tool calls.
+Long tasks: about a third less time and 28-42% fewer input tokens, accuracy equal or better. Short tasks (clean re-run, one build, all approaches interleaved): accuracy equal or better than the tree, 37-51% fewer input tokens and 13-22% less time than the tree. Against screenshots: Luna screenshots score 2 runs higher and use 67% more tokens and 29% more time; Haiku screenshots use about 22% fewer tokens and are about even on time, with 2x the tool calls.
 
 Short-task scores are graded by deterministic answer keys on the captured final state. Long-task rows are model-judged by an uncalibrated judge (79% agreement with deterministic keys), so they are indicative; one short task was swapped after scoring. Screenshot baseline, local workflows, method and all caveats: [bench/RESULTS.md](bench/RESULTS.md).
 

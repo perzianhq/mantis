@@ -89,7 +89,7 @@ Post-hoc swaps were GPL-3 to RFC 8259, IMDb to TMDB, USGS to NIST, and data-gov-
 | | Luna Mantis | Luna tree | Luna screenshot | Haiku Mantis | Haiku tree | Haiku screenshot |
 |---|---:|---:|---:|---:|---:|---:|
 | Success | 88/90 | 86/90 | 90/90 | 90/90 | 88/90 | 88/90 |
-| Input tokens | 77k | 114k | 114k | 47k | 96k | 42k |
+| Input tokens (mean) | 77k | 114k | 114k | 47k | 96k | 42k |
 | Time (median) | 27.2s | 31.2s | 35.1s | 23.9s | 30.5s | 22.9s |
 | Tool calls | 3.3 | 5.0 | 7.3 | 3.8 | 6.2 | 7.9 |
 
