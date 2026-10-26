@@ -598,7 +598,7 @@ export class MantisBrowser {
       if (navigation) this.pendingNavigation = navigation;
       const shown = label.includes('(password)') ? '•••' : `"${text.length > 40 ? text.slice(0, 39) + '…' : text}"`;
       return `typed ${shown} into ${label.replace(' (password)', '')}${submit ? ' and pressed Enter' : ''}`;
-    }, { targetScan: true });
+    }, { requestGrace: !submit, targetScan: true });
   }
 
   async select(id: number, option: string | string[]): Promise<string> {
@@ -1332,7 +1332,9 @@ export class MantisBrowser {
       }
       const navigation = this.pendingNavigation as NavigationWatch | null;
       try {
-        await this.timed('wait', () => this.settle(page, true, navigation, opts.requestGrace));
+        // Fast exits remain the default for ordinary actions; submits explicitly opt out because
+        // their destination can publish a route before its result view has painted.
+        await this.timed('wait', () => this.settle(page, true, navigation, opts.requestGrace ?? true));
       } finally {
         navigation?.cancel();
         if (this.pendingNavigation === navigation) this.pendingNavigation = null;
@@ -1344,7 +1346,14 @@ export class MantisBrowser {
         lines.push('opened in a new tab (now active)');
       }
       const captchaPromise = detectCaptcha(now);
-      const after = await this.scan(now, 'after').catch(() => null);
+      let after = await this.scan(now, 'after').catch(() => null);
+      // Client routers can publish their destination URL before the next frame paints it. Do not
+      // hand back the old page under the new route: give an unchanged route view one bounded retry.
+      if (before && after && now === page && this.needsPageView(before.snap, after.snap)
+        && this.sameVisibleContent(before.snap, after.snap)) {
+        await this.timed('wait', () => this.settle(now, true, null, false, { max: 1500, idleGrace: 750 }));
+        after = await this.scan(now, 'after').catch(() => null);
+      }
       if (before && after && now === page && before.doc !== null && before.doc === after.doc && !this.needsPageView(before.snap, after.snap)) {
         this.remember(after.snap, after.doc);
         const cue = answerReadyCue(before.snap, after.snap);
@@ -1387,6 +1396,15 @@ export class MantisBrowser {
     } catch {
       return before.url !== after.url;
     }
+  }
+
+  /** URL changes alone are not a useful page view while a client router has not painted yet. */
+  private sameVisibleContent(before: Snapshot, after: Snapshot): boolean {
+    if (before.title !== after.title) return false;
+    const visible = (snap: Snapshot): string => JSON.stringify(snap.nodes
+      .filter((n) => n.inViewport)
+      .map(({ kind, role, name, value, states, id }) => [kind, role, name, value ?? '', states, id ?? null]));
+    return visible(before) === visible(after);
   }
 
   private lostQueryOnBack(from: string, landed: string): boolean {
@@ -2064,18 +2082,28 @@ export class MantisBrowser {
 
   /**
    * Wait for load, then for the page to go quiet: no DOM mutation for 150ms (3s cap). Pending
-   * work is given a short grace, but a long-poll or beacon that leaves the DOM quiet cannot hold
-   * the action for the full cap.
+   * optionally gets a short grace, but a long-poll or beacon that leaves the DOM quiet cannot
+   * hold an ordinary action for the full cap.
    * After an action only work begun since it counts (not background polling), and attributes that
    * keep changing on one element (animation) stop resetting the quiet timer.
    */
-  private async settle(page: Page, afterAction = false, navigation: NavigationWatch | null = null, requestGrace = false): Promise<void> {
+  private async settle(
+    page: Page,
+    afterAction = false,
+    navigation: NavigationWatch | null = null,
+    requestGrace = false,
+    bounds: { max: number; idleGrace: number } | null = null,
+  ): Promise<void> {
     const initialUrl = page.url();
+    const settleStarted = Date.now();
+    const settleMax = bounds?.max ?? 3000;
     // An action begins on an already-loaded document. Skipping this independent load wait
     // leaves a started navigation to the watcher's single bounded completion budget.
     if (!afterAction) await page.waitForLoadState('domcontentloaded', { timeout: 5000 }).catch(() => undefined);
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
+        // A retry after a replaced document shares one total budget with its first attempt.
+        const max = Math.max(1, settleMax - (Date.now() - settleStarted));
         const stop = await page.evaluate(
           ({ quiet, idleGrace, max, busyMax, intervalMax, useEpoch, reason, requestGrace, requestMax, requestQuiet }) =>
             new Promise<string | undefined>((done) => {
@@ -2202,7 +2230,18 @@ export class MantisBrowser {
               timer = st(check, idle ? idleGrace : quiet);
               const cap = st(() => finish(reason ? (sawMutation ? 'cap-mutations' : capReason()) : 'quiet'), max);
             }),
-          { quiet: 150, idleGrace: 60, max: 3000, busyMax: 3000, intervalMax: 1000, useEpoch: afterAction, reason: !!this.timing, requestGrace: requestGrace || afterAction, requestMax: 1000, requestQuiet: 300 },
+          {
+            quiet: 150,
+            idleGrace: Math.min(bounds?.idleGrace ?? 60, max),
+            max,
+            busyMax: max,
+            intervalMax: Math.min(1000, max),
+            useEpoch: afterAction,
+            reason: !!this.timing,
+            requestGrace,
+            requestMax: 1000,
+            requestQuiet: 300,
+          },
         );
         if (stop && this.timing) this.timing.settle = stop;
         // A timer can start a main-frame request after its own pending entry has fired. Do not
@@ -2211,6 +2250,8 @@ export class MantisBrowser {
         return;
       } catch (e) {
         if (e instanceof ActionError) throw e;
+        const remaining = settleMax - (Date.now() - settleStarted);
+        if (remaining <= 0) return;
         // Do not spend a second load-state timeout after a request has started. In particular,
         // a timer-triggered navigation that never commits has exactly the watcher's budget.
         if (navigation?.hasStarted()) await this.timed('navigation', () => this.waitForInFlightNavigation(navigation));
@@ -2218,9 +2259,9 @@ export class MantisBrowser {
         // A committed navigation has already replaced the document. Retrying its load wait here
         // duplicates the watcher budget and can add five seconds to a page we can already read.
         if (page.url() === initialUrl && !navigation?.hasCommitted()) {
-          await page.waitForLoadState('domcontentloaded', { timeout: 5000 }).catch(() => undefined);
+          await page.waitForLoadState('domcontentloaded', { timeout: Math.min(5000, remaining) }).catch(() => undefined);
         }
-        await sleep(50);
+        if (Date.now() - settleStarted < settleMax) await sleep(Math.min(50, settleMax - (Date.now() - settleStarted)));
       }
     }
   }

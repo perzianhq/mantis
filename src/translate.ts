@@ -328,6 +328,8 @@ function renderBody(nodes: RawNode[], lvl: Level, ctx: Ctx): { lines: string[]; 
   let dropped = 0;
   const marks: Mark[] = [];
   let proseShown = 0;
+  let offscreenLabelled = 0;
+  let offscreenLabelledChars = 0;
   const kids = new Map<number, number[]>();
   nodes.forEach((n, i) => {
     const list = kids.get(n.parent);
@@ -346,10 +348,45 @@ function renderBody(nodes: RawNode[], lvl: Level, ctx: Ctx): { lines: string[]; 
   };
   const line = (n: RawNode, o: LineOpts = {}): string => interactiveLine(n, { ...o, showHref: showHref(n) });
 
-  const survives = (n: RawNode): boolean => {
-    // Detail fields are compact, actionable facts. Do not discard them before prose merely
-    // because they are below the viewport.
-    if (n.labelled) return true;
+  const labelledFacts = new Set<number>();
+  const pairedLabelled = (group: number[]): void => {
+    for (const value of group.filter((i) => nodes[i].labelledValue === true)) {
+      // A value belongs to its adjacent dt/th, not to any labelled text elsewhere in its region.
+      const label = [...group].reverse().find((i) => i < value && value - i <= 2 && nodes[i].labelledValue === false)
+        ?? group.find((i) => i > value && i - value <= 2 && nodes[i].labelledValue === false);
+      if (label !== undefined) {
+        labelledFacts.add(label);
+        labelledFacts.add(value);
+      }
+    }
+  };
+  const rows = new Map<number, number[]>();
+  const parents = new Map<number, number[]>();
+  nodes.forEach((n, i) => {
+    if (!n.labelled) return;
+    if (n.row !== undefined) (rows.get(n.row) ?? rows.set(n.row, []).get(n.row)!).push(i);
+    else (parents.get(n.parent) ?? parents.set(n.parent, []).get(n.parent)!).push(i);
+  });
+  rows.forEach(pairedLabelled);
+  parents.forEach(pairedLabelled);
+
+  const survives = (n: RawNode, i: number): boolean => {
+    // Keep interactive controls and complete label:value facts, but not bare table headers.
+    const keepLabelled = n.labelled && (n.kind === 'interactive' || labelledFacts.has(i));
+    if (keepLabelled && !n.inViewport && !ctx.full) {
+      const chars = n.name.length + (n.value?.length ?? 0);
+      if (offscreenLabelled >= 20 || offscreenLabelledChars + chars > 1000) {
+        dropped++;
+        return false;
+      }
+      offscreenLabelled++;
+      offscreenLabelledChars += chars;
+    }
+    if (keepLabelled) return true;
+    if (n.labelled && !n.inViewport && !ctx.full) {
+      dropped++;
+      return false;
+    }
     if (n.kind === 'region' || n.inViewport) return true;
     if (lvl.dropOffscreenAll || (lvl.dropOffscreenText && n.kind === 'text')) {
       dropped++;
@@ -435,7 +472,7 @@ function renderBody(nodes: RawNode[], lvl: Level, ctx: Ctx): { lines: string[]; 
 
   const renderList = (idxs: number[], depth: number, owner = ''): string[] => {
     const pad = '  '.repeat(depth);
-    const items = idxs.filter((i) => survives(nodes[i]));
+    const items = idxs.filter((i) => survives(nodes[i], i));
     const rows = compactRows(items);
     const out: string[] = [];
     let skippedProse = 0;
@@ -472,7 +509,7 @@ function renderBody(nodes: RawNode[], lvl: Level, ctx: Ctx): { lines: string[]; 
         let j = k + 1;
         while (j < items.length && nodes[items[j]].inline) j++;
         const links = items.slice(k + 1, j).filter((ix) => nodes[ix].kind === 'interactive');
-        if (ctx.full || lvl.allProse || n.labelled || (n.inViewport && proseShown < PROSE_MAX)) {
+        if (ctx.full || lvl.allProse || labelledFacts.has(items[k]) || (n.inViewport && proseShown < PROSE_MAX)) {
           proseShown++;
           out.push(`${pad}"${quote(ctx.full || lvl.allProse ? n.name : clip(n.name, PROSE_CHARS))}"`);
           if (links.length) {

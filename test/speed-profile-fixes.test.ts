@@ -1,7 +1,9 @@
 import { afterAll, beforeAll, expect, it } from 'vitest';
+import { resolve } from 'node:path';
 import type { Page } from 'playwright';
 import { MantisBrowser } from '../src/index.js';
-import { idOf } from './helpers.js';
+import { translate } from '../src/translate.js';
+import { fixture, idOf, timingCap } from './helpers.js';
 
 let browser: MantisBrowser;
 beforeAll(() => { browser = new MantisBrowser({ actionTimeoutMs: 3000 }); });
@@ -9,6 +11,11 @@ afterAll(async () => { await browser.close(); });
 
 const pageOf = (): Promise<Page> => (browser as unknown as { activePage(): Promise<Page> }).activePage();
 const dataPage = (body: string): string => `data:text/html,${encodeURIComponent(`<!doctype html><body>${body}</body>`)}`;
+const elapsed = async (run: () => Promise<string>): Promise<{ text: string; ms: number }> => {
+  const start = performance.now();
+  const text = await run();
+  return { text, ms: performance.now() - start };
+};
 
 it('uses a target validation scan as the action before snapshot, but still rejects a changed target', async () => {
   const view = await browser.open(dataPage('<button onclick="document.body.append(\' done\')">Run</button>'));
@@ -47,6 +54,47 @@ it('returns the page view when a client router changes the route, but a diff for
   const view2 = await browser.open(spa);
   const same = await browser.click(idOf(view2, 'button "Add"'));
   expect(same).not.toContain('Detail page');
+});
+
+it('re-settles a route whose URL changes before its next-frame title and content, without slowing an unchanged click', async () => {
+  const page = await pageOf();
+  const origin = 'http://fixture.test';
+  await page.route(`${origin}/**`, (route) => route.fulfill({ path: resolve(import.meta.dirname, 'fixtures', 'delayed-route.html') }));
+  try {
+    let view = await browser.open(`${origin}/start`);
+    const clicked = await browser.click(idOf(view, 'button "Open delayed route"'));
+    expect(clicked).toContain('Delayed destination');
+    expect(clicked).toContain('Rendered after route change');
+
+    view = await browser.open(`${origin}/start`);
+    const submitted = await browser.type(idOf(view, 'textbox "Query"'), 'value', true);
+    expect(submitted).toContain('Submitted destination');
+    expect(submitted).toContain('Rendered after submit');
+
+    view = await browser.open(`${origin}/start`);
+    const unchanged = await elapsed(() => browser.click(idOf(view, 'button "Do nothing"')));
+    expect(unchanged.text).toContain('clicked');
+    // Near miss: an action that leaves the page alone still uses the short idle settle.
+    expect(unchanged.ms).toBeLessThan(timingCap(700));
+  } finally {
+    await page.unroute(`${origin}/**`);
+  }
+});
+
+it('keeps paired offscreen detail facts but drops bare table headers and caps labelled rows', async () => {
+  await browser.open(fixture('offscreen-labelled.html'));
+  const snap = await browser.snapshot();
+  const header = snap.nodes.find((node) => node.name === 'Repeated table header');
+  expect(header?.inViewport, JSON.stringify(header)).toBe(false);
+  const view = translate(snap, 900);
+  for (let i = 1; i <= 6; i++) {
+    expect(view).toContain(`Detail ${i}`);
+    expect(view).toContain(`Value ${i}`);
+  }
+  expect(view).not.toContain('Repeated table header');
+  expect(view).toContain('Metric 4');
+  // Near miss: the next paired row is beyond the twenty offscreen labelled-node allowance.
+  expect(view).not.toContain('Metric 5');
 });
 
 it('names the landed URL after back() and warns when the earlier query string was lost', async () => {

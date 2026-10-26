@@ -58,6 +58,8 @@ export interface RawNode {
   inline?: boolean;
   /** A definition-list or header-cell field; keep it ahead of ordinary prose when trimming. */
   labelled?: boolean;
+  /** A labelled field's value side (dd or td paired with a header cell). */
+  labelledValue?: boolean;
   /** Interactive only: a text-entry field that has keyboard focus (site memory never hides it). */
   focused?: boolean;
   /** Control found only by the empty-page screen-reader-content pass. */
@@ -1381,6 +1383,8 @@ export function walker(includeSrOnly = false): WalkResult {
     const explicit = explicitRole(el);
     const labelled = inheritedLabelled || el.localName === 'dt' || el.localName === 'dd' || el.localName === 'th' ||
       (el.localName === 'td' && !!el.parentElement?.querySelector(':scope > th'));
+    const labelledValue = el.localName === 'dd' ||
+      (el.localName === 'td' && !!el.parentElement?.querySelector(':scope > th'));
     const role = interactiveRole(el, explicit, cs);
     if (role) {
       if (shown) emitInteractive(el, role, parent, depth, r, srOnly, requiresOpen);
@@ -1477,7 +1481,7 @@ export function walker(includeSrOnly = false): WalkResult {
       const collapsedHiddenLabel = !!requiresOpen && tag === 'label';
       if (t && t.length <= 80 && !el.shadowRoot && (!el.querySelector(LEAF_BLOCKER) || collapsedHiddenLabel)) {
         const node = stamp({ kind: isProseTag && t.length >= 40 ? 'prose' : 'text', role: 'text', name: t, states: [], parent, depth, inViewport: inView(r), covered: false }, r);
-        if (labelled) node.labelled = true;
+        if (labelled) { node.labelled = true; node.labelledValue = labelledValue; }
         if (requiresOpen) node.requiresOpen = requiresOpen;
         nodes.push(node);
         return;
@@ -1494,7 +1498,7 @@ export function walker(includeSrOnly = false): WalkResult {
         const plain = full.length - linkLen;
         if (plain >= 40 && plain >= full.length * 0.5) {
           const node = stamp({ kind: 'prose', role: 'text', name: full, states: [], parent, depth, inViewport: inView(r), covered: false }, r);
-          if (labelled) node.labelled = true;
+          if (labelled) { node.labelled = true; node.labelledValue = labelledValue; }
           if (requiresOpen) node.requiresOpen = requiresOpen;
           nodes.push(node);
           proseHere = true;
