@@ -1,0 +1,140 @@
+{
+  "hanging-request": {
+    "new": {
+      "ms": [
+        2937,
+        2904,
+        2916,
+        2918,
+        2910,
+        2921,
+        2924,
+        2909
+      ],
+      "rendered": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "fix": {
+      "ms": [
+        1081,
+        1072,
+        1077,
+        1097,
+        1131,
+        1082,
+        1126,
+        1077
+      ],
+      "rendered": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    }
+  },
+  "rendered-in-600ms": {
+    "new": {
+      "ms": [
+        823,
+        823,
+        819,
+        822,
+        842,
+        832,
+        823,
+        805
+      ],
+      "rendered": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    "fix": {
+      "ms": [
+        833,
+        814,
+        832,
+        826,
+        844,
+        822,
+        830,
+        839
+      ],
+      "rendered": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    }
+  },
+  "plain-input": {
+    "new": {
+      "ms": [
+        123,
+        126,
+        122,
+        109,
+        117,
+        105,
+        107,
+        113
+      ],
+      "rendered": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "fix": {
+      "ms": [
+        111,
+        130,
+        108,
+        112,
+        116,
+        104,
+        104,
+        115
+      ],
+      "rendered": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    }
+  }
+}

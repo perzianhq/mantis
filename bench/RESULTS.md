@@ -153,7 +153,19 @@ Model-free replay of recorded Luna `open`/`read`/`find` calls against two Mantis
 - `open` median 3.22s to 2.79s (fix/new 0.86, bootstrap 95% CI 0.69-1.01, not significant); p90 flat (6.69s vs 6.61s).
 - `read` (1.04) and `find` (0.97) are unchanged; no tool regressed more than 15%.
 - Per task: 8 tasks 20-40% faster, one slower (`navigation-gutenberg-search`, 1.34x), which did not reproduce in a 12-rep rerun (1.02x, `results/latency-replay-gutenberg.md`).
-- Not covered: click/type/select (element ids drift between builds), so the `type` settle-cap change is untested here.
+- Not covered by the replay: click/type/select (element ids drift between builds).
+
+### `type` request grace (local fixtures)
+
+`bench/type-latency-ab.mjs` types into a local input on both builds, 8 reps per cell, build order rotated, loopback server, timing off. Results: `results/type-latency-ab.{json,md}`.
+
+| Fixture | 15201a2 (new) median | 181ce0c (fix) median |
+|---|---:|---:|
+| Typeahead request left pending, DOM unchanged | 2916ms | **1081ms** |
+| Typeahead renders after 600ms (near miss) | 823ms, result shown 8/8 | 830ms, result shown 8/8 |
+| Plain input | 113ms | 111ms |
+
+The fix cuts the wait for a hanging background request from the 3s cap to about 1s, still waits for a result that renders within the window, and costs nothing on a plain input. Synthetic fixtures, not real-site typeaheads.
 
 ## Benchmarked source
 
