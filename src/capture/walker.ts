@@ -150,6 +150,20 @@ export function walker(includeSrOnly = false): WalkResult {
   const vh = document.compatMode === 'BackCompat' ? window.innerHeight : documentElement?.clientHeight || window.innerHeight;
   const docW = Math.max(documentElement?.scrollWidth ?? 0, document.body?.scrollWidth ?? 0, window.innerWidth);
   const docH = Math.max(documentElement?.scrollHeight ?? 0, document.body?.scrollHeight ?? 0, window.innerHeight);
+  // A capture is synchronous from the page's point of view, so computed styles cannot become
+  // stale during it. Reusing them avoids repeating an expensive style resolution for ancestors.
+  const styles = new WeakMap<Element, CSSStyleDeclaration>();
+  const styleOf = (el: Element): CSSStyleDeclaration => {
+    let style = styles.get(el);
+    if (!style) { style = getComputedStyle(el); styles.set(el, style); }
+    return style;
+  };
+  // Bound pathological DOMs even when their visible node count remains low. Check periodically
+  // so ordinary captures pay only a cheap counter increment.
+  const WALK_BUDGET_MS = 1500;
+  const walkDeadline = performance.now() + WALK_BUDGET_MS;
+  let visited = 0;
+  const outOfTime = (): boolean => ++visited % 64 === 0 && performance.now() > walkDeadline;
 
   // Private-use code points are icon-font glyphs (Font Awesome etc.): no meaning as text.
   const collapse = (s: string): string => s.replace(/[-]/g, ' ').replace(/\s+/g, ' ').trim();
@@ -206,7 +220,7 @@ export function walker(includeSrOnly = false): WalkResult {
           return;
         }
         if (t === 'textarea' || t === 'select') return;
-        const cs = getComputedStyle(e);
+        const cs = styleOf(e);
         // `withHidden` is for clipped/near-transparent screen-reader wording in accessible
         // names. CSS hard-hidden descendants are never name text: otherwise an ordinary button
         // would absorb dormant display:none or visibility:hidden action labels.
@@ -294,7 +308,7 @@ export function walker(includeSrOnly = false): WalkResult {
     if (!parent) return false;
     const peers = Array.from(parent.children).filter((peer) =>
       peer.localName === el.localName &&
-      getComputedStyle(peer).cursor === 'pointer' &&
+      styleOf(peer).cursor === 'pointer' &&
       !!collapse(peer.textContent || '') && collapse(peer.textContent || '').length <= 12 &&
       !peer.querySelector(INTERACTIVE_SEL),
     );
@@ -353,12 +367,12 @@ export function walker(includeSrOnly = false): WalkResult {
     // listen once at the root). Only small elements with content and nothing interactive inside.
     if (SCRIPT_CLICK_NEVER.has(t) || el.querySelector(INTERACTIVE_SEL)) return '';
     const listener = clickListeners?.has(el) === true;
-    const pointerStart = cs.cursor === 'pointer' && (!el.parentElement || getComputedStyle(el.parentElement).cursor !== 'pointer');
+    const pointerStart = cs.cursor === 'pointer' && (!el.parentElement || styleOf(el.parentElement).cursor !== 'pointer');
     if (!listener && !pointerStart) return '';
     // A container (event delegation root, a section of the page) is not one clickable thing.
     if (el.querySelector(CONTAINER_SEL)) return '';
     if (listener && cs.cursor !== 'pointer') {
-      for (const d of Array.from(el.querySelectorAll('*')).slice(0, 60)) if (getComputedStyle(d).cursor === 'pointer') return '';
+      for (const d of Array.from(el.querySelectorAll('*')).slice(0, 60)) if (styleOf(d).cursor === 'pointer') return '';
     }
     const b = el.getBoundingClientRect();
     if (b.width * b.height > 0.25 * vw * vh || b.width < 4 || b.height < 4) return '';
@@ -537,7 +551,7 @@ export function walker(includeSrOnly = false): WalkResult {
         const e = n as Element;
         if (SKIP.has(e.localName) || e.querySelector(INTERACTIVE_SEL) || e.matches(INTERACTIVE_SEL)) return '';
         // Only inline neighbours: a heading or block above is a title for the section, not for this control.
-        if (!getComputedStyle(e).display.startsWith('inline')) return '';
+        if (!styleOf(e).display.startsWith('inline')) return '';
         t = deepText(e, 60);
       }
       return t.length >= 2 && t.length <= 30 && /[\p{L}]/u.test(t) ? t : '';
@@ -667,7 +681,7 @@ export function walker(includeSrOnly = false): WalkResult {
       if (ROW_STOP.has(a.localName)) return '';
       if (a.querySelectorAll(INTERACTIVE_SEL).length + (a.matches(INTERACTIVE_SEL) ? 1 : 0) !== 1) return '';
       const rowish = a.localName === 'li' || a.localName === 'tr' || /^(?:row|option|listitem)$/.test(explicitRole(a));
-      if (!rowish && getComputedStyle(a).display.startsWith('inline')) continue;
+      if (!rowish && styleOf(a).display.startsWith('inline')) continue;
       // The visible swatch copy is often aria-hidden while an exactly equivalent clipped
       // screen-reader label supplies the real name. Include visual hiding for that fallback,
       // but keep aria-hidden decoration out of it.
@@ -720,7 +734,7 @@ export function walker(includeSrOnly = false): WalkResult {
     try { if (el.matches(':modal')) return true; } catch { /* :modal unsupported */ }
     if (overlapArea(r) >= 0.5 * vw * vh) return true;
     for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) {
-      if (getComputedStyle(a).position === 'fixed' && overlapArea(a.getBoundingClientRect()) >= 0.9 * vw * vh) return true;
+      if (styleOf(a).position === 'fixed' && overlapArea(a.getBoundingClientRect()) >= 0.9 * vw * vh) return true;
     }
     return false;
   }
@@ -736,7 +750,7 @@ export function walker(includeSrOnly = false): WalkResult {
   function labelPointerTarget(el: Element, r: DOMRect): { label: HTMLLabelElement; rect: DOMRect } | null {
     const labels = (el as HTMLInputElement).labels;
     if (!labels?.length) return null;
-    const cs = getComputedStyle(el);
+    const cs = styleOf(el);
     const localOpacity = parseFloat(cs.opacity);
     // screenReaderOnly also recognizes near-transparent elements; opacity itself needs a hit test.
     const clippedOrSrOnly = screenReaderOnly(el, cs, r) &&
@@ -753,7 +767,7 @@ export function walker(includeSrOnly = false): WalkResult {
       if (hit === el || !!hit && el.contains(hit)) return null;
     }
     for (const label of Array.from(labels)) {
-      const style = getComputedStyle(label);
+      const style = styleOf(label);
       const rect = label.getBoundingClientRect();
       if (style.display !== 'none' && style.visibility === 'visible' && effectiveOpacity(label) > 0 &&
           rect.width >= 4 && rect.height >= 4 && inDoc(rect)) return { label, rect };
@@ -762,6 +776,9 @@ export function walker(includeSrOnly = false): WalkResult {
   }
 
   function isCovered(el: Element, r: DOMRect): boolean {
+    // Offscreen controls cannot have a meaningful hit target. This skips label and hit-test
+    // work for the large offscreen tail of a document without changing the reported state.
+    if (!inView(r)) return false;
     const labelTarget = labelPointerTarget(el, r);
     const hitRect = labelTarget?.rect ?? r;
     if (!inView(hitRect)) return false;
@@ -886,13 +903,13 @@ export function walker(includeSrOnly = false): WalkResult {
     let o = 1;
     let a: Element | null = el;
     for (let d = 0; a && d < 5; d++, a = a.parentElement) {
-      const v = parseFloat(getComputedStyle(a).opacity);
+      const v = parseFloat(styleOf(a).opacity);
       if (!Number.isNaN(v)) o *= v;
     }
     return o;
   }
   function isVisibleBox(e: Element): boolean {
-    const cs = getComputedStyle(e);
+    const cs = styleOf(e);
     if (cs.display === 'none' || cs.visibility === 'hidden') return false;
     const b = e.getBoundingClientRect();
     return b.width > 0 && b.height > 0;
@@ -943,40 +960,89 @@ export function walker(includeSrOnly = false): WalkResult {
    * A visible panel can retain text while its native controls are hidden. Preserve the text, but
    * identify the collapsed trigger that controls the panel so it is not mistaken for an action.
    */
-  function closedControllerFor(el: Element): { id: number; name: string } | undefined {
-    const parent = (node: Element): Element | null => {
-      const root = node.getRootNode();
-      return node.parentElement ?? (root instanceof ShadowRoot ? root.host : null);
-    };
-    const rootOf = (node: Element): Document | ShadowRoot => {
-      const root = node.getRootNode();
-      return root instanceof ShadowRoot ? root : document;
-    };
-    const describe = (node: Element): { id: number; name: string } | undefined => {
-      const role = interactiveRole(node, explicitRole(node), getComputedStyle(node));
-      if (!role || !node.getClientRects().length) return undefined;
-      const id = idFor(node);
-      return id === undefined ? undefined : { id, name: cap(accName(node, role) || collapse(node.textContent || '') || role, 60) };
-    };
-    for (let node: Element | null = parent(el); node; node = parent(node)) {
-      if (node instanceof HTMLDetailsElement && !node.open) {
-        const summary = Array.from(childrenOf(node)).find((child): child is HTMLElement => child instanceof HTMLElement && child.localName === 'summary');
-        if (summary && summary !== el) {
-          const found = describe(summary);
-          if (found) return found;
+  type Controller = { id: number; name: string };
+  const ctlParent = (node: Element): Element | null => {
+    const root = node.getRootNode();
+    return node.parentElement ?? (root instanceof ShadowRoot ? root.host : null);
+  };
+  const ctlRootOf = (node: Element): Document | ShadowRoot => {
+    const root = node.getRootNode();
+    return root instanceof ShadowRoot ? root : document;
+  };
+  const describeController = (node: Element): Controller | undefined => {
+    const role = interactiveRole(node, explicitRole(node), styleOf(node));
+    if (!role || !node.getClientRects().length) return undefined;
+    const id = idFor(node);
+    return id === undefined ? undefined : { id, name: cap(accName(node, role) || collapse(node.textContent || '') || role, 60) };
+  };
+  // Collapsed ARIA triggers are enumerated once per document/shadow root (document order), indexed by controlled id.
+  const triggerIndex = new Map<Document | ShadowRoot, { triggers: Element[]; byId: Map<string, number[]> }>();
+  const triggersFor = (root: Document | ShadowRoot): { triggers: Element[]; byId: Map<string, number[]> } => {
+    let entry = triggerIndex.get(root);
+    if (!entry) {
+      const triggers = Array.from(root.querySelectorAll('[aria-expanded="false"][aria-controls]'));
+      const byId = new Map<string, number[]>();
+      triggers.forEach((trigger, i) => {
+        for (const id of new Set((trigger.getAttribute('aria-controls') || '').split(/\s+/))) {
+          if (!id) continue;
+          const list = byId.get(id);
+          if (list) list.push(i); else byId.set(id, [i]);
         }
-      }
+      });
+      entry = { triggers, byId };
+      triggerIndex.set(root, entry);
     }
-    const ids = new Set<string>();
-    for (let node: Element | null = el; node; node = parent(node)) if (node.id) ids.add(node.id);
+    return entry;
+  };
+  const describedTrigger = new Map<Element, Controller | undefined>();
+  const describeTrigger = (trigger: Element): Controller | undefined => {
+    if (!describedTrigger.has(trigger)) describedTrigger.set(trigger, describeController(trigger));
+    return describedTrigger.get(trigger);
+  };
+  // Ids of a node and all its ancestors (crossing shadow hosts), memoized along the chain.
+  const ancestorIds = new Map<Element, string[]>();
+  const idsFrom = (node: Element): string[] => {
+    const cached = ancestorIds.get(node);
+    if (cached) return cached;
+    const up = ctlParent(node);
+    const above = up ? idsFrom(up) : [];
+    const own = node.id ? [node.id, ...above] : above;
+    ancestorIds.set(node, own);
+    return own;
+  };
+  // First closed <details> at or above a node whose summary is a describable control (summary identity checked by caller).
+  const detailsAbove = new Map<Element, { summary: HTMLElement; found: Controller } | null>();
+  const closedDetailsFrom = (node: Element | null): { summary: HTMLElement; found: Controller } | null => {
+    if (!node) return null;
+    if (detailsAbove.has(node)) return detailsAbove.get(node)!;
+    let result: { summary: HTMLElement; found: Controller } | null = null;
+    if (node instanceof HTMLDetailsElement && !node.open) {
+      const summary = Array.from(childrenOf(node)).find((child): child is HTMLElement => child instanceof HTMLElement && child.localName === 'summary');
+      const found = summary ? describeController(summary) : undefined;
+      if (summary && found) result = { summary, found };
+    }
+    if (!result) result = closedDetailsFrom(ctlParent(node));
+    detailsAbove.set(node, result);
+    return result;
+  };
+  function closedControllerFor(el: Element): Controller | undefined {
+    for (let node: Element | null = ctlParent(el); node; ) {
+      const hit = closedDetailsFrom(node);
+      if (!hit) break;
+      if (hit.summary !== el) return hit.found;
+      // The summary itself is excluded: continue above its <details>.
+      node = ctlParent(hit.summary.parentElement ?? hit.summary);
+    }
+    const ids = new Set(idsFrom(el));
     if (!ids.size) return undefined;
     // `aria-controls` does not cross a shadow boundary. Requiring this explicit
     // relationship avoids labelling arbitrary nearby or ancestor controls as a filter.
-    for (const trigger of Array.from(rootOf(el).querySelectorAll('[aria-expanded="false"][aria-controls]'))) {
-      if ((trigger.getAttribute('aria-controls') || '').split(/\s+/).some((id) => ids.has(id))) {
-        const found = describe(trigger);
-        if (found) return found;
-      }
+    const { triggers, byId } = triggersFor(ctlRootOf(el));
+    const candidates = new Set<number>();
+    for (const id of ids) for (const i of byId.get(id) ?? []) candidates.add(i);
+    for (const i of Array.from(candidates).sort((x, y) => x - y)) {
+      const found = describeTrigger(triggers[i]);
+      if (found) return found;
     }
     return undefined;
   }
@@ -1003,7 +1069,7 @@ export function walker(includeSrOnly = false): WalkResult {
     if (!node.name && !el.hasAttribute('href')) unnamed.push({ node, el, role });
     const input = el as HTMLInputElement;
     const attr = (a: string): string | null => el.getAttribute(a);
-    const ecs = getComputedStyle(el);
+    const ecs = styleOf(el);
 
     if (t === 'input') {
       const ty = input.type;
@@ -1120,7 +1186,7 @@ export function walker(includeSrOnly = false): WalkResult {
   /** A visible canvas (a chart or drawing) gets one line, so the agent knows media()/data() can read it. */
   function canvasMark(el: Element, parent: number, depth: number): void {
     if (el.getAttribute('aria-hidden') === 'true') return;
-    const cs = getComputedStyle(el);
+    const cs = styleOf(el);
     if (cs.display === 'none' || cs.visibility !== 'visible' || parseFloat(cs.opacity) === 0) return;
     const r = el.getBoundingClientRect();
     if (r.width < 80 || r.height < 40 || !inDoc(r)) return;
@@ -1134,7 +1200,7 @@ export function walker(includeSrOnly = false): WalkResult {
   /** A visible iframe becomes a region placeholder; capture() fills it with the frame's own nodes. */
   function frameMark(el: Element, parent: number, depth: number): void {
     if (el.getAttribute('aria-hidden') === 'true') return;
-    const cs = getComputedStyle(el);
+    const cs = styleOf(el);
     if (cs.display === 'none' || cs.visibility !== 'visible' || parseFloat(cs.opacity) === 0) return;
     const r = el.getBoundingClientRect();
     if (r.width < 20 || r.height < 20 || !inDoc(r)) return;
@@ -1165,7 +1231,7 @@ export function walker(includeSrOnly = false): WalkResult {
       if (composedContains(n, control)) return false;
       if (n.getAttribute('aria-modal') === 'true') return true;
       try { if (n.matches(':modal')) return true; } catch { /* :modal unsupported */ }
-      if (getComputedStyle(n).position === 'fixed') return true;
+      if (styleOf(n).position === 'fixed') return true;
     }
     return false;
   }
@@ -1187,7 +1253,7 @@ export function walker(includeSrOnly = false): WalkResult {
     for (const c of found) {
       if (nodes.length >= WALK_LIMIT) { truncated = true; return; }
       if (c.closest('[aria-hidden="true"],[inert]')) continue;
-      const cs = getComputedStyle(c);
+      const cs = styleOf(c);
       if (cs.visibility !== 'visible' || cs.pointerEvents === 'none' || cs.display === 'none' || (c !== root && parseFloat(cs.opacity) === 0)) continue;
       const r = c.getBoundingClientRect();
       if (r.width <= 0 || r.height <= 0 || !inDoc(r)) continue;
@@ -1232,7 +1298,7 @@ export function walker(includeSrOnly = false): WalkResult {
    * preserve the prune.
    */
   function hasPositionedEscape(root: Element): boolean {
-    const rootStyle = getComputedStyle(root);
+    const rootStyle = styleOf(root);
     const rootBlocks = createsFixedContainingBlock(rootStyle);
     const pending: { el: Element; blockedForFixed: boolean; blockedForAbsolute: boolean }[] = [];
     for (const child of childrenOf(root)) {
@@ -1248,7 +1314,7 @@ export function walker(includeSrOnly = false): WalkResult {
       const { el, blockedForFixed, blockedForAbsolute } = pending.shift()!;
       scanned++;
       if (SKIP.has(el.localName) || el.getAttribute('aria-hidden') === 'true' || (el as HTMLElement).inert) continue;
-      const cs = getComputedStyle(el);
+      const cs = styleOf(el);
       if (cs.display === 'none' || cs.contentVisibility === 'hidden') continue;
       const r = el.getBoundingClientRect();
       const escapes = (cs.position === 'fixed' || cs.position === 'absolute') && cs.visibility === 'visible' &&
@@ -1271,12 +1337,12 @@ export function walker(includeSrOnly = false): WalkResult {
   }
 
   function visit(el: Element, parent: number, depth: number, box: DOMRect, inheritedSr = false, inheritedOpen?: { id: number; name: string }): void {
-    if (nodes.length >= WALK_LIMIT) { truncated = true; return; }
+    if (nodes.length >= WALK_LIMIT || outOfTime()) { truncated = true; return; }
     if (el.localName === 'canvas') { canvasMark(el, parent, depth); return; }
     if (SKIP.has(el.localName)) return;
     if (el.localName === 'iframe' || el.localName === 'frame') { frameMark(el, parent, depth); return; }
     if (el.getAttribute('aria-hidden') === 'true' || (el as HTMLElement).inert) return;
-    const cs = getComputedStyle(el);
+    const cs = styleOf(el);
     if (cs.display === 'none' || cs.contentVisibility === 'hidden') return;
     if (parseFloat(cs.opacity) === 0) { rescueControls(el, parent, depth); return; }
 

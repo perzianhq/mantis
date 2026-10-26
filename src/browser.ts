@@ -37,12 +37,15 @@ class ActionError extends Error {}
 class NavigatedError extends Error {}
 
 type NavigationWatch = {
+  page: Page;
   started: Promise<boolean>;
   hasStarted: () => boolean;
   remainingMs: () => number | null;
   finished: Promise<'finished'>;
   cancel: () => void;
 };
+
+type ToolTiming = { tool: string; start: number; phases: Map<string, number> };
 
 /** Live count badges and durations may tick without changing a persisted control's identity. */
 function sameIdentity(
@@ -353,6 +356,8 @@ export class MantisBrowser {
   private scratch: BrowserContext | null = null;
   private readonly actionTimeout: number;
   private readonly memory: SiteMemory;
+  /** Present only while MANTIS_TIMING is enabled; normal calls do no timing work. */
+  private timing: ToolTiming | null = null;
 
   constructor(private readonly opts: MantisOptions = {}) {
     this.actionTimeout = opts.actionTimeoutMs ?? 5000;
@@ -394,7 +399,7 @@ export class MantisBrowser {
       const target = /^[a-z][a-z0-9+.-]*:/i.test(url) ? url : `https://${url}`;
       for (let attempt = 0; ; attempt++) {
         try {
-          await page.goto(target, { waitUntil: 'domcontentloaded', timeout: 30_000 });
+          await this.timed('navigate', () => page.goto(target, { waitUntil: 'domcontentloaded', timeout: 30_000 }));
           break;
         } catch (e) {
           // Chromium commits the error page of an earlier failed load late, which can
@@ -413,12 +418,13 @@ export class MantisBrowser {
           throw new ActionError(`could not open ${target}: ${brief(e)}`);
         }
       }
-      await this.settle(page);
+      await this.timed('wait', () => this.settle(page));
       // A navigation starts a new page-scoped number registry. Identities from the previous
       // document must never be mistaken for a newly allocated media/control number.
       this.labels.clear();
       this.known.clear();
-      let observed = await this.observe(page);
+      const captchaPromise = detectCaptcha(page);
+      let observed = await this.timed('capture', () => this.observe(page));
       const controls = observed.snap.nodes.filter((n) => n.kind === 'interactive');
       const disabled = controls.filter((n) => n.states.includes('disabled') || n.states.includes('looks disabled'));
       const blocked = controls.filter((n) => n.covered || disabled.includes(n));
@@ -429,15 +435,15 @@ export class MantisBrowser {
       const hydrating = this.hasDisabledControls(observed.snap);
       const gated = !dialogAlreadyShown && (hydrating || blocked.some((n) => n.covered) || (blocked.length >= 2 && blocked.length * 2 >= controls.length));
       if (gated && await this.waitForLateDialog(page, disabled.map((n) => n.id!).filter((id) => id !== undefined))) {
-        observed = await this.observe(page);
+        observed = await this.timed('capture', () => this.observe(page));
       }
       const snap = observed.snap;
-      let text = this.render(snap, {}, observed.doc);
-      const captcha = await detectCaptcha(page);
+      let text = this.timedSync('translate', () => this.render(snap, {}, observed.doc));
+      const captcha = await captchaPromise;
       if (captcha) text += `\n${captcha}`;
       if (hydrating && this.hasDisabledControls(snap)) text += `\n${this.hydrationNote()}`;
       return this.notes.length ? `${text}\n${this.notes.splice(0).join('\n')}` : text;
-    });
+    }, 'open');
   }
 
   /**
@@ -445,7 +451,7 @@ export class MantisBrowser {
    * `fresh` shows regions in full that site memory would otherwise summarise (as `full` and `region` also do).
    */
   async read(opts: ReadOptions = {}): Promise<string> {
-    return this.guard(async () => this.view(await this.activePage(), opts));
+    return this.guard(async () => this.view(await this.activePage(), opts), 'read');
   }
 
   /** Search the whole page, including parts read() trimmed or summarised, for controls and text. */
@@ -458,7 +464,7 @@ export class MantisBrowser {
       const text = findInSnapshot(snap, query, 20, contextChars);
       const captcha = await detectCaptcha(page);
       return captcha ? `${text}\n${captcha}` : text;
-    });
+    }, 'find');
   }
 
   /** Clear what site memory holds about the current site (this session and on disk). */
@@ -470,11 +476,11 @@ export class MantisBrowser {
       if (!origin) return 'no site is open; nothing to forget';
       this.memory.forget(origin);
       return `forgot everything remembered about ${origin === 'file://' ? 'local files' : origin}; the next read shows every region in full`;
-    });
+    }, 'forget');
   }
 
   async click(id: number): Promise<string> {
-    return this.act(async (page) => {
+    return this.act('click', async (page) => {
       const { el, label } = await this.target(page, id);
       const inactive = await this.inactiveController(el);
       if (inactive) {
@@ -534,15 +540,22 @@ export class MantisBrowser {
   }
 
   async type(id: number, text: string, submit = false): Promise<string> {
-    return this.act(async (page) => {
+    return this.act('type', async (page) => {
       const { el, label } = await this.target(page, id);
+      let navigation: NavigationWatch | null = null;
       try {
         await el.fill(text, { timeout: this.actionTimeout });
-        if (submit) await el.press('Enter', { timeout: this.actionTimeout });
+        if (submit) {
+          navigation = this.watchNavigation(page);
+          await el.press('Enter', { timeout: this.actionTimeout, noWaitAfter: true });
+        }
       } catch (e) {
         throw new ActionError(this.explain(e, label));
       } finally {
         await el.dispose();
+      }
+      if (navigation) {
+        if (!(await this.waitForTriggeredNavigation(navigation))) this.pendingNavigation = navigation;
       }
       const shown = label.includes('(password)') ? '•••' : `"${text.length > 40 ? text.slice(0, 39) + '…' : text}"`;
       return `typed ${shown} into ${label.replace(' (password)', '')}${submit ? ' and pressed Enter' : ''}`;
@@ -550,7 +563,7 @@ export class MantisBrowser {
   }
 
   async select(id: number, option: string | string[]): Promise<string> {
-    return this.act(async (page) => {
+    return this.act('select', async (page) => {
       const { el, label } = await this.target(page, id);
       try {
         const native = await el.evaluate((node) => node instanceof HTMLSelectElement);
@@ -707,7 +720,7 @@ export class MantisBrowser {
 
   /** Fill several fields in one call: text, dropdown option, or true/false for checkboxes and radios. */
   async fill(fields: { id: number; value: string | boolean | string[] }[]): Promise<string> {
-    return this.act(async (page) => {
+    return this.act('fill', async (page) => {
       if (!fields.length) throw new ActionError('no fields given');
       const done: number[] = [];
       const parts: string[] = [];
@@ -766,7 +779,7 @@ export class MantisBrowser {
   }
 
   async press(key: string): Promise<string> {
-    return this.act(async (page) => {
+    return this.act('press', async (page) => {
       try {
         await page.keyboard.press(key);
       } catch (e) {
@@ -781,7 +794,7 @@ export class MantisBrowser {
    * With a direction and `inside` (an id), scroll the list/panel that contains `#inside` instead.
    */
   async scroll(target: 'up' | 'down' | 'left' | 'right' | number = 'down', inside?: number): Promise<string> {
-    return this.act(async (page) => {
+    return this.act('scroll', async (page) => {
       if (typeof target === 'number') {
         const { el, label } = await this.target(page, target);
         try {
@@ -868,7 +881,7 @@ export class MantisBrowser {
   }
 
   async back(): Promise<string> {
-    return this.act(async (page) => {
+    return this.act('back', async (page) => {
       const from = page.url();
       await page.goBack({ waitUntil: 'domcontentloaded', timeout: 15_000 }).catch(() => null);
       return page.url() !== from ? 'went back' : 'cannot go back: no earlier page';
@@ -890,7 +903,7 @@ export class MantisBrowser {
       ? `text "${text}" to ${state}`
       : `#${id} to become ${state}`;
     let timedOut = false;
-    const result = await this.act(async (page) => {
+    const result = await this.act('upload', async (page) => {
       const ready = async (): Promise<boolean> => {
         if (text !== undefined) {
           const shown = await page.evaluate((needle) => (document.body?.innerText ?? '').toLocaleLowerCase().includes(needle), text.toLocaleLowerCase());
@@ -927,7 +940,7 @@ export class MantisBrowser {
 
   /** Hover a numbered control, for menus and tooltips that only appear under the pointer. */
   async hover(id: number): Promise<string> {
-    return this.act(async (page) => {
+    return this.act('hover', async (page) => {
       const { el, label } = await this.target(page, id);
       try {
         await el.hover({ timeout: this.actionTimeout });
@@ -942,7 +955,7 @@ export class MantisBrowser {
 
   /** Set local files on a file input, its label, or a control which opens a file chooser. */
   async upload(id: number, paths: string[]): Promise<string> {
-    return this.act(async (page) => {
+    return this.act('upload', async (page) => {
       if (!paths.length) throw new ActionError('give at least one local file path');
       const files = paths.map((path) => resolvePath(path));
       for (const file of files) {
@@ -1015,7 +1028,7 @@ export class MantisBrowser {
       if (!remaining.length) return `closed tab #${id}`;
       this.page = remaining.at(-1)!;
       return `closed tab #${id}; now active\n${await this.view(this.page)}`;
-    });
+    }, 'tabs');
   }
 
   // ---- fallback ladder: data -> ocr -> look -> ask_human -------------------
@@ -1030,7 +1043,7 @@ export class MantisBrowser {
       const text = await listMedia(page);
       const captcha = await detectCaptcha(page);
       return captcha ? `${text}\n${captcha}` : text;
-    });
+    }, 'media');
   }
 
   /** Hidden text behind a visual element: alt/caption/filename, SVG text, in-memory chart data. */
@@ -1053,7 +1066,7 @@ export class MantisBrowser {
       } finally {
         await el.dispose();
       }
-    });
+    }, 'data');
   }
 
   /** Text inside an image/canvas via OCR (tesseract.js). Never returns the image. */
@@ -1073,7 +1086,7 @@ export class MantisBrowser {
       } finally {
         await el.dispose();
       }
-    });
+    }, 'ocr');
   }
 
   /** The one tool that returns an image: a PNG of a single element, at most 800px on its longest side. */
@@ -1162,7 +1175,7 @@ export class MantisBrowser {
       } finally {
         await headed.close().catch(() => undefined);
       }
-    });
+    }, 'ask_human');
   }
 
   // ---- internals ---------------------------------------------------------
@@ -1197,24 +1210,46 @@ export class MantisBrowser {
     return this.page!;
   }
 
-  private async guard(fn: () => Promise<string>): Promise<string> {
+  private async guard(fn: () => Promise<string>, tool = 'tool'): Promise<string> {
+    const outer = this.timing;
+    if (!outer && process.env.MANTIS_TIMING === '1') this.timing = { tool, start: performance.now(), phases: new Map() };
     try {
       return await fn();
     } catch (e) {
       return `error: ${e instanceof ActionError ? e.message : brief(e)}`;
+    } finally {
+      if (!outer && this.timing) {
+        const timing = this.timing;
+        this.timing = null;
+        const phases = ['navigate', 'wait', 'capture', 'translate', 'diff']
+          .map((name) => `${name}=${Math.round(timing.phases.get(name) ?? 0)}ms`).join(' ');
+        process.stderr.write(`mantis timing tool=${timing.tool} ${phases} total=${Math.round(performance.now() - timing.start)}ms\n`);
+      }
     }
+  }
+
+  private async timed<T>(phase: string, fn: () => Promise<T>): Promise<T> {
+    if (!this.timing) return fn();
+    const start = performance.now();
+    try { return await fn(); } finally { this.timing.phases.set(phase, (this.timing.phases.get(phase) ?? 0) + performance.now() - start); }
+  }
+
+  private timedSync<T>(phase: string, fn: () => T): T {
+    if (!this.timing) return fn();
+    const start = performance.now();
+    try { return fn(); } finally { this.timing.phases.set(phase, (this.timing.phases.get(phase) ?? 0) + performance.now() - start); }
   }
 
   /**
    * Run an action, wait for the page to settle, and report what changed: a diff
    * when the same document is still showing, the full view after a navigation.
    */
-  private act(fn: (page: Page) => Promise<string>, opts: { quiet?: boolean } = {}): Promise<string> {
+  private act(tool: string, fn: (page: Page) => Promise<string>, opts: { quiet?: boolean } = {}): Promise<string> {
     return this.guard(async () => {
       this.pendingNavigation?.cancel();
       this.pendingNavigation = null;
       const page = await this.activePage();
-      const before = (await this.unchanged(page)) ?? (await this.observe(page).catch(() => null));
+      const before = (await this.unchanged(page)) ?? (await this.timed('capture', () => this.observe(page)).catch(() => null));
       // Do not refresh issued identities from this scan. A SPA can recycle the same DOM element
       // between the agent's read and its action; the target guard compares against that last read.
       // Stamp the action's start in-page so settle() ignores timers/requests that were already running.
@@ -1233,7 +1268,7 @@ export class MantisBrowser {
       }
       const navigation = this.pendingNavigation as NavigationWatch | null;
       try {
-        await this.settle(page, true, navigation);
+        await this.timed('wait', () => this.settle(page, true, navigation));
       } finally {
         navigation?.cancel();
         if (this.pendingNavigation === navigation) this.pendingNavigation = null;
@@ -1241,15 +1276,15 @@ export class MantisBrowser {
       const lines = [msg];
       const now = this.page ?? page;
       if (now !== page) {
-        await this.settle(now);
+        await this.timed('wait', () => this.settle(now));
         lines.push('opened in a new tab (now active)');
       }
-      const after = await this.observe(now).catch(() => null);
+      const after = await this.timed('capture', () => this.observe(now)).catch(() => null);
       if (before && after && now === page && before.doc !== null && before.doc === after.doc) {
         this.remember(after.snap, after.doc);
         const cue = answerReadyCue(before.snap, after.snap);
         if (cue) lines.push(cue);
-        const d = diffSnapshots(before.snap, after.snap);
+        const d = this.timedSync('diff', () => diffSnapshots(before.snap, after.snap));
         if (!(opts.quiet && d === NO_CHANGE)) lines.push(d);
       } else {
         // A different document (ids restart, a diff would mislead): say where we are, show it whole.
@@ -1260,7 +1295,7 @@ export class MantisBrowser {
           this.known.clear();
           const cue = before ? answerReadyCue(before.snap, after.snap) : null;
           if (cue) lines.push(cue);
-          lines.push(this.render(after.snap, {}, after.doc));
+          lines.push(this.timedSync('translate', () => this.render(after.snap, {}, after.doc)));
           if (this.hasDisabledControls(after.snap)) lines.push(this.hydrationNote());
         }
       }
@@ -1268,7 +1303,7 @@ export class MantisBrowser {
       if (captcha) lines.push(captcha);
       lines.push(...this.notes.splice(0));
       return lines.join('\n');
-    });
+    }, tool);
   }
 
   /** Scan the page; remembered so the next action can skip its "before" scan if nothing changed. */
@@ -1629,32 +1664,43 @@ export class MantisBrowser {
     const controller = new AbortController();
     let hasStarted = false;
     let deadline: number | null = null;
-    const started = page.waitForRequest(
-      (request) => request.isNavigationRequest() && request.frame() === page.mainFrame(),
-      { timeout: 0, signal: controller.signal },
-    ).then(() => {
-      hasStarted = true;
-      deadline = Date.now() + NAVIGATION_TIMEOUT;
-      return true;
-    }, () => false);
-    // A replacement navigation aborts Playwright's wait for the first request. Watch main-frame
-    // commits instead, so a replacement remains observable under the deadline the first request set.
+    let resolveStarted: (started: boolean) => void = () => undefined;
+    const started = new Promise<boolean>((resolve) => { resolveStarted = resolve; });
+    const begin = (): void => {
+      if (!hasStarted) {
+        hasStarted = true;
+        deadline = Date.now() + NAVIGATION_TIMEOUT;
+        resolveStarted(true);
+      }
+    };
+    const onRequest = (request: import('playwright').Request): void => {
+      if (request.isNavigationRequest() && request.frame() === page.mainFrame()) begin();
+    };
+    page.on('request', onRequest);
+    // History API navigations have no document request. Playwright reports them on the same
+    // main-frame event as a document commit, so use that event as a second start signal.
     let onFrameNavigated: (frame: Frame) => void;
     const finished = new Promise<'finished'>((resolve) => {
       onFrameNavigated = (frame) => {
         if (frame !== page.mainFrame()) return;
+        begin();
         page.off('framenavigated', onFrameNavigated);
         resolve('finished');
       };
       page.on('framenavigated', onFrameNavigated);
     });
+    void controller.signal.addEventListener('abort', () => resolveStarted(false), { once: true });
+    /* A replacement navigation can abort the request wait; request and frame events remain
+       installed until cancel so the replacement is still observed. */
     return {
+      page,
       started,
       hasStarted: () => hasStarted,
       remainingMs: () => deadline === null ? null : Math.max(0, deadline - Date.now()),
       finished,
       cancel: () => {
         controller.abort();
+        page.off('request', onRequest);
         page.off('framenavigated', onFrameNavigated);
       },
     };
@@ -1690,6 +1736,10 @@ export class MantisBrowser {
     ]);
     if (finishTimer) clearTimeout(finishTimer);
     if (outcome === 'timed-out') throw new ActionError('click was dispatched, but the navigation did not finish in time');
+    const loadRemaining = navigation.remainingMs();
+    if (loadRemaining && loadRemaining > 0) {
+      await navigation.page.waitForLoadState('domcontentloaded', { timeout: loadRemaining }).catch(() => undefined);
+    }
   }
 
   /**

@@ -1,0 +1,12 @@
+<!doctype html>
+<title>Navigation source</title>
+<main>
+  <h1>Navigation source</h1>
+  <a href="generic-speed-destination.html">Open destination</a>
+  <form action="generic-speed-destination.html"><label>Query <input name="q"></label></form>
+  <form onsubmit="event.preventDefault()"><label>Local query <input name="local"></label></form>
+  <button id="visible">Visible control</button>
+  <button id="covered">Covered control</button><div class="cover"></div>
+  <button id="offscreen">Offscreen control</button>
+</main>
+<style>.cover { position: fixed; left: 0; top: 0; width: 1px; height: 1px; } #offscreen { margin-top: 1800px; }</style>
