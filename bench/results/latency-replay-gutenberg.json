@@ -1,0 +1,2238 @@
+{
+  "generatedAt": "2026-10-26T15:25:49.924Z",
+  "builds": [
+    {
+      "label": "new",
+      "dir": "D:\\Aadit\\claudez\\mantis\\.tmp-ab\\ab-new",
+      "commit": "15201a2b71a0c217a2a1f674957a187b5e71766e"
+    },
+    {
+      "label": "fix",
+      "dir": "D:\\Aadit\\claudez\\mantis\\.tmp-ab\\ab-fix",
+      "commit": "181ce0c3572f5a2701f112d1c61896aed6fa27cd"
+    }
+  ],
+  "repsPerBuild": 12,
+  "concurrency": 3,
+  "timingBuilds": [
+    "new",
+    "fix"
+  ],
+  "order": "worker queue; arms adjacent by task/rep; build labels rotate by rep",
+  "trace": {
+    "source": ".tmp-ab\\ab-new\\bench\\results\\agent-logs\\latency-ab-luna-new-20261026",
+    "selection": "one --mantis--1 trace per task; open/read/find only; requires open",
+    "tasks": 1,
+    "calls": 1,
+    "files": [
+      {
+        "task": "navigation-gutenberg-search",
+        "file": "livev1-navigation-gutenberg-search--mantis--1--attempt-1-1793024650162-ry63fs.jsonl",
+        "calls": 1,
+        "parseErrors": 0
+      }
+    ]
+  },
+  "preflight": [
+    {
+      "task": "navigation-gutenberg-search",
+      "builds": {
+        "new": {
+          "task": "navigation-gutenberg-search",
+          "build": "new",
+          "rep": 0,
+          "mode": "preflight",
+          "startupMs": 1338.35,
+          "totalWallMs": 3752.68,
+          "validPage": true,
+          "pageError": null,
+          "calls": [
+            {
+              "index": 0,
+              "tool": "open",
+              "handlerMs": 1667.76,
+              "captureMs": 724.43,
+              "ok": true,
+              "error": null,
+              "captureError": null,
+              "page": {
+                "ok": true,
+                "url": "https://www.gutenberg.org/",
+                "title": "Free eBooks | Project Gutenberg",
+                "error": null
+              },
+              "timing": [
+                "mantis timing tool=open navigate=951ms wait=175ms capture=144ms translate=14ms diff=0ms total=1657ms"
+              ]
+            }
+          ]
+        },
+        "fix": {
+          "task": "navigation-gutenberg-search",
+          "build": "fix",
+          "rep": 0,
+          "mode": "preflight",
+          "startupMs": 1360.42,
+          "totalWallMs": 3756.52,
+          "validPage": true,
+          "pageError": null,
+          "calls": [
+            {
+              "index": 0,
+              "tool": "open",
+              "handlerMs": 1700.69,
+              "captureMs": 679.28,
+              "ok": true,
+              "error": null,
+              "captureError": null,
+              "page": {
+                "ok": true,
+                "url": "https://www.gutenberg.org/",
+                "title": "Free eBooks | Project Gutenberg",
+                "error": null
+              },
+              "timing": [
+                "mantis timing tool=open action=0ms navigate=938ms navigation=0ms wait=180ms dialog=0ms captcha=11ms capture=161ms translate=19ms diff=0ms settle=quiet total=1693ms"
+              ]
+            }
+          ]
+        }
+      },
+      "accepted": true
+    }
+  ],
+  "runs": [
+    {
+      "task": "navigation-gutenberg-search",
+      "build": "new",
+      "rep": 1,
+      "mode": "measure",
+      "startupMs": 1529.31,
+      "totalWallMs": 4052.29,
+      "validPage": true,
+      "pageError": null,
+      "calls": [
+        {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1793.78,
+          "captureMs": 718.11,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open navigate=955ms wait=174ms capture=118ms translate=13ms diff=0ms total=1786ms"
+          ]
+        }
+      ]
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "build": "fix",
+      "rep": 1,
+      "mode": "measure",
+      "startupMs": 1502.11,
+      "totalWallMs": 4102.32,
+      "validPage": true,
+      "pageError": null,
+      "calls": [
+        {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1822.41,
+          "captureMs": 766.37,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open action=0ms navigate=1027ms navigation=0ms wait=171ms dialog=0ms captcha=7ms capture=115ms translate=12ms diff=0ms settle=quiet total=1815ms"
+          ]
+        }
+      ]
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "build": "fix",
+      "rep": 2,
+      "mode": "measure",
+      "startupMs": 1503.74,
+      "totalWallMs": 3451.87,
+      "validPage": true,
+      "pageError": null,
+      "calls": [
+        {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1873.6,
+          "captureMs": 63.76,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open action=0ms navigate=941ms navigation=0ms wait=180ms dialog=0ms captcha=67ms capture=118ms translate=11ms diff=0ms settle=quiet total=1868ms"
+          ]
+        }
+      ]
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "build": "new",
+      "rep": 2,
+      "mode": "measure",
+      "startupMs": 1093.58,
+      "totalWallMs": 3460.76,
+      "validPage": true,
+      "pageError": null,
+      "calls": [
+        {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1415.76,
+          "captureMs": 942.93,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open navigate=885ms wait=167ms capture=96ms translate=9ms diff=0ms total=1411ms"
+          ]
+        }
+      ]
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "build": "new",
+      "rep": 3,
+      "mode": "measure",
+      "startupMs": 1165.22,
+      "totalWallMs": 3411.22,
+      "validPage": true,
+      "pageError": null,
+      "calls": [
+        {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1588.54,
+          "captureMs": 648.05,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open navigate=920ms wait=181ms capture=138ms translate=12ms diff=0ms total=1583ms"
+          ]
+        }
+      ]
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "build": "fix",
+      "rep": 3,
+      "mode": "measure",
+      "startupMs": 1107.62,
+      "totalWallMs": 2831.43,
+      "validPage": true,
+      "pageError": null,
+      "calls": [
+        {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1658.17,
+          "captureMs": 56.09,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open action=0ms navigate=937ms navigation=0ms wait=179ms dialog=0ms captcha=70ms capture=132ms translate=10ms diff=0ms settle=quiet total=1653ms"
+          ]
+        }
+      ]
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "build": "fix",
+      "rep": 4,
+      "mode": "measure",
+      "startupMs": 1097.2,
+      "totalWallMs": 3246.02,
+      "validPage": true,
+      "pageError": null,
+      "calls": [
+        {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1441.31,
+          "captureMs": 698.16,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open action=0ms navigate=881ms navigation=0ms wait=171ms dialog=0ms captcha=7ms capture=89ms translate=9ms diff=0ms settle=quiet total=1436ms"
+          ]
+        }
+      ]
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "build": "new",
+      "rep": 4,
+      "mode": "measure",
+      "startupMs": 1118.16,
+      "totalWallMs": 3324.12,
+      "validPage": true,
+      "pageError": null,
+      "calls": [
+        {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1493.59,
+          "captureMs": 704.11,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open navigate=879ms wait=177ms capture=95ms translate=9ms diff=0ms total=1484ms"
+          ]
+        }
+      ]
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "build": "new",
+      "rep": 5,
+      "mode": "measure",
+      "startupMs": 1172.75,
+      "totalWallMs": 3416.96,
+      "validPage": true,
+      "pageError": null,
+      "calls": [
+        {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1452.06,
+          "captureMs": 783.08,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open navigate=928ms wait=177ms capture=107ms translate=10ms diff=0ms total=1446ms"
+          ]
+        }
+      ]
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "build": "fix",
+      "rep": 5,
+      "mode": "measure",
+      "startupMs": 1462.64,
+      "totalWallMs": 3771.59,
+      "validPage": true,
+      "pageError": null,
+      "calls": [
+        {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1595.76,
+          "captureMs": 701.54,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open action=0ms navigate=924ms navigation=0ms wait=175ms dialog=0ms captcha=10ms capture=139ms translate=17ms diff=0ms settle=quiet total=1589ms"
+          ]
+        }
+      ]
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "build": "fix",
+      "rep": 6,
+      "mode": "measure",
+      "startupMs": 1481.39,
+      "totalWallMs": 3475.37,
+      "validPage": true,
+      "pageError": null,
+      "calls": [
+        {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1611.8,
+          "captureMs": 373.41,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open action=0ms navigate=892ms navigation=0ms wait=175ms dialog=0ms captcha=8ms capture=142ms translate=11ms diff=0ms settle=quiet total=1604ms"
+          ]
+        }
+      ]
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "build": "new",
+      "rep": 6,
+      "mode": "measure",
+      "startupMs": 1536.16,
+      "totalWallMs": 3873.02,
+      "validPage": true,
+      "pageError": null,
+      "calls": [
+        {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1640.17,
+          "captureMs": 684.5,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open navigate=933ms wait=185ms capture=154ms translate=14ms diff=0ms total=1635ms"
+          ]
+        }
+      ]
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "build": "new",
+      "rep": 7,
+      "mode": "measure",
+      "startupMs": 1466.61,
+      "totalWallMs": 3704.14,
+      "validPage": true,
+      "pageError": null,
+      "calls": [
+        {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1542.41,
+          "captureMs": 683.84,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open navigate=908ms wait=170ms capture=97ms translate=9ms diff=0ms total=1535ms"
+          ]
+        }
+      ]
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "build": "fix",
+      "rep": 7,
+      "mode": "measure",
+      "startupMs": 1516.88,
+      "totalWallMs": 3774.55,
+      "validPage": true,
+      "pageError": null,
+      "calls": [
+        {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1515.54,
+          "captureMs": 731.24,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open action=0ms navigate=923ms navigation=0ms wait=167ms dialog=0ms captcha=6ms capture=97ms translate=8ms diff=0ms settle=quiet total=1509ms"
+          ]
+        }
+      ]
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "build": "fix",
+      "rep": 8,
+      "mode": "measure",
+      "startupMs": 1383.25,
+      "totalWallMs": 3543.55,
+      "validPage": true,
+      "pageError": null,
+      "calls": [
+        {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1463.86,
+          "captureMs": 685.82,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open action=0ms navigate=880ms navigation=0ms wait=172ms dialog=0ms captcha=7ms capture=106ms translate=8ms diff=0ms settle=quiet total=1457ms"
+          ]
+        }
+      ]
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "build": "new",
+      "rep": 8,
+      "mode": "measure",
+      "startupMs": 1072.71,
+      "totalWallMs": 3235.38,
+      "validPage": true,
+      "pageError": null,
+      "calls": [
+        {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1494.27,
+          "captureMs": 660.61,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open navigate=926ms wait=170ms capture=120ms translate=8ms diff=0ms total=1489ms"
+          ]
+        }
+      ]
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "build": "new",
+      "rep": 9,
+      "mode": "measure",
+      "startupMs": 1102.17,
+      "totalWallMs": 3278.2,
+      "validPage": true,
+      "pageError": null,
+      "calls": [
+        {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1438.11,
+          "captureMs": 730.3,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open navigate=942ms wait=167ms capture=88ms translate=8ms diff=0ms total=1433ms"
+          ]
+        }
+      ]
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "build": "fix",
+      "rep": 9,
+      "mode": "measure",
+      "startupMs": 1078.85,
+      "totalWallMs": 3188.98,
+      "validPage": true,
+      "pageError": null,
+      "calls": [
+        {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1434.15,
+          "captureMs": 668.22,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open action=0ms navigate=886ms navigation=0ms wait=169ms dialog=0ms captcha=7ms capture=107ms translate=9ms diff=0ms settle=quiet total=1430ms"
+          ]
+        }
+      ]
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "build": "fix",
+      "rep": 10,
+      "mode": "measure",
+      "startupMs": 1075.74,
+      "totalWallMs": 3446.23,
+      "validPage": true,
+      "pageError": null,
+      "calls": [
+        {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1572.64,
+          "captureMs": 789.09,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open action=0ms navigate=990ms navigation=0ms wait=174ms dialog=0ms captcha=7ms capture=121ms translate=9ms diff=0ms settle=quiet total=1568ms"
+          ]
+        }
+      ]
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "build": "new",
+      "rep": 10,
+      "mode": "measure",
+      "startupMs": 1109.94,
+      "totalWallMs": 3553.36,
+      "validPage": true,
+      "pageError": null,
+      "calls": [
+        {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1433.16,
+          "captureMs": 1001.35,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open navigate=897ms wait=178ms capture=95ms translate=12ms diff=0ms total=1429ms"
+          ]
+        }
+      ]
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "build": "new",
+      "rep": 11,
+      "mode": "measure",
+      "startupMs": 1131.62,
+      "totalWallMs": 3374.23,
+      "validPage": true,
+      "pageError": null,
+      "calls": [
+        {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1481.75,
+          "captureMs": 752.15,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open navigate=917ms wait=165ms capture=127ms translate=15ms diff=0ms total=1476ms"
+          ]
+        }
+      ]
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "build": "fix",
+      "rep": 11,
+      "mode": "measure",
+      "startupMs": 1455.84,
+      "totalWallMs": 3951.77,
+      "validPage": true,
+      "pageError": null,
+      "calls": [
+        {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1561.45,
+          "captureMs": 923.95,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open action=0ms navigate=876ms navigation=0ms wait=181ms dialog=0ms captcha=11ms capture=124ms translate=14ms diff=0ms settle=quiet total=1555ms"
+          ]
+        }
+      ]
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "build": "fix",
+      "rep": 12,
+      "mode": "measure",
+      "startupMs": 1536.09,
+      "totalWallMs": 3917.38,
+      "validPage": true,
+      "pageError": null,
+      "calls": [
+        {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1612.19,
+          "captureMs": 757.29,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open action=0ms navigate=960ms navigation=0ms wait=171ms dialog=0ms captcha=8ms capture=145ms translate=13ms diff=0ms settle=quiet total=1607ms"
+          ]
+        }
+      ]
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "build": "new",
+      "rep": 12,
+      "mode": "measure",
+      "startupMs": 1524.31,
+      "totalWallMs": 4524.57,
+      "validPage": true,
+      "pageError": null,
+      "calls": [
+        {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1588.73,
+          "captureMs": 1400.39,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open navigate=947ms wait=171ms capture=129ms translate=13ms diff=0ms total=1581ms"
+          ]
+        }
+      ]
+    }
+  ],
+  "pairs": [
+    {
+      "task": "navigation-gutenberg-search",
+      "rep": 1,
+      "index": 0,
+      "tool": "open",
+      "builds": {
+        "new": {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1793.78,
+          "captureMs": 718.11,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open navigate=955ms wait=174ms capture=118ms translate=13ms diff=0ms total=1786ms"
+          ]
+        },
+        "fix": {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1822.41,
+          "captureMs": 766.37,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open action=0ms navigate=1027ms navigation=0ms wait=171ms dialog=0ms captcha=7ms capture=115ms translate=12ms diff=0ms settle=quiet total=1815ms"
+          ]
+        }
+      },
+      "skipReason": null
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "rep": 2,
+      "index": 0,
+      "tool": "open",
+      "builds": {
+        "new": {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1415.76,
+          "captureMs": 942.93,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open navigate=885ms wait=167ms capture=96ms translate=9ms diff=0ms total=1411ms"
+          ]
+        },
+        "fix": {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1873.6,
+          "captureMs": 63.76,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open action=0ms navigate=941ms navigation=0ms wait=180ms dialog=0ms captcha=67ms capture=118ms translate=11ms diff=0ms settle=quiet total=1868ms"
+          ]
+        }
+      },
+      "skipReason": null
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "rep": 3,
+      "index": 0,
+      "tool": "open",
+      "builds": {
+        "new": {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1588.54,
+          "captureMs": 648.05,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open navigate=920ms wait=181ms capture=138ms translate=12ms diff=0ms total=1583ms"
+          ]
+        },
+        "fix": {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1658.17,
+          "captureMs": 56.09,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open action=0ms navigate=937ms navigation=0ms wait=179ms dialog=0ms captcha=70ms capture=132ms translate=10ms diff=0ms settle=quiet total=1653ms"
+          ]
+        }
+      },
+      "skipReason": null
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "rep": 4,
+      "index": 0,
+      "tool": "open",
+      "builds": {
+        "new": {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1493.59,
+          "captureMs": 704.11,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open navigate=879ms wait=177ms capture=95ms translate=9ms diff=0ms total=1484ms"
+          ]
+        },
+        "fix": {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1441.31,
+          "captureMs": 698.16,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open action=0ms navigate=881ms navigation=0ms wait=171ms dialog=0ms captcha=7ms capture=89ms translate=9ms diff=0ms settle=quiet total=1436ms"
+          ]
+        }
+      },
+      "skipReason": null
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "rep": 5,
+      "index": 0,
+      "tool": "open",
+      "builds": {
+        "new": {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1452.06,
+          "captureMs": 783.08,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open navigate=928ms wait=177ms capture=107ms translate=10ms diff=0ms total=1446ms"
+          ]
+        },
+        "fix": {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1595.76,
+          "captureMs": 701.54,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open action=0ms navigate=924ms navigation=0ms wait=175ms dialog=0ms captcha=10ms capture=139ms translate=17ms diff=0ms settle=quiet total=1589ms"
+          ]
+        }
+      },
+      "skipReason": null
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "rep": 6,
+      "index": 0,
+      "tool": "open",
+      "builds": {
+        "new": {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1640.17,
+          "captureMs": 684.5,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open navigate=933ms wait=185ms capture=154ms translate=14ms diff=0ms total=1635ms"
+          ]
+        },
+        "fix": {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1611.8,
+          "captureMs": 373.41,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open action=0ms navigate=892ms navigation=0ms wait=175ms dialog=0ms captcha=8ms capture=142ms translate=11ms diff=0ms settle=quiet total=1604ms"
+          ]
+        }
+      },
+      "skipReason": null
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "rep": 7,
+      "index": 0,
+      "tool": "open",
+      "builds": {
+        "new": {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1542.41,
+          "captureMs": 683.84,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open navigate=908ms wait=170ms capture=97ms translate=9ms diff=0ms total=1535ms"
+          ]
+        },
+        "fix": {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1515.54,
+          "captureMs": 731.24,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open action=0ms navigate=923ms navigation=0ms wait=167ms dialog=0ms captcha=6ms capture=97ms translate=8ms diff=0ms settle=quiet total=1509ms"
+          ]
+        }
+      },
+      "skipReason": null
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "rep": 8,
+      "index": 0,
+      "tool": "open",
+      "builds": {
+        "new": {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1494.27,
+          "captureMs": 660.61,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open navigate=926ms wait=170ms capture=120ms translate=8ms diff=0ms total=1489ms"
+          ]
+        },
+        "fix": {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1463.86,
+          "captureMs": 685.82,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open action=0ms navigate=880ms navigation=0ms wait=172ms dialog=0ms captcha=7ms capture=106ms translate=8ms diff=0ms settle=quiet total=1457ms"
+          ]
+        }
+      },
+      "skipReason": null
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "rep": 9,
+      "index": 0,
+      "tool": "open",
+      "builds": {
+        "new": {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1438.11,
+          "captureMs": 730.3,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open navigate=942ms wait=167ms capture=88ms translate=8ms diff=0ms total=1433ms"
+          ]
+        },
+        "fix": {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1434.15,
+          "captureMs": 668.22,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open action=0ms navigate=886ms navigation=0ms wait=169ms dialog=0ms captcha=7ms capture=107ms translate=9ms diff=0ms settle=quiet total=1430ms"
+          ]
+        }
+      },
+      "skipReason": null
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "rep": 10,
+      "index": 0,
+      "tool": "open",
+      "builds": {
+        "new": {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1433.16,
+          "captureMs": 1001.35,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open navigate=897ms wait=178ms capture=95ms translate=12ms diff=0ms total=1429ms"
+          ]
+        },
+        "fix": {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1572.64,
+          "captureMs": 789.09,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open action=0ms navigate=990ms navigation=0ms wait=174ms dialog=0ms captcha=7ms capture=121ms translate=9ms diff=0ms settle=quiet total=1568ms"
+          ]
+        }
+      },
+      "skipReason": null
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "rep": 11,
+      "index": 0,
+      "tool": "open",
+      "builds": {
+        "new": {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1481.75,
+          "captureMs": 752.15,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open navigate=917ms wait=165ms capture=127ms translate=15ms diff=0ms total=1476ms"
+          ]
+        },
+        "fix": {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1561.45,
+          "captureMs": 923.95,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open action=0ms navigate=876ms navigation=0ms wait=181ms dialog=0ms captcha=11ms capture=124ms translate=14ms diff=0ms settle=quiet total=1555ms"
+          ]
+        }
+      },
+      "skipReason": null
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "rep": 12,
+      "index": 0,
+      "tool": "open",
+      "builds": {
+        "new": {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1588.73,
+          "captureMs": 1400.39,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open navigate=947ms wait=171ms capture=129ms translate=13ms diff=0ms total=1581ms"
+          ]
+        },
+        "fix": {
+          "index": 0,
+          "tool": "open",
+          "handlerMs": 1612.19,
+          "captureMs": 757.29,
+          "ok": true,
+          "error": null,
+          "captureError": null,
+          "page": {
+            "ok": true,
+            "url": "https://www.gutenberg.org/",
+            "title": "Free eBooks | Project Gutenberg",
+            "error": null
+          },
+          "timing": [
+            "mantis timing tool=open action=0ms navigate=960ms navigation=0ms wait=171ms dialog=0ms captcha=8ms capture=145ms translate=13ms diff=0ms settle=quiet total=1607ms"
+          ]
+        }
+      },
+      "skipReason": null
+    }
+  ],
+  "taskPairs": [
+    {
+      "task": "navigation-gutenberg-search",
+      "rep": 1,
+      "builds": {
+        "new": {
+          "task": "navigation-gutenberg-search",
+          "build": "new",
+          "rep": 1,
+          "mode": "measure",
+          "startupMs": 1529.31,
+          "totalWallMs": 4052.29,
+          "validPage": true,
+          "pageError": null,
+          "calls": [
+            {
+              "index": 0,
+              "tool": "open",
+              "handlerMs": 1793.78,
+              "captureMs": 718.11,
+              "ok": true,
+              "error": null,
+              "captureError": null,
+              "page": {
+                "ok": true,
+                "url": "https://www.gutenberg.org/",
+                "title": "Free eBooks | Project Gutenberg",
+                "error": null
+              },
+              "timing": [
+                "mantis timing tool=open navigate=955ms wait=174ms capture=118ms translate=13ms diff=0ms total=1786ms"
+              ]
+            }
+          ]
+        },
+        "fix": {
+          "task": "navigation-gutenberg-search",
+          "build": "fix",
+          "rep": 1,
+          "mode": "measure",
+          "startupMs": 1502.11,
+          "totalWallMs": 4102.32,
+          "validPage": true,
+          "pageError": null,
+          "calls": [
+            {
+              "index": 0,
+              "tool": "open",
+              "handlerMs": 1822.41,
+              "captureMs": 766.37,
+              "ok": true,
+              "error": null,
+              "captureError": null,
+              "page": {
+                "ok": true,
+                "url": "https://www.gutenberg.org/",
+                "title": "Free eBooks | Project Gutenberg",
+                "error": null
+              },
+              "timing": [
+                "mantis timing tool=open action=0ms navigate=1027ms navigation=0ms wait=171ms dialog=0ms captcha=7ms capture=115ms translate=12ms diff=0ms settle=quiet total=1815ms"
+              ]
+            }
+          ]
+        }
+      },
+      "skipReason": null
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "rep": 2,
+      "builds": {
+        "new": {
+          "task": "navigation-gutenberg-search",
+          "build": "new",
+          "rep": 2,
+          "mode": "measure",
+          "startupMs": 1093.58,
+          "totalWallMs": 3460.76,
+          "validPage": true,
+          "pageError": null,
+          "calls": [
+            {
+              "index": 0,
+              "tool": "open",
+              "handlerMs": 1415.76,
+              "captureMs": 942.93,
+              "ok": true,
+              "error": null,
+              "captureError": null,
+              "page": {
+                "ok": true,
+                "url": "https://www.gutenberg.org/",
+                "title": "Free eBooks | Project Gutenberg",
+                "error": null
+              },
+              "timing": [
+                "mantis timing tool=open navigate=885ms wait=167ms capture=96ms translate=9ms diff=0ms total=1411ms"
+              ]
+            }
+          ]
+        },
+        "fix": {
+          "task": "navigation-gutenberg-search",
+          "build": "fix",
+          "rep": 2,
+          "mode": "measure",
+          "startupMs": 1503.74,
+          "totalWallMs": 3451.87,
+          "validPage": true,
+          "pageError": null,
+          "calls": [
+            {
+              "index": 0,
+              "tool": "open",
+              "handlerMs": 1873.6,
+              "captureMs": 63.76,
+              "ok": true,
+              "error": null,
+              "captureError": null,
+              "page": {
+                "ok": true,
+                "url": "https://www.gutenberg.org/",
+                "title": "Free eBooks | Project Gutenberg",
+                "error": null
+              },
+              "timing": [
+                "mantis timing tool=open action=0ms navigate=941ms navigation=0ms wait=180ms dialog=0ms captcha=67ms capture=118ms translate=11ms diff=0ms settle=quiet total=1868ms"
+              ]
+            }
+          ]
+        }
+      },
+      "skipReason": null
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "rep": 3,
+      "builds": {
+        "new": {
+          "task": "navigation-gutenberg-search",
+          "build": "new",
+          "rep": 3,
+          "mode": "measure",
+          "startupMs": 1165.22,
+          "totalWallMs": 3411.22,
+          "validPage": true,
+          "pageError": null,
+          "calls": [
+            {
+              "index": 0,
+              "tool": "open",
+              "handlerMs": 1588.54,
+              "captureMs": 648.05,
+              "ok": true,
+              "error": null,
+              "captureError": null,
+              "page": {
+                "ok": true,
+                "url": "https://www.gutenberg.org/",
+                "title": "Free eBooks | Project Gutenberg",
+                "error": null
+              },
+              "timing": [
+                "mantis timing tool=open navigate=920ms wait=181ms capture=138ms translate=12ms diff=0ms total=1583ms"
+              ]
+            }
+          ]
+        },
+        "fix": {
+          "task": "navigation-gutenberg-search",
+          "build": "fix",
+          "rep": 3,
+          "mode": "measure",
+          "startupMs": 1107.62,
+          "totalWallMs": 2831.43,
+          "validPage": true,
+          "pageError": null,
+          "calls": [
+            {
+              "index": 0,
+              "tool": "open",
+              "handlerMs": 1658.17,
+              "captureMs": 56.09,
+              "ok": true,
+              "error": null,
+              "captureError": null,
+              "page": {
+                "ok": true,
+                "url": "https://www.gutenberg.org/",
+                "title": "Free eBooks | Project Gutenberg",
+                "error": null
+              },
+              "timing": [
+                "mantis timing tool=open action=0ms navigate=937ms navigation=0ms wait=179ms dialog=0ms captcha=70ms capture=132ms translate=10ms diff=0ms settle=quiet total=1653ms"
+              ]
+            }
+          ]
+        }
+      },
+      "skipReason": null
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "rep": 4,
+      "builds": {
+        "new": {
+          "task": "navigation-gutenberg-search",
+          "build": "new",
+          "rep": 4,
+          "mode": "measure",
+          "startupMs": 1118.16,
+          "totalWallMs": 3324.12,
+          "validPage": true,
+          "pageError": null,
+          "calls": [
+            {
+              "index": 0,
+              "tool": "open",
+              "handlerMs": 1493.59,
+              "captureMs": 704.11,
+              "ok": true,
+              "error": null,
+              "captureError": null,
+              "page": {
+                "ok": true,
+                "url": "https://www.gutenberg.org/",
+                "title": "Free eBooks | Project Gutenberg",
+                "error": null
+              },
+              "timing": [
+                "mantis timing tool=open navigate=879ms wait=177ms capture=95ms translate=9ms diff=0ms total=1484ms"
+              ]
+            }
+          ]
+        },
+        "fix": {
+          "task": "navigation-gutenberg-search",
+          "build": "fix",
+          "rep": 4,
+          "mode": "measure",
+          "startupMs": 1097.2,
+          "totalWallMs": 3246.02,
+          "validPage": true,
+          "pageError": null,
+          "calls": [
+            {
+              "index": 0,
+              "tool": "open",
+              "handlerMs": 1441.31,
+              "captureMs": 698.16,
+              "ok": true,
+              "error": null,
+              "captureError": null,
+              "page": {
+                "ok": true,
+                "url": "https://www.gutenberg.org/",
+                "title": "Free eBooks | Project Gutenberg",
+                "error": null
+              },
+              "timing": [
+                "mantis timing tool=open action=0ms navigate=881ms navigation=0ms wait=171ms dialog=0ms captcha=7ms capture=89ms translate=9ms diff=0ms settle=quiet total=1436ms"
+              ]
+            }
+          ]
+        }
+      },
+      "skipReason": null
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "rep": 5,
+      "builds": {
+        "new": {
+          "task": "navigation-gutenberg-search",
+          "build": "new",
+          "rep": 5,
+          "mode": "measure",
+          "startupMs": 1172.75,
+          "totalWallMs": 3416.96,
+          "validPage": true,
+          "pageError": null,
+          "calls": [
+            {
+              "index": 0,
+              "tool": "open",
+              "handlerMs": 1452.06,
+              "captureMs": 783.08,
+              "ok": true,
+              "error": null,
+              "captureError": null,
+              "page": {
+                "ok": true,
+                "url": "https://www.gutenberg.org/",
+                "title": "Free eBooks | Project Gutenberg",
+                "error": null
+              },
+              "timing": [
+                "mantis timing tool=open navigate=928ms wait=177ms capture=107ms translate=10ms diff=0ms total=1446ms"
+              ]
+            }
+          ]
+        },
+        "fix": {
+          "task": "navigation-gutenberg-search",
+          "build": "fix",
+          "rep": 5,
+          "mode": "measure",
+          "startupMs": 1462.64,
+          "totalWallMs": 3771.59,
+          "validPage": true,
+          "pageError": null,
+          "calls": [
+            {
+              "index": 0,
+              "tool": "open",
+              "handlerMs": 1595.76,
+              "captureMs": 701.54,
+              "ok": true,
+              "error": null,
+              "captureError": null,
+              "page": {
+                "ok": true,
+                "url": "https://www.gutenberg.org/",
+                "title": "Free eBooks | Project Gutenberg",
+                "error": null
+              },
+              "timing": [
+                "mantis timing tool=open action=0ms navigate=924ms navigation=0ms wait=175ms dialog=0ms captcha=10ms capture=139ms translate=17ms diff=0ms settle=quiet total=1589ms"
+              ]
+            }
+          ]
+        }
+      },
+      "skipReason": null
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "rep": 6,
+      "builds": {
+        "new": {
+          "task": "navigation-gutenberg-search",
+          "build": "new",
+          "rep": 6,
+          "mode": "measure",
+          "startupMs": 1536.16,
+          "totalWallMs": 3873.02,
+          "validPage": true,
+          "pageError": null,
+          "calls": [
+            {
+              "index": 0,
+              "tool": "open",
+              "handlerMs": 1640.17,
+              "captureMs": 684.5,
+              "ok": true,
+              "error": null,
+              "captureError": null,
+              "page": {
+                "ok": true,
+                "url": "https://www.gutenberg.org/",
+                "title": "Free eBooks | Project Gutenberg",
+                "error": null
+              },
+              "timing": [
+                "mantis timing tool=open navigate=933ms wait=185ms capture=154ms translate=14ms diff=0ms total=1635ms"
+              ]
+            }
+          ]
+        },
+        "fix": {
+          "task": "navigation-gutenberg-search",
+          "build": "fix",
+          "rep": 6,
+          "mode": "measure",
+          "startupMs": 1481.39,
+          "totalWallMs": 3475.37,
+          "validPage": true,
+          "pageError": null,
+          "calls": [
+            {
+              "index": 0,
+              "tool": "open",
+              "handlerMs": 1611.8,
+              "captureMs": 373.41,
+              "ok": true,
+              "error": null,
+              "captureError": null,
+              "page": {
+                "ok": true,
+                "url": "https://www.gutenberg.org/",
+                "title": "Free eBooks | Project Gutenberg",
+                "error": null
+              },
+              "timing": [
+                "mantis timing tool=open action=0ms navigate=892ms navigation=0ms wait=175ms dialog=0ms captcha=8ms capture=142ms translate=11ms diff=0ms settle=quiet total=1604ms"
+              ]
+            }
+          ]
+        }
+      },
+      "skipReason": null
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "rep": 7,
+      "builds": {
+        "new": {
+          "task": "navigation-gutenberg-search",
+          "build": "new",
+          "rep": 7,
+          "mode": "measure",
+          "startupMs": 1466.61,
+          "totalWallMs": 3704.14,
+          "validPage": true,
+          "pageError": null,
+          "calls": [
+            {
+              "index": 0,
+              "tool": "open",
+              "handlerMs": 1542.41,
+              "captureMs": 683.84,
+              "ok": true,
+              "error": null,
+              "captureError": null,
+              "page": {
+                "ok": true,
+                "url": "https://www.gutenberg.org/",
+                "title": "Free eBooks | Project Gutenberg",
+                "error": null
+              },
+              "timing": [
+                "mantis timing tool=open navigate=908ms wait=170ms capture=97ms translate=9ms diff=0ms total=1535ms"
+              ]
+            }
+          ]
+        },
+        "fix": {
+          "task": "navigation-gutenberg-search",
+          "build": "fix",
+          "rep": 7,
+          "mode": "measure",
+          "startupMs": 1516.88,
+          "totalWallMs": 3774.55,
+          "validPage": true,
+          "pageError": null,
+          "calls": [
+            {
+              "index": 0,
+              "tool": "open",
+              "handlerMs": 1515.54,
+              "captureMs": 731.24,
+              "ok": true,
+              "error": null,
+              "captureError": null,
+              "page": {
+                "ok": true,
+                "url": "https://www.gutenberg.org/",
+                "title": "Free eBooks | Project Gutenberg",
+                "error": null
+              },
+              "timing": [
+                "mantis timing tool=open action=0ms navigate=923ms navigation=0ms wait=167ms dialog=0ms captcha=6ms capture=97ms translate=8ms diff=0ms settle=quiet total=1509ms"
+              ]
+            }
+          ]
+        }
+      },
+      "skipReason": null
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "rep": 8,
+      "builds": {
+        "new": {
+          "task": "navigation-gutenberg-search",
+          "build": "new",
+          "rep": 8,
+          "mode": "measure",
+          "startupMs": 1072.71,
+          "totalWallMs": 3235.38,
+          "validPage": true,
+          "pageError": null,
+          "calls": [
+            {
+              "index": 0,
+              "tool": "open",
+              "handlerMs": 1494.27,
+              "captureMs": 660.61,
+              "ok": true,
+              "error": null,
+              "captureError": null,
+              "page": {
+                "ok": true,
+                "url": "https://www.gutenberg.org/",
+                "title": "Free eBooks | Project Gutenberg",
+                "error": null
+              },
+              "timing": [
+                "mantis timing tool=open navigate=926ms wait=170ms capture=120ms translate=8ms diff=0ms total=1489ms"
+              ]
+            }
+          ]
+        },
+        "fix": {
+          "task": "navigation-gutenberg-search",
+          "build": "fix",
+          "rep": 8,
+          "mode": "measure",
+          "startupMs": 1383.25,
+          "totalWallMs": 3543.55,
+          "validPage": true,
+          "pageError": null,
+          "calls": [
+            {
+              "index": 0,
+              "tool": "open",
+              "handlerMs": 1463.86,
+              "captureMs": 685.82,
+              "ok": true,
+              "error": null,
+              "captureError": null,
+              "page": {
+                "ok": true,
+                "url": "https://www.gutenberg.org/",
+                "title": "Free eBooks | Project Gutenberg",
+                "error": null
+              },
+              "timing": [
+                "mantis timing tool=open action=0ms navigate=880ms navigation=0ms wait=172ms dialog=0ms captcha=7ms capture=106ms translate=8ms diff=0ms settle=quiet total=1457ms"
+              ]
+            }
+          ]
+        }
+      },
+      "skipReason": null
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "rep": 9,
+      "builds": {
+        "new": {
+          "task": "navigation-gutenberg-search",
+          "build": "new",
+          "rep": 9,
+          "mode": "measure",
+          "startupMs": 1102.17,
+          "totalWallMs": 3278.2,
+          "validPage": true,
+          "pageError": null,
+          "calls": [
+            {
+              "index": 0,
+              "tool": "open",
+              "handlerMs": 1438.11,
+              "captureMs": 730.3,
+              "ok": true,
+              "error": null,
+              "captureError": null,
+              "page": {
+                "ok": true,
+                "url": "https://www.gutenberg.org/",
+                "title": "Free eBooks | Project Gutenberg",
+                "error": null
+              },
+              "timing": [
+                "mantis timing tool=open navigate=942ms wait=167ms capture=88ms translate=8ms diff=0ms total=1433ms"
+              ]
+            }
+          ]
+        },
+        "fix": {
+          "task": "navigation-gutenberg-search",
+          "build": "fix",
+          "rep": 9,
+          "mode": "measure",
+          "startupMs": 1078.85,
+          "totalWallMs": 3188.98,
+          "validPage": true,
+          "pageError": null,
+          "calls": [
+            {
+              "index": 0,
+              "tool": "open",
+              "handlerMs": 1434.15,
+              "captureMs": 668.22,
+              "ok": true,
+              "error": null,
+              "captureError": null,
+              "page": {
+                "ok": true,
+                "url": "https://www.gutenberg.org/",
+                "title": "Free eBooks | Project Gutenberg",
+                "error": null
+              },
+              "timing": [
+                "mantis timing tool=open action=0ms navigate=886ms navigation=0ms wait=169ms dialog=0ms captcha=7ms capture=107ms translate=9ms diff=0ms settle=quiet total=1430ms"
+              ]
+            }
+          ]
+        }
+      },
+      "skipReason": null
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "rep": 10,
+      "builds": {
+        "new": {
+          "task": "navigation-gutenberg-search",
+          "build": "new",
+          "rep": 10,
+          "mode": "measure",
+          "startupMs": 1109.94,
+          "totalWallMs": 3553.36,
+          "validPage": true,
+          "pageError": null,
+          "calls": [
+            {
+              "index": 0,
+              "tool": "open",
+              "handlerMs": 1433.16,
+              "captureMs": 1001.35,
+              "ok": true,
+              "error": null,
+              "captureError": null,
+              "page": {
+                "ok": true,
+                "url": "https://www.gutenberg.org/",
+                "title": "Free eBooks | Project Gutenberg",
+                "error": null
+              },
+              "timing": [
+                "mantis timing tool=open navigate=897ms wait=178ms capture=95ms translate=12ms diff=0ms total=1429ms"
+              ]
+            }
+          ]
+        },
+        "fix": {
+          "task": "navigation-gutenberg-search",
+          "build": "fix",
+          "rep": 10,
+          "mode": "measure",
+          "startupMs": 1075.74,
+          "totalWallMs": 3446.23,
+          "validPage": true,
+          "pageError": null,
+          "calls": [
+            {
+              "index": 0,
+              "tool": "open",
+              "handlerMs": 1572.64,
+              "captureMs": 789.09,
+              "ok": true,
+              "error": null,
+              "captureError": null,
+              "page": {
+                "ok": true,
+                "url": "https://www.gutenberg.org/",
+                "title": "Free eBooks | Project Gutenberg",
+                "error": null
+              },
+              "timing": [
+                "mantis timing tool=open action=0ms navigate=990ms navigation=0ms wait=174ms dialog=0ms captcha=7ms capture=121ms translate=9ms diff=0ms settle=quiet total=1568ms"
+              ]
+            }
+          ]
+        }
+      },
+      "skipReason": null
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "rep": 11,
+      "builds": {
+        "new": {
+          "task": "navigation-gutenberg-search",
+          "build": "new",
+          "rep": 11,
+          "mode": "measure",
+          "startupMs": 1131.62,
+          "totalWallMs": 3374.23,
+          "validPage": true,
+          "pageError": null,
+          "calls": [
+            {
+              "index": 0,
+              "tool": "open",
+              "handlerMs": 1481.75,
+              "captureMs": 752.15,
+              "ok": true,
+              "error": null,
+              "captureError": null,
+              "page": {
+                "ok": true,
+                "url": "https://www.gutenberg.org/",
+                "title": "Free eBooks | Project Gutenberg",
+                "error": null
+              },
+              "timing": [
+                "mantis timing tool=open navigate=917ms wait=165ms capture=127ms translate=15ms diff=0ms total=1476ms"
+              ]
+            }
+          ]
+        },
+        "fix": {
+          "task": "navigation-gutenberg-search",
+          "build": "fix",
+          "rep": 11,
+          "mode": "measure",
+          "startupMs": 1455.84,
+          "totalWallMs": 3951.77,
+          "validPage": true,
+          "pageError": null,
+          "calls": [
+            {
+              "index": 0,
+              "tool": "open",
+              "handlerMs": 1561.45,
+              "captureMs": 923.95,
+              "ok": true,
+              "error": null,
+              "captureError": null,
+              "page": {
+                "ok": true,
+                "url": "https://www.gutenberg.org/",
+                "title": "Free eBooks | Project Gutenberg",
+                "error": null
+              },
+              "timing": [
+                "mantis timing tool=open action=0ms navigate=876ms navigation=0ms wait=181ms dialog=0ms captcha=11ms capture=124ms translate=14ms diff=0ms settle=quiet total=1555ms"
+              ]
+            }
+          ]
+        }
+      },
+      "skipReason": null
+    },
+    {
+      "task": "navigation-gutenberg-search",
+      "rep": 12,
+      "builds": {
+        "new": {
+          "task": "navigation-gutenberg-search",
+          "build": "new",
+          "rep": 12,
+          "mode": "measure",
+          "startupMs": 1524.31,
+          "totalWallMs": 4524.57,
+          "validPage": true,
+          "pageError": null,
+          "calls": [
+            {
+              "index": 0,
+              "tool": "open",
+              "handlerMs": 1588.73,
+              "captureMs": 1400.39,
+              "ok": true,
+              "error": null,
+              "captureError": null,
+              "page": {
+                "ok": true,
+                "url": "https://www.gutenberg.org/",
+                "title": "Free eBooks | Project Gutenberg",
+                "error": null
+              },
+              "timing": [
+                "mantis timing tool=open navigate=947ms wait=171ms capture=129ms translate=13ms diff=0ms total=1581ms"
+              ]
+            }
+          ]
+        },
+        "fix": {
+          "task": "navigation-gutenberg-search",
+          "build": "fix",
+          "rep": 12,
+          "mode": "measure",
+          "startupMs": 1536.09,
+          "totalWallMs": 3917.38,
+          "validPage": true,
+          "pageError": null,
+          "calls": [
+            {
+              "index": 0,
+              "tool": "open",
+              "handlerMs": 1612.19,
+              "captureMs": 757.29,
+              "ok": true,
+              "error": null,
+              "captureError": null,
+              "page": {
+                "ok": true,
+                "url": "https://www.gutenberg.org/",
+                "title": "Free eBooks | Project Gutenberg",
+                "error": null
+              },
+              "timing": [
+                "mantis timing tool=open action=0ms navigate=960ms navigation=0ms wait=171ms dialog=0ms captcha=8ms capture=145ms translate=13ms diff=0ms settle=quiet total=1607ms"
+              ]
+            }
+          ]
+        }
+      },
+      "skipReason": null
+    }
+  ],
+  "summary": {
+    "baseline": "new",
+    "tools": [
+      {
+        "tool": "open",
+        "n": 12,
+        "builds": {
+          "new": {
+            "medianMs": 1493.93,
+            "p90Ms": 1635.03
+          },
+          "fix": {
+            "medianMs": 1584.2,
+            "p90Ms": 1805.99
+          }
+        },
+        "ratios": {
+          "fix": {
+            "point": null,
+            "low": null,
+            "high": null
+          }
+        },
+        "regressedOver15Pct": false
+      }
+    ],
+    "taskTotals": [
+      {
+        "task": "navigation-gutenberg-search",
+        "n": 12,
+        "medianWallMs": {
+          "new": 3438.86,
+          "fix": 3509.46
+        },
+        "ratios": {
+          "fix": 1.02
+        }
+      }
+    ],
+    "startupMs": {
+      "new": {
+        "medianMs": 1148.42,
+        "p90Ms": 1528.81
+      },
+      "fix": {
+        "medianMs": 1459.24,
+        "p90Ms": 1515.57
+      }
+    },
+    "captureMs": {
+      "new": {
+        "medianMs": 724.21,
+        "p90Ms": 995.51
+      },
+      "fix": {
+        "medianMs": 699.85,
+        "p90Ms": 786.82
+      }
+    },
+    "skippedPairs": 0,
+    "skippedTaskPairs": 0,
+    "skippedByReason": {},
+    "regressions": []
+  }
+}
