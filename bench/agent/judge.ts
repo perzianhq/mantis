@@ -192,7 +192,7 @@ export function buildJudgePrompt(input: { task: string; website: string; finalUr
 // ---- Evidence packet (newer runs) ----
 
 /** One harness frame as the judge sees it: blind image name, page text as captured, no step numbers or tool names. */
-export interface PacketFrame { id: string; url: string; text: string; final: boolean; forms?: FormValue[]; journal?: EvidenceJournal; image: string }
+export interface PacketFrame { id: string; url: string; text: string; final: boolean; forms?: FormValue[]; journal?: EvidenceJournal; image: string /* '' for a text-only final frame (screenshot timed out) */ }
 
 // At most 23 earlier frames plus a 30k final-state excerpt stays comfortably within the judge context budget.
 const EARLIER_EXCERPT_CHARS = 3_000;
@@ -231,7 +231,7 @@ export function buildEvidencePrompt(input: { task: string; website: string; fina
           '',
           `${f.id}${note}`,
           `URL: ${f.url || '(unknown)'}`,
-          `Image: ${where(f.image)}`,
+          `Image: ${f.image ? where(f.image) : 'unavailable (the screenshot timed out; page text and form values were captured)'}`,
           f.final ? 'Page text:' : `Page text (first ${EARLIER_EXCERPT_CHARS.toLocaleString('en-US')} characters):`,
           '"""', excerpt(f.text, f.final ? FINAL_EXCERPT_CHARS : EARLIER_EXCERPT_CHARS), '"""',
           ...(f.final ? [
@@ -282,10 +282,17 @@ export const isEvidenceRun = (run: SavedRun): boolean => Object.hasOwn(run, 'evi
  * documentation text (RFC 9110's "403 Forbidden" entry, prose about security verification) does not count.
  */
 export function isAccessBlockText(text: string): boolean {
+  // HTTP rate-limit error bodies have no stable provider wording. Only recognize a
+  // short page made entirely of the status/message, so normal prose discussing a
+  // rate limit or status 429 remains usable task content.
+  const shortPage = text.trim().replace(/\s+/g, ' ');
+  const rateLimitPage = shortPage.length > 0 && shortPage.length < 200
+    && /^(?:429(?:\s+(?:too many requests|(?:request )?rate(?:[- ]limit)?(?:\s+(?:has been )?exceeded)?))?|too many requests(?:\s*\(?429\)?)?|(?:request )?rate(?:[- ]limit)?\s+(?:has been )?exceeded(?:\s*\(?429\)?)?)\.?$/i.test(shortPage);
   // A bare CAPTCHA mention is common accessibility/documentation prose. Treat
   // it as a block only with an active challenge or verification action, while keeping the
   // unambiguous refusal/interstitial phrases as direct signals.
-  return /\b(?:access denied|unusual traffic|verify (?:that )?you are human|bot check|country\/region (?:not )?available)\b/i.test(text)
+  return rateLimitPage
+    || /\b(?:access denied|unusual traffic|verify (?:that )?you are human|bot check|country\/region (?:not )?available)\b/i.test(text)
     || /\b(?:captcha|recaptcha|hcaptcha|turnstile)\b[^\n]{0,100}\b(?:challenge|verify|verification|checkbox|complete|solve)\b/i.test(text)
     || /\b(?:challenge|verify|verification)\b[^\n]{0,100}\b(?:captcha|recaptcha|hcaptcha|turnstile)\b/i.test(text)
     || /^\s*(?:403\s+)?forbidden\s*$/im.test(text)
@@ -360,9 +367,11 @@ export function buildEvidencePacket(sidecarPath: string | null | undefined, allo
   const frames: PacketFrame[] = [];
   sidecar.frames.forEach((frame, i) => {
     const source = path.join(folder, path.basename(frame.file)); // a basename only: never leave the run's log folder
-    if (!existsSync(source) || !statSync(source).isFile()) return;
-    const image = `f${i + 1}.png`;
-    writeFileSync(path.join(destDir, image), prepareFrameImage(readFileSync(source), frame.final === true).png);
+    const hasImage = existsSync(source) && statSync(source).isFile();
+    // The harness marks a final frame whose screenshot timed out as text-only; every other frame needs its image.
+    if (!hasImage && !(frame.final === true && frame.textOnly === true)) return;
+    const image = hasImage ? `f${i + 1}.png` : '';
+    if (hasImage) writeFileSync(path.join(destDir, image), prepareFrameImage(readFileSync(source), frame.final === true).png);
     frames.push({ id: frame.id, url: frame.url, text: frame.text, final: frame.final === true, ...(frame.final ? { forms: frame.forms ?? [], ...(sidecar.journal ? { journal: sidecar.journal } : {}) } : {}), image });
   });
   return { frames, texts: sidecar.frames.map((f) => f.text), siteFailure: evidenceShowsOnlySiteErrors(sidecar.frames) };
@@ -814,12 +823,12 @@ export async function judgeBenchmark(name: string, options: JudgeOptions = {}): 
     let prompt: string;
     if (evidenceRun) {
       const fresh = canJudge && !packet.frames.length && finalUrl && await screenshot(finalUrl, path.join(dir, 'fresh.png')) ? 'fresh.png' : undefined;
-      const names = fresh ? [fresh] : packet.frames.map((f) => f.image);
+      const names = fresh ? [fresh] : packet.frames.map((f) => f.image).filter(Boolean);
       savedImages = names.map((n) => path.join(dir, n));
       shots = supportsImages ? savedImages : [];
       prompt = buildEvidencePrompt({ task: row.task, website: row.website, finalUrl, answer, attached, rubric: row.judgeRubric,
         imagesUnavailable: !supportsImages, freshImage: fresh && (attached ? fresh : path.join(dir, fresh)),
-        frames: packet.frames.map((f) => ({ ...f, image: attached ? f.image : path.join(dir, f.image) })),
+        frames: packet.frames.map((f) => ({ ...f, image: !f.image || attached ? f.image : path.join(dir, f.image) })),
       });
     } else {
       const shot = path.join(dir, 'final.png');

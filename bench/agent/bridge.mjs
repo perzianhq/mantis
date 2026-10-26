@@ -12,13 +12,21 @@ if (process.argv[2] === '--mantis-server') {
   server.registerTool('bench_capture', { description: 'Harness-only viewport capture; with `evaluate` (source of a function, as in browser_evaluate), also returns its result as text.', inputSchema: { evaluate: z.string().optional() } }, async ({ evaluate }) => {
     const page = browser.page;
     if (!page || page.isClosed()) return { content: [{ type: 'text', text: 'No live page to capture.' }], isError: true };
-    const png = await page.screenshot({ type: 'png', fullPage: false, scale: 'css' });
-    const content = [{ type: 'image', data: png.toString('base64'), mimeType: 'image/png' }];
+    // State is the grading evidence. Capture it before the best-effort image so a
+    // compositor hang cannot discard the URL, rendered text, or form values.
+    const content = [];
     if (evaluate) {
       try {
         const value = await page.evaluate(`(${evaluate})()`);
         content.push({ type: 'text', text: typeof value === 'string' ? value : JSON.stringify(value) ?? String(value) });
-      } catch { /* the image alone is still useful */ }
+      } catch { /* the image may still be useful */ }
+    }
+    try {
+      const png = await page.screenshot({ type: 'png', fullPage: false, scale: 'css', animations: 'disabled', timeout: 5_000 });
+      content.unshift({ type: 'image', data: png.toString('base64'), mimeType: 'image/png' });
+    } catch {
+      // A text-only response is deliberate: the harness can still write final
+      // deterministic evidence when Chromium cannot produce a viewport PNG.
     }
     return { content };
   });

@@ -33,6 +33,8 @@ export interface EvidenceFrame {
   url: string;
   file: string; /** basename of the PNG, in the same folder as the sidecar */
   text: string; final?: boolean; forms?: FormValue[];
+  /** The final frame's screenshot timed out; no PNG exists, only the captured page state. */
+  textOnly?: boolean;
 }
 export interface EvidenceSidecar { frames: EvidenceFrame[]; captured: number; kept: number; captureMs: number; journal?: EvidenceJournal }
 

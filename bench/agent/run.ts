@@ -39,7 +39,7 @@ import { LONG_LIVE_V1_MANIFEST_FILE, LONG_LIVE_V1_SUITE, LONG_LIVE_V1_TASKS } fr
 import { aggregateUsage, assertCompatibleResume, classifyAttempt, extractGradedAnswer, hashSources, isHarnessFailure, isSarvamStepLimit, makeMetadata, nextHarnessFailureStreak, parseClaudeStream, validateFlag, validatePositiveInt, wrongAnswerDetail } from './integrity.js';
 import type { AttemptStatus, RunMetadata, StreamUsage } from './integrity.js';
 import { codexArgs, rawMcpToolName } from './codex-config.js';
-import { PAGE_STATE_FUNCTION, journalFromPageStates, packEvidence, parsePageState, scopedObservationFromToolCall, toCapturedFrame } from './evidence.js';
+import { FINAL_TEXT_CAP, PAGE_STATE_FUNCTION, journalFromPageStates, packEvidence, parsePageState, scopedObservationFromToolCall, toCapturedFrame } from './evidence.js';
 import type { CapturedFrame } from './evidence.js';
 import { retainFinalAnswer } from './final-answer.js';
 import { createMcpProxy } from './mcp-proxy.js';
@@ -102,24 +102,33 @@ const TSX = import.meta.resolve('tsx');
 const SCREENSHOT_MCP = process.env.BENCH_SCREENSHOT_MCP ?? path.join(REPO, 'bench', 'agent', 'screenshot-mcp.ts');
 interface ServerSpec { command: string; args: string[]; env?: Record<string, string> }
 
-interface RawCapture { step: number; png: Buffer; state: string | null; final: boolean }
+interface RawCapture { step: number; png: Buffer | null; state: string | null; final: boolean }
 type ToolResult = { isError?: boolean; content?: { type: string; mimeType?: string; data?: string; text?: string }[] };
 
 const sarvamMaxStepsForTask = (task: AgentTask): number =>
   (SUITE === LOCAL_V2_DEVELOPMENT_SUITE || SUITE === LOCAL_V2_SUITE || SUITE === LOCAL_V21_SUITE) && task.category !== 'long' ? V2_STANDARD_MAX_STEPS : SARVAM_MAX_STEPS;
 
-/** Viewport PNG plus page state (URL, text, form values) of the live page, through the harness channel; rejects after 15 s. */
+/** Viewport PNG when available plus page state (URL, text, form values) of the live page; rejects after 15 s. */
 async function captureOnce(server: Pick<McpProxy, 'call'>, approach: Approach, step: number, final: boolean): Promise<RawCapture> {
-  const pngOf = (result: ToolResult): Buffer => {
+  const pngOf = (result: ToolResult): Buffer | null => {
     const data = result.content?.find((item) => item.type === 'image' && item.mimeType === 'image/png')?.data;
-    if (result.isError || typeof data !== 'string') throw new Error('capture returned no PNG');
+    if (result.isError || typeof data !== 'string') return null;
     return Buffer.from(data, 'base64');
   };
   const stateOf = (result: ToolResult): string | null => result.isError ? null : (result.content ?? []).flatMap((item) => item.type === 'text' && typeof item.text === 'string' ? [item.text] : []).find((text) => parsePageState(text)) ?? null;
+  const withTimeout = async <T>(operation: Promise<T>, ms: number): Promise<T | null> => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      return await Promise.race([operation, new Promise<null>((resolve) => { timer = setTimeout(() => resolve(null), ms); })]);
+    } finally { clearTimeout(timer); }
+  };
   const capture = async (): Promise<RawCapture> => {
     if (approach === 'tree') {
-      const png = pngOf(await server.call('tools/call', { name: 'browser_take_screenshot', arguments: { type: 'png', fullPage: false, scale: 'css' } }));
+      // Capture state first: the Playwright MCP screenshot call has its own
+      // timeout behaviour and must not decide whether terminal evidence exists.
       const state = await server.call('tools/call', { name: 'browser_evaluate', arguments: { function: PAGE_STATE_FUNCTION } }).then(stateOf, () => null);
+      const image = await withTimeout(server.call('tools/call', { name: 'browser_take_screenshot', arguments: { type: 'png', fullPage: false, scale: 'css' } }), 5_000);
+      const png = image === null ? null : pngOf(image);
       return { step, png, state, final };
     }
     const result: ToolResult = await server.call('tools/call', { name: 'bench_capture', arguments: { evaluate: PAGE_STATE_FUNCTION } });
@@ -601,7 +610,10 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
       }
       captureMs += Date.now() - started;
       // Drop near-duplicates, cap the count, and save the kept frames beside the run log.
-      const frames = raw.flatMap((c): CapturedFrame[] => { const frame = toCapturedFrame(c.png, c.state, c.step, c.final); return frame ? [frame] : []; });
+      const frames = raw.flatMap((c): CapturedFrame[] => {
+        const frame = c.png === null ? null : toCapturedFrame(c.png, c.state, c.step, c.final);
+        return frame ? [frame] : [];
+      });
       // History is retained separately from the image sampler: an intermediate
       // form can be evidence even when its near-duplicate PNG is not kept.
       const journal = journalFromPageStates(raw.flatMap((capture) => {
@@ -609,12 +621,32 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
         return state ? [{ ...state, step: capture.step }] : [];
       }), [], scopedObservations);
       const { sidecar, pngs } = packEvidence(frames, unique, captureMs, journal);
+      // `packEvidence` deliberately owns PNG sampling.  If only the final PNG
+      // failed, retain the independently captured terminal state as a sidecar
+      // frame rather than dropping deterministic URL/text/form evidence.
+      const textOnlyFinal = [...raw].reverse().find((capture) => capture.final && capture.png === null && capture.state !== null);
+      const finalState = textOnlyFinal ? parsePageState(textOnlyFinal.state!) : null;
+      if (textOnlyFinal && finalState) {
+        sidecar.frames.push({
+          id: `F${sidecar.frames.length + 1}`,
+          step: textOnlyFinal.step,
+          // Keep the historical basename shape for sidecar readers. No file is
+          // written, which explicitly marks this as a text-only frame.
+          file: `${unique}.final.png`,
+          url: finalState.url,
+          text: finalState.text.slice(0, FINAL_TEXT_CAP),
+          final: true,
+          textOnly: true,
+          forms: finalState.forms,
+        });
+        sidecar.kept = sidecar.frames.length;
+      }
       try {
         for (const { file, png } of pngs) writeFileSync(path.join(logDir, file), png);
         evidencePath = path.join(logDir, `${unique}.evidence.json`);
         writeFileSync(evidencePath, JSON.stringify(sidecar, null, 2));
         evidenceFrames = pngs.map(({ file }) => path.join(logDir, file));
-        if (sidecar.frames.some((f) => f.final)) finalScreenshotPath = path.join(logDir, `${unique}.final.png`);
+        if (pngs.some(({ file }) => file === `${unique}.final.png`)) finalScreenshotPath = path.join(logDir, `${unique}.final.png`);
       } catch (error) {
         evidencePath = null; evidenceFrames = [];
         console.warn(`[agent] could not save evidence for ${unique}: ${error instanceof Error ? error.message : String(error)}`);

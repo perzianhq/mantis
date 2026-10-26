@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { spawn, spawnSync } from 'node:child_process';
 import { createServer } from 'node:http';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -25,6 +25,12 @@ describe('final-page screenshot evidence', () => {
     const row = { task_id: 'synthetic', website: 'https://example.test/', task: 'Find 18', level: 'easy', deterministic: { kind: 'fact' as const, answerIncludes: [{ type: 'number' as const, value: 18 }], final: { url: { origin: 'https://example.test', path: '/done' }, textIncludes: [{ type: 'number' as const, value: 18 }] } } };
     expect(deterministicGradeForRun(row, 'success', true, '18', [])).toBeNull();
     expect(deterministicGradeForRun(row, 'success', true, '18', [{ id: 'F1', image: 'f.png', final: true, url: 'https://example.test/done', text: 'CAPTCHA: verify you are human' }])).toBeNull();
+  });
+  it('grades a text-only final frame on its url and text, and fails a wrong page', () => {
+    const row = { task_id: 'synthetic', website: 'https://example.test/', task: 'Open the page', level: 'easy', deterministic: { kind: 'fact' as const, answerIncludes: [{ type: 'text' as const, value: 'Done' }], final: { url: { origin: 'https://example.test', path: '/done' }, textIncludes: [{ type: 'text' as const, value: 'Done' }] } } };
+    const frame = (url: string, text: string): PacketFrame => ({ id: 'F1', image: '', final: true, url, text });
+    expect(deterministicGradeForRun(row, 'success', true, 'Done', [frame('https://example.test/done', 'Done')])?.pass).toBe(true);
+    expect(deterministicGradeForRun(row, 'success', true, 'Done', [frame('https://example.test/other', 'Done')])?.pass).toBe(false);
   });
   it('does not mistake a legitimate RFC 403 Forbidden reference for an access block', () => {
     const row = { task_id: 'synthetic', website: 'https://example.test/', task: 'Find HTTP Semantics', level: 'easy', deterministic: { kind: 'fact' as const, answerIncludes: [{ type: 'text' as const, value: 'HTTP Semantics' }], final: { url: { origin: 'https://example.test', path: '/rfc' }, textIncludes: [{ type: 'text' as const, value: 'HTTP Semantics' }] } } };
@@ -422,6 +428,22 @@ describe('evidence packet files', () => {
     const packet = buildEvidencePacket(gone.sidecar, gone.logs, gone.dest);
     expect(packet.frames.map((f) => f.id)).toEqual(['F2']);
     expect(packet.texts).toHaveLength(2);
+  });
+
+  it('keeps a final frame whose screenshot timed out as text-only, and still drops earlier frames without an image', () => {
+    const { logs, sidecar, dest } = setup([{ file: 'a.step-01.png', png: solid(10, 10) }, { file: 'a.final.png', png: solid(10, 10), final: true }]);
+    rmSync(path.join(logs, 'a.step-01.png'));
+    rmSync(path.join(logs, 'a.final.png'));
+    const unmarked = buildEvidencePacket(sidecar, logs, dest);
+    expect(unmarked.frames).toEqual([]); // a missing final image alone is an incomplete packet, not a text-only capture
+    const raw = JSON.parse(readFileSync(sidecar, 'utf8'));
+    raw.frames[1].textOnly = true;
+    writeFileSync(sidecar, JSON.stringify(raw));
+    const packet = buildEvidencePacket(sidecar, logs, dest);
+    expect(packet.frames.map((f) => [f.id, f.image, f.final, f.text])).toEqual([['F2', '', true, 'text 1']]);
+    expect(packet.frames[0]!.forms).toEqual([{ label: 'Name', value: 'x' }]);
+    expect(buildEvidencePrompt({ task: 't', website: 'w', finalUrl: null, answer: 'a', frames: packet.frames, attached: true })).toContain('Image: unavailable (the screenshot timed out');
+    expect(readdirSync(dest)).toEqual([]);
   });
 
   it('never reads outside the sidecar folder through a frame file name', () => {

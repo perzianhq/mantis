@@ -40,8 +40,11 @@ type NavigationWatch = {
   page: Page;
   started: Promise<boolean>;
   hasStarted: () => boolean;
+  /** The main frame has committed (or its URL already differs from the action's start). */
+  hasCommitted: () => boolean;
   remainingMs: () => number | null;
   finished: Promise<'finished'>;
+  failureMessage: string;
   cancel: () => void;
 };
 
@@ -134,9 +137,9 @@ const TRACKER = `(() => {
     try { return send.apply(this, arguments); } catch (e) { done(); throw e; }
   };
   // Is short-lived work that began at or after \`since\` (performance.now()) still pending? No argument: any.
-  window.__mantisBusy = (since, includeIntervals = false, maxDelay = Infinity) => {
+  window.__mantisBusy = (since, includeIntervals = false, maxDelay = Infinity, minIntervalDelay = 0) => {
     const from = since === undefined ? -Infinity : since;
-    for (const timer of live.values()) if (timer.origin >= from && timer.delay <= maxDelay && (includeIntervals || !timer.interval)) return true;
+    for (const timer of live.values()) if (timer.origin >= from && timer.delay <= maxDelay && (timer.interval ? includeIntervals && timer.delay >= minIntervalDelay : true)) return true;
     for (const req of reqs) if (req.origin >= from) return true;
     return false;
   };
@@ -213,7 +216,10 @@ const TRACKER = `(() => {
   domObserver.observe(document, MUTATIONS);
   window.__mantisObserveShadows(domObserver, MUTATIONS);
   addEventListener('DOMContentLoaded', scanShadows, { once: true });
-  for (const ev of ['scroll', 'input', 'change', 'focusin', 'focusout', 'resize', 'load', 'mouseover', 'mouseout', 'toggle', 'transitionend', 'animationend']) {
+  // Hover and animation lifecycle events do not themselves change the captured DOM. Their
+  // previous inclusion made a completed action look new to its immediately following read().
+  // DOM changes caused by either still arrive through the mutation observer above.
+  for (const ev of ['scroll', 'input', 'change', 'focusin', 'focusout', 'resize', 'load', 'toggle']) {
     addEventListener(ev, bump, { capture: true, passive: true });
   }
 })();`;
@@ -458,11 +464,12 @@ export class MantisBrowser {
   async find(query: string, contextChars?: number): Promise<string> {
     return this.guard(async () => {
       const page = await this.activePage();
-      const observed = (await this.unchanged(page)) ?? (await this.observe(page));
+      const captchaPromise = detectCaptcha(page);
+      const observed = (await this.unchanged(page)) ?? (await this.timed('capture', () => this.observe(page)));
       const { snap } = observed;
       this.remember(snap, observed.doc);
       const text = findInSnapshot(snap, query, 20, contextChars);
-      const captcha = await detectCaptcha(page);
+      const captcha = await captchaPromise;
       return captcha ? `${text}\n${captcha}` : text;
     }, 'find');
   }
@@ -546,7 +553,7 @@ export class MantisBrowser {
       try {
         await el.fill(text, { timeout: this.actionTimeout });
         if (submit) {
-          navigation = this.watchNavigation(page);
+          navigation = this.watchNavigation(page, 'submit');
           await el.press('Enter', { timeout: this.actionTimeout, noWaitAfter: true });
         }
       } catch (e) {
@@ -964,6 +971,11 @@ export class MantisBrowser {
       }
       const { el, label } = await this.target(page, id);
       try {
+        const directInput = await el.evaluate((node) => node instanceof HTMLInputElement && node.type === 'file');
+        if (directInput) {
+          await el.setInputFiles(files, { timeout: this.actionTimeout });
+          return `selected ${files.length} file${files.length === 1 ? '' : 's'} on ${label}: ${files.map((file) => basename(file)).join(', ')}`;
+        }
         const handle = await el.evaluateHandle((node) => {
           const fileInput = (candidate: Element | null): HTMLInputElement | null =>
             candidate instanceof HTMLInputElement && candidate.type === 'file' ? candidate : null;
@@ -1279,6 +1291,7 @@ export class MantisBrowser {
         await this.timed('wait', () => this.settle(now));
         lines.push('opened in a new tab (now active)');
       }
+      const captchaPromise = detectCaptcha(now);
       const after = await this.timed('capture', () => this.observe(now)).catch(() => null);
       if (before && after && now === page && before.doc !== null && before.doc === after.doc) {
         this.remember(after.snap, after.doc);
@@ -1299,7 +1312,7 @@ export class MantisBrowser {
           if (this.hasDisabledControls(after.snap)) lines.push(this.hydrationNote());
         }
       }
-      const captcha = await detectCaptcha(now);
+      const captcha = await captchaPromise;
       if (captcha) lines.push(captcha);
       lines.push(...this.notes.splice(0));
       return lines.join('\n');
@@ -1338,19 +1351,21 @@ export class MantisBrowser {
   private async navigatedObservation(page: Page): Promise<string> {
     const now = this.page ?? page;
     await this.settle(now);
-    const after = await this.observe(now);
+    const captchaPromise = detectCaptcha(now);
+    const after = await this.timed('capture', () => this.observe(now));
     this.labels.clear();
     this.known.clear();
     let text = `page navigated; showing the current page\n${this.render(after.snap, {}, after.doc)}`;
-    const captcha = await detectCaptcha(now);
+    const captcha = await captchaPromise;
     if (captcha) text += `\n${captcha}`;
     return text;
   }
 
   private async view(page: Page, opts: ReadOptions = {}): Promise<string> {
-    const observed = (await this.unchanged(page)) ?? (await this.observe(page));
+    const captchaPromise = detectCaptcha(page);
+    const observed = (await this.unchanged(page)) ?? (await this.timed('capture', () => this.observe(page)));
     let text = this.render(observed.snap, opts, observed.doc);
-    const captcha = await detectCaptcha(page);
+    const captcha = await captchaPromise;
     if (captcha) text += `\n${captcha}`;
     return this.notes.length ? `${text}\n${this.notes.splice(0).join('\n')}` : text;
   }
@@ -1660,9 +1675,11 @@ export class MantisBrowser {
   }
 
   /** Observe before dispatch without spending either navigation budget until dispatch has happened. */
-  private watchNavigation(page: Page): NavigationWatch {
+  private watchNavigation(page: Page, action = 'click'): NavigationWatch {
     const controller = new AbortController();
+    const initialUrl = page.url();
     let hasStarted = false;
+    let hasCommitted = false;
     let deadline: number | null = null;
     let resolveStarted: (started: boolean) => void = () => undefined;
     const started = new Promise<boolean>((resolve) => { resolveStarted = resolve; });
@@ -1684,6 +1701,7 @@ export class MantisBrowser {
       onFrameNavigated = (frame) => {
         if (frame !== page.mainFrame()) return;
         begin();
+        hasCommitted = true;
         page.off('framenavigated', onFrameNavigated);
         resolve('finished');
       };
@@ -1696,8 +1714,10 @@ export class MantisBrowser {
       page,
       started,
       hasStarted: () => hasStarted,
+      hasCommitted: () => hasCommitted || page.url() !== initialUrl,
       remainingMs: () => deadline === null ? null : Math.max(0, deadline - Date.now()),
       finished,
+      failureMessage: `${action} was dispatched, but the navigation did not finish in time`,
       cancel: () => {
         controller.abort();
         page.off('request', onRequest);
@@ -1728,14 +1748,22 @@ export class MantisBrowser {
   private async waitForInFlightNavigation(navigation: NavigationWatch): Promise<void> {
     const remaining = navigation.remainingMs();
     if (remaining === null) return;
-    if (remaining <= 0) throw new ActionError('click was dispatched, but the navigation did not finish in time');
+    if (remaining <= 0) {
+      if (navigation.hasCommitted()) return;
+      throw new ActionError(navigation.failureMessage);
+    }
     let finishTimer: ReturnType<typeof setTimeout> | undefined;
     const outcome = await Promise.race([
       navigation.finished,
       new Promise<'timed-out'>((resolve) => { finishTimer = setTimeout(() => resolve('timed-out'), remaining); }),
     ]);
     if (finishTimer) clearTimeout(finishTimer);
-    if (outcome === 'timed-out') throw new ActionError('click was dispatched, but the navigation did not finish in time');
+    if (outcome === 'timed-out') {
+      // A URL change is already the observable result the caller needs, even when a late load
+      // event never arrives (for example, a document held open by a streaming response).
+      if (navigation.hasCommitted()) return;
+      throw new ActionError(navigation.failureMessage);
+    }
     const loadRemaining = navigation.remainingMs();
     if (loadRemaining && loadRemaining > 0) {
       await navigation.page.waitForLoadState('domcontentloaded', { timeout: loadRemaining }).catch(() => undefined);
@@ -1961,23 +1989,25 @@ export class MantisBrowser {
   }
 
   /**
-   * Wait for load, then for the page to go quiet: no DOM mutation for 150ms (3s cap) and no
-   * timer or request still pending (3s cap), so delayed effects of an action are included.
+   * Wait for load, then for the page to go quiet: no DOM mutation for 150ms (3s cap). Pending
+   * work is given a short grace, but a long-poll or beacon that leaves the DOM quiet cannot hold
+   * the action for the full cap.
    * After an action only work begun since it counts (not background polling), and attributes that
    * keep changing on one element (animation) stop resetting the quiet timer.
    */
   private async settle(page: Page, afterAction = false, navigation: NavigationWatch | null = null): Promise<void> {
+    const initialUrl = page.url();
     // An action begins on an already-loaded document. Skipping this independent load wait
     // leaves a started navigation to the watcher's single bounded completion budget.
     if (!afterAction) await page.waitForLoadState('domcontentloaded', { timeout: 5000 }).catch(() => undefined);
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
         await page.evaluate(
-          ({ quiet, idleGrace, max, busyMax, useEpoch }) =>
+          ({ quiet, idleGrace, max, busyMax, intervalMax, useEpoch }) =>
             new Promise<void>((done) => {
               const w = window as unknown as {
                 __mantisSetTimeout?: typeof setTimeout;
-                __mantisBusy?: (since?: number, includeIntervals?: boolean, maxDelay?: number) => boolean;
+                __mantisBusy?: (since?: number, includeIntervals?: boolean, maxDelay?: number, minIntervalDelay?: number) => boolean;
                 __mantisEpoch?: number;
                 __mantisDocStart?: number;
                 __mantisDomChanges?: number;
@@ -1994,6 +2024,7 @@ export class MantisBrowser {
               // Only work begun since the action (or post-navigation epoch) counts as pending.
               const since = useEpoch ? (w.__mantisEpoch ?? 0) : 0;
               const start = Date.now();
+              const ownIntervals = useEpoch && (w.__mantisEpoch ?? 0) > (w.__mantisDocStart ?? Infinity);
               let timer: ReturnType<typeof setTimeout>;
               let unwatchShadows: (() => void) | undefined;
               const finish = (): void => {
@@ -2008,7 +2039,10 @@ export class MantisBrowser {
                 if (elapsed < metaRefreshMs) timer = st(check, Math.min(50, metaRefreshMs - elapsed));
                 // An action's own interval can lead to a navigation, but an interval installed
                 // while a destination document loads is background work and must not hold settle.
-                else if (w.__mantisBusy?.(since, useEpoch && (w.__mantisEpoch ?? 0) > (w.__mantisDocStart ?? Infinity), busyMax) && elapsed < busyMax) timer = st(check, 50);
+                // A fast recurring interval that leaves the DOM quiet is a poll, not a pending result, so it
+                // only gets a short grace; one-shot timers, requests and slow intervals keep the full cap.
+                else if (w.__mantisBusy?.(since, ownIntervals, busyMax, 500) && elapsed < busyMax) timer = st(check, 50);
+                else if (w.__mantisBusy?.(since, ownIntervals, busyMax) && elapsed < intervalMax) timer = st(check, 50);
                 else finish();
               };
               // An element whose same attribute keeps changing (carousel, spinner, ticker) is an animation:
@@ -2075,7 +2109,7 @@ export class MantisBrowser {
               timer = st(check, idle ? idleGrace : quiet);
               const cap = st(finish, max);
             }),
-          { quiet: 150, idleGrace: 60, max: 3000, busyMax: 3000, useEpoch: afterAction },
+          { quiet: 150, idleGrace: 60, max: 3000, busyMax: 3000, intervalMax: 1000, useEpoch: afterAction },
         );
         // A timer can start a main-frame request after its own pending entry has fired. Do not
         // cancel that request's watcher just because the old document has become quiet.
@@ -2087,7 +2121,11 @@ export class MantisBrowser {
         // a timer-triggered navigation that never commits has exactly the watcher's budget.
         if (navigation?.hasStarted()) await this.waitForInFlightNavigation(navigation);
         // A navigation replaced the document under us; wait for it and try once more.
-        await page.waitForLoadState('domcontentloaded', { timeout: 5000 }).catch(() => undefined);
+        // A committed navigation has already replaced the document. Retrying its load wait here
+        // duplicates the watcher budget and can add five seconds to a page we can already read.
+        if (page.url() === initialUrl && !navigation?.hasCommitted()) {
+          await page.waitForLoadState('domcontentloaded', { timeout: 5000 }).catch(() => undefined);
+        }
         await sleep(50);
       }
     }
