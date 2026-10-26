@@ -22,7 +22,7 @@ import { pathToFileURL } from 'node:url';
 import { deflateSync } from 'node:zlib';
 import { evidenceShowsOnlySiteErrors, FINAL_TEXT_CAP, PAGE_STATE_FUNCTION, STEP_TEXT_CAP, packEvidence, parsePageState, selectFrames, toCapturedFrame } from '../bench/agent/evidence.js';
 import type { CapturedFrame } from '../bench/agent/evidence.js';
-import { deterministicGradeForRun, finalizeSiteBrokenVerdicts, parseJudgeOutput, renderJudgedMarkdown, universallySiteBrokenTasks } from '../bench/agent/judge.js';
+import { deterministicGradeForRun, finalizeSiteBrokenVerdicts, parseJudgeOutput, readFinalTexts, renderJudgedMarkdown, universallySiteBrokenTasks } from '../bench/agent/judge.js';
 import type { JudgedRun } from '../bench/agent/judge.js';
 import { buildAuditManifest, summarizeAudit } from '../bench/agent/judge-audit.js';
 import type { AuditPacket, AuditRun } from '../bench/agent/judge-audit.js';
@@ -30,12 +30,13 @@ import { evaluateDeterministicGrader, loadRealsiteRows, sanitizeAnswer, validate
 import { uploadFixturePath } from '../bench/agent/upload-fixture.js';
 import { LIVE_V1_ROWS } from '../bench/agent/live-v1.js';
 import { LONG_LIVE_V1_ROWS } from '../bench/agent/long-live-v1.js';
+import { applyLongLiveIdfix, framesWithJournal } from '../bench/agent/deterministic-regrade.js';
 import { createMcpProxy } from '../bench/agent/mcp-proxy.js';
 import { decodePng, encodePng, fitWithin, grayThumb, resizeImage, thumbDiff } from '../bench/agent/png.js';
 import { classifyClickError } from '../src/browser.js';
 import { answerReadyCue } from '../src/diff.js';
 import type { Snapshot } from '../src/capture/index.js';
-import { fixture, idOf } from './helpers.js';
+import { fixture, idOf, timingCap } from './helpers.js';
 
 it('requires an audit to meet both the agreement and false-success calibration gates', () => {
   const packets: AuditPacket[] = Array.from({ length: 100 }, (_, index) => {
@@ -100,7 +101,7 @@ it('identifies an expanded combobox popup as recoverable while retaining persist
 });
 
 it('verifies completed result-card navigation without accepting a prevented activation', async () => {
-  const mantis = new MantisBrowser({ actionTimeoutMs: 300 });
+  const mantis = new MantisBrowser({ actionTimeoutMs: timingCap(1_500) });
   try {
     for (const mode of ['', '?mode=router']) {
       const startUrl = `${fixture('generic-browser-result-card.html')}${mode}`;
@@ -110,6 +111,7 @@ it('verifies completed result-card navigation without accepting a prevented acti
       await page.evaluate(() => (window as unknown as { hydrate(): void }).hydrate());
       const view = await mantis.read({ fresh: true });
       await mantis.click(idOf(view, 'link "Sample entry"'));
+      await expect.poll(async () => (await mantis.snapshot()).url, { timeout: 5_000 }).toBe(dest);
       const snap = await mantis.snapshot();
       const success = snap.url === dest && snap.nodes.some((n) => n.kind === 'heading' && n.name === 'Entry detail');
       expect(success).toBe(true);
@@ -130,38 +132,115 @@ it('verifies completed result-card navigation without accepting a prevented acti
   }
 });
 
-it('long-live-v1 deterministic contracts accept reviewed keys and reject an associated tuple near miss', () => {
-  const mutate = (value: string): string => value.length > 1 ? `${value.slice(0, -1)}?` : `${value}?`;
-  for (const row of LONG_LIVE_V1_ROWS.filter((entry) => entry.grading === 'deterministic')) {
-    const grader = row.deterministic!;
-    const expected = row.keyNotes.expectedAnswer;
-    // Fact-extraction rows carry their reviewed answer in keyNotes. The three
-    // form rehearsal rows have no captured answer string/records yet, so their
-    // explicit deterministic contract is the only offline construction source.
-    const answer = typeof expected === 'string' && expected.trim()
-      ? expected
-      : grader.answerIncludes.map((predicate) => String(predicate.value)).join('\n');
-    const url = new URL(`${grader.final.url.origin}${grader.final.url.path}`);
-    for (const [name, value] of Object.entries(grader.final.url.query ?? {})) url.searchParams.set(name, value);
-    const text = grader.final.textIncludes.map((predicate) => String(predicate.value)).join('\n');
-    const journal = grader.history || grader.orderedStates ? {
-      complete: true,
-      submissions: [],
-      states: (grader.orderedStates ?? [{ name: 'final', formValues: grader.final.formValues ?? [] }]).map((state) => ({ name: state.name, forms: state.formValues.map((form) => ({ ...form })) })),
-    } : undefined;
-    const frames = [{ final: true, url: url.href, text, forms: grader.final.formValues?.map((form) => ({ ...form })), ...(journal ? { journal } : {}) }];
-    expect(evaluateDeterministicGrader(grader, answer, frames)?.pass, row.task_id).toBe(true);
+const LONG_LIVE_DETERMINISTIC_ROWS = LONG_LIVE_V1_ROWS.filter((row) => row.grading === 'deterministic');
 
-    const answerMutation = row.nearMiss.answerMutation;
-    const from = answerMutation && typeof answerMutation === 'object' && !Array.isArray(answerMutation) && typeof answerMutation.from === 'string'
-      ? answerMutation.from
-      : String(grader.answerIncludes[0]!.value);
-    const to = answerMutation && typeof answerMutation === 'object' && !Array.isArray(answerMutation) && typeof answerMutation.to === 'string'
-      ? answerMutation.to
-      : mutate(from);
-    const nearMissAnswer = answer.includes(from) ? answer.replace(from, to) : answer.replace(String(grader.answerIncludes[0]!.value), mutate(String(grader.answerIncludes[0]!.value)));
-    expect(evaluateDeterministicGrader(grader, nearMissAnswer, frames)?.pass, `${row.task_id}: ${row.nearMiss.description}`).toBe(false);
+function reviewedLongLiveEvidence(row: typeof LONG_LIVE_DETERMINISTIC_ROWS[number]) {
+  const grader = row.deterministic!;
+  const expected = row.keyNotes.expectedAnswer;
+  const answer = typeof expected === 'string' && expected.trim()
+    ? expected
+    : grader.answerIncludes.map((predicate) => String(predicate.value)).join('\n');
+  const url = new URL(`${grader.final.url.origin}${grader.final.url.path}`);
+  for (const [name, value] of Object.entries(grader.final.url.query ?? {})) url.searchParams.set(name, value);
+  const journal = grader.history || grader.orderedStates ? {
+    complete: true,
+    submissions: [],
+    states: (grader.orderedStates ?? [{ name: 'final', formValues: grader.final.formValues ?? [] }]).map((state) => ({ name: state.name, forms: state.formValues.map((form) => ({ ...form })) })),
+  } : undefined;
+  return {
+    answer,
+    frame: {
+      final: true,
+      url: url.href,
+      text: grader.final.textIncludes.map((predicate) => String(predicate.value)).join('\n'),
+      forms: grader.final.formValues?.map((form) => ({ ...form })),
+      ...(journal ? { journal } : {}),
+    },
+  };
+}
+
+it.each(LONG_LIVE_DETERMINISTIC_ROWS)('long-live reviewed key passes: $task_id', (row) => {
+  const { answer, frame } = reviewedLongLiveEvidence(row);
+  expect(evaluateDeterministicGrader(row.deterministic, answer, [frame])?.pass).toBe(true);
+});
+
+it.each(LONG_LIVE_DETERMINISTIC_ROWS)('long-live task-specific near miss rejects: $task_id', (row) => {
+  const { answer, frame } = reviewedLongLiveEvidence(row);
+  const near = row.nearMiss as Record<string, unknown>;
+  let nearAnswer = answer;
+  const nearFrame = { ...frame, forms: frame.forms?.map((form) => ({ ...form })) };
+  const replace = near.replace as { from?: unknown; to?: unknown } | undefined;
+  const answerMutation = near.answerMutation as { from?: unknown; to?: unknown } | undefined;
+  const stateMutation = near.finalStateMutation as { from?: unknown; to?: unknown; label?: unknown; urlTo?: unknown } | undefined;
+  const formMutation = near.formValueMutation as { label?: unknown; to?: unknown } | undefined;
+  if (replace && typeof replace.from === 'string' && typeof replace.to === 'string') {
+    nearAnswer = nearAnswer.replace(replace.from, replace.to);
+  } else if (stateMutation && typeof stateMutation.urlTo === 'string') {
+    if (stateMutation.urlTo.startsWith('http')) nearFrame.url = stateMutation.urlTo;
+    else {
+      const url = new URL(nearFrame.url);
+      const [name, value] = stateMutation.urlTo.split('=', 2);
+      url.searchParams.set(name!, value!);
+      nearFrame.url = url.href;
+    }
+  } else if (stateMutation && typeof stateMutation.label === 'string' && typeof stateMutation.to === 'string') {
+    nearFrame.forms = nearFrame.forms?.map((form) => form.label === stateMutation.label ? { ...form, value: stateMutation.to } : form);
+  } else if (stateMutation && typeof stateMutation.from === 'string' && typeof stateMutation.to === 'string') {
+    nearFrame.text = nearFrame.text.replace(stateMutation.from, stateMutation.to);
+  } else if (formMutation && typeof formMutation.label === 'string' && typeof formMutation.to === 'string') {
+    nearFrame.forms = nearFrame.forms?.map((form) => form.label === formMutation.label ? { ...form, value: formMutation.to } : form);
+  } else if (answerMutation && typeof answerMutation.from === 'string' && typeof answerMutation.to === 'string') {
+    nearAnswer = nearAnswer.replace(answerMutation.from, answerMutation.to);
+  } else {
+    throw new Error(`${row.task_id} is missing an executable task-specific near miss`);
   }
+  expect(evaluateDeterministicGrader(row.deterministic, nearAnswer, [nearFrame])?.pass, row.nearMiss.description).toBe(false);
+});
+
+it('tolerates Gutenberg rendered Language = Any while retaining lang=en in the final URL', () => {
+  for (const row of LONG_LIVE_DETERMINISTIC_ROWS.filter((candidate) => /gutenberg-(dickens|shakespeare)-search/.test(candidate.task_id))) {
+    const { answer, frame } = reviewedLongLiveEvidence(row);
+    frame.text = `${frame.text}\nLanguage = Any`;
+    expect(new URL(frame.url).searchParams.get('lang')).toBe('en');
+    expect(evaluateDeterministicGrader(row.deterministic, answer, [frame])?.pass, row.task_id).toBe(true);
+  }
+});
+
+it('long-live deterministic replay uses full attempt-bound replies, final journals, and raw idfix provenance', () => {
+  const folder = mkdtempSync(join(os.tmpdir(), 'deterministic-regrade-'));
+  try {
+    const log = 'longlive-wiki-probes--mantis--1--attempt-1-100-a.jsonl';
+    const later = 'longlive-wiki-probes--mantis--1--attempt-2-200-b.jsonl';
+    writeFileSync(join(folder, log), `${JSON.stringify({ type: 'agent_message', text: 'full answer contains the terminal key' })}\n`);
+    writeFileSync(join(folder, later), `${JSON.stringify({ type: 'agent_message', text: 'stale relaunch reply' })}\n`);
+    const saved = { task: 'longlive-wiki-probes', approach: 'mantis', run: 1, status: 'success', answer: 'x'.repeat(160), attempt: 1, logPath: log, toolCalls: 0, totalInputTokens: null };
+    // The saved terminal attempt, not a later transcript and not the 160-char result field, is authoritative.
+    expect(readFinalTexts(folder, 'codex', [saved]).get('longlive-wiki-probes|mantis|1')).toBe('full answer contains the terminal key');
+
+    const journal = { complete: true, submissions: [], states: [], transitions: [], uploads: [] };
+    const frames = framesWithJournal({ frames: [{ id: 'F1', step: 1, file: 'final.png', url: 'https://fixture.test/form', text: 'Form', final: true, forms: [] }], captured: 1, kept: 1, captureMs: 0, journal });
+    expect(frames[0]!.journal).toBe(journal);
+    expect(frames[0]!.final).toBe(true);
+
+    const originals = [1, 2, 3].map((run) => ({ ...saved, task: 'longlive-form-selenium-select', run }));
+    const fixes = originals.map((original) => ({ ...original, answer: 'replacement reply', logPath: `replacement-${original.run}.jsonl` }));
+    const cells = applyLongLiveIdfix('long-live-v1-final-haiku', originals, fixes);
+    expect(cells).toHaveLength(6);
+    expect(cells.filter((cell) => !cell.selected)).toEqual(originals.map((run) => expect.objectContaining({ run, provenance: 'long-live-v1-final-haiku', selected: false })));
+    expect(cells.filter((cell) => cell.selected)).toEqual(fixes.map((run) => expect.objectContaining({ run, provenance: 'long-live-v1-idfix-haiku', selected: true })));
+  } finally { rmSync(folder, { recursive: true, force: true }); }
+});
+
+it('requires redacted password emptiness when a form contract opts into it', () => {
+  const grader = {
+    kind: 'form' as const, answerIncludes: [{ type: 'text' as const, value: 'done' }],
+    final: { url: { origin: 'https://fixture.test', path: '/form' }, textIncludes: [{ type: 'text' as const, value: 'Form' }], formValues: [{ label: 'Password', value: '', name: 'pw', passwordEmpty: true }] },
+  };
+  expect(validateDeterministicGrader(grader)).toBeNull();
+  const grade = (passwordEmpty?: boolean) => evaluateDeterministicGrader(grader, 'done', [{ final: true, url: 'https://fixture.test/form', text: 'Form', forms: [{ label: 'Password', value: '', name: 'pw', ...(passwordEmpty === undefined ? {} : { passwordEmpty }) }] }])!;
+  expect(grade(true).pass).toBe(true);
+  expect(grade(false).pass).toBe(false);
+  expect(grade().pass).toBe(false);
 });
 
 it('answerExcludes rejects replies that report a forbidden live total and validates its patterns', () => {

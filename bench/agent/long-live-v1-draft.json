@@ -1148,10 +1148,6 @@
           {
             "type": "entity",
             "value": "LoC Class = PR"
-          },
-          {
-            "type": "entity",
-            "value": "Language = English"
           }
         ]
       }
@@ -1296,10 +1292,6 @@
           {
             "type": "entity",
             "value": "LoC Class = PR"
-          },
-          {
-            "type": "entity",
-            "value": "Language = English"
           }
         ]
       }
@@ -2124,6 +2116,12 @@
           "value": "Synthetic profile. Leave unsubmitted."
         },
         {
+          "label": "Password",
+          "value": "",
+          "name": "my-password",
+          "passwordEmpty": true
+        },
+        {
           "label": "Readonly input",
           "value": "Readonly input"
         },
@@ -2363,31 +2361,38 @@
       "expectedFinalValues": [
         {
           "label": "selectWithoutMultiple",
-          "value": "two"
+          "value": "two",
+          "id": "selectWithoutMultiple"
         },
         {
           "label": "selectWithMultipleEqualsMultiple",
-          "value": "Emmental, Cheddar"
+          "value": "Emmental, Cheddar",
+          "id": "selectWithMultipleEqualsMultiple"
         },
         {
           "label": "selectWithEmptyStringMultiple",
-          "value": "one, two"
+          "value": "one, two",
+          "id": "selectWithEmptyStringMultiple"
         },
         {
           "label": "selectWithMultipleWithoutValue",
-          "value": "two"
+          "value": "two",
+          "id": "selectWithMultipleWithoutValue"
         },
         {
           "label": "selectWithRandomMultipleValue",
-          "value": "one"
+          "value": "one",
+          "id": "selectWithRandomMultipleValue"
         },
         {
           "label": "selectWithMultipleLongList",
-          "value": "two, five, six"
+          "value": "two, five, six",
+          "id": "selectWithMultipleLongList"
         },
         {
           "label": "narrow",
-          "value": "Avonlea Clothbound Cheddar"
+          "value": "Avonlea Clothbound Cheddar",
+          "id": "narrow"
         }
       ],
       "captureMethod": "Live actual Playwright MCP walkthrough and harness PAGE_STATE_FUNCTION terminal capture. Seven uniquely named fallback labels verified from the live page; all sets below are exact, in DOM option order. Actual stale-selection capture rejected by the unchanged final-value contract.",
@@ -2464,31 +2469,38 @@
         "formValues": [
           {
             "label": "selectWithoutMultiple",
-            "value": "two"
+            "value": "two",
+            "id": "selectWithoutMultiple"
           },
           {
             "label": "selectWithMultipleEqualsMultiple",
-            "value": "Emmental, Cheddar"
+            "value": "Emmental, Cheddar",
+            "id": "selectWithMultipleEqualsMultiple"
           },
           {
             "label": "selectWithEmptyStringMultiple",
-            "value": "one, two"
+            "value": "one, two",
+            "id": "selectWithEmptyStringMultiple"
           },
           {
             "label": "selectWithMultipleWithoutValue",
-            "value": "two"
+            "value": "two",
+            "id": "selectWithMultipleWithoutValue"
           },
           {
             "label": "selectWithRandomMultipleValue",
-            "value": "one"
+            "value": "one",
+            "id": "selectWithRandomMultipleValue"
           },
           {
             "label": "selectWithMultipleLongList",
-            "value": "two, five, six"
+            "value": "two, five, six",
+            "id": "selectWithMultipleLongList"
           },
           {
             "label": "narrow",
-            "value": "Avonlea Clothbound Cheddar"
+            "value": "Avonlea Clothbound Cheddar",
+            "id": "narrow"
           }
         ]
       }

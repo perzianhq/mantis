@@ -39,6 +39,8 @@ export interface FormValue {
   name?: string;
   /** Zero-based occurrence among controls with the same id/name/label. */
   occurrence?: number;
+  /** Password contents are redacted; this is the only admissible emptiness proof. */
+  passwordEmpty?: boolean;
 }
 export interface OrderedFormState { name: string; formValues: FormValue[] }
 export interface FormHistory {
@@ -265,10 +267,11 @@ export function validateDeterministicGrader(value: unknown): string | null {
   const validFormValue = (entry: unknown): entry is FormValue => {
     if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return false;
     const form = entry as Record<string, unknown>;
-    return Object.keys(form).every((key) => ['label', 'value', 'id', 'name', 'occurrence'].includes(key)) &&
+    return Object.keys(form).every((key) => ['label', 'value', 'id', 'name', 'occurrence', 'passwordEmpty'].includes(key)) &&
       typeof form.label === 'string' && Boolean(form.label.trim()) && typeof form.value === 'string' &&
       (form.id === undefined || typeof form.id === 'string') && (form.name === undefined || typeof form.name === 'string') &&
-      (form.occurrence === undefined || (Number.isInteger(form.occurrence) && (form.occurrence as number) >= 0));
+      (form.occurrence === undefined || (Number.isInteger(form.occurrence) && (form.occurrence as number) >= 0)) &&
+      (form.passwordEmpty === undefined || typeof form.passwordEmpty === 'boolean');
   };
   const validForms = Array.isArray(values) && values.length > 0 && values.every(validFormValue);
   if (o.kind === 'form' && !validForms) return 'deterministic.final.formValues must be a non-empty label/value array for form graders';
@@ -329,10 +332,10 @@ function parseDeterministicGrader(value: unknown): DeterministicGrader | undefin
       url: Array.isArray(o.final.url) ? o.final.url.map(url) : url(o.final.url),
       textIncludes: predicates(o.final.textIncludes),
       ...(o.final.pathHeadings ? { pathHeadings: o.final.pathHeadings.map((entry) => ({ ...(entry.origin ? { origin: entry.origin.trim() } : {}), path: entry.path, heading: predicates([entry.heading])[0]! })) } : {}),
-      ...(o.final.formValues ? { formValues: o.final.formValues.map((entry) => ({ label: entry.label.trim(), value: entry.value, ...(entry.id !== undefined ? { id: entry.id } : {}), ...(entry.name !== undefined ? { name: entry.name } : {}), ...(entry.occurrence !== undefined ? { occurrence: entry.occurrence } : {}) })) } : {}),
+      ...(o.final.formValues ? { formValues: o.final.formValues.map((entry) => ({ label: entry.label.trim(), value: entry.value, ...(entry.id !== undefined ? { id: entry.id } : {}), ...(entry.name !== undefined ? { name: entry.name } : {}), ...(entry.occurrence !== undefined ? { occurrence: entry.occurrence } : {}), ...(entry.passwordEmpty !== undefined ? { passwordEmpty: entry.passwordEmpty } : {}) })) } : {}),
     },
-    ...(o.orderedStates ? { orderedStates: o.orderedStates.map((state) => ({ name: state.name.trim(), formValues: state.formValues.map((entry) => ({ label: entry.label.trim(), value: entry.value, ...(entry.id !== undefined ? { id: entry.id } : {}), ...(entry.name !== undefined ? { name: entry.name } : {}), ...(entry.occurrence !== undefined ? { occurrence: entry.occurrence } : {}) })) })) } : {}),
-    ...(o.history ? { history: { ...(o.history.noSubmission ? { noSubmission: true as const } : {}), ...(o.history.allowedSubmissions ? { allowedSubmissions: o.history.allowedSubmissions } : {}), ...(o.history.requireJournal ? { requireJournal: true as const } : {}), ...(o.history.untouched ? { untouched: o.history.untouched.map((entry) => ({ label: entry.label.trim(), value: entry.value, ...(entry.id !== undefined ? { id: entry.id } : {}), ...(entry.name !== undefined ? { name: entry.name } : {}), ...(entry.occurrence !== undefined ? { occurrence: entry.occurrence } : {}) })) } : {}) } } : {}),
+    ...(o.orderedStates ? { orderedStates: o.orderedStates.map((state) => ({ name: state.name.trim(), formValues: state.formValues.map((entry) => ({ label: entry.label.trim(), value: entry.value, ...(entry.id !== undefined ? { id: entry.id } : {}), ...(entry.name !== undefined ? { name: entry.name } : {}), ...(entry.occurrence !== undefined ? { occurrence: entry.occurrence } : {}), ...(entry.passwordEmpty !== undefined ? { passwordEmpty: entry.passwordEmpty } : {}) })) })) } : {}),
+    ...(o.history ? { history: { ...(o.history.noSubmission ? { noSubmission: true as const } : {}), ...(o.history.allowedSubmissions ? { allowedSubmissions: o.history.allowedSubmissions } : {}), ...(o.history.requireJournal ? { requireJournal: true as const } : {}), ...(o.history.untouched ? { untouched: o.history.untouched.map((entry) => ({ label: entry.label.trim(), value: entry.value, ...(entry.id !== undefined ? { id: entry.id } : {}), ...(entry.name !== undefined ? { name: entry.name } : {}), ...(entry.occurrence !== undefined ? { occurrence: entry.occurrence } : {}), ...(entry.passwordEmpty !== undefined ? { passwordEmpty: entry.passwordEmpty } : {}) })) } : {}) } } : {}),
   };
 }
 
@@ -369,7 +372,8 @@ const answerContent = (answer: string): string => stripAnswerMetadata(answer);
 const formMatches = (actual: FormValue, wanted: FormValue): boolean =>
   norm(actual.label) === norm(wanted.label) && actual.value === wanted.value &&
   (wanted.id === undefined || actual.id === wanted.id) && (wanted.name === undefined || actual.name === wanted.name) &&
-  (wanted.occurrence === undefined || actual.occurrence === wanted.occurrence);
+  (wanted.occurrence === undefined || actual.occurrence === wanted.occurrence) &&
+  (wanted.passwordEmpty === undefined || actual.passwordEmpty === wanted.passwordEmpty);
 
 /**
  * Run a row's answer-key checks (case-insensitive, whitespace collapsed): every `answerIncludes` string must be in
