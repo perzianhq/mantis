@@ -4,7 +4,7 @@ One real task, same prompt for both tools, shown side by side with an estimated 
 
 **Task:** `longlive-gutenberg-dickens-search` (from `long-live-v1`). On Project Gutenberg, run Advanced Search for author Charles Dickens, language English, LoC class PR. Inspect result page one, follow next to page two, then look up #98 and #1400 through separate Quick searches, report `eBook number | title | release date | LoC class`, and return to page two of the original search. About 11 to 30 tool calls, 1 to 2 minutes.
 
-## Figures (median of 3 runs; every run graded success)
+## Figures (the video replays the middle run: 292k tokens, 10 calls, 50 s vs 22 calls, 733k, 73 s; every run graded success)
 
 Luna (`gpt-6-luna`, local). Published run and an independent rerun on the same commit:
 
@@ -14,7 +14,7 @@ Luna (`gpt-6-luna`, local). Published run and an independent rerun on the same c
 | Input tokens, rerun | 289,972 | 1,123,795 | -74% |
 | Wall time, published | 50 s | 73 s | -32% |
 | Wall time, rerun | 47 s | 75 s | -37% |
-| Tool calls, published | 11 | 22 | -50% |
+| Tool calls, published (the run replayed in the video) | 10 | 22 | -55% |
 | Tool calls, rerun | 14 | 29 | -52% |
 
 Mantis is stable across the two runs (about 290k tokens, 47-50 s). The tree varies more (733k to 1.12M tokens). Quote the range: **about 2.5x to 4x fewer input tokens, about a third less time, about half the calls.** Luna reports tokens only, so no dollar figure is claimed for it.

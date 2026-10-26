@@ -63,7 +63,7 @@ Verdict (Opus review, 2026-10-24): good enough to launch as a v0.x beta. Accurac
    - Delete about 145 untracked scratch files at the repo root (`.tmp-*`) and decide which `bench/results/` leftovers to commit or ignore.
 
 ### Before launch (moved up, 2026-10-24)
-- `long-live-v1`: 16 long real-site tasks (5 multi-entity extraction, 4 search+facets+pagination, 3 form fills without submit, 2 demo-site test-account flows, 2 new-tab/iframe/upload; 10 medium, 6 hard; at most 4 demo sites). Size on the tree walkthrough at 20-40 calls (about 15-30 for Mantis), cap 100 calls and 1200 s. Reviewed deterministic keys and final-state validators; sol only for leftovers. Pilot once per approach and model, replace failures, then freeze (at least 12 must survive). Luna and Haiku, Mantis vs tree, 3 runs each (192 runs, plus 64-run pilot). Report the median paired ratio per task with a bootstrap CI over tasks, on rows where both succeeded. Backs the long-task claim on real sites, which is measured on local fixtures only (`long-local-v1`). Does not block launch if the copy stays scoped to local fixtures; ship as a labelled follow-up within about 2 weeks. Draft: `bench/agent/long-live-v1-draft.json`.
+- `long-live-v1` follow-up: re-grade its published 16-task, 48-run-per-cell Luna and Haiku real-site result with reviewed deterministic keys, replacing the uncalibrated judge. Non-blocking.
 
 ### Before launch, remaining (moved up, 2026-10-25)
 - [x] README opens with the GIF, install and a 3-line example.
@@ -75,7 +75,8 @@ Verdict (Opus review, 2026-10-24): good enough to launch as a v0.x beta. Accurac
 1. **Done: deterministic grading.** Drop the model judge for live-v1. Key the 10 state tasks, take the URL and text from the harness-captured final frame, and fail runs that end on an access-block page. Regrade both clean campaigns from saved evidence with no model calls, check every disagreement, and review the saved frames of every failure plus one passing frame per task. Both clean campaigns regraded offline: Luna Mantis 88, tree 86, screenshot 90; Haiku 90 / 88 / 88 of 90.
 2. **Done: Mantis speed** (`15201a2`, `181ce0c`). Add per-phase timing. Fix the stale page after a navigating click, `type` with submit, and sequential `open()`. Ship the walker memoization fix. Each fix gets a fixture with a passing case and a near miss, and nothing site-specific in `src/`.
 3. **Done: verify and commit.** tsc and tests, then commit to a feature branch in separate commits (graders, Mantis, docs).
-4. **Done: rerun.** Mantis only, 180 runs (Luna 86/90, Haiku 90/90 by the deterministic keys; the model-free replay in [RESULTS.md](../bench/RESULTS.md) found no per-tool regression and `open` about 14% faster, not significant). The `type` request grace is measured on local fixtures: a pending typeahead request 2.9s to 1.1s, a 600ms rendered result still shown, plain input unchanged. with a fresh build, graded by the new rules. Rerun all three approaches only if load makes the timings look unfair.
+4. **Done: rerun.** Mantis only, 180 runs (Luna 86/90, Haiku 90/90 by the deterministic keys; the model-free replay in [RESULTS.md](../bench/RESULTS.md) found no per-tool regression and `open` about 14% faster, not significant). The `type` request grace is measured on local fixtures: a pending typeahead request 2.9s to 1.1s, a 600ms rendered result still shown, plain input unchanged. Rerun all three approaches only if load makes the timings look unfair.
+4b. **Done: Haiku rerun with the fixes.** Haiku Mantis 90/90, about 11% lower median wall time at equal tokens; ship as 0.1.8.
 5. **Only if the gap remains.** Fewer double captures, and trimming the first-render tokens. Luna result-list hints only as a generic page-structure signal.
 
 ### Optional
@@ -83,6 +84,7 @@ Verdict (Opus review, 2026-10-24): good enough to launch as a v0.x beta. Accurac
 
 ### After launch
 - ~~Add `upload` to the tool table in SETUP.md~~ (done).
+- **0.2: canvas input.** A `draw`/pointer tool for canvas, WebGL and map elements: points on a 0-100 grid relative to a numbered canvas, run as mouse down, move and up, plus a grid overlay on `look` so the model can pick cells. Gap found in the stress pass (Excalidraw tools visible, no way to draw). Check what Playwright MCP's coordinate tools do before claiming a difference. Needs a fixture (canvas that records strokes) with a passing case and a near miss, then a small canvas/map task set.
 - Integration PRs and guides: [LAUNCH.md](LAUNCH.md#5-after-launch-becoming-the-default).
 
 ### Action plan (remaining)
@@ -95,6 +97,7 @@ Verdict (Opus review, 2026-10-24): good enough to launch as a v0.x beta. Accurac
 5c. ~~Write launch drafts~~ (done: [LAUNCH.md](LAUNCH.md#4-drafts); re-check numbers against README.md and bench/RESULTS.md before posting).
 6. ~~Record the 30-second video and GIF; README opens with it~~ (done, [video/gif.md](../video/gif.md)).
 7. Not started: Show HN, Tue-Thu 8-10am US Eastern, then X, Reddit and LinkedIn per [LAUNCH.md](LAUNCH.md#3-launch-week).
+8. After launch: build 0.2 canvas input (see "After launch" above), keep it to one small tool, and test it on a map and a drawing app before any claim. Ship 0.1.8 first; the README Limitations section says there is no coordinate input yet.
 
 ### Biggest risks
 - Installs that fail on day one.

@@ -14,7 +14,7 @@ npx -y -p mantis-browser mantis read https://example.com   # try it without an a
 
 Windows, Linux servers and other agents: [SETUP](docs/SETUP.md#install).
 
-<p align="center"><img src="video/mantis-demo.gif" alt="Side-by-side replay of the same task with Mantis and Playwright MCP: Mantis finishes in 11 calls and about 292k input tokens, Playwright MCP in 22 calls and about 733k" width="100%"></p>
+<p align="center"><img src="video/mantis-demo.gif" alt="Side-by-side replay of the same task with Mantis and Playwright MCP: Mantis finishes in 10 calls and about 292k input tokens, Playwright MCP in 22 calls and about 733k" width="100%"></p>
 
 *One real task (Luna, logged runs replayed): about a third less time, over 2x fewer input tokens, about half the calls. This is a selected example from 16 long tasks; medians across all 16 are in [Results](#results). [Full video](video/mantis-demo.mp4).*
 
@@ -53,6 +53,17 @@ Mantis vs the accessibility tree (Playwright MCP) on public sites, `gpt-6-luna` 
 Long tasks: about a third less time and 28-42% fewer input tokens, accuracy equal or better. Short tasks (clean re-run, one build, all approaches interleaved): accuracy equal or better than the tree, 37-51% fewer input tokens and 13-22% less time than the tree. Against screenshots: Luna screenshots score 2 runs higher and use 67% more tokens and 29% more time; Haiku screenshots use about 22% fewer tokens and are about even on time, with 2x the tool calls.
 
 Short-task scores are graded by deterministic answer keys on the captured final state. Long-task rows are model-judged by an uncalibrated judge (79% agreement with deterministic keys), so they are indicative; one short task was swapped after scoring. Screenshot baseline, local workflows, method and all caveats: [bench/RESULTS.md](bench/RESULTS.md).
+
+## Limitations
+
+- Canvas and WebGL apps, including drawing tools, maps and charts, are described only as canvas. `data`, `ocr` and `look` are available, but there is no coordinate click, drag or draw tool.
+- Login and bot walls need `ask_human`, which needs a display.
+- Benchmarks cover read, navigate and form-fill tasks on public and demo sites with Luna and Haiku; production authenticated and write-heavy workflows are not measured.
+- Long real-site rows were judged by an uncalibrated judge (79% agreement). `long-local-v1` measures local fixtures with a deterministic full-ledger grader; `long-live-v1` measures real sites with that judge.
+- The screenshot baseline is this project's own tool, not a third-party product.
+- Some live-v1 tasks were swapped after results; this is disclosed in [bench/RESULTS.md](bench/RESULTS.md).
+- Page content is untrusted data; see [SECURITY.md](SECURITY.md).
+- This is a small v0.1.x beta project.
 
 ## Learn more
 
