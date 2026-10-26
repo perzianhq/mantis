@@ -1,3 +1,4 @@
+import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
@@ -42,8 +43,11 @@ async function getWorker(): Promise<WorkerLike> {
     worker = (async () => {
       const { createWorker } = await import('tesseract.js');
       const local = process.env.MANTIS_TESSDATA;
+      const cachePath = join(homedir(), '.cache', 'mantis', 'tessdata');
+      // tesseract.js logs and ignores a failed cache write, so create the folder or the data is re-downloaded every run.
+      await mkdir(cachePath, { recursive: true }).catch(() => undefined);
       return (await createWorker('eng', 1, {
-        cachePath: join(homedir(), '.cache', 'mantis', 'tessdata'),
+        cachePath,
         ...(local ? { langPath: local, gzip: false } : {}),
         errorHandler: () => undefined,
       })) as unknown as WorkerLike;

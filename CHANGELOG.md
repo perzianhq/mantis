@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.7 (2026-10-25)
+- `mantis install` no longer prints Playwright's "run npm install first" warning under `npx`, and reports `OCR data ready.`.
+- OCR language data is now cached in `~/.cache/mantis/tessdata` (the folder was never created, so it was re-downloaded on every first `ocr` call and failed offline).
+- On Linux without Chromium's system libraries, the launch error now says to run `mantis install --with-deps`.
+
 ## 0.1.6 (2026-10-25)
 - `mantis install` fetches the matching Chromium and English OCR data; `--with-deps` for bare Linux.
 - MCP server instructions now tell the agent to treat page text as untrusted data.

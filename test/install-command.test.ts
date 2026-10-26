@@ -1,7 +1,7 @@
 import { EventEmitter } from 'node:events';
 import { join } from 'node:path';
 import { expect, it, vi } from 'vitest';
-import { bundledPlaywrightCli, runInstallCommand } from '../src/install.js';
+import { bundledPlaywrightCli, playwrightInstallArgs, runInstallCommand } from '../src/install.js';
 import { missingChromiumHint } from '../src/userAgent.js';
 
 it('installs Chromium with the bundled Playwright CLI', async () => {
@@ -16,7 +16,7 @@ it('installs Chromium with the bundled Playwright CLI', async () => {
   child.emit('close', 0);
 
   await expect(result).resolves.toBe(0);
-  expect(spawn).toHaveBeenCalledWith('/node', [join('/package/node_modules/playwright', 'cli.js'), 'install', 'chromium'], { stdio: 'inherit' });
+  expect(spawn).toHaveBeenCalledWith('/node', playwrightInstallArgs(join('/package/node_modules/playwright', 'cli.js'), false), { stdio: 'inherit' });
   expect(bundledPlaywrightCli((id) => id === 'playwright-core/package.json' ? '/package/node_modules/playwright-core/package.json' : (() => { throw new Error('not found'); })()))
     .toBe(join('/package/node_modules/playwright-core', 'cli.js'));
 });
@@ -35,7 +35,7 @@ it('passes --with-deps through for Linux system libraries and rejects other flag
   const result = runInstallCommand(['install', '--with-deps'], { execPath: '/node', prefetchOcr: vi.fn().mockResolvedValue(undefined), resolve: () => '/p/playwright/cli.js', spawn });
   child.emit('close', 0);
   await expect(result).resolves.toBe(0);
-  expect(spawn).toHaveBeenCalledWith('/node', ['/p/playwright/cli.js', 'install', '--with-deps', 'chromium'], { stdio: 'inherit' });
+  expect(spawn).toHaveBeenCalledWith('/node', playwrightInstallArgs('/p/playwright/cli.js', true), { stdio: 'inherit' });
   await expect(runInstallCommand(['install', '--force'], { spawn })).resolves.toBe(2);
   expect(spawn).toHaveBeenCalledTimes(1);
 });
@@ -71,4 +71,17 @@ it('does not prefetch OCR data when Chromium installation fails', async () => {
 
   await expect(result).resolves.toBe(23);
   expect(prefetchOcr).not.toHaveBeenCalled();
+});
+
+it('launches the Playwright CLI without `_npx` in its script name so no install-dependencies warning prints', () => {
+  const args = playwrightInstallArgs('/home/u/.npm/_npx/abc/node_modules/playwright/cli.js', true);
+  expect(args.slice(2)).toEqual(['install', '--with-deps', 'chromium']);
+  expect(args[0]).toBe('-e');
+  expect(args[1]).toContain("process.argv.splice(1, 0, 'playwright')");
+});
+
+it('hints at --with-deps when Chromium cannot load its system libraries', () => {
+  const hint = missingChromiumHint(new Error('browserType.launch: Target page, context or browser has been closed\n[pid=1][err] chrome-headless-shell: error while loading shared libraries: libglib-2.0.so.0: cannot open shared object file'));
+  expect(hint).toContain('mantis install --with-deps');
+  expect(missingChromiumHint(new Error('net::ERR_NAME_NOT_RESOLVED'))).toBeUndefined();
 });

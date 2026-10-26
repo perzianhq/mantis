@@ -33,6 +33,15 @@ export function bundledPlaywrightCli(resolve: Resolve = localRequire.resolve): s
   throw new Error('Unable to resolve the bundled Playwright CLI. Reinstall mantis-browser.');
 }
 
+/**
+ * Playwright prints a "run npm install first" box when its CLI path contains `_npx`, which it always does
+ * under `npx mantis install`. Load the CLI through `node -e` with a neutral script name to avoid the box.
+ */
+export function playwrightInstallArgs(cli: string, withDeps: boolean): string[] {
+  const script = `process.argv.splice(1, 0, 'playwright'); require(${JSON.stringify(cli)});`;
+  return ['-e', script, 'install', ...(withDeps ? ['--with-deps'] : []), 'chromium'];
+}
+
 /** Install Chromium through the Playwright version bundled with Mantis. */
 export async function installChromium(dependencies: InstallDependencies = {}, withDeps = false): Promise<number> {
   const command = dependencies.execPath ?? process.execPath;
@@ -40,7 +49,7 @@ export async function installChromium(dependencies: InstallDependencies = {}, wi
   const spawn: Spawn = dependencies.spawn ?? ((file, args, options) => nodeSpawn(file, [...args], options));
 
   const exitCode = await new Promise<number>((resolve, reject) => {
-    const child = spawn(command, [cli, 'install', ...(withDeps ? ['--with-deps'] : []), 'chromium'], { stdio: 'inherit' });
+    const child = spawn(command, playwrightInstallArgs(cli, withDeps), { stdio: 'inherit' });
     child.once('error', reject);
     child.once('close', (code) => resolve(code ?? 1));
   });
@@ -50,6 +59,7 @@ export async function installChromium(dependencies: InstallDependencies = {}, wi
   const prefetchOcr = dependencies.prefetchOcr ?? (async () => (await import('./fallback/ocr.js')).prefetchOcrData());
   try {
     await prefetchOcr();
+    console.log('OCR data ready.');
   } catch (error) {
     const firstLine = String(error instanceof Error ? error.message : error).split('\n')[0] || 'Unknown error';
     console.warn(`OCR data not fetched (ocr will download it on first use): ${firstLine}`);
