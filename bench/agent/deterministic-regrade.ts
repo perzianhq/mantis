@@ -21,7 +21,7 @@ export function deterministicRegrade(name: string): { runs: Result[]; difference
     const blocked = final.some((f) => isAccessBlockText(f.text));
     const grade = deterministicGradeForRun(rows.get(run.task)!, run.status, true, run.answer ?? '', frames);
     const verdict: 'success' | 'failure' = grade?.pass === true ? 'success' : 'failure';
-    return { task: run.task, approach: run.approach, run: run.run, status: run.status, verdict, reason: blocked ? 'final captured frame is an access-block page' : grade?.failed.join('; ') ?? 'missing saved final evidence or unfinished run', blocked };
+    return { task: run.task, approach: run.approach, run: run.run, status: run.status, verdict, reason: blocked ? 'final captured frame is an access-block page' : grade?.failed.join('; ') ?? (run.status === 'success' ? 'missing saved final evidence' : `run status ${run.status} (no graded final frame)`), blocked };
   });
   const taskRuns = new Map<string, Result[]>(); for (const run of preliminary) taskRuns.set(run.task, [...(taskRuns.get(run.task) ?? []), run]);
   const excluded = new Set([...taskRuns].filter(([, runs]) => runs.length > 0 && runs.every((run) => run.blocked)).map(([task]) => task));

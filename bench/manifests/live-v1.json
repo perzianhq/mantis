@@ -11,9 +11,9 @@
   "documentedTaskCount": 31,
   "excludedTasks": {"livev1-standards-gpl-3": "The live GNU host timed out for every approach in the captured 20261022 run; archive.org cannot satisfy the required live-origin contract."},
   "taskHashAlgorithm": "sha256(canonical sorted task contracts)",
-  "taskHash": "e12d5a169cd10150bbf79220505fb3adadc1373ad1333dab71f11c01875e864f",
+  "taskHash": "51a3b06f241231172cd6c577e4b142f6f279c30cf46663fadf146c80d7619a97",
   "sourceFingerprintAlgorithm": "sha256(canonical URL + task-specific grading contract)",
-  "sourceFingerprintSetHash": "907c383b3b8fe96ea477c6481fb2ca0a8f4b75ade89206e15bd5ccd944e84e8f",
+  "sourceFingerprintSetHash": "f39fff5a33b16303c416c037e06c567101a93e38c1badb7fb0d686e57fbb6401",
   "tasks": [
     "livev1-standards-gpl-3", "livev1-standards-rfc-8259", "livev1-standards-wcag-22", "livev1-standards-rfc-9110", "livev1-standards-openapi-31", "livev1-standards-css-color-4",
     "livev1-docs-python-json", "livev1-docs-mdn-http-overview", "livev1-docs-node-url", "livev1-docs-django-overview", "livev1-docs-postgresql-types",

@@ -2,7 +2,6 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { buildEvidencePrompt } from '../bench/agent/judge.js';
 import { evaluateDeterministicGrader } from '../bench/agent/realsite.js';
 import { collectLiveV1Preflight } from '../bench/agent/live-v1-preflight.js';
 import { LIVE_V1_ROWS, LIVE_V1_SCORED_ROWS, LIVE_V1_SOURCE_FINGERPRINTS, LIVE_V1_TASK_HASH, LIVE_V1_TASKS, loadLiveV1Rows, validateLiveV1Rows } from '../bench/agent/live-v1.js';
@@ -15,8 +14,8 @@ describe('live-v1 frozen public catalog', () => {
     expect(LIVE_V1_ROWS.filter((row) => row.excluded)).toEqual([expect.objectContaining({ task_id: 'livev1-standards-gpl-3', exclusionReason: expect.any(String) })]);
     expect(LIVE_V1_TASKS).toHaveLength(30);
     expect(LIVE_V1_TASKS.filter((task) => task.judged)).toHaveLength(30);
-    expect(LIVE_V1_SCORED_ROWS.filter((row) => row.grading === 'deterministic')).toHaveLength(20);
-    expect(LIVE_V1_SCORED_ROWS.filter((row) => row.grading === 'judge')).toHaveLength(10);
+    expect(LIVE_V1_SCORED_ROWS.filter((row) => row.grading === 'deterministic')).toHaveLength(30);
+    expect(LIVE_V1_SCORED_ROWS.filter((row) => row.grading === 'judge')).toHaveLength(0);
     expect(LIVE_V1_TASKS.map((task) => task.id)).not.toContain('livev1-standards-gpl-3');
   });
 
@@ -24,7 +23,7 @@ describe('live-v1 frozen public catalog', () => {
     const corrupt = LIVE_V1_ROWS.map((row) => ({ ...row })) as LiveV1Row[];
     const scoredIndex = corrupt.findIndex((row) => !row.excluded);
     corrupt[scoredIndex] = { ...corrupt[scoredIndex]!, grading: 'judge', deterministic: undefined, judgeRubric: 'A rubric alone cannot repair the frozen allocation.' };
-    expect(() => validateLiveV1Rows(corrupt)).toThrow(/20 deterministic and 10 judged scored/);
+    expect(() => validateLiveV1Rows(corrupt)).toThrow(/requires 30 deterministic scored tasks/);
     expect(() => loadLiveV1Rows(fileURLToPath(new URL('../bench/agent/live-v1-tasks.json', import.meta.url)))).not.toThrow();
   });
 
@@ -34,19 +33,19 @@ describe('live-v1 frozen public catalog', () => {
     expect(manifest.tasks).toEqual(LIVE_V1_ROWS.map((row) => row.task_id));
     expect(manifest.taskHash).toBe(LIVE_V1_TASK_HASH);
     expect(manifest.sourceFingerprintSetHash).toBe(createHash('sha256').update(JSON.stringify(LIVE_V1_SOURCE_FINGERPRINTS)).digest('hex'));
-    expect(manifest.grading).toEqual({ deterministic: 20, judge: 10 });
+    expect(manifest.grading).toEqual({ deterministic: 30, judge: 0 });
     expect(manifest.difficulty).toEqual({ easy: 8, medium: 14, hard: 8 });
   });
 
-  it('delivers the task-specific rubric to a blind judge without exposing tool details', () => {
-    const row = LIVE_V1_ROWS.find((entry) => entry.grading === 'judge')!;
-    const prompt = buildEvidencePrompt({ task: row.task, website: row.website, finalUrl: row.source.canonicalUrl, answer: 'Done.', rubric: row.judgeRubric, attached: false, frames: [] });
-    expect(prompt).toContain(`Task-specific rubric: ${row.judgeRubric}`);
-    expect(prompt).not.toMatch(/mantis|playwright|accessibility tree/i);
+  it('keys every scored task with a deterministic contract', () => {
+    for (const row of LIVE_V1_SCORED_ROWS) {
+      expect(row.deterministic, row.task_id).toBeDefined();
+      expect(row.grading, row.task_id).toBe('deterministic');
+    }
   });
 
   it('validates every deterministic contract and rejects its URL/text near misses', () => {
-    for (const row of LIVE_V1_ROWS.filter((entry) => entry.grading === 'deterministic')) {
+    for (const row of LIVE_V1_ROWS.filter((entry) => entry.grading === 'deterministic' && entry.deterministic?.kind !== 'state')) {
       const grader = row.deterministic!;
       const pathHeading = grader.final.pathHeadings?.find((heading) => heading.path === grader.final.url.path);
       const headingValue = pathHeading ? ` ${String(pathHeading.heading.value)}` : '';
