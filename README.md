@@ -32,14 +32,21 @@ Security and threat model: [SECURITY.md](SECURITY.md).
 
 Mantis vs the accessibility tree (Playwright MCP) on public sites, medians, `gpt-6-luna` and `claude-haiku-5-5`:
 
+**Long tasks** (16 tasks, 48 runs per cell):
+
 | | Luna Mantis | Luna tree | Haiku Mantis | Haiku tree |
 |---|---:|---:|---:|---:|
-| Long tasks: correct /48 | **41** | 37 | **47** | 44 |
-| Long tasks: time | **50s** | 75s | **90s** | 135s |
-| Long tasks: input tokens | **262k** | 362k | **432k** | 746k |
-| Short tasks: success /90 | 89 | **90** | **89** | **89** |
-| Short tasks: input tokens (mean) | **87k** | 122k | **72k** | 142k |
-| Short tasks: time | 44s | **23s** | 45s | 43s |
+| Correct | **41/48** | 37/48 | **47/48** | 44/48 |
+| Time | **50s** | 75s | **90s** | 135s |
+| Input tokens | **262k** | 362k | **432k** | 746k |
+
+**Short tasks** (30 tasks, 90 runs per cell):
+
+| | Luna Mantis | Luna tree | Haiku Mantis | Haiku tree |
+|---|---:|---:|---:|---:|
+| Success | 89/90 | **90/90** | 89/90 | 89/90 |
+| Input tokens (mean) | **87k** | 122k | **72k** | 142k |
+| Time | 44s | **23s** | 45s | 43s |
 
 Long tasks: about a third less time and 28-42% fewer input tokens, accuracy equal or better. Short tasks: accuracy within one task of the tree and 28-49% fewer tokens, but not faster (timings are being re-measured under cleaner conditions).
 
