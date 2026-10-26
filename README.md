@@ -42,13 +42,13 @@ Mantis vs the accessibility tree (Playwright MCP) on public sites, medians, `gpt
 
 **Short tasks** (30 tasks, 90 runs per cell):
 
-| | Luna Mantis | Luna tree | Haiku Mantis | Haiku tree |
-|---|---:|---:|---:|---:|
-| Success | **88/90** | 86/90 | **90/90** | 88/90 |
-| Input tokens (mean) | **77k** | 114k | **47k** | 96k |
-| Time | **27s** | 31s | **24s** | 31s |
+| | Luna Mantis | Luna tree | Luna screenshot | Haiku Mantis | Haiku tree | Haiku screenshot |
+|---|---:|---:|---:|---:|---:|---:|
+| Success | 88/90 | 86/90 | **90/90** | **90/90** | 88/90 | 88/90 |
+| Input tokens (mean) | **77k** | 114k | 114k | 47k | 96k | **42k** |
+| Time (median) | **27s** | 31s | 35s | 24s | 31s | **23s** |
 
-Long tasks: about a third less time and 28-42% fewer input tokens, accuracy equal or better. Short tasks (clean re-run, one build, all approaches interleaved): accuracy equal or better, 32-51% fewer input tokens and 13-22% less time than the tree.
+Long tasks: about a third less time and 28-42% fewer input tokens, accuracy equal or better. Short tasks (clean re-run, one build, all approaches interleaved): accuracy equal or better than the tree, 32-51% fewer input tokens and 13-22% less time than the tree. Against screenshots: Luna screenshots score 2 runs higher and use 48% more tokens and 30% more time; Haiku screenshots use about 10% fewer tokens and are about even on time, with 2x the tool calls.
 
 Short-task scores are graded by deterministic answer keys on the captured final state. Long-task rows are model-judged by an uncalibrated judge (79% agreement with deterministic keys), so they are indicative; one short task was swapped after scoring. Screenshot baseline, local workflows, method and all caveats: [bench/RESULTS.md](bench/RESULTS.md).
 
