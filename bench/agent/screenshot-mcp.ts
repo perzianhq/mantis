@@ -57,19 +57,31 @@ const NATIVE_SELECT_OVERLAY = String.raw`({ x: clickX, y: clickY }) => {
   const overlay = document.createElement('div');
   overlay.id = '__mantis_native_select_overlay'; overlay.setAttribute('role', 'listbox');
   overlay.style.cssText = ['position:fixed', 'left:' + box.left + 'px', 'top:' + Math.min(box.bottom, window.innerHeight - 4) + 'px', 'min-width:' + Math.max(box.width, 120) + 'px', 'max-height:240px', 'overflow:auto', 'z-index:2147483647', 'background:white', 'color:black', 'border:1px solid #767676', 'box-shadow:0 2px 8px #0006', 'font:13px sans-serif'].join(';');
-  const close = () => { overlay.remove(); document.removeEventListener('pointerdown', closeOutside, true); document.removeEventListener('keydown', closeKey, true); };
+  const rows = [];
+  const sync = () => {
+    let selected;
+    for (const [option, row] of rows) {
+      row.setAttribute('aria-selected', String(option.selected));
+      row.style.background = option.selected ? '#dbeafe' : 'white';
+      if (option.selected) selected = row;
+    }
+    selected?.scrollIntoView({ block: 'nearest' });
+  };
+  const close = () => { overlay.remove(); document.removeEventListener('pointerdown', closeOutside, true); document.removeEventListener('keydown', closeKey, true); select.removeEventListener('change', sync); select.removeEventListener('input', sync); };
   for (const option of Array.from(select.options)) {
     const row = document.createElement('button');
     row.type = 'button'; row.disabled = option.disabled; row.textContent = option.text;
     row.setAttribute('role', 'option'); row.setAttribute('aria-selected', String(option.selected));
     row.style.cssText = 'display:block;width:100%;min-height:32px;padding:6px 10px;text-align:left;border:0;background:' + (option.selected ? '#dbeafe' : 'white') + ';color:inherit';
     row.addEventListener('click', () => { if (option.disabled) return; select.value = option.value; select.dispatchEvent(new Event('input', { bubbles: true })); select.dispatchEvent(new Event('change', { bubbles: true })); select.focus(); close(); });
+    rows.push([option, row]);
     overlay.append(row);
   }
   const closeOutside = (event) => { if (!overlay.contains(event.target) && event.target !== select) close(); };
-  const closeKey = (event) => { if (event.key === 'Escape' || event.key === 'Enter') close(); };
+  const closeKey = (event) => { if (event.key === 'Enter') { event.preventDefault(); event.stopPropagation(); close(); } else if (event.key === 'Escape') close(); };
   document.addEventListener('pointerdown', closeOutside, true);
   document.addEventListener('keydown', closeKey, true);
+  select.addEventListener('change', sync); select.addEventListener('input', sync);
   document.body.append(overlay); select.focus(); return true;
 }`;
 async function openNativeSelectOverlayAt(p: Page, x: number, y: number): Promise<boolean> {
@@ -110,7 +122,7 @@ server.registerTool('upload', {
   });
 });
 server.registerTool('computer', {
-  description: `Anthropic-style coordinate computer tool for a ${VIEWPORT.width}x${VIEWPORT.height} viewport. screenshot returns the viewport; zoom crops region [x0,y0,x1,y1]. Click coordinates are [x,y], click text is optional ctrl/alt/shift/meta modifiers. key accepts portable xdotool-style names and space-separated presses. scroll_amount is wheel ticks; one tick is ${COMPUTER_SCROLL_TICK_PIXELS} CSS pixels. ${NATIVE_SELECT_KEYBOARD_GUIDANCE}`,
+  description: `Anthropic-style coordinate computer tool for a ${VIEWPORT.width}x${VIEWPORT.height} viewport. screenshot returns the viewport; zoom crops region [x0,y0,x1,y1]. Click coordinates are [x,y], click text is optional ctrl/alt/shift/meta modifiers. key accepts portable xdotool-style names and space-separated presses. scroll_amount is wheel ticks; one tick is ${COMPUTER_SCROLL_TICK_PIXELS} CSS pixels. Scroll defaults to the viewport center when coordinate is omitted. ${NATIVE_SELECT_KEYBOARD_GUIDANCE}`,
   inputSchema: {
     action: z.enum(COMPUTER_ACTIONS), coordinate: z.array(z.number()).length(2).optional().describe('Viewport [x, y].'), start_coordinate: z.array(z.number()).length(2).optional().describe('Drag start viewport [x, y].'), region: z.array(z.number()).length(4).optional().describe('Zoom [x0, y0, x1, y1].'), text: z.string().optional(), duration: z.number().positive().max(10).optional().describe('Seconds, maximum 10.'), scroll_direction: z.enum(['up', 'down', 'left', 'right']).optional(), scroll_amount: z.number().positive().max(100).optional().describe(`Wheel ticks; one tick is ${COMPUTER_SCROLL_TICK_PIXELS} CSS pixels.`),
   },
@@ -156,7 +168,7 @@ server.registerTool('computer', {
       return act(async (active) => { for (const key of held) await active.keyboard.down(key); await active.waitForTimeout(input.duration * 1000); for (const key of held.reverse()) await active.keyboard.up(key); return `held ${input.text} for ${input.duration} seconds`; });
     }
     if (action === 'scroll') {
-      const at = coordinate(input.coordinate); if (typeof at === 'string') return error(at);
+      const at = input.coordinate ? coordinate(input.coordinate) : [VIEWPORT.width / 2, VIEWPORT.height / 2] as Coordinate; if (typeof at === 'string') return error(at);
       if (!input.scroll_direction || input.scroll_amount === undefined) return error('scroll_direction and scroll_amount are required for scroll');
       const { deltaX, deltaY } = resolveComputerScroll(input.scroll_direction, input.scroll_amount); cursor = at;
       return act(async (active) => { await active.mouse.move(...at); await active.mouse.wheel(deltaX, deltaY); return `scrolled ${input.scroll_direction} ${input.scroll_amount} tick(s) at (${at.join(', ')})`; });

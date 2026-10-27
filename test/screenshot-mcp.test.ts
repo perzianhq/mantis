@@ -21,6 +21,7 @@ it('exposes one Anthropic-style computer tool and targets nested scrollers by co
     const { tools } = await client.listTools();
     expect(tools.map((tool) => tool.name).sort()).toEqual(['back', 'bench_capture', 'computer', 'navigate', 'upload']);
     expect(tools.find((tool) => tool.name === 'computer')?.description).toContain('one tick is 100 CSS pixels');
+    expect(tools.find((tool) => tool.name === 'computer')?.description).toContain('Scroll defaults to the viewport center');
     const html = `<!doctype html><style>html,body{margin:0}#outer{position:absolute;left:20px;top:20px;width:280px;height:180px;overflow:auto}#target,#decoy{width:220px;height:100px;overflow:auto;white-space:nowrap}#target{margin:20px}#decoy{position:absolute;left:360px;top:20px}#target>div,#decoy>div{width:700px;height:400px}</style><div id="outer"><div id="target"><div>nested target</div></div><div style="height:300px"></div></div><div id="decoy"><div>wrong target</div></div>`;
     const url = `data:text/html,${encodeURIComponent(html)}`;
     const state = async () => JSON.parse(textOf(await call('bench_capture', { evaluate: '() => ({target:[document.querySelector("#target").scrollLeft,document.querySelector("#target").scrollTop],outer:[document.querySelector("#outer").scrollLeft,document.querySelector("#outer").scrollTop],decoy:[document.querySelector("#decoy").scrollLeft,document.querySelector("#decoy").scrollTop]})' }))) as { target: [number, number]; outer: [number, number]; decoy: [number, number] };
@@ -35,6 +36,18 @@ it('exposes one Anthropic-style computer tool and targets nested scrollers by co
     const wrongTarget = await state();
     expect(wrongTarget.target[0]).toBe(0);
     expect(wrongTarget.decoy[0]).toBeGreaterThan(0);
+  });
+}, 30_000);
+
+it('scrolls at the viewport center when coordinate is omitted and still rejects invalid coordinates', async () => {
+  await withClient(async (_client, call) => {
+    const html = '<div style="height:2400px">scroll target</div>';
+    await call('navigate', { url: `data:text/html,${encodeURIComponent(html)}` });
+    await call('computer', { action: 'scroll', scroll_direction: 'down', scroll_amount: 1 });
+    const position = Number(textOf(await call('bench_capture', { evaluate: '() => scrollY' })));
+    expect(position).toBeGreaterThan(0);
+    const bad = await call('computer', { action: 'scroll', coordinate: [1281, 400], scroll_direction: 'down', scroll_amount: 1 });
+    expect(textOf(bad)).toContain('coordinate must be two viewport pixels');
   });
 }, 30_000);
 
@@ -71,7 +84,7 @@ it('uses xdotool ctrl+a to replace focused text; plain type remains an append ne
   });
 }, 30_000);
 
-it('renders a visible native-select overlay whose coordinate click changes the select and fires events', async () => {
+it('keeps the native-select overlay synchronized and consumes Enter after keyboard selection', async () => {
   await withClient(async (_client, call) => {
     const html = '<select id="choice" style="position:absolute;left:20px;top:20px;width:180px"><option value="one">One</option><option value="two">Two</option></select><script>window.events=[];choice.addEventListener("input",()=>events.push("input"));choice.addEventListener("change",()=>events.push("change"));</script>';
     const url = `data:text/html,${encodeURIComponent(html)}`;
@@ -81,8 +94,12 @@ it('renders a visible native-select overlay whose coordinate click changes the s
     const screenshot = await call('computer', { action: 'screenshot' });
     expect((screenshot.content as { type: string }[]).some((part) => part.type === 'image')).toBe(true);
     expect((await state()).overlay).toBe(true);
-    await call('computer', { action: 'left_click', coordinate: [80, 85] });
+    await call('computer', { action: 'type', text: 't' });
+    expect(JSON.parse(textOf(await call('bench_capture', { evaluate: '() => ({selected:[...document.querySelectorAll("#__mantis_native_select_overlay [role=option]")].map(row => [row.getAttribute("aria-selected"), row.style.background]), overlay:!!document.querySelector("#__mantis_native_select_overlay")})' })))).toEqual({ selected: [['false', 'white'], ['true', 'rgb(219, 234, 254)']], overlay: true });
+    await call('bench_capture', { evaluate: '() => document.addEventListener("keydown", event => { if (event.key === "Enter") window.enterPrevented = event.defaultPrevented; }, true)' });
+    await call('computer', { action: 'key', text: 'Enter' });
     expect(await state()).toEqual({ value: 'two', events: ['input', 'change'], overlay: false });
+    expect(textOf(await call('bench_capture', { evaluate: '() => String(window.enterPrevented)' }))).toBe('true');
 
     await call('navigate', { url });
     await call('computer', { action: 'left_click', coordinate: [80, 30] });
