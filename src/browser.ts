@@ -642,7 +642,7 @@ export class MantisBrowser {
       if (navigation) this.pendingNavigation = navigation;
       const shown = label.includes('(password)') ? '•••' : `"${text.length > 40 ? text.slice(0, 39) + '…' : text}"`;
       return `typed ${shown} into ${label.replace(' (password)', '')}${submit ? ' and pressed Enter' : ''}`;
-    }, { requestGrace: !submit, targetScan: true });
+    }, { requestGrace: !submit, targetScan: true, ...(submit ? {} : { bounds: { max: 1500, idleGrace: 60 } }) });
   }
 
   async select(id: number, option: string | string[]): Promise<string> {
@@ -1367,7 +1367,7 @@ export class MantisBrowser {
    * Run an action, wait for the page to settle, and report what changed: a diff
    * when the same document is still showing, the full view after a navigation.
    */
-  private act(tool: string, fn: (page: Page) => Promise<string>, opts: { quiet?: boolean; requestGrace?: boolean; targetScan?: boolean } = {}): Promise<string> {
+  private act(tool: string, fn: (page: Page) => Promise<string>, opts: { quiet?: boolean; requestGrace?: boolean; targetScan?: boolean; bounds?: { max: number; idleGrace: number } } = {}): Promise<string> {
     return this.guard(async () => {
       this.pendingNavigation?.cancel();
       this.pendingNavigation = null;
@@ -1398,7 +1398,7 @@ export class MantisBrowser {
       try {
         // Fast exits remain the default for ordinary actions; submits explicitly opt out because
         // their destination can publish a route before its result view has painted.
-        await this.timed('wait', () => this.settle(page, true, navigation, opts.requestGrace ?? true));
+        await this.timed('wait', () => this.settle(page, true, navigation, opts.requestGrace ?? true, opts.bounds ?? null));
       } finally {
         navigation?.cancel();
         if (this.pendingNavigation === navigation) this.pendingNavigation = null;
@@ -2212,7 +2212,7 @@ export class MantisBrowser {
         // A retry after a replaced document shares one total budget with its first attempt.
         const max = Math.max(1, settleMax - (Date.now() - settleStarted));
         const stop = await page.evaluate(
-          ({ quiet, idleGrace, max, busyMax, intervalMax, useEpoch, reason, requestGrace, requestMax, requestQuiet }) =>
+          ({ quiet, idleGrace, max, busyMax, timerMax, intervalMax, useEpoch, reason, requestGrace, requestMax, requestQuiet, chainedMax }) =>
             new Promise<string | undefined>((done) => {
               const w = window as unknown as {
                 __mantisSetTimeout?: typeof setTimeout;
@@ -2239,7 +2239,7 @@ export class MantisBrowser {
               let lastMutation = start;
               let timer: ReturnType<typeof setTimeout>;
               let unwatchShadows: (() => void) | undefined;
-              const busyKinds = () => w.__mantisBusyKinds?.(since, ownIntervals, busyMax) ?? { timer: false, chained: false, interval: false, request: false, oneShotDelay: -1 };
+              const busyKinds = () => w.__mantisBusyKinds?.(since, ownIntervals, timerMax) ?? { timer: false, chained: false, interval: false, request: false, oneShotDelay: -1 };
               const describe = (busy: ReturnType<typeof busyKinds>): string =>
                 ([busy.request && 'req', busy.timer && 'timer', busy.chained && 'chained', busy.interval && 'interval'].filter(Boolean).join('+') || 'none')
                 + (busy.oneShotDelay >= 0 ? `(oneShot=${busy.oneShotDelay}ms)` : '');
@@ -2248,6 +2248,11 @@ export class MantisBrowser {
               const defer = (): void => {
                 if (reason && !heldBy) heldBy = `${describe(busyKinds())}@${Date.now() - start}ms`;
                 timer = st(check, 50);
+              };
+              // Only a self-rearming timer is pending: no request, interval or one-shot that could still render a result.
+              const onlyQuietPoll = (): boolean => {
+                const busy = busyKinds();
+                return busy.chained && busy.timer && !busy.request && !busy.interval && busy.oneShotDelay < 0;
               };
               const capReason = (): string => {
                 const busy = busyKinds();
@@ -2270,15 +2275,16 @@ export class MantisBrowser {
                 // while a destination document loads is background work and must not hold settle.
                 // A quiet request, interval, or self-rearming timeout is a poll, not a pending result.
                 // Keep one-shot timers in the normal window: they can still render a late result.
+                else if (requestGrace && elapsed >= chainedMax && Date.now() - lastMutation >= requestQuiet && onlyQuietPoll()) finish('cap-timer');
                 else if (requestGrace && elapsed >= requestMax && Date.now() - lastMutation >= requestQuiet) {
                   const busy = busyKinds();
                   if (busy.request && !busy.timer && !busy.interval) finish('cap-request');
                   else if (busy.chained && busy.timer) finish('cap-timer');
-                  else if (w.__mantisBusy?.(since, ownIntervals, busyMax, 500) && elapsed < busyMax) defer();
-                  else if (w.__mantisBusy?.(since, ownIntervals, busyMax) && elapsed < intervalMax) defer();
+                  else if (w.__mantisBusy?.(since, ownIntervals, timerMax, 500) && elapsed < busyMax) defer();
+                  else if (w.__mantisBusy?.(since, ownIntervals, timerMax) && elapsed < intervalMax) defer();
                   else finish(reason && (busy.request || busy.timer || busy.interval) ? capReason() : 'quiet');
-                } else if (w.__mantisBusy?.(since, ownIntervals, busyMax, 500) && elapsed < busyMax) defer();
-                else if (w.__mantisBusy?.(since, ownIntervals, busyMax) && elapsed < intervalMax) defer();
+                } else if (w.__mantisBusy?.(since, ownIntervals, timerMax, 500) && elapsed < busyMax) defer();
+                else if (w.__mantisBusy?.(since, ownIntervals, timerMax) && elapsed < intervalMax) defer();
                 else finish(reason && elapsed >= busyMax ? capReason() : 'quiet');
               };
               // An element whose same attribute keeps changing (carousel, spinner, ticker) is an animation:
@@ -2345,7 +2351,7 @@ export class MantisBrowser {
               // Any mutation during it restarts the normal window.
               const idle = useEpoch && metaRefreshMs === 0 && w.__mantisEpochDomChanges !== undefined
                 && w.__mantisDomChanges === w.__mantisEpochDomChanges
-                && !w.__mantisBusy?.(since, (w.__mantisEpoch ?? 0) > (w.__mantisDocStart ?? Infinity), busyMax);
+                && !w.__mantisBusy?.(since, (w.__mantisEpoch ?? 0) > (w.__mantisDocStart ?? Infinity), timerMax);
               timer = st(check, idle ? idleGrace : quiet);
               const cap = st(() => finish(reason ? (sawMutation ? 'cap-mutations' : capReason()) : 'quiet'), max);
             }),
@@ -2354,12 +2360,15 @@ export class MantisBrowser {
             idleGrace: Math.min(bounds?.idleGrace ?? 60, max),
             max,
             busyMax: max,
+            // A page load can leave housekeeping timers (storage cleanup, idle flushes) of 2s or more; they do not render a result.
+            timerMax: afterAction ? max : Math.min(max, 1999),
             intervalMax: Math.min(1000, max),
             useEpoch: afterAction,
             reason: !!this.timing,
             requestGrace,
             requestMax: 1000,
             requestQuiet: 300,
+            chainedMax: 450,
           },
         );
         if (stop && this.timing) this.timing.settle = stop;

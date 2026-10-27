@@ -55,6 +55,23 @@ describe('settle busy work grace', () => {
     expect(ms).toBeLessThan(timingCap(1800));
   });
 
+  it('exits well before a second on a quiet self-rearming poll', async () => {
+    const view = await browser.open(dataPage(`
+      <button onclick="const poll = () => setTimeout(poll, 40); poll()">Begin poll</button>
+    `));
+    const { text, ms } = await elapsed(() => browser.click(idOf(view, 'Begin poll')));
+    expect(text).toContain('clicked');
+    expect(ms).toBeLessThan(timingCap(900));
+  });
+
+  it('near miss: a poll with a one-shot result pending still waits for the result', async () => {
+    const view = await browser.open(dataPage(`
+      <button onclick="const poll = () => setTimeout(poll, 40); poll(); setTimeout(() => document.body.append('Result behind poll'), 800)">Begin both</button>
+    `));
+    const text = await browser.click(idOf(view, 'Begin both'));
+    expect(text).toContain('Result behind poll');
+  });
+
   it('keeps waiting for a late one-shot result during open (near miss)', async () => {
     const { text, ms } = await elapsed(() => browser.open(dataPage(`
       <main>Ready</main><script>setTimeout(() => document.body.append('Late open result'), 1500)</script>
@@ -131,6 +148,23 @@ describe('open late-dialog gate', () => {
     expect(buttons).toHaveLength(3);
     expect(buttons.join('\n')).not.toContain('disabled');
   });
+
+  it('does not wait on a 2s housekeeping timer after load', async () => {
+    const { ms, text } = await elapsed(() => browser.open(dataPage(`
+      <main>Article body</main>
+      <script>setTimeout(() => { window.housekeeping = true }, 2000)</script>
+    `)));
+    expect(text).toContain('Article body');
+    expect(ms).toBeLessThan(timingCap(1500));
+  });
+
+  it('near miss: a click still waits for a 2s timer it started', async () => {
+    const view = await browser.open(dataPage(`
+      <button onclick="setTimeout(() => document.body.append('Slow result'), 2000)">Go</button>
+    `));
+    const text = await browser.click(idOf(view, 'Go'));
+    expect(text).toContain('Slow result');
+  });
 });
 
 describe('settle timing reasons', () => {
@@ -185,6 +219,18 @@ describe('type request grace', () => {
     const fast = await browser.type(idOf(view, 'textbox "Search"'), 'fast');
     expect(fast).toContain('Suggestions ready');
     await page.unroute('https://typeahead.test/fast');
+  });
+});
+
+describe('typeahead typing cap', () => {
+  it('stops typing at 1.5s on a widget that never goes quiet, but keeps a 1s debounced result (near miss)', async () => {
+    let view = await browser.open(dataPage('<input aria-label="Search" oninput="setInterval(() => document.body.append(document.createTextNode(\'.\')), 40)">'));
+    const busy = await elapsed(() => browser.type(idOf(view, 'textbox "Search"'), 'abc'));
+    expect(busy.ms).toBeLessThan(timingCap(2300));
+
+    view = await browser.open(dataPage('<input aria-label="Search" oninput="setTimeout(() => document.body.append(\'Debounced suggestions\'), 1000)">'));
+    const debounced = await browser.type(idOf(view, 'textbox "Search"'), 'abc');
+    expect(debounced).toContain('Debounced suggestions');
   });
 });
 
