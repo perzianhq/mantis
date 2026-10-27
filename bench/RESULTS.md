@@ -21,26 +21,39 @@ Formerly named `live-long-fixtures` (the tasks run on local fixtures, not live s
 
 - Mantis vs tree: Luna 22% less time, 38% fewer input tokens, 29% fewer calls; Haiku 29% less time, 35% fewer input tokens, 18% fewer calls. Scores are equal.
 - Luna's screenshot approach failed 6 of 48 rows; Mantis and the tree failed none.
+- Speed rerun (20261027, Mantis only, current build, `results/long-local-v1-{luna,haiku}-speed-20261027.md`): Luna 47/48 (one wrong answer on `llf-access-on`, run 1), Haiku 48/48. Against the tree rows above: input tokens -38% (Luna) and -33% (Haiku), calls -38% and -30%. No time claim: the setups differ. Those tree rows come from a heavier session, so the gap may be overstated by 10-20%.
 - Luna ran locally on Windows and Haiku on cloud Linux; concurrency was not reliably recorded for these runs, so compare approaches within a model, not times across models. Rows that needed a retry are best-of-two.
 - A later Mantis-only full run (20261023, final fixtures and graders) scored 48/48 for both models (`results/live-long-fixtures-{luna,haiku}-mantis-final-20261023.md`); the table keeps the same-condition three-way run so approaches stay comparable.
 - Basket and retention rows were rerun after two fixture fixes (history restore, unsaved retention summary); other rows were regraded offline with the current graders from the same runs. Merged files: `results/live-long-fixtures-{luna,haiku}-merged-20261023.md`.
 
 ## Long real-site tasks (long-live-v1), deterministic regrade (current)
 
-The same saved runs regraded offline with reviewed deterministic answer keys, no model calls and no reruns ([report](results/long-live-v1-deterministic-regrade.md), [Luna](results/long-live-v1-deterministic-regrade-luna.md), [Haiku](results/long-live-v1-deterministic-regrade-haiku.md)). 14 tasks x {Mantis, tree} x 3 runs = 42 runs per cell. The regrade reproduced all 171 earlier deterministic verdicts, and the saved frames of all 16 failures plus one passing run per task were reviewed; no key was found over-strict.
+Run 20261027: both approaches rerun in the same session at the same settings (concurrency 4, 3 runs per task, 16 tasks), then regraded offline with reviewed deterministic answer keys, no model calls ([Luna](results/long-live-v1-luna-speed-20261027-regraded.md), [Haiku](results/long-live-v1-haiku-speed-20261027-regraded.md); tree: `results/long-live-v1-{luna,haiku}-tree-20261027-regraded.md`). 14 keyed tasks x {Mantis, tree} x 3 runs = 42 runs per cell. The earlier regrade ([report](results/long-live-v1-deterministic-regrade.md)) reproduced all 171 earlier deterministic verdicts, and the saved frames of its 16 failures plus one passing run per task were reviewed; no key was found over-strict.
 
 | Agent | Mantis | Tree (Playwright MCP) |
 |---|---:|---:|
 | Luna (`gpt-6-luna`) | **35/42 (83%)** | 34/42 (81%) |
-| Haiku (`claude-haiku-5-5`) | **42/42 (100%)** | 41/42 (98%) |
+| Haiku (`claude-haiku-5-5`) | 40/42 (95%) | 40/42 (95%) |
+
+Efficiency, medians over all 48 runs per cell, failed runs included:
+
+| Metric | Luna Mantis | Luna tree | Diff | Haiku Mantis | Haiku tree | Diff |
+|---|---:|---:|---:|---:|---:|---:|
+| Wall time | 42s | 66s | -36% | 54s | 85s | -36% |
+| Tool calls | 17 | 24 | -29% | 19 | 30 | -37% |
+| Input tokens | 244k | 345k | -29% | 268k | 506k | -47% |
+
+Totals: Luna 13.7M vs 22.6M input tokens (-39%), 902 vs 1219 calls, 3 vs 60 tool errors; Haiku 15.6M vs 31.9M (-51%), 1014 vs 1515 calls, 37 vs 61 tool errors. Wall time per call (model plus tool): Luna 2.4s vs 2.7s, Haiku 2.7s vs 3.0s, so most of the time saving is fewer calls.
+
+Misses to fix: Haiku `gutenberg-gothic` run 1 (a table row lost its label) and `form-selenium-select` run 1 (multi-select values and a narrow select not set).
 
 Disclosures:
 
 - Two tasks are excluded: `internet-window-frames-upload` and `selenium-window-frames-upload`. The saved evidence has no leaf-frame text, frame path or tab identity, so their central requirements cannot be graded from the final state. They need a redesign and a new versioned campaign. On the 14 keyed tasks the Luna gap is one run, against four in the earlier judged 16-task table.
 - Keys check final state (URL, page text, form values, the full reply), not process: "use the on-site search", visit order and no-login are not graded.
-- Result rows truncate answers to 160 characters; the full replies were recovered from the attempt transcripts. The three Haiku `form-selenium-select` re-runs after the id/name fix replace that cell, with provenance recorded in the report.
-- The 16 failures are all Luna except one Haiku tree run, and were kept as failures: `gutenberg-gothic` (Luna Mantis 1 and 3, Luna tree 1, 2 and 3, Haiku tree 3: author shortened to "Mary Wollstonecraft Shelley" instead of the displayed catalogue string), `wiki-probes` (Luna Mantis and tree 1: thousands separators where ungrouped numbers were required, and a Galileo mass mismatch), `wiki-moons` (Luna Mantis 1 and 3: only one moon inspected), `gutenberg-novels` (Luna Mantis 2: correct list, final page is not #105), `met-vangogh` (Luna tree 3: fields unverified), `met-rembrandt-search` (Luna tree 2 and 3 incomplete; Luna Mantis 3 had the right state but dropped the literal "cm" the format requires), `gutenberg-shakespeare-search` (Luna tree 2: the site returned a 504 gateway time-out; kept as a failure, not excluded).
-- Efficiency medians in the README are the 16-task, 48-run figures below. They were not recomputed on the 14-task subset.
+- Result rows truncate answers to 160 characters; the full replies were recovered from the attempt transcripts.
+- Failures of the earlier regrade (20261022 runs), kept as failures: `gutenberg-gothic` (Luna Mantis 1 and 3, Luna tree 1, 2 and 3, Haiku tree 3: author shortened to "Mary Wollstonecraft Shelley" instead of the displayed catalogue string), `wiki-probes` (Luna Mantis and tree 1: thousands separators where ungrouped numbers were required, and a Galileo mass mismatch), `wiki-moons` (Luna Mantis 1 and 3: only one moon inspected), `gutenberg-novels` (Luna Mantis 2: correct list, final page is not #105), `met-vangogh` (Luna tree 3: fields unverified), `met-rembrandt-search` (Luna tree 2 and 3 incomplete; Luna Mantis 3 had the right state but dropped the literal "cm" the format requires), `gutenberg-shakespeare-search` (Luna tree 2: the site returned a 504 gateway time-out; kept as a failure, not excluded).
+- Efficiency medians are the 16-task, 48-run figures above. They were not recomputed on the 14-task subset.
 
 ## Long real-site tasks (long-live-v1), model-judged (historical)
 
@@ -109,6 +122,8 @@ Post-hoc swaps were GPL-3 to RFC 8259, IMDb to TMDB, USGS to NIST, and data-gov-
 | Input tokens (mean) | 77k | 114k | 114k | 47k | 96k | 42k |
 | Time (median) | 27.2s | 31.2s | 35.1s | 23.9s | 30.5s | 22.9s |
 | Tool calls | 3.3 | 5.0 | 7.3 | 3.8 | 6.2 | 7.9 |
+
+**Mantis speed rerun (20261027).** Mantis only, current build, all 30 tasks x 3 runs per model, regraded with the same deterministic keys. Luna 88/90 (agent-reported success 90/90), Haiku 90/90. Medians: Luna 64k input tokens, 3 calls, 16s; Haiku 38k, 3 calls, 19s. Against the 20261026 tree rows above: input tokens -35% (Luna) and -57% (Haiku). Against the 20261026 Mantis rows: time -41% (Luna, 27s to 16s) and -21% (Haiku, 24s to 19s). The tree and screenshot rows were not rerun, and the tree rows come from a heavier session (a fresh tree rerun on the long tasks used 10-20% fewer tokens), so the token gap may be overstated. Files: `results/live-v1-{luna,haiku}-speed-20261027.*` (gitignored, gated real-site data).
 
 Historical model-judging mix (not used for the scores above): the first pass (gpt-6.1-sol) timed out on 169 runs, which were re-judged. Sol re-judged the first 21 of them and claude-sonnet-5-5 (high effort, `JUDGE_PROVIDER=claude`) the other 148, because sol stalled under sustained load; `judgeModel` is recorded per run in `results/live-v1-{luna,haiku}-clean-20261026-final.json`. Sonnet is a different model from both agents under test (Luna, Haiku), but Sonnet-judged rows have not passed the calibration gate. The earlier short timings and the claim that Mantis was slower than the tree came from runs with unequal concurrency and different hosts, and are not reproduced here.
 
@@ -185,6 +200,8 @@ Model-free replay of recorded Luna `open`/`read`/`find` calls against two Mantis
 The fix cuts the wait for a hanging background request from the 3s cap to about 1s, still waits for a result that renders within the window, and costs nothing on a plain input. Synthetic fixtures, not real-site typeaheads.
 
 ## Benchmarked source
+
+The 20261027 speed reruns (long-live-v1, live-v1 and long-local-v1 Mantis rows; the long-live-v1 tree rows were rerun alongside) ran on `1ecc6cf`, the code released as 0.1.9. The older sections below ran on the earlier commits listed here.
 
 npm `mantis-browser@0.1.5` is built from `70dbd5f`. The published numbers ran on earlier commits; seven agent-visible `src/` commits separate them from v0.1.4, so v0.1.4 is not what was measured.
 

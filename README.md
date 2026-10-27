@@ -32,25 +32,25 @@ Security and threat model: [SECURITY.md](SECURITY.md).
 
 Mantis vs the accessibility tree (Playwright MCP) on public sites, `gpt-6-luna` and `claude-haiku-5-5`. Every cell is a per-run median; time is end-to-end wall time per run:
 
-**Long tasks** (correct: 14 tasks, 42 runs per cell, deterministic answer keys; medians: all 16 tasks, 48 runs per cell):
+**Long tasks** (correct: 14 keyed tasks, 42 runs per cell; medians: all 16 tasks, 48 runs per cell; both approaches run in the same session):
 
 | | Luna Mantis | Luna tree | Haiku Mantis | Haiku tree |
 |---|---:|---:|---:|---:|
-| Correct | **35/42** | 34/42 | **42/42** | 41/42 |
-| Input tokens (median) | **262k** | 362k | **432k** | 746k |
-| Tool calls (median) | **18** | 25 | **26** | 32 |
-| Time (median) | **50s** | 75s | **90s** | 135s |
+| Correct | **35/42** | 34/42 | 40/42 | 40/42 |
+| Input tokens (median) | **244k** | 345k | **268k** | 506k |
+| Tool calls (median) | **17** | 24 | **19** | 30 |
+| Time (median) | **42s** | 66s | **54s** | 85s |
 
-**Short tasks** (30 tasks, 90 runs per cell):
+**Short tasks** (30 tasks, 90 runs per cell; tree and screenshot columns are the earlier 20261026 run):
 
 | | Luna Mantis | Luna tree | Luna screenshot | Haiku Mantis | Haiku tree | Haiku screenshot |
 |---|---:|---:|---:|---:|---:|---:|
 | Correct | 88/90 | 86/90 | **90/90** | **90/90** | 88/90 | 88/90 |
-| Input tokens (median) | **63k** | 99k | 104k | 43k | 88k | **33k** |
-| Tool calls (median) | **2** | 4 | 7 | **3** | 5 | 6 |
-| Time (median) | **27s** | 31s | 35s | 24s | 31s | **23s** |
+| Input tokens (median) | **64k** | 99k | 104k | 38k | 88k | **33k** |
+| Tool calls (median) | **3** | 4 | 7 | **3** | 5 | 6 |
+| Time (median) | **16s** | 31s | 35s | 19s | 30s | **23s** |
 
-Long tasks: about a third less time and 28-42% fewer input tokens than the tree, with accuracy within one run. Short tasks: accuracy equal or better than the tree, 36-51% fewer input tokens and 13-22% less time. Screenshots score 2 runs higher on Luna but use more tokens and time there; on Haiku they use fewer tokens.
+Long tasks: accuracy within one run, 29-47% fewer input tokens, 29-37% fewer calls and about a third less time than the tree. Short tasks: accuracy equal or better than the tree, 35-57% fewer input tokens. Short-task times compare a newer Mantis build with the earlier tree and screenshot run, so treat that gap as indicative. Screenshots score 2 runs higher on Luna but use more tokens and time there; on Haiku they use fewer tokens.
 
 Scores come from deterministic answer keys on the final page state. Two long iframe/tab tasks can't be keyed and are left out of the long-task counts. Method, screenshot baseline and caveats: [bench/RESULTS.md](bench/RESULTS.md).
 
