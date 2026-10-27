@@ -83,12 +83,16 @@ interface LineOpts {
   showHref?: boolean;
   /** Clip the name to this many chars (0/undefined: no clipping). */
   maxName?: number;
+  /** The "open first" hint: 'run' says it covers the controls after this one too; 'same' repeats it, so leave it out. */
+  openHint?: 'run' | 'same';
 }
 
 /** One control as a line: `#14 button "Save" (primary)`; guessed names are marked `~"name"`. */
 export function interactiveLine(n: RawNode, o: LineOpts = {}): string {
   const parts = n.states.map((s) => (s === 'error' && n.errorText ? `error: "${quote(clip(n.errorText, 60))}"` : s));
-  if (n.requiresOpen) parts.push(`open #${n.requiresOpen.id} "${quote(n.requiresOpen.name)}" first`);
+  if (n.requiresOpen && o.openHint !== 'same') {
+    parts.push(`open #${n.requiresOpen.id} "${quote(n.requiresOpen.name)}" first${o.openHint === 'run' ? ', also for the controls after this' : ''}`);
+  }
   if (n.value) parts.push(`value "${quote(n.value)}"`);
   if (n.options?.length) parts.push(`options: ${n.options.map(quote).join(' | ')}`);
   if (n.href && o.showHref) parts.push(`href ${n.href}`);
@@ -100,10 +104,12 @@ export function interactiveLine(n: RawNode, o: LineOpts = {}): string {
 }
 
 /** Plain text line; live messages (alerts, toasts) are flagged. */
-export function textLine(n: RawNode): string {
+export function textLine(n: RawNode, openHint?: 'run' | 'same'): string {
   if (n.role === 'canvas' && n.id !== undefined) return `#${n.id} canvas${n.name}`;
   const mark = n.live === 'alert' ? '⚠ ' : n.live === 'status' ? 'ℹ ' : '';
-  const open = n.requiresOpen ? ` (open #${n.requiresOpen.id} "${quote(n.requiresOpen.name)}" first)` : '';
+  const open = n.requiresOpen && openHint !== 'same'
+    ? ` (open #${n.requiresOpen.id} "${quote(n.requiresOpen.name)}" first${openHint === 'run' ? ', also for the controls after this' : ''})`
+    : '';
   return `${mark}"${quote(n.name)}"${open}`;
 }
 
@@ -346,7 +352,30 @@ function renderBody(nodes: RawNode[], lvl: Level, ctx: Ctx): { lines: string[]; 
     const copies = ctx.dupNames.get(norm(n.name)) ?? 0;
     return GENERIC_LINK.test(n.name) || (copies >= 2 && copies <= 3);
   };
-  const line = (n: RawNode, o: LineOpts = {}): string => interactiveLine(n, { ...o, showHref: showHref(n) });
+  // Three or more controls in a row behind the same closed trigger: say "open it first" once, not on each.
+  const openRun = new Map<RawNode, 'run' | 'same'>();
+  {
+    const controls = nodes.filter((n) => n.kind === 'interactive' || n.kind === 'text');
+    for (let i = 0; i < controls.length;) {
+      const id = controls[i].requiresOpen?.id;
+      let j = i + 1;
+      while (id !== undefined && j < controls.length && controls[j].requiresOpen?.id === id) j++;
+      if (j - i >= 3) {
+        openRun.set(controls[i], 'run');
+        for (let k = i + 1; k < j; k++) openRun.set(controls[k], 'same');
+      }
+      i = j;
+    }
+  }
+  let lastOpenId: number | undefined;
+  const hintFor = (n: RawNode): 'run' | 'same' | undefined => {
+    const planned = openRun.get(n);
+    // Only leave the hint out when the line just before it was shown with it.
+    const openHint = planned === 'same' && lastOpenId !== n.requiresOpen?.id ? undefined : planned;
+    lastOpenId = n.requiresOpen?.id;
+    return openHint;
+  };
+  const line = (n: RawNode, o: LineOpts = {}): string => interactiveLine(n, { ...o, showHref: showHref(n), openHint: hintFor(n) });
 
   const labelledFacts = new Set<number>();
   const pairedLabelled = (group: number[]): void => {
@@ -577,7 +606,7 @@ function renderBody(nodes: RawNode[], lvl: Level, ctx: Ctx): { lines: string[]; 
         if (dup(next) || dup(prev)) {
           k++;
         } else if (n.live || n.requiresOpen || n.role === 'canvas') {
-          out.push(`${pad}${textLine(n)}`);
+          out.push(`${pad}${textLine(n, hintFor(n))}`);
           k++;
         } else if (next?.kind === 'interactive' && !next.inline && runEnd(items, k + 1) - k <= lvl.over) {
           out.push(`${pad}"${quote(n.name)}" ${line(next)}`);
