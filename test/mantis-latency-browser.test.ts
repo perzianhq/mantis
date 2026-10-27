@@ -141,7 +141,7 @@ describe('settle timing reasons', () => {
     let view = await browser.open(dataPage('<button onclick="setInterval(() => document.body.append(document.createTextNode(\'x\')), 40)">Mutate forever</button>'));
     timed().timing = { tool: 'click', start: performance.now(), phases: new Map() };
     await browser.click(idOf(view, 'Mutate forever'));
-    expect(timed().timing?.settle).toMatch(/^cap-mutations pending=\S+( oneShot=\d+ms)? quietFor=\d+ms after=\d+ms$/);
+    expect(timed().timing?.settle).toMatch(/^cap-mutations pending=\S+( heldBy=\S+)? quietFor=\d+ms after=\d+ms$/);
     timed().timing = null;
 
     view = await browser.open(dataPage('<input aria-label="Lookup" oninput="fetch(\'https://pending.test/value\')">'));

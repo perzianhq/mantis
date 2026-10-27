@@ -2240,6 +2240,15 @@ export class MantisBrowser {
               let timer: ReturnType<typeof setTimeout>;
               let unwatchShadows: (() => void) | undefined;
               const busyKinds = () => w.__mantisBusyKinds?.(since, ownIntervals, busyMax) ?? { timer: false, chained: false, interval: false, request: false, oneShotDelay: -1 };
+              const describe = (busy: ReturnType<typeof busyKinds>): string =>
+                ([busy.request && 'req', busy.timer && 'timer', busy.chained && 'chained', busy.interval && 'interval'].filter(Boolean).join('+') || 'none')
+                + (busy.oneShotDelay >= 0 ? `(oneShot=${busy.oneShotDelay}ms)` : '');
+              // Timing runs only: what was pending the first time a check deferred, since it has fired by the exit.
+              let heldBy = '';
+              const defer = (): void => {
+                if (reason && !heldBy) heldBy = `${describe(busyKinds())}@${Date.now() - start}ms`;
+                timer = st(check, 50);
+              };
               const capReason = (): string => {
                 const busy = busyKinds();
                 return busy.request ? 'cap-request' : busy.timer ? 'cap-timer' : busy.interval ? 'cap-interval' : 'cap-timer';
@@ -2250,10 +2259,8 @@ export class MantisBrowser {
                 clearTimeout(timer);
                 clearTimeout(cap);
                 // Timing runs only: what was still pending and how long the DOM had been quiet.
-                const busy = reason ? busyKinds() : null;
-                done(busy
-                  ? `${why} pending=${[busy.request && 'req', busy.timer && 'timer', busy.chained && 'chained', busy.interval && 'interval'].filter(Boolean).join('+') || 'none'}`
-                    + `${busy.oneShotDelay >= 0 ? ` oneShot=${busy.oneShotDelay}ms` : ''} quietFor=${Date.now() - lastMutation}ms after=${Date.now() - start}ms`
+                done(reason
+                  ? `${why} pending=${describe(busyKinds())}${heldBy ? ` heldBy=${heldBy}` : ''} quietFor=${Date.now() - lastMutation}ms after=${Date.now() - start}ms`
                   : undefined);
               };
               const check = (): void => {
@@ -2267,11 +2274,11 @@ export class MantisBrowser {
                   const busy = busyKinds();
                   if (busy.request && !busy.timer && !busy.interval) finish('cap-request');
                   else if (busy.chained && busy.timer) finish('cap-timer');
-                  else if (w.__mantisBusy?.(since, ownIntervals, busyMax, 500) && elapsed < busyMax) timer = st(check, 50);
-                  else if (w.__mantisBusy?.(since, ownIntervals, busyMax) && elapsed < intervalMax) timer = st(check, 50);
+                  else if (w.__mantisBusy?.(since, ownIntervals, busyMax, 500) && elapsed < busyMax) defer();
+                  else if (w.__mantisBusy?.(since, ownIntervals, busyMax) && elapsed < intervalMax) defer();
                   else finish(reason && (busy.request || busy.timer || busy.interval) ? capReason() : 'quiet');
-                } else if (w.__mantisBusy?.(since, ownIntervals, busyMax, 500) && elapsed < busyMax) timer = st(check, 50);
-                else if (w.__mantisBusy?.(since, ownIntervals, busyMax) && elapsed < intervalMax) timer = st(check, 50);
+                } else if (w.__mantisBusy?.(since, ownIntervals, busyMax, 500) && elapsed < busyMax) defer();
+                else if (w.__mantisBusy?.(since, ownIntervals, busyMax) && elapsed < intervalMax) defer();
                 else finish(reason && elapsed >= busyMax ? capReason() : 'quiet');
               };
               // An element whose same attribute keeps changing (carousel, spinner, ticker) is an animation:
