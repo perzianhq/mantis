@@ -7,11 +7,13 @@ import { z } from 'zod';
 import { MantisBrowser } from './browser.js';
 import { noHuman } from './fallback/captcha.js';
 import { runInstallCommand } from './install.js';
+import { MAX_FIND_QUERIES } from './translate.js';
 
 const reply = (text: string) => ({
   content: [{ type: 'text' as const, text }],
   ...(text.startsWith('error:') ? { isError: true } : {}),
 });
+const FIND_MAX_MESSAGE = `find takes at most ${MAX_FIND_QUERIES} texts per call; split them across calls`;
 
 function packageVersion(): string {
   try {
@@ -34,6 +36,12 @@ export function createServer(browser: MantisBrowser = new MantisBrowser()): McpS
     { instructions: UNTRUSTED_PAGE_NOTE },
   );
   const id = z.number().int();
+  const findText = z.union([z.string(), z.array(z.string()).min(1).max(MAX_FIND_QUERIES, FIND_MAX_MESSAGE)], {
+    // Surface the nested array cap rather than Zod's generic union error over MCP.
+    error: (issue) => issue.code === 'invalid_union' && Array.isArray(issue.input) && issue.input.length > MAX_FIND_QUERIES
+      ? FIND_MAX_MESSAGE
+      : undefined,
+  });
   const humanAvailable = !noHuman();
 
   server.registerTool(
@@ -63,9 +71,9 @@ export function createServer(browser: MantisBrowser = new MantisBrowser()): McpS
     {
       description:
         'Case-insensitive whole-page text search, including trimmed content; returns #numbers, actionable row neighbours, and bounded local context. ' +
-        'Give a list of up to 6 texts to search them all in one call. ' +
+        `Give a list of up to ${MAX_FIND_QUERIES} texts to search them all in one call. ` +
         'Use context_chars to expand just that local context; a matched heading is not a region label.',
-      inputSchema: { text: z.union([z.string(), z.array(z.string()).min(1).max(6)]), context_chars: z.number().int().min(80).max(800).optional() },
+      inputSchema: { text: findText, context_chars: z.number().int().min(80).max(800).optional() },
     },
     async ({ text, context_chars }) => reply(await browser.find(text, context_chars)),
   );
@@ -92,7 +100,7 @@ export function createServer(browser: MantisBrowser = new MantisBrowser()): McpS
   );
   server.registerTool(
     'select',
-    { description: 'Choose option text in select or combobox #id. A <select multiple> takes a list and its selection becomes exactly that list.', inputSchema: { id, option: z.union([z.string(), z.array(z.string()).min(1)]) } },
+    { description: 'Choose option text in select or combobox #id. A <select multiple> takes a list and its selection becomes exactly that list. Matching ignores case, accents and punctuation.', inputSchema: { id, option: z.union([z.string(), z.array(z.string()).min(1)]) } },
     async ({ id, option }) => reply(await browser.select(id, option)),
   );
   server.registerTool(

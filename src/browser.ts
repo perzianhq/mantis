@@ -100,6 +100,7 @@ type ToolTiming = {
   scans?: Map<string, number>;
   stack?: { phase: string; start: number; children: number }[];
   settle?: string;
+  routeRetry?: 'fired' | '1/changed' | '1/same';
 };
 
 /** Live count badges and durations may tick without changing a persisted control's identity. */
@@ -1335,7 +1336,7 @@ export class MantisBrowser {
         const phases = ['action', 'navigate', 'navigation', 'wait', 'dialog', 'captcha', 'capture', 'scan-before', 'scan-target', 'scan-after', 'translate', 'diff']
           .map((name) => `${name}=${Math.round(timing.phases.get(name) ?? 0)}ms`).join(' ');
         const scans = ['before', 'target', 'after'].map((name) => `${name}:${timing.scans?.get(name) ?? 0}`).join(',');
-        process.stderr.write(`mantis timing tool=${timing.tool} ${phases} scans=${scans}${timing.settle ? ` settle=${timing.settle}` : ''} total=${Math.round(performance.now() - timing.start)}ms\n`);
+        process.stderr.write(`mantis timing tool=${timing.tool} ${phases} scans=${scans}${timing.settle ? ` settle=${timing.settle}` : ''} total=${Math.round(performance.now() - timing.start)}ms${timing.routeRetry ? ` routeRetry=${timing.routeRetry}` : ''}\n`);
       }
     }
   }
@@ -1413,8 +1414,10 @@ export class MantisBrowser {
       // hand back the old page under the new route: give an unchanged route view one bounded retry.
       if (before && after && now === page && this.needsPageView(before.snap, after.snap)
         && this.sameVisibleContent(before.snap, after.snap)) {
+        if (this.timing) this.timing.routeRetry = 'fired';
         await this.timed('wait', () => this.settle(now, true, null, false, { max: 1500, idleGrace: 750 }));
         after = await this.scan(now, 'after').catch(() => null);
+        if (this.timing) this.timing.routeRetry = after && !this.sameVisibleContent(before.snap, after.snap) ? '1/changed' : '1/same';
       }
       if (before && after && now === page && before.doc !== null && before.doc === after.doc && !this.needsPageView(before.snap, after.snap)) {
         this.remember(after.snap, after.doc);

@@ -42,6 +42,7 @@ it('guides bottom-loaded feed search and focused local context', async () => {
   expect(description('find')).toContain('actionable row neighbours, and bounded local context');
   expect(description('find')).toContain('Use context_chars to expand just that local context');
   expect(description('find')).toContain('a matched heading is not a region label');
+  expect(description('select')).toContain('Matching ignores case, accents and punctuation.');
 });
 
 it('retains read verification, memory expansion and recovery contracts in compact descriptions', async () => {
@@ -130,4 +131,13 @@ it('flags errors with isError', async () => {
   const res = await call('click', { id: 4242 });
   expect(res.isError).toBe(true);
   expect(res.text).toMatch(/^error: no element #4242/);
+});
+
+it('caps multi-find at six texts with a split-call hint', async () => {
+  await call('open', { url: fixture('article.html') });
+  const accepted = await call('find', { text: ['one', 'two', 'three', 'four', 'five', 'six'] });
+  expect(accepted.text).not.toContain('find takes at most 6 texts per call');
+  const rejected = await call('find', { text: ['one', 'two', 'three', 'four', 'five', 'six', 'seven'] });
+  expect(rejected.isError).toBe(true);
+  expect(rejected.text).toContain('find takes at most 6 texts per call; split them across calls');
 });
