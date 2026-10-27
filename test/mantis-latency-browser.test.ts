@@ -109,6 +109,38 @@ describe('settle busy work grace', () => {
     expect(text).toContain('Delayed result');
     expect(ms).toBeGreaterThan(1200);
   });
+
+  it('returns soon after a one-shot timer that changes nothing finishes', async () => {
+    const view = await browser.open(dataPage('<button onclick="setTimeout(() => {}, 600)">Silent timer</button>'));
+    const { text, ms } = await elapsed(() => browser.click(idOf(view, 'Silent timer')));
+    expect(text).toContain('clicked');
+    expect(ms).toBeLessThan(timingCap(1300));
+  });
+
+  it('near miss: a timer that renders content is not cut off by the wake', async () => {
+    const view = await browser.open(dataPage(`
+      <button onclick="setTimeout(() => { const p = document.createElement('p'); p.textContent = 'Timer rendered'; document.body.append(p); }, 400)">Render timer</button>
+    `));
+    const text = await browser.click(idOf(view, 'Render timer'));
+    expect(text).toContain('Timer rendered');
+  });
+
+  it('near miss: a timer that starts a request whose result renders still shows it', async () => {
+    const view = await browser.open(dataPage(`
+      <button onclick="setTimeout(() => fetch('https://wake.test/data').then((r) => r.text()).then((t) => document.body.append(t)), 300)">Timer then fetch</button>
+    `));
+    const page = await pageOf();
+    await page.route('https://wake.test/**', async (route) => {
+      await new Promise((done) => setTimeout(done, 300));
+      await route.fulfill({ status: 200, contentType: 'text/plain', headers: { 'access-control-allow-origin': '*' }, body: 'Fetched after timer' }).catch(() => undefined);
+    });
+    try {
+      const text = await browser.click(idOf(view, 'Timer then fetch'));
+      expect(text).toContain('Fetched after timer');
+    } finally {
+      await page.unroute('https://wake.test/**');
+    }
+  });
 });
 
 describe('open late-dialog gate', () => {

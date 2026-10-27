@@ -148,6 +148,8 @@ const TRACKER = `(() => {
   // distinction so settle can treat it like an interval without hiding a one-shot result.
   let currentTimerChain = false;
   window.__mantisSetTimeout = st.bind(window);
+  // settle() sets this while it waits on pending work, so a finished timer re-checks at once instead of at the next poll.
+  window.__mantisWake = null;
   window.setTimeout = function (fn, ms, ...rest) {
     if (typeof fn !== 'function') return st.call(this, fn, ms, ...rest);
     const origin = originNow();
@@ -159,7 +161,7 @@ const TRACKER = `(() => {
       const prevChain = currentTimerChain;
       currentOrigin = origin;
       currentTimerChain = true;
-      try { return fn.apply(this, arguments); } finally { currentOrigin = prev; currentTimerChain = prevChain; }
+      try { return fn.apply(this, arguments); } finally { currentOrigin = prev; currentTimerChain = prevChain; if (window.__mantisWake) window.__mantisWake(); }
     }, ms, ...rest);
     live.set(id, { origin, interval: false, delay: Number.isFinite(Number(ms)) ? Math.max(0, Number(ms)) : 0, chained });
     return id;
@@ -2218,6 +2220,7 @@ export class MantisBrowser {
                 __mantisSetTimeout?: typeof setTimeout;
                 __mantisBusy?: (since?: number, includeIntervals?: boolean, maxDelay?: number, minIntervalDelay?: number) => boolean;
                 __mantisBusyKinds?: (since?: number, includeIntervals?: boolean, maxDelay?: number, minIntervalDelay?: number) => { timer: boolean; chained: boolean; interval: boolean; request: boolean; oneShotDelay: number };
+                __mantisWake?: (() => void) | null;
                 __mantisEpoch?: number;
                 __mantisDocStart?: number;
                 __mantisDomChanges?: number;
@@ -2245,9 +2248,24 @@ export class MantisBrowser {
                 + (busy.oneShotDelay >= 0 ? `(oneShot=${busy.oneShotDelay}ms)` : '');
               // Timing runs only: what was pending the first time a check deferred, since it has fired by the exit.
               let heldBy = '';
+              // True while the next check is a poll of pending work (not the quiet window after a mutation).
+              let polling = false;
+              let mutations = 0;
+              let finished = false;
               const defer = (): void => {
                 if (reason && !heldBy) heldBy = `${describe(busyKinds())}@${Date.now() - start}ms`;
+                polling = true;
                 timer = st(check, 50);
+              };
+              // A tracked timer just ran. If it changed nothing in the DOM, re-check now rather than at the next 50ms poll.
+              const wake = (): void => {
+                if (!polling) return;
+                const seen = mutations;
+                st(() => {
+                  if (finished || !polling || mutations !== seen) return;
+                  clearTimeout(timer);
+                  timer = st(check, 0);
+                }, 0);
               };
               // Only a self-rearming timer is pending: no request, interval or one-shot that could still render a result.
               const onlyQuietPoll = (): boolean => {
@@ -2259,6 +2277,8 @@ export class MantisBrowser {
                 return busy.request ? 'cap-request' : busy.timer ? 'cap-timer' : busy.interval ? 'cap-interval' : 'cap-timer';
               };
               const finish = (why = 'quiet'): void => {
+                finished = true;
+                if (w.__mantisWake === wake) w.__mantisWake = null;
                 obs.disconnect();
                 unwatchShadows?.();
                 clearTimeout(timer);
@@ -2269,6 +2289,7 @@ export class MantisBrowser {
                   : undefined);
               };
               const check = (): void => {
+                polling = false;
                 const elapsed = Date.now() - start;
                 if (elapsed < metaRefreshMs) timer = st(check, Math.min(50, metaRefreshMs - elapsed));
                 // An action's own interval can lead to a navigation, but an interval installed
@@ -2335,6 +2356,8 @@ export class MantisBrowser {
                 let real = false;
                 for (const m of records) if (!animated(m)) real = true;
                 if (!real) return;
+                mutations++;
+                polling = false;
                 if (reason || requestGrace) {
                   sawMutation = true;
                   lastMutation = Date.now();
@@ -2353,6 +2376,7 @@ export class MantisBrowser {
                 && w.__mantisDomChanges === w.__mantisEpochDomChanges
                 && !w.__mantisBusy?.(since, (w.__mantisEpoch ?? 0) > (w.__mantisDocStart ?? Infinity), timerMax);
               timer = st(check, idle ? idleGrace : quiet);
+              w.__mantisWake = wake;
               const cap = st(() => finish(reason ? (sawMutation ? 'cap-mutations' : capReason()) : 'quiet'), max);
             }),
           {
