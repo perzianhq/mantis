@@ -171,7 +171,7 @@ export function createServer(browser: MantisBrowser = new MantisBrowser()): McpS
   // ---- fallback ladder: only when read() is not enough. Try in this order. ----
   const visual = {
     id: id.optional(),
-    selector: z.string().optional().describe('CSS selector'),
+    selector: z.string().optional().describe('CSS selector or #N ref'),
   };
   server.registerTool(
     'media',
@@ -185,7 +185,7 @@ export function createServer(browser: MantisBrowser = new MantisBrowser()): McpS
     'data',
     {
       description:
-        'Prefer; text only. Extract image/SVG/chart alt, caption, text or Chart.js/ECharts/Highcharts values. id from read()/media(), or CSS selector.',
+        'Prefer; text only. Extract image/SVG/chart alt, caption, text or Chart.js/ECharts/Highcharts values; a table gives its rows. id from read()/media(), or CSS selector (#N refs work too).',
       inputSchema: visual,
     },
     async ({ id, selector }) => reply(await browser.data({ id, selector })),

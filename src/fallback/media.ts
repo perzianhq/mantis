@@ -12,6 +12,52 @@ export interface Target {
 /** Cap for the text `data()` returns. */
 export const DATA_CHARS = 1500;
 
+/** Format a semantic table or definition list, or return null for other elements. */
+export function formatTableRows(el: Element, budget: number): string | null {
+  if (el.tagName !== 'TABLE' && el.tagName !== 'DL') return null;
+  const text = (node: Node) => (node.textContent ?? '').replace(/\s+/g, ' ').trim();
+  const rows = el.tagName === 'TABLE'
+    ? Array.from(el.querySelectorAll('tr'))
+      .filter((row) => row.closest('table') === el)
+      .map((row) => {
+        const cells = Array.from(row.children).filter((cell) => cell.tagName === 'TH' || cell.tagName === 'TD');
+        if (!cells.length) return '';
+        const values = cells.map(text);
+        return cells[0]!.tagName === 'TH'
+          ? `${values[0]}: ${values.slice(1).join(' | ')}`.trimEnd()
+          : values.join(' | ');
+      })
+      .filter(Boolean)
+    : Array.from(el.children)
+      .filter((child) => child.tagName === 'DT')
+      .map((term) => {
+        const values: string[] = [];
+        for (let next = term.nextElementSibling; next && next.tagName !== 'DT'; next = next.nextElementSibling) {
+          if (next.tagName === 'DD') values.push(text(next));
+        }
+        return `${text(term)}: ${values.join(' | ')}`.trimEnd();
+      });
+  const caption = el.tagName === 'TABLE' ? el.querySelector('caption') : null;
+  const title = caption ? text(caption) : '';
+  const label = title || (el.getAttribute('aria-label') ?? '').replace(/\s+/g, ' ').trim();
+  let head = `table${label ? ` "${label}"` : ''} (${rows.length} rows)`;
+  const shown: string[] = [];
+  for (let i = 0; i < rows.length; i++) {
+    const tail = i + 1 < rows.length ? `\u2026${rows.length - i - 1} more rows` : '';
+    const candidate = [...shown, rows[i]!].join('\n');
+    if (`${head}\n${candidate}${tail ? `\n${tail}` : ''}`.length > budget) break;
+    shown.push(rows[i]!);
+  }
+  if (shown.length === rows.length) {
+    const output = [head, ...shown].join('\n');
+    return output.length <= budget ? output : output.slice(0, budget - 1).trimEnd() + '\u2026';
+  }
+  const tail = `\u2026${rows.length - shown.length} more rows`;
+  while (shown.length && [head, ...shown, tail].join('\n').length > budget) shown.pop();
+  if ([head, tail].join('\n').length > budget) head = head.slice(0, Math.max(0, budget - tail.length - 2)).trimEnd() + '\u2026';
+  return [head, ...shown, tail].join('\n');
+}
+
 // Built with the Function constructor so Playwright passes the element in (string form would not).
 const DESCRIBE = new Function('el', `return (${makeProbe.toString()})().describe(el)`) as (el: Element) => DataItem[];
 const DESCRIBE_BOUNDED = new Function('el', 'chartPointLimit', `return (${makeProbe.toString()})(chartPointLimit).describe(el)`) as (el: Element, chartPointLimit: number) => DataItem[];

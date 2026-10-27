@@ -9,7 +9,7 @@ import { matchOptions, optionHint } from './optionMatch.js';
 import type { ReadOptions } from './translate.js';
 import { SiteMemory, originOf } from './memory.js';
 import { NO_CHANGE, answerReadyCue, diffSnapshots, headerLines } from './diff.js';
-import { listMedia, describeElement, formatData } from './fallback/media.js';
+import { DATA_CHARS, listMedia, describeElement, formatData, formatTableRows } from './fallback/media.js';
 import type { Target } from './fallback/media.js';
 import { detectCaptcha, noHuman } from './fallback/captcha.js';
 import { recognize, closeOcr } from './fallback/ocr.js';
@@ -36,6 +36,47 @@ class ActionError extends Error {}
 
 /** An issued number belongs to a document that has since been replaced. */
 class NavigatedError extends Error {}
+
+/** Split a selector list without mistaking commas in CSS syntax for separators. */
+function splitSelectorList(selector: string): string[] {
+  const tokens: string[] = [];
+  let start = 0;
+  let brackets = 0;
+  let parentheses = 0;
+  let quote = '';
+  let escaped = false;
+  for (let i = 0; i < selector.length; i++) {
+    const char = selector[i]!;
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+    if (char === '\\') {
+      escaped = true;
+      continue;
+    }
+    if (quote) {
+      if (char === quote) quote = '';
+      continue;
+    }
+    if (char === '"' || char === "'") {
+      quote = char;
+    } else if (char === '[') {
+      brackets++;
+    } else if (char === ']') {
+      brackets = Math.max(0, brackets - 1);
+    } else if (char === '(') {
+      parentheses++;
+    } else if (char === ')') {
+      parentheses = Math.max(0, parentheses - 1);
+    } else if (char === ',' && !brackets && !parentheses) {
+      tokens.push(selector.slice(start, i));
+      start = i + 1;
+    }
+  }
+  tokens.push(selector.slice(start));
+  return tokens;
+}
 
 const FRAME_OPERATION_MS = 1_500;
 
@@ -1131,7 +1172,8 @@ export class MantisBrowser {
       }
       const { el, label } = resolved;
       try {
-        return formatData(label, await describeElement(el));
+        const rows = await el.evaluate(formatTableRows, DATA_CHARS);
+        return rows ?? formatData(label, await describeElement(el));
       } finally {
         await el.dispose();
       }
@@ -2059,6 +2101,33 @@ export class MantisBrowser {
   private async visualTarget(page: Page, t: Target): Promise<{ el: ElementHandle<Element>; label: string }> {
     if (t.id !== undefined) return this.target(page, t.id);
     if (t.selector) {
+      const tokens = splitSelectorList(t.selector);
+      const refs = tokens.flatMap((token) => {
+        const match = token.trim().match(/^#(\d+)$/);
+        return match ? [Number(match[1])] : [];
+      });
+      if (refs.length) {
+        const selector = tokens.filter((token) => !/^#\d+$/.test(token.trim())).join(',');
+        let selectorError: ActionError | undefined;
+        if (selector) {
+          try {
+            return await this.visualTarget(page, { selector });
+          } catch (e) {
+            if (!(e instanceof ActionError)) throw e;
+            selectorError = e;
+          }
+        }
+        let missing: ActionError | undefined;
+        for (const id of refs) {
+          try {
+            return await this.target(page, id);
+          } catch (e) {
+            if (!(e instanceof ActionError)) throw e;
+            missing = e;
+          }
+        }
+        throw selectorError ?? missing!;
+      }
       // Validate once in the main document, then search each child frame. A selector has
       // document-local scope, so the first match follows the same main-frame-first order as
       // ordinary page.$(), while still reaching cross-origin frames through Playwright.
