@@ -12,6 +12,15 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v5
+      - name: Wait for the npm package (published by a parallel workflow)
+        run: |
+          version="$(node -p "require('./server.json').version")"
+          for i in $(seq 1 30); do
+            if [ "$(npm view "mantis-browser@${version}" version --prefer-online 2>/dev/null)" = "${version}" ]; then exit 0; fi
+            sleep 10
+          done
+          echo "mantis-browser@${version} not on npm after 5 minutes" >&2
+          exit 1
       - name: Install MCP publisher
         run: |
           curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
