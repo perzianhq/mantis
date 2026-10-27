@@ -496,7 +496,7 @@ export class MantisBrowser {
   }
 
   /** Search the whole page, including parts read() trimmed or summarised, for controls and text. */
-  async find(query: string, contextChars?: number): Promise<string> {
+  async find(query: string | string[], contextChars?: number): Promise<string> {
     return this.guard(async () => {
       const page = await this.activePage();
       const captchaPromise = detectCaptcha(page);

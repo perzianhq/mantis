@@ -748,9 +748,22 @@ export function translate(snap: Snapshot, budget: number = BUDGET_CHARS, opts: R
 /**
  * Search the whole page (nothing trimmed or summarised) for controls and text containing `query`,
  * case-insensitive. Exact name matches first, controls before text, then page order; each hit says
- * which region it is in.
+ * which region it is in. A list of queries runs each search in one call.
  */
-export function findInSnapshot(snap: Snapshot, query: string, max = 20, contextChars = 360): string {
+export function findInSnapshot(snap: Snapshot, query: string | string[], max = 20, contextChars = 360): string {
+  if (!Array.isArray(query)) return findOne(snap, query, max, contextChars);
+  const queries = [...new Map(query.map((q) => q.trim()).filter(Boolean).map((q) => [q.toLowerCase(), q] as const)).values()].slice(0, MAX_FIND_QUERIES);
+  if (!queries.length) return 'error: give the text to find';
+  if (queries.length === 1) return findOne(snap, queries[0]!, max, contextChars);
+  // One call, several searches: each keeps its own header so the answers stay separable.
+  const each = Math.max(5, Math.min(max, Math.floor(max * 1.5 / queries.length)));
+  return queries.map((q) => findOne(snap, q, each, contextChars)).join('\n\n');
+}
+
+/** Most searches one multi-query find runs. */
+export const MAX_FIND_QUERIES = 6;
+
+function findOne(snap: Snapshot, query: string, max: number, contextChars: number): string {
   const q = query.toLowerCase().replace(/\s+/g, ' ').trim();
   if (!q) return 'error: give the text to find';
   const nodes = deriveRegions(snap);
