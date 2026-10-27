@@ -47,7 +47,7 @@ Haiku on the same task (published / rerun): tokens -59% / -69%, time -41% / -58%
 
 ## Honesty note
 
-This is a selected example from the 16 long tasks, picked for the demo because short tasks tie. Across all long-live-v1 tasks the medians are smaller: wall time -33% on both models, input tokens -28% (Luna) and -42% (Haiku), and total Haiku cost -26%. Say so in the caption. Full results and failures: `bench/RESULTS.md`.
+This is a selected example from the 16 long tasks, picked for the demo because short tasks tie. Across all long-live-v1 tasks the medians are smaller: wall time -36% on both models, input tokens -29% (Luna) and -47% (Haiku) (fresh same-session tree rerun, 20261027). Say so in the caption. Full results and failures: `bench/RESULTS.md`.
 
 ## Recording tips
 
