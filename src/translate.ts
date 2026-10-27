@@ -350,7 +350,7 @@ function renderBody(nodes: RawNode[], lvl: Level, ctx: Ctx): { lines: string[]; 
 
   const labelledFacts = new Set<number>();
   const pairedLabelled = (group: number[]): void => {
-    for (const value of group.filter((i) => nodes[i].labelledValue === true)) {
+    for (const value of group.filter((i) => nodes[i].labelledValue === true || nodes[i].valueControl)) {
       // A value belongs to its adjacent dt/th, not to any labelled text elsewhere in its region.
       const label = [...group].reverse().find((i) => i < value && value - i <= 2 && nodes[i].labelledValue === false)
         ?? group.find((i) => i > value && i - value <= 2 && nodes[i].labelledValue === false);
@@ -363,7 +363,7 @@ function renderBody(nodes: RawNode[], lvl: Level, ctx: Ctx): { lines: string[]; 
   const rows = new Map<number, number[]>();
   const parents = new Map<number, number[]>();
   nodes.forEach((n, i) => {
-    if (!n.labelled) return;
+    if (!n.labelled && !n.valueControl) return;
     if (n.row !== undefined) (rows.get(n.row) ?? rows.set(n.row, []).get(n.row)!).push(i);
     else (parents.get(n.parent) ?? parents.set(n.parent, []).get(n.parent)!).push(i);
   });
@@ -756,7 +756,7 @@ export function findInSnapshot(snap: Snapshot, query: string, max = 20, contextC
   const nodes = deriveRegions(snap);
   const hits = nodes
     .map((n, i) => ({ n, i }))
-    .filter(({ n }) => n.kind !== 'region' && (n.name.toLowerCase().includes(q) || n.href?.toLowerCase().includes(q) || (!n.secret && !!n.value?.toLowerCase().includes(q))))
+    .filter(({ n }) => n.kind !== 'region' && (n.name.toLowerCase().includes(q) || n.href?.toLowerCase().includes(q) || (!n.secret && !!n.value?.toLowerCase().includes(q)) || !!n.attrs?.some((a) => a.toLowerCase().includes(q))))
     .sort((a, b) =>
       Number(norm(b.n.name) === q) - Number(norm(a.n.name) === q) ||
       Number(b.n.kind === 'interactive') - Number(a.n.kind === 'interactive') ||
@@ -807,7 +807,7 @@ export function findInSnapshot(snap: Snapshot, query: string, max = 20, contextC
   };
   const lines = hits.slice(0, max).map(({ n, i }) => {
     const body =
-      n.kind === 'interactive' ? interactiveLine(n, { maxName: 80 })
+      n.kind === 'interactive' ? interactiveLine({ ...n, identity: n.identity ?? n.attrs }, { maxName: 80 })
         : n.kind === 'heading' ? `${'#'.repeat(Math.min(n.level ?? 1, 4))} ${quote(clip(n.name, 120))}`
           : `"${quote(snippet(n.name))}"`;
     const local = context(i);

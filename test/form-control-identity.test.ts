@@ -34,4 +34,22 @@ describe('form-control identity', () => {
     const named = lineFor(view, 'value "South"');
     expect(named).not.toMatch(/\b(?:id|name)=/);
   });
+  it('find matches a control by its id or name even when read hides the marker', async () => {
+    const page = 'data:text/html,' + encodeURIComponent(`<!doctype html><title>Find by id</title>
+      <select id="dropdown-size" name="sz" aria-label="Pick one"><option>Small</option><option>Large</option></select>
+      <select id="dropdown-color" name="clr" aria-label="Choose"><option>Red</option><option>Blue</option></select>`);
+
+    await browser.open(page);
+    const hit = await browser.find('dropdown-color');
+    expect(hit).toMatch(/found 1 match/);
+    expect(hit).toMatch(/combobox "Choose".*\(id=dropdown-color, name=clr\)/);
+  });
+
+  it('find by id does not match a different control or an absent id', async () => {
+    const page = 'data:text/html,' + encodeURIComponent(`<!doctype html><title>Find by id near miss</title>
+      <select id="dropdown-size" aria-label="Pick one"><option>Small</option></select>`);
+
+    await browser.open(page);
+    expect(await browser.find('dropdown-color')).toMatch(/no control or text containing/);
+  });
 });

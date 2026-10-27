@@ -30,6 +30,8 @@ export interface RawNode {
   value?: string;
   /** Native form-control attributes that distinguish an otherwise similarly named action target. */
   identity?: string[];
+  /** Same id/name markers on every control that has them; searchable by find, never shown in read. */
+  attrs?: string[];
   href?: string;
   /** Option labels for native <select>. */
   options?: string[];
@@ -60,6 +62,8 @@ export interface RawNode {
   labelled?: boolean;
   /** A labelled field's value side (dd or td paired with a header cell). */
   labelledValue?: boolean;
+  /** Interactive only: sits in a labelled field's value side, so its dt/th label is a real fact. */
+  valueControl?: boolean;
   /** Interactive only: a text-entry field that has keyboard focus (site memory never hides it). */
   focused?: boolean;
   /** Control found only by the empty-page screen-reader-content pass. */
@@ -1387,7 +1391,16 @@ export function walker(includeSrOnly = false): WalkResult {
       (el.localName === 'td' && !!el.parentElement?.querySelector(':scope > th'));
     const role = interactiveRole(el, explicit, cs);
     if (role) {
-      if (shown) emitInteractive(el, role, parent, depth, r, srOnly, requiresOpen);
+      if (shown) {
+        const before = nodes.length;
+        emitInteractive(el, role, parent, depth, r, srOnly, requiresOpen);
+        if (labelled && nodes.length > before) {
+          const cell = el.closest('dd,td,dt,th');
+          if (cell && (cell.localName === 'dd' || (cell.localName === 'td' && !!cell.parentElement?.querySelector(':scope > th')))) {
+            nodes[nodes.length - 1].valueControl = true;
+          }
+        }
+      }
       // Custom interactive containers are common around a real secondary action (for example,
       // a card-wide role=button with a nested Delete button). The container remains useful, but
       // hiding the child makes the independently actionable operation unreachable. Descend with
@@ -1574,7 +1587,10 @@ export function walker(includeSrOnly = false): WalkResult {
   const sameLook = new Map<string, number>();
   for (const c of identified) sameLook.set(lookOf(c.node), 0);
   for (const n of nodes) if (n.kind === 'interactive' && sameLook.has(lookOf(n))) sameLook.set(lookOf(n), sameLook.get(lookOf(n))! + 1);
-  for (const c of identified) if (sameLook.get(lookOf(c.node))! > 1) c.node.identity = c.identity;
+  for (const c of identified) {
+    c.node.attrs = c.identity;
+    if (sameLook.get(lookOf(c.node))! > 1) c.node.identity = c.identity;
+  }
 
   // Do not let document order decide which third of a long page is useful.  We still walk the
   // page to find content around the current scroll position, then retain the viewport, its near
