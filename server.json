@@ -6,12 +6,12 @@
     "url": "https://github.com/perzianhq/mantis",
     "source": "github"
   },
-  "version": "0.1.9",
+  "version": "0.1.10",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "mantis-browser",
-      "version": "0.1.9",
+      "version": "0.1.10",
       "transport": {
         "type": "stdio"
       }

@@ -32,6 +32,8 @@ Security and threat model: [SECURITY.md](SECURITY.md).
 
 Mantis vs the accessibility tree (Playwright MCP) on public sites, `gpt-6-luna` and `claude-haiku-5-5`. Every cell is a per-run median; time is end-to-end wall time per run:
 
+*0.1.10: headline numbers are 0.1.9's; Haiku subset smoke-checked.*
+
 **Long tasks** (correct: 14 keyed tasks, 42 runs per cell; medians: all 16 tasks, 48 runs per cell; both approaches run in the same session):
 
 | | Luna Mantis | Luna tree | Haiku Mantis | Haiku tree |
