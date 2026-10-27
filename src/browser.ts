@@ -206,7 +206,7 @@ const TRACKER = `(() => {
   };
   window.__mantisBusyKinds = (since, includeIntervals = false, maxDelay = Infinity, minIntervalDelay = 0) => {
     const from = since === undefined ? -Infinity : since;
-    const kinds = { timer: false, chained: false, interval: false, request: false };
+    const kinds = { timer: false, chained: false, interval: false, request: false, oneShotDelay: -1 };
     for (const timer of live.values()) {
       if (timer.origin < from || timer.delay > maxDelay) continue;
       if (timer.interval) {
@@ -214,6 +214,7 @@ const TRACKER = `(() => {
       } else {
         kinds.timer = true;
         if (timer.chained) kinds.chained = true;
+        else kinds.oneShotDelay = Math.max(kinds.oneShotDelay, timer.delay);
       }
     }
     for (const req of reqs) if (req.origin >= from) kinds.request = true;
@@ -2216,7 +2217,7 @@ export class MantisBrowser {
               const w = window as unknown as {
                 __mantisSetTimeout?: typeof setTimeout;
                 __mantisBusy?: (since?: number, includeIntervals?: boolean, maxDelay?: number, minIntervalDelay?: number) => boolean;
-                __mantisBusyKinds?: (since?: number, includeIntervals?: boolean, maxDelay?: number, minIntervalDelay?: number) => { timer: boolean; chained: boolean; interval: boolean; request: boolean };
+                __mantisBusyKinds?: (since?: number, includeIntervals?: boolean, maxDelay?: number, minIntervalDelay?: number) => { timer: boolean; chained: boolean; interval: boolean; request: boolean; oneShotDelay: number };
                 __mantisEpoch?: number;
                 __mantisDocStart?: number;
                 __mantisDomChanges?: number;
@@ -2238,7 +2239,7 @@ export class MantisBrowser {
               let lastMutation = start;
               let timer: ReturnType<typeof setTimeout>;
               let unwatchShadows: (() => void) | undefined;
-              const busyKinds = () => w.__mantisBusyKinds?.(since, ownIntervals, busyMax) ?? { timer: false, chained: false, interval: false, request: false };
+              const busyKinds = () => w.__mantisBusyKinds?.(since, ownIntervals, busyMax) ?? { timer: false, chained: false, interval: false, request: false, oneShotDelay: -1 };
               const capReason = (): string => {
                 const busy = busyKinds();
                 return busy.request ? 'cap-request' : busy.timer ? 'cap-timer' : busy.interval ? 'cap-interval' : 'cap-timer';
@@ -2248,7 +2249,12 @@ export class MantisBrowser {
                 unwatchShadows?.();
                 clearTimeout(timer);
                 clearTimeout(cap);
-                done(reason ? why : undefined);
+                // Timing runs only: what was still pending and how long the DOM had been quiet.
+                const busy = reason ? busyKinds() : null;
+                done(busy
+                  ? `${why} pending=${[busy.request && 'req', busy.timer && 'timer', busy.chained && 'chained', busy.interval && 'interval'].filter(Boolean).join('+') || 'none'}`
+                    + `${busy.oneShotDelay >= 0 ? ` oneShot=${busy.oneShotDelay}ms` : ''} quietFor=${Date.now() - lastMutation}ms after=${Date.now() - start}ms`
+                  : undefined);
               };
               const check = (): void => {
                 const elapsed = Date.now() - start;

@@ -141,7 +141,7 @@ describe('settle timing reasons', () => {
     let view = await browser.open(dataPage('<button onclick="setInterval(() => document.body.append(document.createTextNode(\'x\')), 40)">Mutate forever</button>'));
     timed().timing = { tool: 'click', start: performance.now(), phases: new Map() };
     await browser.click(idOf(view, 'Mutate forever'));
-    expect(timed().timing?.settle).toBe('cap-mutations');
+    expect(timed().timing?.settle).toMatch(/^cap-mutations pending=\S+( oneShot=\d+ms)? quietFor=\d+ms after=\d+ms$/);
     timed().timing = null;
 
     view = await browser.open(dataPage('<input aria-label="Lookup" oninput="fetch(\'https://pending.test/value\')">'));
@@ -152,14 +152,14 @@ describe('settle timing reasons', () => {
     });
     timed().timing = { tool: 'type', start: performance.now(), phases: new Map() };
     await browser.type(idOf(view, 'textbox "Lookup"'), 'value');
-    expect(timed().timing?.settle).toBe('cap-request');
+    expect(timed().timing?.settle).toMatch(/^cap-request pending=req/);
     timed().timing = null;
     await page.unroute('https://pending.test/**');
 
     await browser.open(dataPage('<main>Still</main>'));
     timed().timing = { tool: 'read', start: performance.now(), phases: new Map() };
     await (browser as unknown as { settle(page: Page): Promise<void> }).settle(await pageOf());
-    expect(timed().timing?.settle).toBe('quiet');
+    expect(timed().timing?.settle).toMatch(/^quiet pending=none quietFor=\d+ms after=\d+ms$/);
     timed().timing = null;
   });
 });
