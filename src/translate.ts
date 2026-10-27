@@ -336,6 +336,8 @@ function renderBody(nodes: RawNode[], lvl: Level, ctx: Ctx): { lines: string[]; 
   let proseShown = 0;
   let offscreenLabelled = 0;
   let offscreenLabelledChars = 0;
+  let offscreenLinkValued = 0;
+  let offscreenLinkValuedChars = 0;
   const kids = new Map<number, number[]>();
   nodes.forEach((n, i) => {
     const list = kids.get(n.parent);
@@ -378,6 +380,7 @@ function renderBody(nodes: RawNode[], lvl: Level, ctx: Ctx): { lines: string[]; 
   const line = (n: RawNode, o: LineOpts = {}): string => interactiveLine(n, { ...o, showHref: showHref(n), openHint: hintFor(n) });
 
   const labelledFacts = new Set<number>();
+  const linkValuedFacts = new Set<number>();
   const pairedLabelled = (group: number[]): void => {
     for (const value of group.filter((i) => nodes[i].labelledValue === true || nodes[i].valueControl)) {
       // A value belongs to its adjacent dt/th, not to any labelled text elsewhere in its region.
@@ -386,6 +389,10 @@ function renderBody(nodes: RawNode[], lvl: Level, ctx: Ctx): { lines: string[]; 
       if (label !== undefined) {
         labelledFacts.add(label);
         labelledFacts.add(value);
+        if (nodes[value].valueControl) {
+          linkValuedFacts.add(label);
+          linkValuedFacts.add(value);
+        }
       }
     }
   };
@@ -401,15 +408,23 @@ function renderBody(nodes: RawNode[], lvl: Level, ctx: Ctx): { lines: string[]; 
 
   const survives = (n: RawNode, i: number): boolean => {
     // Keep interactive controls and complete label:value facts, but not bare table headers.
-    const keepLabelled = n.labelled && (n.kind === 'interactive' || labelledFacts.has(i));
+    const linkValuedFact = linkValuedFacts.has(i);
+    const keepLabelled = linkValuedFact || (n.labelled && (n.kind === 'interactive' || labelledFacts.has(i)));
     if (keepLabelled && !n.inViewport && !ctx.full) {
       const chars = n.name.length + (n.value?.length ?? 0);
-      if (offscreenLabelled >= 20 || offscreenLabelledChars + chars > 1000) {
+      const count = linkValuedFact ? offscreenLinkValued : offscreenLabelled;
+      const usedChars = linkValuedFact ? offscreenLinkValuedChars : offscreenLabelledChars;
+      if (count >= 20 || usedChars + chars > 1000) {
         dropped++;
         return false;
       }
-      offscreenLabelled++;
-      offscreenLabelledChars += chars;
+      if (linkValuedFact) {
+        offscreenLinkValued++;
+        offscreenLinkValuedChars += chars;
+      } else {
+        offscreenLabelled++;
+        offscreenLabelledChars += chars;
+      }
     }
     if (keepLabelled) return true;
     if (n.labelled && !n.inViewport && !ctx.full) {
