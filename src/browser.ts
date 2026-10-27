@@ -1421,10 +1421,21 @@ export class MantisBrowser {
   /** URL changes alone are not a useful page view while a client router has not painted yet. */
   private sameVisibleContent(before: Snapshot, after: Snapshot): boolean {
     if (before.title !== after.title) return false;
-    const visible = (snap: Snapshot): string => JSON.stringify(snap.nodes
+    // States and ids are left out: a click moves focus onto the clicked link without the page repainting.
+    const visible = (snap: Snapshot): string[] => snap.nodes
       .filter((n) => n.inViewport)
-      .map(({ kind, role, name, value, states, id }) => [kind, role, name, value ?? '', states, id ?? null]));
-    return visible(before) === visible(after);
+      .map(({ kind, role, name, value }) => JSON.stringify([kind, role, name, value ?? '']));
+    const was = visible(before);
+    const now = visible(after);
+    const left = new Map<string, number>();
+    for (const key of was) left.set(key, (left.get(key) ?? 0) + 1);
+    let shared = 0;
+    for (const key of now) {
+      const n = left.get(key) ?? 0;
+      if (n > 0) { shared++; left.set(key, n - 1); }
+    }
+    const most = Math.max(was.length, now.length);
+    return most === 0 || shared / most >= 0.9;
   }
 
   private lostQueryOnBack(from: string, landed: string): boolean {
