@@ -5,6 +5,7 @@ import type { Browser, BrowserContext, ElementHandle, Frame, Page } from 'playwr
 import { bounded, capture, resolve } from './capture/index.js';
 import type { RawNode, Snapshot } from './capture/index.js';
 import { findInSnapshot, translate } from './translate.js';
+import { matchOptions, optionHint } from './optionMatch.js';
 import type { ReadOptions } from './translate.js';
 import { SiteMemory, originOf } from './memory.js';
 import { NO_CHANGE, answerReadyCue, diffSnapshots, headerLines } from './diff.js';
@@ -606,6 +607,16 @@ export class MantisBrowser {
       const { el, label } = await this.target(page, id);
       try {
         const native = await el.evaluate((node) => node instanceof HTMLSelectElement);
+        // A link that really goes somewhere would navigate away before any option could be chosen;
+        // a dropdown toggle (hash or script href, or marked as a popup trigger) is fine.
+        const navigates = !native && await el.evaluate((node) => {
+          if (!(node instanceof HTMLAnchorElement)) return false;
+          const href = node.getAttribute('href') ?? '';
+          const popup = node.hasAttribute('aria-haspopup') || node.hasAttribute('aria-expanded') || node.hasAttribute('aria-controls') ||
+            node.hasAttribute('data-toggle') || node.hasAttribute('data-bs-toggle');
+          return !popup && href !== '' && !href.startsWith('#') && !/^javascript:/i.test(href);
+        });
+        if (navigates) throw new ActionError(`${label} is a link to another page, not a select; click it to follow it`);
         const picked = native
           ? await this.chooseOption(el, label, option)
           : await this.chooseCustomOption(el, label, typeof option === 'string' ? option : this.oneOption(option, label));
@@ -630,39 +641,39 @@ export class MantisBrowser {
    */
   private async chooseOption(el: ElementHandle<Element>, label: string, option: string | string[]): Promise<string> {
     const wants = Array.isArray(option) ? option : [option];
-    const found = await el.evaluate((node, list) => {
+    const found = await el.evaluate((node) => {
       if (!(node instanceof HTMLSelectElement)) return { notSelect: true as const };
-      const opts = Array.from(node.options).map((o, index) => ({
-        index, value: o.value, label: (o.label || o.text).replace(/\s+/g, ' ').trim(),
-      }));
-      const hits = list.map((want) => {
-        const w = want.toLowerCase();
-        return opts.find((o) => o.value === want) ??
-          opts.find((o) => o.label === want) ??
-          opts.find((o) => o.label.toLowerCase() === w) ??
-          opts.find((o) => o.label.toLowerCase().includes(w));
-      });
-      return { multiple: node.multiple, hits: hits.map((h) => h?.index ?? -1), picked: hits.map((h) => h?.label), labels: opts.map((o) => o.label) };
-    }, wants);
+      const opts = Array.from(node.options).map((o) => ({ value: o.value, label: (o.label || o.text).replace(/\s+/g, ' ').trim() }));
+      return { multiple: node.multiple, opts };
+    });
     if ('notSelect' in found) {
       throw new ActionError(`${label} is not a <select>; click it, then click the option you want`);
     }
     if (wants.length > 1 && !found.multiple) {
       throw new ActionError(`${label} is a single-choice select; give one option, not ${wants.length}`);
     }
-    const missing = found.hits.findIndex((index) => index < 0);
-    if (missing >= 0) {
-      throw new ActionError(`no option "${wants[missing]}" in ${label}; options: ${found.labels.slice(0, 15).join(' | ')}`);
+    const labels = found.opts.map((o) => o.label);
+    const hits: number[] = [];
+    for (const want of wants) {
+      const m = matchOptions(found.opts, want);
+      if (!m.hits.length) {
+        throw new ActionError(`no option "${want}" in ${label}; ${optionHint(labels, want)}`);
+      }
+      if (m.loose && m.hits.length > 1) {
+        throw new ActionError(`ambiguous option "${want}" in ${label}; candidates: ${m.hits.slice(0, 15).map((i) => labels[i]).join(' | ')}`);
+      }
+      hits.push(m.hits[0]!);
     }
-    await el.selectOption(found.hits.map((index) => ({ index })), { timeout: this.actionTimeout });
-    return found.picked.map((text, i) => text ?? wants[i]).join(', ');
+    await el.selectOption(hits.map((index) => ({ index })), { timeout: this.actionTimeout });
+    return hits.map((i) => labels[i]).join(', ');
   }
 
   /** Open a custom combobox/listbox and choose its one unambiguous matching option. */
   private async chooseCustomOption(el: ElementHandle<Element>, label: string, option: string): Promise<string> {
     // Runs in the control's own frame: lists the visible options of its popup and matches
     // the wanted text exactly, then case-insensitively, then as a substring.
-    const scan = () => el.evaluateHandle((control, want) => {
+    const ITEMS = '[role="option"], [role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"], option, a[href], button, li';
+    const scan = () => el.evaluateHandle((control, items) => {
       const clean = (text: string | null | undefined): string => (text ?? '').replace(/\s+/g, ' ').trim();
       const visible = (node: Element): boolean => {
         if (!node.getClientRects().length) return false;
@@ -687,36 +698,45 @@ export class MantisBrowser {
       const add = (node: Element): void => { if (!options.includes(node) && visible(node)) options.push(node); };
       for (const root of roots) {
         if (root.matches('[role="option"], option')) add(root);
-        for (const node of Array.from(root.querySelectorAll('[role="option"], option'))) add(node);
+        for (const node of Array.from(root.querySelectorAll('[role="option"], [role="menuitem"], option'))) add(node);
         // Some listboxes omit explicit option roles; their direct children are still options.
         if (root.getAttribute('role') === 'listbox') for (const node of Array.from(root.children)) add(node);
       }
-      const entries = options.map((node) => ({ node, label: clean(node.getAttribute('aria-label') || node.textContent) })).filter((entry) => entry.label);
-      const lower = want.toLowerCase();
-      const exact = entries.filter((entry) => entry.label === want);
-      const insensitive = entries.filter((entry) => entry.label.toLowerCase() === lower);
-      const substring = entries.filter((entry) => entry.label.toLowerCase().includes(lower));
-      const matches = exact.length ? exact : insensitive.length ? insensitive : substring;
-      return {
-        labels: entries.map((entry) => entry.label),
-        matches: matches.map((entry) => entry.label),
-        node: matches.length === 1 ? matches[0]!.node : null,
-      };
-    }, option);
-    type Found = { labels: string[]; matches: string[]; node: ElementHandle<Element> | null };
+      // Plain dropdowns (a toggle link or button over a list of links) carry no ARIA at all:
+      // fall back to the items that appeared only after the click.
+      if (!options.length) {
+        const seen = (globalThis as { __mantisSeen?: Set<Element> }).__mantisSeen;
+        if (seen) for (const node of Array.from(doc.querySelectorAll(items))) if (!seen.has(node) && !control.contains(node)) add(node);
+      }
+      const all = options.map((node) => ({ node, label: clean(node.getAttribute('aria-label') || node.textContent) })).filter((entry) => entry.label);
+      // A wrapper (li) and the link inside it are one choice: keep the innermost element of each label.
+      const entries = all.filter((entry) => !all.some((other) => other.node !== entry.node && other.label === entry.label && entry.node.contains(other.node)));
+      return { labels: entries.map((entry) => entry.label), nodes: entries.map((entry) => entry.node) };
+    }, ITEMS);
+    type Found = { labels: string[]; matches: number[]; loose: boolean; node: ElementHandle<Element> | null };
     const find = async (): Promise<Found> => {
       const handle = await scan();
       try {
-        const [labels, matches, node] = await Promise.all([
-          handle.getProperty('labels').then((h) => h.jsonValue() as Promise<string[]>),
-          handle.getProperty('matches').then((h) => h.jsonValue() as Promise<string[]>),
-          handle.getProperty('node').then((h) => h.asElement() as ElementHandle<Element> | null),
-        ]);
-        return { labels, matches, node };
+        const labels = await handle.getProperty('labels').then((h) => h.jsonValue() as Promise<string[]>);
+        const nodes = await handle.getProperty('nodes').then((h) => h.getProperties());
+        const m = matchOptions(labels.map((l) => ({ label: l })), option);
+        const picked = m.hits.length === 1 ? m.hits[0]! : -1;
+        let node: ElementHandle<Element> | null = null;
+        for (const [key, h] of nodes) {
+          if (Number(key) === picked) node = h.asElement() as ElementHandle<Element> | null;
+          else await h.dispose();
+        }
+        return { labels, matches: m.hits, loose: m.loose, node };
       } finally {
         await handle.dispose();
       }
     };
+    await el.evaluate((control, items) => {
+      const doc = control.ownerDocument;
+      const seen = new Set<Element>();
+      for (const node of Array.from(doc.querySelectorAll(items))) if (node.getClientRects().length) seen.add(node);
+      (globalThis as { __mantisSeen?: Set<Element> }).__mantisSeen = seen;
+    }, ITEMS);
     try {
       await el.click({ timeout: this.actionTimeout });
     } catch (e) {
@@ -741,10 +761,10 @@ export class MantisBrowser {
     const choice = found.node;
     try {
       if (found.matches.length > 1) {
-        throw new ActionError(`ambiguous option "${option}" in ${label}; candidates: ${found.matches.slice(0, 15).join(' | ')}`);
+        throw new ActionError(`ambiguous option "${option}" in ${label}; candidates: ${found.matches.slice(0, 15).map((i) => found.labels[i]).join(' | ')}`);
       }
       if (!choice) {
-        throw new ActionError(`no option "${option}" in ${label}; options: ${found.labels.slice(0, 15).join(' | ')}`);
+        throw new ActionError(`no option "${option}" in ${label}; ${optionHint(found.labels, option)}`);
       }
       try {
         await choice.click({ timeout: this.actionTimeout });
@@ -754,7 +774,7 @@ export class MantisBrowser {
     } finally {
       await choice?.dispose();
     }
-    return found.matches[0]!;
+    return found.labels[found.matches[0]!]!;
   }
 
   /** Fill several fields in one call: text, dropdown option, or true/false for checkboxes and radios. */
