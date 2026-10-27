@@ -475,7 +475,7 @@ export class MantisBrowser {
       // Several truly disabled controls on first load usually mean the page is still hydrating.
       const hydrating = this.hasDisabledControls(observed.snap);
       const gated = !dialogAlreadyShown && (hydrating || covered.length >= 2 || (blocked.length >= 2 && blocked.length * 2 >= controls.length));
-      if (gated && await this.timed('dialog', () => this.waitForLateDialog(page, disabled.map((n) => n.id!).filter((id) => id !== undefined)))) {
+      if (gated && await this.timed('dialog', () => this.waitForLateDialog(page, disabled.map((n) => n.id!).filter((id) => id !== undefined), hydrating ? 1500 : 1000))) {
         observed = await this.timed('capture', () => this.observe(page));
       }
       const snap = observed.snap;
@@ -2017,9 +2017,12 @@ export class MantisBrowser {
     }).catch(() => false);
   }
 
-  /** Observe only a blocked page for a rendered dialog or a disabled control becoming enabled. */
-  private async waitForLateDialog(page: Page, disabledIds: number[]): Promise<boolean> {
-    return page.evaluate((ids) => new Promise<boolean>((done) => {
+  /**
+   * Observe only a blocked page for a rendered dialog or a disabled control becoming enabled.
+   * A page still hydrating gets the long wait; a page that is only covered gets a shorter one.
+   */
+  private async waitForLateDialog(page: Page, disabledIds: number[], waitMs: number): Promise<boolean> {
+    return page.evaluate(([ids, limit]) => new Promise<boolean>((done) => {
       const registry = (window as unknown as { __mantis?: { byId: Map<number, WeakRef<Element>> } }).__mantis;
       const initial = new Map(ids.map((id) => [id, registry?.byId.get(id)?.deref()]));
       const rendered = (el: Element): boolean => {
@@ -2044,8 +2047,8 @@ export class MantisBrowser {
       const finish = (value: boolean): void => { observer.disconnect(); clearTimeout(timer); done(value); };
       const observer = new MutationObserver(() => { if (changed()) finish(true); });
       observer.observe(document, { subtree: true, childList: true, attributes: true });
-      const timer = setTimeout(() => finish(false), 1500);
-    }), disabledIds).catch(() => false);
+      const timer = setTimeout(() => finish(false), limit);
+    }), [disabledIds, waitMs] as [number[], number]).catch(() => false);
   }
 
   private isHeadless(): boolean {

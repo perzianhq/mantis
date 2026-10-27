@@ -113,6 +113,24 @@ describe('open late-dialog gate', () => {
     `));
     expect(text).toContain('Late dialog');
   });
+
+  it('gives up sooner on a covered page that never shows a dialog', async () => {
+    const { ms } = await elapsed(() => browser.open(dataPage(`
+      <style>.backdrop { position: fixed; inset: 0; z-index: 2 }</style>
+      <button>First</button><button>Second</button><button>Third</button><div class="backdrop"></div>
+    `)));
+    expect(ms).toBeLessThan(timingCap(1400));
+  });
+
+  it('near miss: a hydrating page still waits long enough for its controls to enable', async () => {
+    const text = await browser.open(dataPage(`
+      <button disabled id="a">Alpha</button><button disabled id="b">Beta</button><button disabled id="c">Gamma</button>
+      <script>setTimeout(() => document.querySelectorAll('button').forEach((b) => { b.disabled = false }), 1250)</script>
+    `));
+    const buttons = text.split('\n').filter((line) => /button "(Alpha|Beta|Gamma)"/.test(line));
+    expect(buttons).toHaveLength(3);
+    expect(buttons.join('\n')).not.toContain('disabled');
+  });
 });
 
 describe('settle timing reasons', () => {
