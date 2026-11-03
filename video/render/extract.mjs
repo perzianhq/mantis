@@ -5,10 +5,18 @@ import { fileURLToPath } from 'node:url';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..', '..');
 const taskId = 'longlive-gutenberg-dickens-search';
-const logDir = path.join(root, 'bench', 'results', 'agent-logs', 'long-live-v1-final-luna');
-const results = JSON.parse(fs.readFileSync(path.join(root, 'bench', 'results', 'long-live-v1-final-luna.json'), 'utf8'));
+// One logged Luna run per approach: the median run by input tokens of the three same-session runs
+// (Mantis run 3 of 211,872 / 249,752 / 303,548; tree run 3 of 632,662 / 1,166,463 / 1,250,898).
+const sources = {
+  mantis: { stem: 'long-live-v1-luna-speed-20261027', run: 3, expected: { calls: 11, tokens: 249752, wallMs: 42466 } },
+  tree: { stem: 'long-live-v1-luna-tree-20261027', run: 3, expected: { calls: 35, tokens: 1166463, wallMs: 96191 } },
+};
+const resultsDir = path.join(root, 'bench', 'results');
+const logDirs = Object.fromEntries(Object.entries(sources).map(([approach, source]) => [approach, path.join(resultsDir, 'agent-logs', source.stem)]));
+const resultsByApproach = Object.fromEntries(Object.entries(sources).map(([approach, source]) => [approach, JSON.parse(fs.readFileSync(path.join(resultsDir, `${source.stem}.json`), 'utf8'))]));
 const tasks = JSON.parse(fs.readFileSync(path.join(root, 'bench', 'agent', 'long-live-v1-draft.json'), 'utf8'));
 const shotsDir = path.join(here, 'shots');
+fs.rmSync(shotsDir, { recursive: true, force: true });
 fs.mkdirSync(shotsDir, { recursive: true });
 
 function parseConcatenatedJson(text) {
@@ -29,7 +37,7 @@ function parseConcatenatedJson(text) {
   return values;
 }
 
-function findOne(pattern) {
+function findOne(pattern, logDir) {
   const matches = fs.readdirSync(logDir).filter((name) => pattern.test(name));
   if (matches.length !== 1) throw new Error(`Expected one log for ${pattern}; found ${matches.length}`);
   return path.join(logDir, matches[0]);
@@ -81,7 +89,7 @@ function copyFrames(approach, evidencePath, events, wallMs) {
   const frames = evidence.frames.map((frame) => {
     const event = eventByStep.get(frame.step);
     if (!event) throw new Error(`${approach} capture ${frame.file} has no call ${frame.step}`);
-    const source = path.join(logDir, frame.file);
+    const source = path.join(logDirs[approach], frame.file);
     const size = pngSize(source);
     if (size.width > 1280) throw new Error(`${frame.file} is ${size.width}px wide; downscale it before rendering`);
     const suffix = frame.file.endsWith('.final.png') ? 'final' : `step-${String(frame.step).padStart(2, '0')}`;
@@ -98,13 +106,15 @@ function copyFrames(approach, evidencePath, events, wallMs) {
   return frames;
 }
 
-function readRun(approach, run, expected) {
+function readRun(approach) {
+  const { run, expected } = sources[approach];
+  const logDir = logDirs[approach];
   const stem = `${taskId}--${approach}--${run}--`;
-  const longPath = findOne(new RegExp(`^${stem.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}.*\\.long\\.jsonl$`));
+  const longPath = findOne(new RegExp(`^${stem.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}.*\\.long\\.jsonl$`), logDir);
   const evidencePath = longPath.replace(/\.long\.jsonl$/, '.evidence.json');
   const streamPath = longPath.replace(/\.long\.jsonl$/, '.jsonl');
   const calls = fs.readFileSync(longPath, 'utf8').trim().split(/\r?\n/).map(JSON.parse).filter((row) => row.kind === 'call');
-  const result = results.results.find((row) => row.task === taskId && row.approach === approach && row.run === run);
+  const result = resultsByApproach[approach].results.find((row) => row.task === taskId && row.approach === approach && row.run === run);
   if (!result) throw new Error(`Published result is missing for ${approach} run ${run}`);
   const totalTokens = result.totalInputTokens;
   const wallMs = result.timings?.cliWallMs;
@@ -145,11 +155,11 @@ if (!task?.confirmed_task) throw new Error(`Task prompt missing for ${taskId}`);
 const data = {
   taskId,
   taskText: task.confirmed_task,
-  source: 'bench/results/agent-logs/long-live-v1-final-luna',
+  source: Object.values(sources).map((source) => `bench/results/agent-logs/${source.stem}`).join(' + '),
   tokenCounterMethod: 'estimated-observation-weighted',
   runs: [
-    readRun('mantis', 2, { calls: 10, tokens: 291952, wallMs: 49756 }),
-    readRun('tree', 1, { calls: 22, tokens: 733231, wallMs: 72977 }),
+    readRun('mantis'),
+    readRun('tree'),
   ],
 };
 fs.writeFileSync(path.join(here, 'data.json'), `${JSON.stringify(data, null, 2)}\n`);

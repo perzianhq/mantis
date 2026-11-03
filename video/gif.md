@@ -2,11 +2,24 @@
 
 One real task, same prompt for both tools, shown side by side with an estimated replay token counter. Record on **Luna** (steadier across reruns than Haiku).
 
-**Task:** `longlive-gutenberg-dickens-search` (from `long-live-v1`). On Project Gutenberg, run Advanced Search for author Charles Dickens, language English, LoC class PR. Inspect result page one, follow next to page two, then look up #98 and #1400 through separate Quick searches, report `eBook number | title | release date | LoC class`, and return to page two of the original search. About 11 to 30 tool calls, 1 to 2 minutes.
+**Task:** `longlive-gutenberg-dickens-search` (from `long-live-v1`). On Project Gutenberg, run Advanced Search for author Charles Dickens, language English, LoC class PR. Inspect result page one, follow next to page two, then look up #98 and #1400 through separate Quick searches, report `eBook number | title | release date | LoC class`, and return to page two of the original search. About 10 to 35 tool calls, 40 s to 1.5 minutes.
 
-## Figures (the video replays the middle run: 292k tokens, 10 calls, 50 s vs 22 calls, 733k, 73 s; every run graded success)
+## Figures (the video replays the median-by-input-tokens run of run 20261027: 250k tokens, 11 calls, 42 s vs 35 calls, 1.17M, 96 s; every run graded success)
 
-Luna (`gpt-6-luna`, local). Published run and an independent rerun on the same commit:
+Luna (`gpt-6-luna`, local). Mantis and tree ran in the same session (20261027), three runs each. The video replays run 3 of each approach, the median by input tokens (Mantis 212k / 250k / 304k, tree 633k / 1.17M / 1.25M):
+
+| | Mantis | Tree (Playwright MCP style) | Change |
+|---|---|---|---|
+| Input tokens, replayed run (r3) | 249,752 | 1,166,463 | -79% |
+| Wall time, replayed run (r3) | 42 s | 96 s | -56% |
+| Tool calls, replayed run (r3) | 11 | 35 | -69% |
+| Input tokens, range over 3 runs | 211,872 to 303,548 | 632,662 to 1,250,898 | |
+| Wall time, range over 3 runs | 37 to 57 s | 66 to 96 s | |
+| Tool calls, range over 3 runs | 11 to 14 | 20 to 35 | |
+
+Wall time is `timings.cliWallMs` (the md's "CLI wall" column; the md's "CLI execution" column is 0.4 to 0.7 s shorter: 41.8 s and 95.7 s for the replayed runs). The tree varies a lot between runs (20 to 35 calls); Mantis stays at 11 to 14 calls. Quote the range: **about 2x to 5x fewer input tokens, about half the time, about a third to a half of the calls.** Luna reports tokens only, so no dollar figure is claimed for it.
+
+Earlier build (before the settle-timing changes), published run `long-live-v1-final-luna` and an independent rerun `long-live-v1-crosscheck-luna`. The video previously replayed the first column (Mantis run 2, tree run 1):
 
 | | Mantis | Tree (Playwright MCP style) | Change |
 |---|---|---|---|
@@ -14,12 +27,10 @@ Luna (`gpt-6-luna`, local). Published run and an independent rerun on the same c
 | Input tokens, rerun | 289,972 | 1,123,795 | -74% |
 | Wall time, published | 50 s | 73 s | -32% |
 | Wall time, rerun | 47 s | 75 s | -37% |
-| Tool calls, published (the run replayed in the video) | 10 | 22 | -55% |
+| Tool calls, published | 10 | 22 | -55% |
 | Tool calls, rerun | 14 | 29 | -52% |
 
-Mantis is stable across the two runs (about 290k tokens, 47-50 s). The tree varies more (733k to 1.12M tokens). Quote the range: **about 2.5x to 4x fewer input tokens, about a third less time, about half the calls.** Luna reports tokens only, so no dollar figure is claimed for it.
-
-Haiku 5.5 (`claude-haiku-5-5`) is less steady on this task: Mantis 315k tokens published vs 417k on the rerun (the rerun took a longer path with a full-page read), tree 761k vs 738k.
+Haiku 5.5 (`claude-haiku-5-5`), earlier build, is less steady on this task: Mantis 315k tokens published vs 417k on the rerun (the rerun took a longer path with a full-page read), tree 761k vs 738k.
 
 | Haiku | Mantis | Tree | Change |
 |---|---|---|---|
@@ -30,11 +41,11 @@ Haiku 5.5 (`claude-haiku-5-5`) is less steady on this task: Mantis 315k tokens p
 | Cost, published | $0.234 | $0.430 | -46% |
 | Cost, rerun | $0.291 | $0.418 | -30% |
 
-Sources: `bench/results/long-live-v1-final-{luna,haiku}.json` (published) and `bench/results/long-live-v1-crosscheck-{luna,haiku}.json` (rerun): `totalInputTokens`, `toolCalls`, `costUsd`, `timings.cliWallMs`. Cost is the Claude CLI's `total_cost_usd`.
+Sources: current Luna table `bench/results/long-live-v1-luna-speed-20261027.json` (Mantis) and `bench/results/long-live-v1-luna-tree-20261027.json` (tree), logs in `bench/results/agent-logs/` under the same names (`video/render/extract.mjs` reads them). Earlier-build and Haiku tables: `bench/results/long-live-v1-final-{luna,haiku}.json` (published) and `bench/results/long-live-v1-crosscheck-{luna,haiku}.json` (rerun): `totalInputTokens`, `toolCalls`, `costUsd`, `timings.cliWallMs`. Cost is the Claude CLI's `total_cost_usd`.
 
 A Sol review of the commits since the headline run found no regression in tokens or latency: tool descriptions are identical, the new MCP instruction adds about 32 tokens, and the Haiku Dickens gap is a different agent path (more calls, one full read), not bigger tool output.
 
-## Runner-up: `longlive-met-monet-search`
+## Runner-up: `longlive-met-monet-search` (earlier build)
 
 | Luna | Mantis | Tree | Change |
 |---|---|---|---|
@@ -51,4 +62,4 @@ This is a selected example from the 16 long tasks, picked for the demo because s
 
 ## Recording tips
 
-Fresh browser profile, same model, show the per-call token counter. Last frame, safe to claim: "about a third less time, over 2x fewer input tokens, about half the calls". Show exact final totals; label intermediate estimates.
+Fresh browser profile, same model, show the per-call token counter. Last frame, safe to claim for the replayed run: "less than half the time, over 4x fewer input tokens, about a third of the calls" (selected example; the medians above are the headline). Show exact final totals; label intermediate estimates.
