@@ -9,7 +9,8 @@ const taskId = 'longlive-gutenberg-dickens-search';
 // (Mantis run 3 of 211,872 / 249,752 / 303,548; tree run 3 of 632,662 / 1,166,463 / 1,250,898).
 const sources = {
   mantis: { stem: 'long-live-v1-luna-speed-20261027', run: 3, expected: { calls: 11, tokens: 249752, wallMs: 42466 } },
-  tree: { stem: 'long-live-v1-luna-tree-20261027', run: 3, expected: { calls: 35, tokens: 1166463, wallMs: 96191 } },
+  // Call 7 (browser_click) hit Playwright's 5000 ms action timeout; the replay drops that wait.
+  tree: { stem: 'long-live-v1-luna-tree-20261027', run: 3, expected: { calls: 35, tokens: 1166463, wallMs: 96191 }, cut: { call: 7, ms: 5000 } },
 };
 const resultsDir = path.join(root, 'bench', 'results');
 const logDirs = Object.fromEntries(Object.entries(sources).map(([approach, source]) => [approach, path.join(resultsDir, 'agent-logs', source.stem)]));
@@ -107,7 +108,7 @@ function copyFrames(approach, evidencePath, events, wallMs) {
 }
 
 function readRun(approach) {
-  const { run, expected } = sources[approach];
+  const { run, expected, cut } = sources[approach];
   const logDir = logDirs[approach];
   const stem = `${taskId}--${approach}--${run}--`;
   const longPath = findOne(new RegExp(`^${stem.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}.*\\.long\\.jsonl$`), logDir);
@@ -117,10 +118,12 @@ function readRun(approach) {
   const result = resultsByApproach[approach].results.find((row) => row.task === taskId && row.approach === approach && row.run === run);
   if (!result) throw new Error(`Published result is missing for ${approach} run ${run}`);
   const totalTokens = result.totalInputTokens;
-  const wallMs = result.timings?.cliWallMs;
-  if (calls.length !== expected.calls || totalTokens !== expected.tokens || wallMs !== expected.wallMs) {
-    throw new Error(`${approach} totals disagree: calls ${calls.length}, tokens ${totalTokens}, wall ${wallMs}`);
+  const loggedWallMs = result.timings?.cliWallMs;
+  if (calls.length !== expected.calls || totalTokens !== expected.tokens || loggedWallMs !== expected.wallMs) {
+    throw new Error(`${approach} totals disagree: calls ${calls.length}, tokens ${totalTokens}, wall ${loggedWallMs}`);
   }
+  const cutMs = cut?.ms ?? 0;
+  const wallMs = loggedWallMs - cutMs;
   const startAt = Math.min(...calls.map((call) => call.dispatchedAt));
   const streamTokens = streamUsage(streamPath);
   // The stream has one aggregate usage event for this one-turn agent. It cannot produce a
@@ -128,11 +131,17 @@ function readRun(approach) {
   const weights = calls.map((call) => Math.max(1, call.observation?.tokensEstimate || 0));
   const weightTotal = weights.reduce((a, b) => a + b, 0);
   let cumulative = 0;
+  if (cut) {
+    const timedOut = calls[cut.call - 1];
+    if ((timedOut.resultAt - timedOut.dispatchedAt) < cut.ms) throw new Error(`${approach} call ${cut.call} is shorter than the ${cut.ms} ms cut`);
+  }
+  // Times at or after the cut call's result move earlier by the cut.
+  const shift = (index) => (cut && index >= cut.call - 1 ? cutMs : 0);
   const events = calls.map((call, index) => {
     cumulative += weights[index] / weightTotal * totalTokens;
     return {
-      atMs: Math.max(0, call.dispatchedAt - startAt),
-      resultMs: Math.max(0, (call.resultAt ?? call.dispatchedAt) - startAt),
+      atMs: Math.max(0, call.dispatchedAt - startAt - (cut && index > cut.call - 1 ? cutMs : 0)),
+      resultMs: Math.max(0, (call.resultAt ?? call.dispatchedAt) - startAt - shift(index)),
       tool: call.tool,
       argument: shortArgument(call.tool, call.arguments),
       observationTokensEstimate: call.observation?.tokensEstimate ?? 0,
@@ -142,7 +151,7 @@ function readRun(approach) {
   return {
     name: approach === 'mantis' ? 'Mantis' : 'Playwright MCP',
     detail: approach === 'mantis' ? 'Mantis browser view' : '@playwright/mcp 0.0.83 · benchmark configuration; JavaScript tools disabled',
-    approach, run, calls: calls.length, totalTokens, wallMs,
+    approach, run, calls: calls.length, totalTokens, wallMs, loggedWallMs, cutMs,
     tokenMethod: 'estimated-observation-weighted',
     streamUsageEvents: streamTokens.length,
     events,

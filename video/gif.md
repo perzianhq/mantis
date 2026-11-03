@@ -4,14 +4,16 @@ One real task, same prompt for both tools, shown side by side with an estimated 
 
 **Task:** `longlive-gutenberg-dickens-search` (from `long-live-v1`). On Project Gutenberg, run Advanced Search for author Charles Dickens, language English, LoC class PR. Inspect result page one, follow next to page two, then look up #98 and #1400 through separate Quick searches, report `eBook number | title | release date | LoC class`, and return to page two of the original search. About 10 to 35 tool calls, 40 s to 1.5 minutes.
 
-## Figures (the video replays the median-by-input-tokens run of run 20261027: 250k tokens, 11 calls, 42 s vs 35 calls, 1.17M, 96 s; every run graded success)
+## Figures (the video replays the median-by-input-tokens run of run 20261027: 250k tokens, 11 calls, 42 s vs 35 calls, 1.17M, 91 s; every run graded success)
+
+The tree run's call 7 (`browser_click`) hit Playwright's 5000 ms action timeout. The replay cuts that 5 s wait from the tree's timeline and total (`cut` in `video/render/extract.mjs`), so the video shows 91.2 s instead of the logged 96.2 s; calls and tokens are unchanged. The video's final card says so.
 
 Luna (`gpt-6-luna`, local). Mantis and tree ran in the same session (20261027), three runs each. The video replays run 3 of each approach, the median by input tokens (Mantis 212k / 250k / 304k, tree 633k / 1.17M / 1.25M):
 
 | | Mantis | Tree (Playwright MCP style) | Change |
 |---|---|---|---|
 | Input tokens, replayed run (r3) | 249,752 | 1,166,463 | -79% |
-| Wall time, replayed run (r3) | 42 s | 96 s | -56% |
+| Wall time, replayed run (r3) | 42 s | 91 s (96 s logged, minus one 5 s click timeout) | -53% |
 | Tool calls, replayed run (r3) | 11 | 35 | -69% |
 | Input tokens, range over 3 runs | 211,872 to 303,548 | 632,662 to 1,250,898 | |
 | Wall time, range over 3 runs | 37 to 57 s | 66 to 96 s | |

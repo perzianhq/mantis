@@ -12,6 +12,8 @@
       "calls": 11,
       "totalTokens": 249752,
       "wallMs": 42466,
+      "loggedWallMs": 42466,
+      "cutMs": 0,
       "tokenMethod": "estimated-observation-weighted",
       "streamUsageEvents": 1,
       "events": [
@@ -202,7 +204,9 @@
       "run": 3,
       "calls": 35,
       "totalTokens": 1166463,
-      "wallMs": 96191,
+      "wallMs": 91191,
+      "loggedWallMs": 96191,
+      "cutMs": 5000,
       "tokenMethod": "estimated-observation-weighted",
       "streamUsageEvents": 1,
       "events": [
@@ -256,231 +260,231 @@
         },
         {
           "atMs": 12288,
-          "resultMs": 17311,
+          "resultMs": 12311,
           "tool": "browser_click",
           "argument": "e90",
           "observationTokensEstimate": 187,
           "cumulativeTokens": 249191
         },
         {
-          "atMs": 19418,
-          "resultMs": 19444,
+          "atMs": 14418,
+          "resultMs": 14444,
           "tool": "browser_snapshot",
           "argument": "5",
           "observationTokensEstimate": 87,
           "cumulativeTokens": 252096
         },
         {
-          "atMs": 21337,
-          "resultMs": 21421,
+          "atMs": 16337,
+          "resultMs": 16421,
           "tool": "browser_navigate_back",
           "argument": "page state",
           "observationTokensEstimate": 89,
           "cumulativeTokens": 255069
         },
         {
-          "atMs": 22957,
-          "resultMs": 22989,
+          "atMs": 17957,
+          "resultMs": 17989,
           "tool": "browser_snapshot",
           "argument": "5",
           "observationTokensEstimate": 1034,
           "cumulativeTokens": 289603
         },
         {
-          "atMs": 25168,
-          "resultMs": 25218,
+          "atMs": 20168,
+          "resultMs": 20218,
           "tool": "browser_snapshot",
           "argument": "f2e64",
           "observationTokensEstimate": 426,
           "cumulativeTokens": 303831
         },
         {
-          "atMs": 26848,
-          "resultMs": 29971,
+          "atMs": 21848,
+          "resultMs": 24971,
           "tool": "browser_click",
           "argument": "f2e90",
           "observationTokensEstimate": 103,
           "cumulativeTokens": 307272
         },
         {
-          "atMs": 32168,
-          "resultMs": 32240,
+          "atMs": 27168,
+          "resultMs": 27240,
           "tool": "browser_snapshot",
           "argument": "5",
           "observationTokensEstimate": 5478,
           "cumulativeTokens": 490232
         },
         {
-          "atMs": 33748,
-          "resultMs": 37442,
+          "atMs": 28748,
+          "resultMs": 32442,
           "tool": "browser_click",
           "argument": "f3e44",
           "observationTokensEstimate": 139,
           "cumulativeTokens": 494874
         },
         {
-          "atMs": 39896,
-          "resultMs": 40006,
+          "atMs": 34896,
+          "resultMs": 35006,
           "tool": "browser_snapshot",
           "argument": "4",
           "observationTokensEstimate": 961,
           "cumulativeTokens": 526971
         },
         {
-          "atMs": 41704,
-          "resultMs": 41841,
+          "atMs": 36704,
+          "resultMs": 36841,
           "tool": "browser_snapshot",
           "argument": "f4e45",
           "observationTokensEstimate": 7364,
           "cumulativeTokens": 772922
         },
         {
-          "atMs": 44568,
-          "resultMs": 44573,
+          "atMs": 39568,
+          "resultMs": 39573,
           "tool": "browser_fill_form",
           "argument": "“98”",
           "observationTokensEstimate": 23,
           "cumulativeTokens": 773690
         },
         {
-          "atMs": 47052,
-          "resultMs": 47130,
+          "atMs": 42052,
+          "resultMs": 42130,
           "tool": "browser_snapshot",
           "argument": "4",
           "observationTokensEstimate": 961,
           "cumulativeTokens": 805786
         },
         {
-          "atMs": 49568,
-          "resultMs": 49638,
+          "atMs": 44568,
+          "resultMs": 44638,
           "tool": "browser_find",
           "argument": "“Quick search”",
           "observationTokensEstimate": 134,
           "cumulativeTokens": 810262
         },
         {
-          "atMs": 51406,
-          "resultMs": 51429,
+          "atMs": 46406,
+          "resultMs": 46429,
           "tool": "browser_fill_form",
           "argument": "“98”",
           "observationTokensEstimate": 29,
           "cumulativeTokens": 811230
         },
         {
-          "atMs": 53228,
-          "resultMs": 55530,
+          "atMs": 48228,
+          "resultMs": 50530,
           "tool": "browser_click",
           "argument": "f4e11",
           "observationTokensEstimate": 109,
           "cumulativeTokens": 814871
         },
         {
-          "atMs": 57193,
-          "resultMs": 57219,
+          "atMs": 52193,
+          "resultMs": 52219,
           "tool": "browser_snapshot",
           "argument": "5",
           "observationTokensEstimate": 3024,
           "cumulativeTokens": 915870
         },
         {
-          "atMs": 58862,
-          "resultMs": 59861,
+          "atMs": 53862,
+          "resultMs": 54861,
           "tool": "browser_click",
           "argument": "f5e48",
           "observationTokensEstimate": 115,
           "cumulativeTokens": 919711
         },
         {
-          "atMs": 61605,
-          "resultMs": 61626,
+          "atMs": 56605,
+          "resultMs": 56626,
           "tool": "browser_snapshot",
           "argument": "6",
           "observationTokensEstimate": 1710,
           "cumulativeTokens": 976823
         },
         {
-          "atMs": 63440,
-          "resultMs": 63480,
+          "atMs": 58440,
+          "resultMs": 58480,
           "tool": "browser_snapshot",
           "argument": "f6e117",
           "observationTokensEstimate": 1437,
           "cumulativeTokens": 1024817
         },
         {
-          "atMs": 66054,
-          "resultMs": 66059,
+          "atMs": 61054,
+          "resultMs": 61059,
           "tool": "browser_fill_form",
           "argument": "“1400”",
           "observationTokensEstimate": 23,
           "cumulativeTokens": 1025586
         },
         {
-          "atMs": 67850,
-          "resultMs": 67876,
+          "atMs": 62850,
+          "resultMs": 62876,
           "tool": "browser_find",
           "argument": "“Quick search”",
           "observationTokensEstimate": 134,
           "cumulativeTokens": 1030061
         },
         {
-          "atMs": 70109,
-          "resultMs": 70131,
+          "atMs": 65109,
+          "resultMs": 65131,
           "tool": "browser_fill_form",
           "argument": "“1400”",
           "observationTokensEstimate": 30,
           "cumulativeTokens": 1031063
         },
         {
-          "atMs": 70711,
-          "resultMs": 72868,
+          "atMs": 65711,
+          "resultMs": 67868,
           "tool": "browser_click",
           "argument": "f6e11",
           "observationTokensEstimate": 111,
           "cumulativeTokens": 1034770
         },
         {
-          "atMs": 74336,
-          "resultMs": 74359,
+          "atMs": 69336,
+          "resultMs": 69359,
           "tool": "browser_snapshot",
           "argument": "4",
           "observationTokensEstimate": 2310,
           "cumulativeTokens": 1111922
         },
         {
-          "atMs": 76004,
-          "resultMs": 76981,
+          "atMs": 71004,
+          "resultMs": 71981,
           "tool": "browser_click",
           "argument": "f7e64",
           "observationTokensEstimate": 112,
           "cumulativeTokens": 1115663
         },
         {
-          "atMs": 78596,
-          "resultMs": 78618,
+          "atMs": 73596,
+          "resultMs": 73618,
           "tool": "browser_find",
           "argument": "“About this eBook”",
           "observationTokensEstimate": 175,
           "cumulativeTokens": 1121508
         },
         {
-          "atMs": 80826,
-          "resultMs": 80861,
+          "atMs": 75826,
+          "resultMs": 75861,
           "tool": "browser_snapshot",
           "argument": "f8e117",
           "observationTokensEstimate": 1006,
           "cumulativeTokens": 1155107
         },
         {
-          "atMs": 84276,
-          "resultMs": 86408,
+          "atMs": 79276,
+          "resultMs": 81408,
           "tool": "browser_navigate",
           "argument": "gutenberg.org/ebooks/results/",
           "observationTokensEstimate": 169,
           "cumulativeTokens": 1160752
         },
         {
-          "atMs": 88046,
-          "resultMs": 88130,
+          "atMs": 83046,
+          "resultMs": 83130,
           "tool": "browser_find",
           "argument": "“You selected”",
           "observationTokensEstimate": 171,
@@ -522,7 +526,7 @@
         },
         {
           "call": 7,
-          "atMs": 17311,
+          "atMs": 12311,
           "file": "shots/tree-step-07.png",
           "url": "",
           "width": 1280,
@@ -530,7 +534,7 @@
         },
         {
           "call": 8,
-          "atMs": 19444,
+          "atMs": 14444,
           "file": "shots/tree-step-08.png",
           "url": "https://www.gutenberg.org/ebooks/results/",
           "width": 1280,
@@ -538,7 +542,7 @@
         },
         {
           "call": 9,
-          "atMs": 21421,
+          "atMs": 16421,
           "file": "shots/tree-step-09.png",
           "url": "https://www.gutenberg.org/ebooks/",
           "width": 1280,
@@ -546,7 +550,7 @@
         },
         {
           "call": 12,
-          "atMs": 29971,
+          "atMs": 24971,
           "file": "shots/tree-step-12.png",
           "url": "https://www.gutenberg.org/ebooks/results/",
           "width": 1280,
@@ -554,7 +558,7 @@
         },
         {
           "call": 14,
-          "atMs": 37442,
+          "atMs": 32442,
           "file": "shots/tree-step-14.png",
           "url": "https://www.gutenberg.org/ebooks/results/?author=Charles+Dickens&title=&subject=&locc=PR&lang=en&category=&filetype=&submit_search=Search&pageno=2",
           "width": 1280,
@@ -562,7 +566,7 @@
         },
         {
           "call": 20,
-          "atMs": 51429,
+          "atMs": 46429,
           "file": "shots/tree-step-20.png",
           "url": "https://www.gutenberg.org/ebooks/results/?author=Charles+Dickens&title=&subject=&locc=PR&lang=en&category=&filetype=&submit_search=Search&pageno=2",
           "width": 1280,
@@ -570,7 +574,7 @@
         },
         {
           "call": 21,
-          "atMs": 55530,
+          "atMs": 50530,
           "file": "shots/tree-step-21.png",
           "url": "https://www.gutenberg.org/ebooks/search/?query=98",
           "width": 1280,
@@ -578,7 +582,7 @@
         },
         {
           "call": 23,
-          "atMs": 59861,
+          "atMs": 54861,
           "file": "shots/tree-step-23.png",
           "url": "https://www.gutenberg.org/ebooks/98",
           "width": 1280,
@@ -586,7 +590,7 @@
         },
         {
           "call": 28,
-          "atMs": 70131,
+          "atMs": 65131,
           "file": "shots/tree-step-28.png",
           "url": "https://www.gutenberg.org/ebooks/98",
           "width": 1280,
@@ -594,7 +598,7 @@
         },
         {
           "call": 29,
-          "atMs": 72868,
+          "atMs": 67868,
           "file": "shots/tree-step-29.png",
           "url": "https://www.gutenberg.org/ebooks/search/?query=1400",
           "width": 1280,
@@ -602,7 +606,7 @@
         },
         {
           "call": 31,
-          "atMs": 76981,
+          "atMs": 71981,
           "file": "shots/tree-step-31.png",
           "url": "https://www.gutenberg.org/ebooks/1400",
           "width": 1280,
@@ -610,7 +614,7 @@
         },
         {
           "call": 35,
-          "atMs": 96191,
+          "atMs": 91191,
           "file": "shots/tree-final.png",
           "url": "https://www.gutenberg.org/ebooks/results/?author=Charles+Dickens&title=&subject=&locc=PR&lang=en&category=&filetype=&submit_search=Search&pageno=2",
           "width": 1280,
