@@ -78,7 +78,7 @@ Numbers come only from [README.md](../README.md#results) and [bench/RESULTS.md](
 > - **Long real-site rows are graded by final-state keys only.** An earlier model judge (`gpt-6.1-sol`, 79% agreement with deterministic keys) was dropped; the long rows were regraded offline with reviewed keys. Keys do not check process (on-site search, visit order), two chain tasks are excluded, and the Luna and Haiku gaps are one run each, so treat accuracy as a tie and the savings as the result.
 > - **The screenshot baseline is my own minimal tool.**
 > - **Short tasks: smaller win against screenshots.** About 3-6x less tool output (earlier run) and 35-57% fewer input tokens than the tree (newer Mantis build vs earlier tree run). Against screenshots: Luna screenshots scored 90 (vs 88) and used 63% more tokens; Haiku screenshots use about 13% fewer tokens, with 2x the tool calls.
-> - **Known gaps.** Closed shadow roots are unreadable; frames are read to 3 levels (20 frames, 2s each), so stalled or deeper frames are skipped. Page text is unsanitised, so prompt injection is possible (SECURITY.md). Two models. Live sites change. Published numbers ran on earlier commits than the npm build (RESULTS.md, Benchmarked source).
+> - **Known gaps.** Declarative closed shadow roots (`<template shadowrootmode="closed">`) are unreadable; frames are read to 3 levels (20 frames, 2s each), so stalled or deeper frames are skipped. Page text is unsanitised, so prompt injection is possible (SECURITY.md). Two models. Live sites change. Published numbers ran on earlier commits than the npm build (RESULTS.md, Benchmarked source).
 >
 > Install: `npx -y -p mantis-browser mantis install`, then `claude mcp add mantis -- npx -y -p mantis-browser mantis-mcp`. MIT, benchmarks re-runnable. I want tasks where Mantis loses.
 
@@ -90,7 +90,7 @@ Numbers come only from [README.md](../README.md#results) and [bench/RESULTS.md](
 4. Long real-site workflows (14 tasks, 42 runs per cell, deterministic keys, same session): Luna 35/42 vs 34/42 for the tree, 42s vs 66s. Haiku 40/42 vs 40/42, 54s vs 85s. Input tokens 29% and 47% lower.
 5. Short real-site tasks (deterministic keys): Success /90, Mantis / tree / screenshots: Luna 88/86/90, Haiku 90/88/88. Mantis used 35-57% fewer input tokens than the tree (newer build vs earlier tree run); Haiku screenshots use fewer tokens.
 6. Caveats: four tasks swapped post-hoc (disclosed beside the scores), two long chain tasks excluded because they cannot be keyed, accuracy gaps are one run, the screenshot baseline is my own tool.
-7. Gaps: closed shadow roots; frames are read to 3 levels (20 frames, 2s each), so stalled or deeper frames are skipped; page text is untrusted. Two models, read/navigate on public sites.
+7. Gaps: declarative closed shadow roots; frames are read to 3 levels (20 frames, 2s each), so stalled or deeper frames are skipped; page text is untrusted. Two models, read/navigate on public sites.
 8. `npx -y -p mantis-browser mantis install`, then `claude mcp add mantis -- npx -y -p mantis-browser mantis-mcp`. Repo, tables, method: github.com/perzianhq/mantis. Tell me tasks where it loses.
 
 ### Reddit

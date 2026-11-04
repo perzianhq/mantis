@@ -405,14 +405,18 @@ export function makeProbe(chartPointLimit = Number.MAX_SAFE_INTEGER): Probe {
   function list(): MediaList {
     const entries: MediaEntry[] = [];
     let more = 0;
-    // querySelectorAll stops at shadow boundaries. Open roots are page-visible DOM, so include
-    // their media while leaving closed roots (which script cannot inspect) as a known limit.
+    // querySelectorAll stops at shadow boundaries. Include the media inside open roots and inside
+    // closed roots that Mantis's attachShadow patch recorded (declarative closed roots stay out).
     const all: Element[] = [];
     const seen = new Set<Element>();
     const add = (el: Element): void => { if (!seen.has(el)) { seen.add(el); all.push(el); } };
     const collect = (root: Document | ShadowRoot): void => {
       root.querySelectorAll('img,canvas,svg').forEach(add);
-      root.querySelectorAll('*').forEach((host) => { if (host.shadowRoot) collect(host.shadowRoot); });
+      const shadowOf = (win as unknown as { __mantisShadowOf?: (host: Element) => ShadowRoot | null }).__mantisShadowOf;
+      root.querySelectorAll('*').forEach((host) => {
+        const shadow = host.shadowRoot ?? shadowOf?.(host);
+        if (shadow) collect(shadow);
+      });
     };
     collect(document);
     for (const el of all) {

@@ -17,7 +17,8 @@ import { fixture } from './helpers.js';
 // hidden.html: elements a person cannot see (opacity 0, zero size, off screen, collapsed). The tree
 // keeps them; Mantis drops them on purpose (tested in reading.test.ts).
 // viewport-cap.html is over the node cap on purpose, so it drops far-offscreen content (tested in generic-capture-fixes.test.ts).
-const SKIP = new Set(['human.html', 'ocr.html', 'captcha.html', 'invisible-captcha.html', 'bigcanvas.html', 'hidden.html', 'viewport-cap.html']);
+// closed-shadow-declarative.html: a parser-built closed root, which Chrome's tree shows and Mantis documents as unreadable.
+const SKIP = new Set(['human.html', 'ocr.html', 'captcha.html', 'invisible-captcha.html', 'bigcanvas.html', 'hidden.html', 'viewport-cap.html', 'closed-shadow-declarative.html']);
 const PAGES = readdirSync(resolve(import.meta.dirname, 'fixtures')).filter((f) => f.endsWith('.html') && !SKIP.has(f));
 
 // Roles that carry no information of their own (containers, structure).

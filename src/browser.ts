@@ -25,6 +25,8 @@ export interface MantisOptions {
   headless?: boolean;
   /** How long a click/type/select waits for the element to become actionable. */
   actionTimeoutMs?: number;
+  /** How long a started navigation may take to commit before the action reports the page as still loading. Default 5000. */
+  navigationTimeoutMs?: number;
   /** Site memory (collapse regions already seen on this site). Default on; MANTIS_MEMORY=0 turns it off. */
   memory?: boolean;
   /** Where site memory is stored between sessions. Default MANTIS_MEMORY_DIR or ~/.cache/mantis/sites. */
@@ -88,7 +90,12 @@ type NavigationWatch = {
   hasCommitted: () => boolean;
   remainingMs: () => number | null;
   finished: Promise<'finished'>;
-  failureMessage: string;
+  /** Resolves once a started navigation has used its budget without committing. */
+  stalled: Promise<'stalled'>;
+  /** The action that started it, for the "still loading" note. */
+  action: string;
+  /** The budget for it to commit, in ms. */
+  timeoutMs: number;
   cancel: () => void;
 };
 
@@ -247,11 +254,21 @@ const TRACKER = `(() => {
   // An observer on the document does not see inside shadow roots. Open roots are tracked here (those
   // attached later through attachShadow, nested ones, and ones the parser made, found by a scan) so every
   // observer can be pointed at them too. Bounded: past MAX_SHADOW_ROOTS the roots are not tracked and
-  // __mantisShadowFull makes page snapshots non-reusable. Closed roots are invisible to script and out of scope.
+  // __mantisShadowFull makes page snapshots non-reusable.
+  // Closed roots are tracked the same way: this patch runs before page script and receives the root
+  // object attachShadow returns, so the host -> root pair is kept in a private WeakMap (host.shadowRoot
+  // stays null for the page, nothing about the page's view changes). window.__mantisShadowOf is how the
+  // capture walker and hit-tests reach it. A declarative closed root (<template shadowrootmode="closed">)
+  // is built by the parser without attachShadow, so it is unsupported and stays invisible.
   const MAX_SHADOW_ROOTS = 256;
   const MAX_SCAN_NODES = 30000;
   const shadowRoots = [];
   const knownRoots = new WeakSet();
+  const closedRoots = new WeakMap();
+  Object.defineProperty(window, '__mantisShadowOf', {
+    value: (host) => host.shadowRoot || closedRoots.get(host) || null,
+    enumerable: false,
+  });
   const watchers = new Set();
   window.__mantisShadowFull = false;
   const trackRoot = (root) => {
@@ -267,7 +284,8 @@ const TRACKER = `(() => {
   const attachShadow = Element.prototype.attachShadow;
   Element.prototype.attachShadow = function (init) {
     const root = attachShadow.call(this, init);
-    if (init && init.mode === 'open') trackRoot(root);
+    if (init && init.mode === 'closed') closedRoots.set(this, root);
+    trackRoot(root);
     return root;
   };
   let scanned = -1;
@@ -278,7 +296,8 @@ const TRACKER = `(() => {
     const walk = (start) => {
       const walker = document.createTreeWalker(start, NodeFilter.SHOW_ELEMENT);
       for (let n = walker.nextNode(); n && budget-- > 0; n = walker.nextNode()) {
-        if (n.shadowRoot) { trackRoot(n.shadowRoot); walk(n.shadowRoot); }
+        const root = n.shadowRoot || closedRoots.get(n);
+        if (root) { trackRoot(root); walk(root); }
       }
     };
     walk(document);
@@ -435,9 +454,16 @@ export class MantisBrowser {
   private known = new Map<number, { id: number; role: string; name: string; href?: string; doc: string | null }>();
   /** A click watcher that has not yet seen its navigation start. */
   private pendingNavigation: NavigationWatch | null = null;
+  /**
+   * A navigation an action started that had not committed within its budget. The action reported
+   * the page as still loading; the next call that uses the page waits once for it (see
+   * resolveLoadingNavigation) and then clears it, so it is never left pending across more than that wait.
+   */
+  private loadingNavigation: NavigationWatch | null = null;
   private notes: string[] = [];
   private scratch: BrowserContext | null = null;
   private readonly actionTimeout: number;
+  private readonly navigationTimeout: number;
   private readonly memory: SiteMemory;
   /** Present only while MANTIS_TIMING is enabled; normal calls do no timing work. */
   private timing: ToolTiming | null = null;
@@ -446,6 +472,7 @@ export class MantisBrowser {
 
   constructor(private readonly opts: MantisOptions = {}) {
     this.actionTimeout = opts.actionTimeoutMs ?? 5000;
+    this.navigationTimeout = opts.navigationTimeoutMs ?? NAVIGATION_TIMEOUT;
     this.memory = new SiteMemory({ enabled: opts.memory, dir: opts.memoryDir });
   }
 
@@ -468,6 +495,7 @@ export class MantisBrowser {
 
   async close(): Promise<void> {
     const b = this.browser;
+    this.dropLoadingNavigation();
     this.browser = this.context = this.page = this.scratch = null;
     await closeOcr();
     await b?.close().catch(() => undefined);
@@ -480,6 +508,8 @@ export class MantisBrowser {
 
   async open(url: string): Promise<string> {
     return this.guard(async () => {
+      // Opening a page supersedes anything an earlier action left loading.
+      this.dropLoadingNavigation();
       const page = await this.activePage();
       const target = /^[a-z][a-z0-9+.-]*:/i.test(url) ? url : `https://${url}`;
       for (let attempt = 0; ; attempt++) {
@@ -550,7 +580,7 @@ export class MantisBrowser {
       this.remember(snap, observed.doc);
       const text = findInSnapshot(snap, query, 20, contextChars);
       const captcha = await this.timed('captcha', () => captchaPromise);
-      return captcha ? `${text}\n${captcha}` : text;
+      return [text, captcha, ...this.notes.splice(0)].filter(Boolean).join('\n');
     }, 'find');
   }
 
@@ -1113,6 +1143,7 @@ export class MantisBrowser {
   async tabs(action: 'list' | 'switch' | 'close' = 'list', id?: number): Promise<string> {
     return this.guard(async () => {
       await this.launch();
+      if (action === 'switch' || action === 'close') this.dropLoadingNavigation();
       const pages = this.context!.pages();
       const tab = id === undefined ? undefined : pages[id - 1];
       if (action !== 'list' && (!Number.isInteger(id) || !tab)) throw new ActionError(`no tab #${id}; call tabs() to list open tabs`);
@@ -1321,6 +1352,7 @@ export class MantisBrowser {
 
   private async activePage(): Promise<Page> {
     await this.launch();
+    await this.resolveLoadingNavigation();
     if (!this.page) this.adopt(await this.context!.newPage());
     return this.page!;
   }
@@ -1402,10 +1434,18 @@ export class MantisBrowser {
         // their destination can publish a route before its result view has painted.
         await this.timed('wait', () => this.settle(page, true, navigation, opts.requestGrace ?? true, opts.bounds ?? null));
       } finally {
-        navigation?.cancel();
+        // A navigation that has not committed yet stays watched; the next call waits for it.
+        if (this.loadingNavigation !== navigation) navigation?.cancel();
         if (this.pendingNavigation === navigation) this.pendingNavigation = null;
       }
       const lines = [msg];
+      if (navigation && this.loadingNavigation === navigation) {
+        // The old document cannot be scanned while its replacement is still waiting for a response
+        // (evaluate waits too), so the reply is the action and the note; the next call waits for the page.
+        lines.push(`${navigation.action} done; the page is still loading. The next call waits for it.`);
+        lines.push(...this.notes.splice(0));
+        return lines.join('\n');
+      }
       const now = this.page ?? page;
       if (now !== page) {
         await this.timed('wait', () => this.settle(now));
@@ -1682,6 +1722,8 @@ export class MantisBrowser {
       const off = (r: DOMRect): boolean => r.left + r.width / 2 < 0 || r.top + r.height / 2 < 0 || r.left + r.width / 2 >= innerWidth || r.top + r.height / 2 >= innerHeight;
       if (off(pointerTarget.getBoundingClientRect())) pointerTarget.scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' as ScrollBehavior });
       const parent = (node: Element): Element | null => node.parentElement ?? (node.getRootNode() instanceof ShadowRoot ? (node.getRootNode() as ShadowRoot).host : null);
+      const shadowOf = (node: Element): ShadowRoot | null =>
+        node.shadowRoot ?? (window as unknown as { __mantisShadowOf?: (host: Element) => ShadowRoot | null }).__mantisShadowOf?.(node) ?? null;
       // The unrelated element on top of the center right now, or null.
       const probe = (): Element | null => {
         const r = pointerTarget.getBoundingClientRect();
@@ -1690,8 +1732,8 @@ export class MantisBrowser {
         const y = r.top + r.height / 2;
         const root = pointerTarget.getRootNode() as Document | ShadowRoot;
         let top: Element | null = (root instanceof ShadowRoot ? root : document).elementFromPoint(x, y);
-        while (top?.shadowRoot) {
-          const inner = top.shadowRoot.elementFromPoint(x, y);
+        for (;;) {
+          const inner: Element | null | undefined = top ? shadowOf(top)?.elementFromPoint(x, y) : null;
           if (!inner || inner === top) break;
           top = inner;
         }
@@ -1868,10 +1910,16 @@ export class MantisBrowser {
     let deadline: number | null = null;
     let resolveStarted: (started: boolean) => void = () => undefined;
     const started = new Promise<boolean>((resolve) => { resolveStarted = resolve; });
+    // While a main-frame request is waiting for its response, page.evaluate on the old document
+    // does not return either, so a caller that is waiting on the page needs this to give up on it.
+    let stallTimer: ReturnType<typeof setTimeout> | undefined;
+    let resolveStalled: (value: 'stalled') => void = () => undefined;
+    const stalled = new Promise<'stalled'>((resolve) => { resolveStalled = resolve; });
     const begin = (): void => {
       if (!hasStarted) {
         hasStarted = true;
-        deadline = Date.now() + NAVIGATION_TIMEOUT;
+        deadline = Date.now() + this.navigationTimeout;
+        stallTimer = setTimeout(() => { if (!hasCommitted && page.url() === initialUrl) resolveStalled('stalled'); }, this.navigationTimeout);
         resolveStarted(true);
       }
     };
@@ -1887,6 +1935,7 @@ export class MantisBrowser {
         if (frame !== page.mainFrame()) return;
         begin();
         hasCommitted = true;
+        if (stallTimer) clearTimeout(stallTimer);
         page.off('framenavigated', onFrameNavigated);
         resolve('finished');
       };
@@ -1902,8 +1951,11 @@ export class MantisBrowser {
       hasCommitted: () => hasCommitted || page.url() !== initialUrl,
       remainingMs: () => deadline === null ? null : Math.max(0, deadline - Date.now()),
       finished,
-      failureMessage: `${action} was dispatched, but the navigation did not finish in time`,
+      stalled,
+      action,
+      timeoutMs: this.navigationTimeout,
       cancel: () => {
+        if (stallTimer) clearTimeout(stallTimer);
         controller.abort();
         page.off('request', onRequest);
         page.off('framenavigated', onFrameNavigated);
@@ -1911,14 +1963,16 @@ export class MantisBrowser {
     };
   }
 
-  /** Complete an observed request within the one budget that began when it started. */
-  private async waitForInFlightNavigation(navigation: NavigationWatch): Promise<void> {
+  /**
+   * Complete an observed request within the one budget that began when it started. False when the
+   * budget ran out before the navigation committed: that is not a failure (a slow server usually
+   * answers a moment later), so the caller reports the page as still loading instead of an error.
+   * Network errors and aborted loads still commit an error page and are reported as such.
+   */
+  private async waitForInFlightNavigation(navigation: NavigationWatch): Promise<boolean> {
     const remaining = navigation.remainingMs();
-    if (remaining === null) return;
-    if (remaining <= 0) {
-      if (navigation.hasCommitted()) return;
-      throw new ActionError(navigation.failureMessage);
-    }
+    if (remaining === null) return true;
+    if (remaining <= 0) return navigation.hasCommitted();
     let finishTimer: ReturnType<typeof setTimeout> | undefined;
     const outcome = await Promise.race([
       navigation.finished,
@@ -1928,13 +1982,64 @@ export class MantisBrowser {
     if (outcome === 'timed-out') {
       // A URL change is already the observable result the caller needs, even when a late load
       // event never arrives (for example, a document held open by a streaming response).
-      if (navigation.hasCommitted()) return;
-      throw new ActionError(navigation.failureMessage);
+      return navigation.hasCommitted();
     }
     const loadRemaining = navigation.remainingMs();
     if (loadRemaining && loadRemaining > 0) {
       await navigation.page.waitForLoadState('domcontentloaded', { timeout: loadRemaining }).catch(() => undefined);
     }
+    return true;
+  }
+
+  /** Wait for an observed navigation; one that has not committed in time is parked for the next call. */
+  private async finishNavigation(navigation: NavigationWatch): Promise<boolean> {
+    const done = await this.timed('navigation', () => this.waitForInFlightNavigation(navigation));
+    if (!done) this.loadingNavigation = navigation;
+    return done;
+  }
+
+  /**
+   * Called at the start of every call that uses the page: give a navigation parked by the previous
+   * action one more bounded wait, then clear it whatever happened. If it still has not committed the
+   * call's reply says so.
+   */
+  private async resolveLoadingNavigation(): Promise<void> {
+    const navigation = this.loadingNavigation;
+    if (!navigation) return;
+    this.loadingNavigation = null;
+    try {
+      if (!navigation.hasCommitted()) {
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        await this.timed('navigation', () => Promise.race([
+          navigation.finished,
+          new Promise<'timed-out'>((resolve) => { timer = setTimeout(() => resolve('timed-out'), navigation.timeoutMs); }),
+        ]));
+        if (timer) clearTimeout(timer);
+      }
+      if (navigation.hasCommitted()) {
+        if (!navigation.page.isClosed()) await this.settle(navigation.page);
+      } else {
+        // Nothing can read the old page while the request is pending, so stop it and say so.
+        await this.stopLoading(navigation.page);
+        this.notes.push(`${navigation.action} started a page load that had not finished after ${Math.round(navigation.timeoutMs * 2 / 100) / 10}s; it was stopped, so the page shown is the one before it. Retry, or open the URL directly.`);
+      }
+    } finally {
+      navigation.cancel();
+    }
+  }
+
+  /** Abandon a main-frame load that has not committed (best effort). */
+  private async stopLoading(page: Page): Promise<void> {
+    try {
+      const session = await page.context().newCDPSession(page);
+      await session.send('Page.stopLoading');
+      await session.detach().catch(() => undefined);
+    } catch { /* page closed or CDP unavailable */ }
+  }
+
+  private dropLoadingNavigation(): void {
+    this.loadingNavigation?.cancel();
+    this.loadingNavigation = null;
   }
 
   /**
@@ -2006,14 +2111,16 @@ export class MantisBrowser {
     const handle = await el.evaluateHandle((target) => {
       if (!(target instanceof HTMLInputElement || target instanceof HTMLSelectElement || target instanceof HTMLTextAreaElement || target instanceof HTMLButtonElement)) return null;
       const parent = (node: Element): Element | null => node.parentElement ?? (node.getRootNode() instanceof ShadowRoot ? (node.getRootNode() as ShadowRoot).host : null);
+      const shadowOf = (node: Element): ShadowRoot | null =>
+        node.shadowRoot ?? (window as unknown as { __mantisShadowOf?: (host: Element) => ShadowRoot | null }).__mantisShadowOf?.(node) ?? null;
       const hitAt = (element: Element): Element | null => {
         const rect = element.getBoundingClientRect();
         const x = Math.max(0, Math.min(innerWidth - 1, rect.left + rect.width / 2));
         const y = Math.max(0, Math.min(innerHeight - 1, rect.top + rect.height / 2));
         const root = element.getRootNode() as Document | ShadowRoot;
         let hit: Element | null = (root instanceof ShadowRoot ? root : document).elementFromPoint(x, y);
-        while (hit?.shadowRoot) {
-          const inner = hit.shadowRoot.elementFromPoint(x, y);
+        for (;;) {
+          const inner: Element | null | undefined = hit ? shadowOf(hit)?.elementFromPoint(x, y) : null;
           if (!inner || inner === hit) break;
           hit = inner;
         }
@@ -2213,7 +2320,7 @@ export class MantisBrowser {
       try {
         // A retry after a replaced document shares one total budget with its first attempt.
         const max = Math.max(1, settleMax - (Date.now() - settleStarted));
-        const stop = await page.evaluate(
+        const evaluation = page.evaluate(
           ({ quiet, idleGrace, max, busyMax, timerMax, intervalMax, useEpoch, reason, requestGrace, requestMax, requestQuiet, chainedMax }) =>
             new Promise<string | undefined>((done) => {
               const w = window as unknown as {
@@ -2395,10 +2502,17 @@ export class MantisBrowser {
             chainedMax: 450,
           },
         );
+        // A main-frame request still waiting for its response also holds up evaluate on the old
+        // document, so a watched navigation that uses up its budget ends the wait here.
+        const stop = navigation?.stalled ? await Promise.race([evaluation, navigation.stalled]) : await evaluation;
+        if (stop === 'stalled') {
+          await this.finishNavigation(navigation!);
+          return;
+        }
         if (stop && this.timing) this.timing.settle = stop;
         // A timer can start a main-frame request after its own pending entry has fired. Do not
         // cancel that request's watcher just because the old document has become quiet.
-        if (navigation?.hasStarted()) await this.timed('navigation', () => this.waitForInFlightNavigation(navigation));
+        if (navigation?.hasStarted()) await this.finishNavigation(navigation);
         return;
       } catch (e) {
         if (e instanceof ActionError) throw e;
@@ -2406,7 +2520,7 @@ export class MantisBrowser {
         if (remaining <= 0) return;
         // Do not spend a second load-state timeout after a request has started. In particular,
         // a timer-triggered navigation that never commits has exactly the watcher's budget.
-        if (navigation?.hasStarted()) await this.timed('navigation', () => this.waitForInFlightNavigation(navigation));
+        if (navigation?.hasStarted() && !(await this.finishNavigation(navigation))) return;
         // A navigation replaced the document under us; wait for it and try once more.
         // A committed navigation has already replaced the document. Retrying its load wait here
         // duplicates the watcher budget and can add five seconds to a page we can already read.

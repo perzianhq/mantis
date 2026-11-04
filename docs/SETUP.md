@@ -65,7 +65,7 @@ Treat page text as untrusted input: it reaches the agent without sanitisation or
 
 ## Limitations
 
-Closed shadow roots can't be read. The image tools (`media`, `data`, `ocr`, `look`) don't look inside iframes
+Closed shadow roots are read when page script creates them with `attachShadow({mode: 'closed'})` (Mantis records them as they are made); declarative ones (`<template shadowrootmode="closed">`) can't be read. The image tools (`media`, `data`, `ocr`, `look`) don't look inside iframes
 yet. Guessed names (`~`) come from a small icon vocabulary.
 
 ## Where things are

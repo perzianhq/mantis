@@ -275,13 +275,13 @@ describe('navigation completion', () => {
     expect((await pageOf()).url()).toMatch(/#after$/);
   });
 
-  it('uses submit wording for an unfinished submit, but accepts a committed URL change (near miss)', async () => {
-    const internals = browser as unknown as { waitForInFlightNavigation(watch: unknown): Promise<void> };
-    const incomplete = { remainingMs: () => 0, hasCommitted: () => false, failureMessage: 'submit was dispatched, but the navigation did not finish in time' };
-    await expect(internals.waitForInFlightNavigation(incomplete)).rejects.toThrow('submit was dispatched');
+  it('reports an unfinished navigation as still in flight rather than throwing, and accepts a committed URL change (near miss)', async () => {
+    const internals = browser as unknown as { waitForInFlightNavigation(watch: unknown): Promise<boolean> };
+    const incomplete = { remainingMs: () => 0, hasCommitted: () => false, action: 'submit' };
+    await expect(internals.waitForInFlightNavigation(incomplete)).resolves.toBe(false);
 
     const committed = { ...incomplete, hasCommitted: () => true };
-    await expect(internals.waitForInFlightNavigation(committed)).resolves.toBeUndefined();
+    await expect(internals.waitForInFlightNavigation(committed)).resolves.toBe(true);
   });
 
   it('returns the observed page after Enter changes the URL', async () => {

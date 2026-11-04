@@ -7,8 +7,8 @@
  * at compile time) may live at module level.
  *
  * Iframes: the walker only marks them (a region node carrying `frame`); capture() walks
- * each frame separately and splices its nodes in. Known gap: closed shadow roots are
- * unreadable from script.
+ * each frame separately and splices its nodes in. Closed shadow roots are read when they were made with attachShadow (Mantis's init script
+ * keeps the host -> root pair; see window.__mantisShadowOf). Declarative closed roots stay unreadable.
  */
 
 export type NodeKind = 'interactive' | 'heading' | 'region' | 'text' | 'prose';
@@ -199,8 +199,13 @@ export function walker(includeSrOnly = false): WalkResult {
     r.left + window.scrollX < docW && r.top + window.scrollY < docH;
   const inView = (r: DOMRect): boolean => r.bottom > 0 && r.right > 0 && r.top < vh && r.left < vw;
 
+  /** The element's shadow root: open ones directly, closed ones through Mantis's attachShadow patch (see TRACKER). */
+  const shadowOf = (e: Element): ShadowRoot | null =>
+    e.shadowRoot ?? (window as unknown as { __mantisShadowOf?: (host: Element) => ShadowRoot | null }).__mantisShadowOf?.(e) ?? null;
+
   function childrenOf(e: Element): Node[] {
-    if (e.shadowRoot) return Array.from(e.shadowRoot.childNodes);
+    const shadow = shadowOf(e);
+    if (shadow) return Array.from(shadow.childNodes);
     if (e.localName === 'slot') {
       const assigned = (e as HTMLSlotElement).assignedNodes({ flatten: true });
       if (assigned.length) return assigned;
@@ -978,7 +983,11 @@ export function walker(includeSrOnly = false): WalkResult {
   const ACTIVE_CLASS = /(^|\s)(active|current|selected|is-active|is-current|is-selected)(\s|$)/;
 
   let deepActive: Element | null = document.activeElement;
-  while (deepActive?.shadowRoot?.activeElement) deepActive = deepActive.shadowRoot.activeElement;
+  for (;;) {
+    const inner: Element | null | undefined = deepActive ? shadowOf(deepActive)?.activeElement : null;
+    if (!inner) break;
+    deepActive = inner;
+  }
 
   const buttonish: { node: RawNode; el: Element; r: DOMRect; cs: CSSStyleDeclaration }[] = [];
 
@@ -1248,8 +1257,8 @@ export function walker(includeSrOnly = false): WalkResult {
    */
   function inOverlay(h: Element, control: Element, x: number, y: number): boolean {
     let deep = h;
-    for (let k = 0; k < 8 && deep.shadowRoot && !composedContains(deep, control); k++) {
-      const inner = deep.shadowRoot.elementFromPoint(x, y);
+    for (let k = 0; k < 8 && shadowOf(deep) && !composedContains(deep, control); k++) {
+      const inner = shadowOf(deep)!.elementFromPoint(x, y);
       if (!inner || inner === deep) break;
       deep = inner;
     }
@@ -1492,14 +1501,14 @@ export function walker(includeSrOnly = false): WalkResult {
       // native control is hidden until its closed group is opened. Keep that text with the
       // controller guidance instead of letting the hidden descendant suppress it.
       const collapsedHiddenLabel = !!requiresOpen && tag === 'label';
-      if (t && t.length <= 80 && !el.shadowRoot && (!el.querySelector(LEAF_BLOCKER) || collapsedHiddenLabel)) {
+      if (t && t.length <= 80 && !shadowOf(el) && (!el.querySelector(LEAF_BLOCKER) || collapsedHiddenLabel)) {
         const node = stamp({ kind: isProseTag && t.length >= 40 ? 'prose' : 'text', role: 'text', name: t, states: [], parent, depth, inViewport: inView(r), covered: false }, r);
         if (labelled) { node.labelled = true; node.labelledValue = labelledValue; }
         if (requiresOpen) node.requiresOpen = requiresOpen;
         nodes.push(node);
         return;
       }
-      if ((t.length > 80 || (isProseTag && t.length >= 40)) && !el.shadowRoot && !el.querySelector(BLOCK_SEL)) {
+      if ((t.length > 80 || (isProseTag && t.length >= 40)) && !shadowOf(el) && !el.querySelector(BLOCK_SEL)) {
         // A paragraph of running text (maybe with inline links): keep it as prose, unless it is
         // mostly link text (a headline card), which the links already cover.
         // `find()` and read(full=true) promise access to content omitted from the

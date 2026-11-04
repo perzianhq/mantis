@@ -47,7 +47,7 @@
     stage(inner.attachShadow({ mode: 'open' }), 'Open');
   });
 
-  // Near miss: closed roots are not reachable from script or from the page walk, and settle must not wait for them.
+  // A closed root made through attachShadow: Mantis's patch records it, so settle waits on it and it is read.
   document.getElementById('closed').addEventListener('click', () => {
     working();
     const host = document.createElement('div');

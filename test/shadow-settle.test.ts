@@ -19,14 +19,11 @@ describe('settle watches open shadow roots', () => {
     expect(res).toContain('Static step 16');
   });
 
-  it('does not wait on a closed root, which nothing can see (near miss)', async () => {
+  it('waits for a staged update inside a closed root attached through attachShadow', async () => {
     const view = await browser.open(fixture('shadow-settle.html'));
-    const start = performance.now();
     const res = await browser.click(idOf(view, 'Start closed steps'));
-    const ms = performance.now() - start;
     expect(res).toContain('clicked #');
-    expect(res).not.toContain('Closed step');
-    expect(ms).toBeLessThan(1500);
+    expect(res).toContain('Closed step 16');
   });
 
   it('types into and clicks controls inside an open shadow root', async () => {
@@ -37,9 +34,9 @@ describe('settle watches open shadow roots', () => {
     expect(await browser.read()).toContain('Hello Ada');
   });
 
-  it('keeps shadow content out of the view when the root is closed (near miss)', async () => {
+  it('shows closed-root content in a later read too', async () => {
     const view = await browser.open(fixture('shadow-settle.html'));
     await browser.click(idOf(view, 'Start closed steps'));
-    expect(await browser.read()).not.toContain('Closed step');
+    expect(await browser.read()).toContain('Closed step');
   });
 });

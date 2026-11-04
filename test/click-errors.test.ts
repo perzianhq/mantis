@@ -239,12 +239,14 @@ describe('click errors and navigation', () => {
     expect(result).not.toContain('(no visible change)');
   });
 
-  it('reports a timer-triggered navigation that stalls within one navigation budget', async () => {
+  it('reports a timer-triggered navigation that stalls within one navigation budget as still loading, not as a failure', async () => {
     const view = await b.open(`${base}/late-hanging-timer`);
     const started = Date.now();
     const result = await b.click(idOf(view, 'button "Continue to stalled page"'));
 
-    expect(result).toBe('error: click was dispatched, but the navigation did not finish in time');
+    expect(result).toMatch(/^clicked #\d+ button "Continue to stalled page"/);
+    expect(result).toContain('click done; the page is still loading. The next call waits for it.');
+    expect(result).not.toMatch(/error:/);
     expect(Date.now() - started).toBeGreaterThanOrEqual(4800);
     expect(Date.now() - started).toBeLessThan(6500);
   });

@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Declarative closed shadow</title></head>
+<body>
+<main>
+  <h1>Declarative closed shadow</h1>
+  <!-- Built by the parser, not by attachShadow, so Mantis never sees the root (a documented limit). -->
+  <div id="declarative-host">
+    <template shadowrootmode="closed">
+      <p>Declarative closed text</p>
+      <button type="button">Declarative closed button</button>
+    </template>
+  </div>
+</main>
+</body>
+</html>

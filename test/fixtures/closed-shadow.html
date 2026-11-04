@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Closed shadow</title></head>
+<body>
+<main>
+  <h1>Closed shadow</h1>
+  <p id="outer-status">Outer idle</p>
+  <fancy-widget></fancy-widget>
+  <div id="open-host"></div>
+</main>
+<script>
+  // A custom element that keeps its root closed and holds the only reference to it.
+  customElements.define('fancy-widget', class extends HTMLElement {
+    constructor() {
+      super();
+      const root = this.attachShadow({ mode: 'closed' });
+      root.innerHTML =
+        '<p id="msg">Closed widget text</p>' +
+        '<label>Closed name <input id="name"></label>' +
+        '<button id="go" type="button">Closed go</button>' +
+        '<output id="state">idle</output>';
+      root.getElementById('go').addEventListener('click', () => {
+        root.getElementById('state').textContent = 'clicked closed';
+      });
+      root.getElementById('name').addEventListener('input', (e) => {
+        root.getElementById('state').textContent = 'hello ' + e.target.value;
+      });
+    }
+  });
+  const openRoot = document.getElementById('open-host').attachShadow({ mode: 'open' });
+  openRoot.innerHTML = '<p>Open widget text</p><button type="button">Open go</button>';
+  // What page script sees: a closed root must stay closed.
+  document.getElementById('outer-status').dataset.hostRoot = String(document.querySelector('fancy-widget').shadowRoot);
+</script>
+</body>
+</html>
