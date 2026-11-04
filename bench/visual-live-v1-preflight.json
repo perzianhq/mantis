@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "suite": "visual-live-v1",
+  "mode": "network",
+  "taskHash": "b54837497ea0a95ec2090e1c2d9a1d429e0860c7fbbbb38b965a3b2a15ff2dc9",
+  "note": "Public GET probes only; review redirects and content changes before promoting a candidate.",
+  "candidates": [
+    {
+      "taskId": "visuallive-books-one-star",
+      "canonicalUrl": "https://books.toscrape.com/catalogue/category/books/sports-and-games_17/index.html",
+      "sourceFingerprint": "eb415315d1b6c58804b8a7f181e60086f7e5b30b32dd5941c6f267ade7d48ce6",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://books.toscrape.com/catalogue/category/books/sports-and-games_17/index.html"
+    },
+    {
+      "taskId": "visuallive-books-five-star-page",
+      "canonicalUrl": "https://books.toscrape.com/catalogue/page-4.html",
+      "sourceFingerprint": "858b32eeb35459827e6ce7aa6d6db9f448c7c57a5260006fb530dca0474fcd44",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://books.toscrape.com/catalogue/page-4.html"
+    },
+    {
+      "taskId": "visuallive-oscars-ajax-winner",
+      "canonicalUrl": "https://www.scrapethissite.com/pages/ajax-javascript/",
+      "sourceFingerprint": "c102644750040509cd380c3bfad3e499b55edf83f1c4d448a8b04a8a71f8a2a0",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://www.scrapethissite.com/pages/ajax-javascript/"
+    },
+    {
+      "taskId": "visuallive-quotes-infinite-scroll",
+      "canonicalUrl": "https://quotes.toscrape.com/scroll",
+      "sourceFingerprint": "88286fa801528fe622e3c6f12064692a6f5577f5f602bbd2e0376fbe04c6317e",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://quotes.toscrape.com/scroll"
+    },
+    {
+      "taskId": "visuallive-quotes-delayed",
+      "canonicalUrl": "https://quotes.toscrape.com/js-delayed/page/3/",
+      "sourceFingerprint": "ae32145f39a0485517abaa27c5dcd3d714630de8268c2cfb528cbfb270493078",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://quotes.toscrape.com/js-delayed/page/3/"
+    },
+    {
+      "taskId": "visuallive-dynamic-loading",
+      "canonicalUrl": "https://the-internet.herokuapp.com/dynamic_loading/2",
+      "sourceFingerprint": "9ac4f262af29e6a96fd0be39555dede184d12392390fbee7e501939b698c50b3",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://the-internet.herokuapp.com/dynamic_loading/2"
+    },
+    {
+      "taskId": "visuallive-xkcd-iso-date",
+      "canonicalUrl": "https://xkcd.com/1179/",
+      "sourceFingerprint": "234425ce47d75d474567562c3121fde7d79ee1aac94a052f739f10d8013d22c8",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://xkcd.com/1179/"
+    },
+    {
+      "taskId": "visuallive-xkcd-worth-time",
+      "canonicalUrl": "https://xkcd.com/1205/",
+      "sourceFingerprint": "75af04ff9f1a3539efd2fd4e2ab7e8e2d860ac27b4fe4cbfbfed25f82f6b60ff",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://xkcd.com/1205/"
+    }
+  ]
+}

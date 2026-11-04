@@ -63,7 +63,7 @@ Mantis runs set `MANTIS_NO_HUMAN=1` on the MCP server (`ask_human` returns immed
 | Variable | Default | Meaning |
 |---|---|---|
 | `AGENT_PROVIDER` | `codex` | `codex`, `claude`, or `sarvam` |
-| `AGENT_SUITE` | `local-v1` | `local-v2-development`, `local-v2`, `local-v2.1`, `capability-v1` (12-task dynamic/visual probe: 8 reused v2 list/chart tasks plus 4 synthetic ones), or `live-v1` (see [live-v1](live-v1.md)); use with `AGENT_TASKS=all` |
+| `AGENT_SUITE` | `local-v1` | `local-v2-development`, `local-v2`, `local-v2.1`, `capability-v1` (12-task dynamic/visual probe: 8 reused v2 list/chart tasks plus 4 synthetic ones), `visual-live-v1` (8 real-site visual/dynamic-content tasks, see below), or `live-v1` (see [live-v1](live-v1.md)); use with `AGENT_TASKS=all` |
 | `AGENT_TASKS` | pilot | `all`, task ids, or `cat:<category>`, comma-separated |
 | `AGENT_ROWS` | unset | exact recovery rows: comma-separated `task|approach|run` triples; each must exist in the selected task/approach/run plan |
 | `AGENT_FIXTURE_SEED` | unset | frozen local-fixture variant seed; requires `AGENT_TASKS=local` or explicit local task IDs. Current seed: `20261018` is one frozen profile spanning all 25 local tasks; it is not 25 independently generated profiles. |
@@ -90,6 +90,15 @@ Sarvam agent models are `gemma-4-31b`, `deepseek-v4.1-flash`, `glm-5.3`, and `sa
 The harness converts MCP schemas to function tools, writes per-attempt JSONL traces/evidence, retries malformed tool arguments once, and uses Sarvam's retry/backoff client. Traces now retain full replies, tool arguments and result text; the judge parses Sarvam traces for the full reply and `FINAL_URL`. Sarvam costs are published-rate INR estimates; USD remains unknown. Summaries include API attempts, response tokens and HTTP 429 counts.
 
 For trace/log analysis and doc-summary trials, use source references and sample outputs for omissions and invented claims. DeepSeek can trial structured extraction, failure clustering and candidate answer-key annotations; sol verifies keys against sources and passing/near-miss graders. `sarvam-105b` drafts summaries with reasoning off. Before relying on analysis, audit flagged and unflagged traces for attribution precision/recall; measure summary omissions, unsupported claims and net reviewer usage/time saved. Outcome-judge calibration does not validate these uses.
+
+### visual-live-v1 (real-site visual and dynamic content)
+
+Eight public-site tasks for what a text-only reader tends to miss: icon-only star ratings, an AJAX table with an icon-only winner, infinite scroll, a delayed JavaScript render, text revealed after a loading bar, and two facts that exist only inside an image (a comic date, a chart cell). Rows live in `bench/agent/visual-live-v1-tasks.json` (ids `visuallive-*`), are graded only by the deterministic grader on the captured final state (no judge), and each `keyNotes` records how the key was verified and its near miss. Limits match live-v1 (no tool cap, 600 s).
+
+```
+AGENT_SUITE=visual-live-v1 AGENT_TASKS=all npx tsx bench/agent/run.ts
+LIVE_V1_PREFLIGHT_SUITE=visual-live-v1 LIVE_V1_PREFLIGHT_NETWORK=1 npx tsx bench/agent/live-v1-preflight.ts   # no-LLM source check, writes bench/visual-live-v1-preflight.json
+```
 
 ### Real-site tasks (blind judge)
 

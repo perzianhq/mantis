@@ -28,6 +28,7 @@ import type { JudgedRun } from '../bench/agent/judge.js';
 import { buildAuditManifest, summarizeAudit } from '../bench/agent/judge-audit.js';
 import type { AuditPacket, AuditRun } from '../bench/agent/judge-audit.js';
 import { evaluateDeterministicGrader, loadRealsiteRows, sanitizeAnswer, validateChecks, validateDeterministicGrader } from '../bench/agent/realsite.js';
+import { VISUAL_LIVE_V1_ROWS } from '../bench/agent/visual-live-v1.js';
 import { uploadFixturePath } from '../bench/agent/upload-fixture.js';
 import { LIVE_V1_ROWS } from '../bench/agent/live-v1.js';
 import { LONG_LIVE_V1_ROWS } from '../bench/agent/long-live-v1.js';
@@ -1696,4 +1697,67 @@ it('capability live-update: grades the pickup code collected after Ready and rej
   expect(gradeCapabilityCase(entry.id, 'PK-6193', good).ok).toBe(false);
   // Ready but never collected.
   expect(gradeCapabilityCase(entry.id, LIVE_PICKUP_CODE, [capEvent('settled', CAPABILITY_ROUTES.live, { ...entry.expected.state, collected: false, code: null })]).ok).toBe(false);
+});
+
+it('visual-live-v1: every task has a passing captured state and a near-miss failing state', () => {
+  const grade = (id: string, answer: string, url: string, text: string) =>
+    evaluateDeterministicGrader(VISUAL_LIVE_V1_ROWS.find((row) => row.task_id === id)!.deterministic!, answer, [{ final: true, url, text }])?.pass;
+  const books = 'https://books.toscrape.com';
+  const category = `${books}/catalogue/category/books/sports-and-games_17/index.html`;
+
+  // Icon-only rating: the one-star title passes on the category page or its own book page; another title in the category does not.
+  const oneStar = 'visuallive-books-one-star';
+  const listing = 'Sports and Games The Book of Basketball: The NBA ... Sugar Rush (Offensive Line ... Icing (Aces Hockey #2)';
+  expect(grade(oneStar, 'Sugar Rush (Offensive Line #2)', category, listing)).toBe(true);
+  expect(grade(oneStar, 'Sugar Rush (Offensive Line #2)', `${books}/catalogue/sugar-rush-offensive-line-2_108/index.html`, 'Sugar Rush (Offensive Line #2) In stock')).toBe(true);
+  expect(grade(oneStar, 'Icing (Aces Hockey #2)', category, listing)).toBe(false);
+  expect(grade(oneStar, 'Sugar Rush (Offensive Line #2)', `${books}/catalogue/category/books/travel_2/index.html`, listing)).toBe(false);
+
+  // Five-star page 4: both titles needed; one alone, or the right titles on page 2, fail.
+  const fiveStar = 'visuallive-books-five-star-page';
+  const page4 = 'Page 4 of 50 The Inefficiency Assassin: Time ... The Activist\'s Tao Te ...';
+  const both = 'The Inefficiency Assassin: Time Management Tactics for Working Smarter, Not Longer; The Activist\'s Tao Te Ching: Ancient Advice for a Modern Revolution';
+  expect(grade(fiveStar, both, `${books}/catalogue/page-4.html`, page4)).toBe(true);
+  expect(grade(fiveStar, 'The Inefficiency Assassin', `${books}/catalogue/page-4.html`, page4)).toBe(false);
+  expect(grade(fiveStar, both, `${books}/catalogue/page-2.html`, 'Page 2 of 50 Chase Me (Paris Nights #2)')).toBe(false);
+
+  // AJAX table with an icon-only winner: Spotlight passes once 2015 has loaded; The Revenant (most nominated) or an unloaded table fails.
+  const oscars = 'visuallive-oscars-ajax-winner';
+  const ajaxUrl = 'https://www.scrapethissite.com/pages/ajax-javascript/#2015';
+  expect(grade(oscars, 'Spotlight', ajaxUrl, 'Title Nominations Awards Best Picture Spotlight 6 2 Mad Max: Fury Road 10 6')).toBe(true);
+  expect(grade(oscars, 'The Revenant', ajaxUrl, 'Title Spotlight 6 2 Mad Max: Fury Road 10 6 The Revenant 12 3')).toBe(false);
+  expect(grade(oscars, 'Spotlight', 'https://www.scrapethissite.com/pages/ajax-javascript/', 'Oscar Winning Films Click on a year to see the nominees')).toBe(false);
+
+  // Infinite scroll: all six tags with the loaded quote; page-1 tags, or no scroll, fail.
+  const scroll = 'visuallive-quotes-infinite-scroll';
+  const scrollUrl = 'https://quotes.toscrape.com/scroll';
+  expect(grade(scroll, 'bilbo, journey, lost, quest, travel, wander', scrollUrl, '“Not all those who wander are lost.” by J.R.R. Tolkien Tags: bilbo journey lost quest travel wander')).toBe(true);
+  expect(grade(scroll, 'change, deep-thoughts, thinking, world', scrollUrl, '“Not all those who wander are lost.” by J.R.R. Tolkien')).toBe(false);
+  expect(grade(scroll, 'bilbo, journey, lost, quest, travel, wander', scrollUrl, 'Quotes to Scrape Albert Einstein Tags: change deep-thoughts')).toBe(false);
+
+  // Delayed render: first quote's author on page 3 passes; page 3's second author, or the right author on page 2's path, fails.
+  const delayed = 'visuallive-quotes-delayed';
+  const delayedUrl = 'https://quotes.toscrape.com/js-delayed/page/3/';
+  expect(grade(delayed, 'Pablo Neruda', delayedUrl, '“I love you without knowing how, or when” by Pablo Neruda')).toBe(true);
+  expect(grade(delayed, 'Ralph Waldo Emerson', delayedUrl, '“I love you without knowing how, or when” by Pablo Neruda')).toBe(false);
+  expect(grade(delayed, 'Pablo Neruda', 'https://quotes.toscrape.com/js-delayed/page/2/', 'by Pablo Neruda')).toBe(false);
+
+  // Dynamic loading: the revealed text passes; a page where Start was never clicked fails.
+  const loading = 'visuallive-dynamic-loading';
+  const loadingUrl = 'https://the-internet.herokuapp.com/dynamic_loading/2';
+  expect(grade(loading, 'Hello World!', loadingUrl, 'Example 2: Element rendered after the fact Hello World!')).toBe(true);
+  expect(grade(loading, 'Hello World!', loadingUrl, 'Example 2: Element rendered after the fact Start')).toBe(false);
+  expect(grade(loading, 'Goodbye', loadingUrl, 'Hello World!')).toBe(false);
+
+  // Fact only inside the comic image: the numeric ISO date passes; the title-text date fails.
+  const iso = 'visuallive-xkcd-iso-date';
+  expect(grade(iso, '2013-02-27', 'https://xkcd.com/1179/', 'ISO 8601')).toBe(true);
+  expect(grade(iso, '06/05/88', 'https://xkcd.com/1179/', 'ISO 8601')).toBe(false);
+  expect(grade(iso, '2013-02-27', 'https://xkcd.com/1205/', 'Is It Worth the Time?')).toBe(false);
+
+  // Table inside an image: 2 hours (5 seconds x daily) passes; the neighbouring 5/day cell (12 hours) fails, even though it contains "2 hours".
+  const worth = 'visuallive-xkcd-worth-time';
+  expect(grade(worth, '2 hours', 'https://xkcd.com/1205/', 'Is It Worth the Time?')).toBe(true);
+  expect(grade(worth, '12 hours', 'https://xkcd.com/1205/', 'Is It Worth the Time?')).toBe(false);
+  expect(grade(worth, '2 hours', 'https://xkcd.com/1179/', 'ISO 8601')).toBe(false);
 });

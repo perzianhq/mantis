@@ -5,9 +5,10 @@ import { fileURLToPath } from 'node:url';
 import { deterministicGradeForRun, isAccessBlockText, readEvidenceSidecar, readFinalTexts, runKey, type PacketFrame, type SavedRun } from './judge.js';
 import { LIVE_V1_SCORED_ROWS } from './live-v1.js';
 import { LONG_LIVE_V1_ROWS } from './long-live-v1.js';
+import { VISUAL_LIVE_V1_SCORED_ROWS } from './visual-live-v1.js';
 import type { RealsiteRow } from './realsite.js';
 
-export type RegradeSuite = 'live-v1' | 'long-live-v1';
+export type RegradeSuite = 'live-v1' | 'long-live-v1' | 'visual-live-v1';
 export type RegradeResult = {
   task: string; approach: string; run: number; status: string; verdict: 'success' | 'failure'; reason: string; blocked: boolean;
   /** The raw result/log directory that supplied this cell, never a merged judged report. */
@@ -26,7 +27,7 @@ const resultKey = (r: Pick<RegradeResult, 'task' | 'approach' | 'run'>) => `${r.
 const longIdfix = 'long-live-v1-idfix-haiku';
 
 function suiteRows(suite: RegradeSuite): readonly RealsiteRow[] {
-  return suite === 'long-live-v1' ? LONG_LIVE_V1_ROWS : LIVE_V1_SCORED_ROWS;
+  return suite === 'long-live-v1' ? LONG_LIVE_V1_ROWS : suite === 'visual-live-v1' ? VISUAL_LIVE_V1_SCORED_ROWS : LIVE_V1_SCORED_ROWS;
 }
 function sourceFile(root: string, name: string): SourceFile { return JSON.parse(readFileSync(path.join(root, `${name}.json`), 'utf8')) as SourceFile; }
 function sourceProvider(source: SourceFile): string { return source.metadata?.settings?.provider ?? (source.model?.includes('claude') ? 'claude' : source.model?.includes('sarvam') ? 'sarvam' : 'codex'); }
@@ -175,7 +176,7 @@ function main(): void {
     writeLongLiveSummary(reports);
     return;
   }
-  const suite: RegradeSuite = first === 'live-v1' || first === 'long-live-v1' ? first : (first?.startsWith('long-live-v1') ? 'long-live-v1' : 'live-v1');
+  const suite: RegradeSuite = first === 'live-v1' || first === 'long-live-v1' || first === 'visual-live-v1' ? first : (first?.startsWith('long-live-v1') ? 'long-live-v1' : 'live-v1');
   const source = second ?? first;
   if (!source || source === 'live-v1') throw new Error('Pass a saved result name, or `long-live-v1` to replay the published Luna and Haiku cohorts.');
   const report = deterministicRegrade(source, suite); const stem = writeReport(report);

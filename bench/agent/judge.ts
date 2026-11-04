@@ -28,6 +28,7 @@ import { evaluateChecks, evaluateDeterministicGrader, evaluateProcessContract, l
 import type { RealsiteRow } from './realsite.js';
 import { LIVE_V1_SCORED_ROWS } from './live-v1.js';
 import { LONG_LIVE_V1_SCORED_ROWS } from './long-live-v1.js';
+import { VISUAL_LIVE_V1_SCORED_ROWS } from './visual-live-v1.js';
 import { TASKS } from './tasks.js';
 import { evidenceShowsOnlySiteErrors } from './evidence.js';
 import type { EvidenceFrame, EvidenceJournal, EvidenceSidecar, FormValue } from './evidence.js';
@@ -759,7 +760,7 @@ export async function judgeBenchmark(name: string, options: JudgeOptions = {}): 
   // Missing credentials fail before worker errors can turn them into "unsure" verdicts.
   const sarvam = judgeProvider === 'sarvam' ? options.sarvamClient ?? new SarvamClient({ timeoutMs }) : null;
   const provider = saved.metadata?.settings?.provider ?? 'codex';
-  const catalog = options.rows ?? [...loadRealsiteRows(), ...LIVE_V1_SCORED_ROWS, ...LONG_LIVE_V1_SCORED_ROWS, ...builtInJudgeRows()];
+  const catalog = options.rows ?? [...loadRealsiteRows(), ...LIVE_V1_SCORED_ROWS, ...LONG_LIVE_V1_SCORED_ROWS, ...VISUAL_LIVE_V1_SCORED_ROWS, ...builtInJudgeRows()];
   const rows = new Map(catalog.map((r) => [r.task_id, r]));
   const judgedRuns = saved.results.filter((r) => rows.has(r.task) && (!runKeys || runKeys.has(runKey(r.task, r.approach, r.run))));
   if (!judgedRuns.length) throw new Error(`${name}.json has no runs of known benchmark tasks.`);
