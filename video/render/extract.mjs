@@ -5,12 +5,11 @@ import { fileURLToPath } from 'node:url';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..', '..');
 const taskId = 'longlive-gutenberg-dickens-search';
-// One logged Luna run per approach: the median run by input tokens of the three same-session runs
-// (Mantis run 3 of 211,872 / 249,752 / 303,548; tree run 3 of 632,662 / 1,166,463 / 1,250,898).
+// One logged Luna run per approach: the median run by input tokens of five same-session runs
+// (Mantis run 3 of 219,060 / 222,561 / 238,210 / 244,265 / 247,030; tree run 3 of 753,977 / 811,096 / 887,347 / 916,617 / 1,044,454).
 const sources = {
-  mantis: { stem: 'long-live-v1-luna-speed-20261027', run: 3, expected: { calls: 11, tokens: 249752, wallMs: 42466 } },
-  // Call 7 (browser_click) hit Playwright's 5000 ms action timeout; the replay drops that wait.
-  tree: { stem: 'long-live-v1-luna-tree-20261027', run: 3, expected: { calls: 35, tokens: 1166463, wallMs: 96191 }, cut: { call: 7, ms: 5000 } },
+  mantis: { stem: 'dickens-video-luna-20261104', run: 3, expected: { calls: 11, tokens: 238210, wallMs: 54599 } },
+  tree: { stem: 'dickens-video-luna-20261104', run: 3, expected: { calls: 25, tokens: 887347, wallMs: 103415 } },
 };
 const resultsDir = path.join(root, 'bench', 'results');
 const logDirs = Object.fromEntries(Object.entries(sources).map(([approach, source]) => [approach, path.join(resultsDir, 'agent-logs', source.stem)]));

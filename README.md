@@ -14,9 +14,9 @@ npx -y -p mantis-browser mantis read https://example.com   # try it without an a
 
 Windows, Linux servers and other agents: [SETUP](docs/SETUP.md#install).
 
-<p align="center"><img src="video/mantis-demo.gif" alt="Side-by-side replay of the same task with Mantis and Playwright MCP: Mantis finishes in 11 calls and about 250k input tokens, Playwright MCP in 35 calls and about 1.17M" width="100%"></p>
+<p align="center"><img src="video/mantis-demo.gif" alt="Side-by-side replay of the same task with Mantis and Playwright MCP: Mantis finishes in 11 calls and about 238k input tokens, Playwright MCP in 25 calls and about 887k" width="100%"></p>
 
-*One real task (Luna, each tool's median run by input tokens out of 3, replayed; one 5 s Playwright click timeout cut from its time): less than half the time, over 4x fewer input tokens, about a third of the calls. Across all 3 runs: about 2-5x fewer tokens, about half the time, a third to half the calls. This is a selected example from 16 long tasks; medians across all 16 are in [Results](#results). [Full video](video/mantis-demo.mp4).*
+*One real task (Luna, each tool’s median run of 5 by input tokens, replayed): about half the time, over 3.5x fewer input tokens, less than half the calls. Across all 5 runs: 3-5x fewer tokens, about half the time, 11-12 calls vs 21-29. This is a selected example from 16 long tasks; medians across all 16 are in [Results](#results). [Full video](video/mantis-demo.mp4).*
 
 Security and threat model: [SECURITY.md](SECURITY.md).
 

@@ -4,22 +4,24 @@ One real task, same prompt for both tools, shown side by side with an estimated 
 
 **Task:** `longlive-gutenberg-dickens-search` (from `long-live-v1`). On Project Gutenberg, run Advanced Search for author Charles Dickens, language English, LoC class PR. Inspect result page one, follow next to page two, then look up #98 and #1400 through separate Quick searches, report `eBook number | title | release date | LoC class`, and return to page two of the original search. About 10 to 35 tool calls, 40 s to 1.5 minutes.
 
-## Figures (the video replays the median-by-input-tokens run of run 20261027: 250k tokens, 11 calls, 42 s vs 35 calls, 1.17M, 91 s; every run graded success)
+## Figures (the video replays each tool's median-by-input-tokens run of 5, run 20261104: 238k tokens, 11 calls, 55 s vs 887k, 25 calls, 103 s; all 10 runs graded success)
 
-The tree run's call 7 (`browser_click`) hit Playwright's 5000 ms action timeout. The replay cuts that 5 s wait from the tree's timeline and total (`cut` in `video/render/extract.mjs`), so the video shows 91.2 s instead of the logged 96.2 s; calls and tokens are unchanged. The video's final card says so.
-
-Luna (`gpt-6-luna`, local). Mantis and tree ran in the same session (20261027), three runs each. The video replays run 3 of each approach, the median by input tokens (Mantis 212k / 250k / 304k, tree 633k / 1.17M / 1.25M):
+Luna (`gpt-6-luna`, local). Mantis and tree ran in the same session (`dickens-video-luna-20261104`), five runs each, both run 3 replayed. Neither replayed run hit a timeout; the tree run has one failed click (no matching element), kept as logged.
 
 | | Mantis | Tree (Playwright MCP style) | Change |
 |---|---|---|---|
-| Input tokens, replayed run (r3) | 249,752 | 1,166,463 | -79% |
-| Wall time, replayed run (r3) | 42 s | 91 s (96 s logged, minus one 5 s click timeout) | -53% |
-| Tool calls, replayed run (r3) | 11 | 35 | -69% |
-| Input tokens, range over 3 runs | 211,872 to 303,548 | 632,662 to 1,250,898 | |
-| Wall time, range over 3 runs | 37 to 57 s | 66 to 96 s | |
-| Tool calls, range over 3 runs | 11 to 14 | 20 to 35 | |
+| Input tokens, replayed run (r3) | 238,210 | 887,347 | -73% |
+| Wall time, replayed run (r3) | 54.6 s | 103.4 s | -47% |
+| Tool calls, replayed run (r3) | 11 | 25 | -56% |
+| Input tokens, range over 5 runs | 219,060 to 247,030 | 753,977 to 1,044,454 | |
+| Wall time, range over 5 runs | 43.8 to 58.8 s | 88.2 to 103.4 s | |
+| Tool calls, range over 5 runs | 11 to 12 | 21 to 29 | |
 
-Wall time is `timings.cliWallMs` (the md's "CLI wall" column; the md's "CLI execution" column is 0.4 to 0.7 s shorter: 41.8 s and 95.7 s for the replayed runs). The tree varies a lot between runs (20 to 35 calls); Mantis stays at 11 to 14 calls. Quote the range: **about 2x to 5x fewer input tokens, about half the time, about a third to a half of the calls.** Luna reports tokens only, so no dollar figure is claimed for it.
+Wall time is `timings.cliWallMs`. The replayed tree run is the median by tokens but the slowest of the five (median 98.1 s); Mantis run 3 is the median on all three measures. Quote the range: **3-5x fewer input tokens, about half the time, less than half the calls.** Luna reports tokens only, so no dollar figure is claimed for it.
+
+Same-build Haiku rerun (`dickens-video-haiku-20261103`, 5 runs each, not used for the video): median by tokens Mantis 409k / 43 calls / 146 s vs tree 933k / 43 calls / 237 s. Gutenberg's search took over 5 s that night; Haiku on Mantis treated the click's "navigation did not finish in time" error as a failure and restarted the search about 7 times.
+
+Previous video (run 20261027, 3 runs each, median by tokens): Mantis 249,752 / 11 calls / 42 s vs tree 1,166,463 / 35 / 96 s; that tree run included one 5 s click timeout.
 
 Earlier build (before the settle-timing changes), published run `long-live-v1-final-luna` and an independent rerun `long-live-v1-crosscheck-luna`. The video previously replayed the first column (Mantis run 2, tree run 1):
 
@@ -43,7 +45,7 @@ Haiku 5.5 (`claude-haiku-5-5`), earlier build, is less steady on this task: Mant
 | Cost, published | $0.234 | $0.430 | -46% |
 | Cost, rerun | $0.291 | $0.418 | -30% |
 
-Sources: current Luna table `bench/results/long-live-v1-luna-speed-20261027.json` (Mantis) and `bench/results/long-live-v1-luna-tree-20261027.json` (tree), logs in `bench/results/agent-logs/` under the same names (`video/render/extract.mjs` reads them). Earlier-build and Haiku tables: `bench/results/long-live-v1-final-{luna,haiku}.json` (published) and `bench/results/long-live-v1-crosscheck-{luna,haiku}.json` (rerun): `totalInputTokens`, `toolCalls`, `costUsd`, `timings.cliWallMs`. Cost is the Claude CLI's `total_cost_usd`.
+Sources: current Luna table `bench/results/dickens-video-luna-20261104.json`, logs in `bench/results/agent-logs/dickens-video-luna-20261104/` (`video/render/extract.mjs` reads them). Earlier-build and Haiku tables: `bench/results/long-live-v1-final-{luna,haiku}.json` (published) and `bench/results/long-live-v1-crosscheck-{luna,haiku}.json` (rerun): `totalInputTokens`, `toolCalls`, `costUsd`, `timings.cliWallMs`. Cost is the Claude CLI's `total_cost_usd`.
 
 A Sol review of the commits since the headline run found no regression in tokens or latency: tool descriptions are identical, the new MCP instruction adds about 32 tokens, and the Haiku Dickens gap is a different agent path (more calls, one full read), not bigger tool output.
 
@@ -64,4 +66,4 @@ This is a selected example from the 16 long tasks, picked for the demo because s
 
 ## Recording tips
 
-Fresh browser profile, same model, show the per-call token counter. Last frame, safe to claim for the replayed run: "less than half the time, over 4x fewer input tokens, about a third of the calls" (selected example; the medians above are the headline). Show exact final totals; label intermediate estimates.
+Fresh browser profile, same model, show the per-call token counter. Last frame, safe to claim for the replayed run: "about half the time, over 3.5x fewer input tokens, less than half the calls" (selected example; the medians above are the headline). Show exact final totals; label intermediate estimates.
