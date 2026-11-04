@@ -1,0 +1,8 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Fully rendered scroll list</title>
+<style>body{font:15px system-ui;margin:16px}#box{height:200px;overflow:auto;border:2px solid #345}li{height:36px}</style></head><body>
+<h1>Plain list</h1>
+<div id="box" aria-label="All entries"><ul id="l"></ul></div>
+<script>
+document.getElementById('l').innerHTML = Array.from({length: 60}, (_, i) => '<li>Row ' + (i + 1) + '</li>').join('');
+</script></body></html>

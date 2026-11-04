@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "capability-v1",
+  "kind": "local-fixture-capability-probe",
+  "status": "configured",
+  "sourceSelector": "bench/agent/capability-v1.ts",
+  "taskCount": 12,
+  "splits": { "reusedLocalV2Development": 8, "newSynthetic": 4 },
+  "purpose": "Quick map of where a browser tool works and fails on dynamic and visual pages; not a headline scorecard.",
+  "tasks": [
+    "v2-list-virtual-target", "v2-list-paginated-filter", "v2-list-reordered-item", "v2-list-nested-scroll",
+    "v2-chart-svg-series", "v2-chart-canvas-point", "v2-chart-image-fact", "v2-chart-responsive",
+    "capability-colour-swatch", "capability-photo-fact", "capability-revisit-earlier", "capability-live-update"
+  ],
+  "newCases": [
+    { "id": "capability-colour-swatch", "description": "colour variants are unlabelled coloured buttons; select the green one and add it to the cart" },
+    { "id": "capability-photo-fact", "description": "serial number exists only in a canvas-generated PNG" },
+    { "id": "capability-revisit-earlier", "description": "order code shown on step 1 of 4 must be entered on the final verification form" },
+    { "id": "capability-live-update", "description": "status goes Pending, Processing (2.5 s), Ready (5 s); the action only works once Ready" }
+  ],
+  "approaches": ["mantis", "tree", "screenshot"],
+  "runs": 1,
+  "limits": { "standardMaxSteps": 50 },
+  "command": "AGENT_SUITE=capability-v1 AGENT_APPROACHES=mantis,tree,screenshot AGENT_RUNS=1 AGENT_MAX_STEPS=50 AGENT_V2_STANDARD_MAX_STEPS=50 npm run bench:agent"
+}

@@ -63,7 +63,7 @@ Mantis runs set `MANTIS_NO_HUMAN=1` on the MCP server (`ask_human` returns immed
 | Variable | Default | Meaning |
 |---|---|---|
 | `AGENT_PROVIDER` | `codex` | `codex`, `claude`, or `sarvam` |
-| `AGENT_SUITE` | `local-v1` | `local-v2-development`, `local-v2`, `local-v2.1`, or `live-v1` (see [live-v1](live-v1.md)); use with `AGENT_TASKS=all` |
+| `AGENT_SUITE` | `local-v1` | `local-v2-development`, `local-v2`, `local-v2.1`, `capability-v1` (12-task dynamic/visual probe: 8 reused v2 list/chart tasks plus 4 synthetic ones), or `live-v1` (see [live-v1](live-v1.md)); use with `AGENT_TASKS=all` |
 | `AGENT_TASKS` | pilot | `all`, task ids, or `cat:<category>`, comma-separated |
 | `AGENT_ROWS` | unset | exact recovery rows: comma-separated `task|approach|run` triples; each must exist in the selected task/approach/run plan |
 | `AGENT_FIXTURE_SEED` | unset | frozen local-fixture variant seed; requires `AGENT_TASKS=local` or explicit local task IDs. Current seed: `20261018` is one frozen profile spanning all 25 local tasks; it is not 25 independently generated profiles. |

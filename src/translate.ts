@@ -807,13 +807,26 @@ export function findInSnapshot(snap: Snapshot, query: string | string[], max = 2
 /** Most searches one multi-query find runs. */
 export const MAX_FIND_QUERIES = 6;
 
+function matchesQuery(n: RawNode, q: string): boolean {
+  return n.kind !== 'region' && (n.name.toLowerCase().includes(q) || !!n.href?.toLowerCase().includes(q) || (!n.secret && !!n.value?.toLowerCase().includes(q)) || !!n.attrs?.some((a) => a.toLowerCase().includes(q)));
+}
+
+/** The queries (as given, deduplicated, at most MAX_FIND_QUERIES) that match nothing in the snapshot. */
+export function findMisses(snap: Snapshot, query: string | string[]): string[] {
+  const queries = [...new Map((Array.isArray(query) ? query : [query]).map((q) => q.trim()).filter(Boolean).map((q) => [q.toLowerCase(), q] as const)).values()].slice(0, MAX_FIND_QUERIES);
+  return queries.filter((query) => {
+    const q = query.toLowerCase().replace(/\s+/g, ' ').trim();
+    return !snap.nodes.some((n) => matchesQuery(n, q));
+  });
+}
+
 function findOne(snap: Snapshot, query: string, max: number, contextChars: number): string {
   const q = query.toLowerCase().replace(/\s+/g, ' ').trim();
   if (!q) return 'error: give the text to find';
   const nodes = deriveRegions(snap);
   const hits = nodes
     .map((n, i) => ({ n, i }))
-    .filter(({ n }) => n.kind !== 'region' && (n.name.toLowerCase().includes(q) || n.href?.toLowerCase().includes(q) || (!n.secret && !!n.value?.toLowerCase().includes(q)) || !!n.attrs?.some((a) => a.toLowerCase().includes(q))))
+    .filter(({ n }) => matchesQuery(n, q))
     .sort((a, b) =>
       Number(norm(b.n.name) === q) - Number(norm(a.n.name) === q) ||
       Number(b.n.kind === 'interactive') - Number(a.n.kind === 'interactive') ||

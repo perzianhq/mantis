@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Virtual scroll search</title>
+<style>
+body{font:15px system-ui;margin:16px}
+#feed{height:240px;overflow:auto;border:2px solid #345;position:relative}
+#sizer{position:relative}
+#feed button{position:absolute;left:0;right:0;height:40px;text-align:left}
+#log{height:30px}
+</style></head><body>
+<h1>Ledger</h1>
+<div id="feed" aria-label="Ledger entries"><div id="sizer"></div></div>
+<p id="log"></p>
+<script>
+const rows = Array.from({length: 120}, (_, i) => 'Entry ' + String(i + 1).padStart(3, '0'));
+const feed = document.getElementById('feed'), sizer = document.getElementById('sizer');
+sizer.style.height = rows.length * 40 + 'px';
+function render() {
+  const first = Math.max(0, Math.floor(feed.scrollTop / 40) - 1);
+  sizer.innerHTML = rows.slice(first, first + 9).map((t, i) => '<button style="top:' + ((first + i) * 40) + 'px">' + t + '</button>').join('');
+}
+feed.addEventListener('scroll', render);
+feed.addEventListener('click', e => { const b = e.target.closest('button'); if (b) document.getElementById('log').textContent = 'Opened ' + b.textContent; });
+render();
+</script></body></html>

@@ -9,6 +9,7 @@
  *   AGENT_SUITE=local-v2-development AGENT_TASKS=all npx tsx bench/agent/run.ts  # opt-in, 32 development cases
  *   AGENT_SUITE=local-v2 AGENT_TASKS=all npx tsx bench/agent/run.ts              # frozen historical 48-case scorecard
  *   AGENT_SUITE=local-v2.1 AGENT_TASKS=all npx tsx bench/agent/run.ts            # permanent 54-case scorecard
+ *   AGENT_SUITE=capability-v1 AGENT_TASKS=all npx tsx bench/agent/run.ts         # 12-task dynamic/visual capability probe
  *   AGENT_SUITE=live-v1 AGENT_TASKS=all npx tsx bench/agent/run.ts                # frozen 30-task public live suite
  *   AGENT_SUITE=long-live-v1 AGENT_TASKS=all npx tsx bench/agent/run.ts           # reviewed long live-task draft
  *   AGENT_RESUME=1 ...                                   (continue a stopped run)
@@ -34,6 +35,7 @@ import { LOCAL_V2_DEVELOPMENT_CHECKS, LOCAL_V2_DEVELOPMENT_MANIFEST, LOCAL_V2_DE
 import { LOCAL_V2_CHECKS, LOCAL_V2_MANIFEST, LOCAL_V2_SUITE, LOCAL_V2_TASKS, gradeLocalV2Case, localV2Route } from './local-v2.js';
 import { LONG_LOCAL_V1_CHECKS, LONG_LOCAL_V1_MANIFEST, LONG_LOCAL_V1_TASKS, LONG_LOCAL_V1_SUITE, gradeLongLocalV1Case, longLocalV1Route } from './long-local-v1.js';
 import { LOCAL_V21_CHECKS, LOCAL_V21_MANIFEST, LOCAL_V21_SUITE, LOCAL_V21_TASKS, gradeLocalV21Case, localV21Route } from './local-v21.js';
+import { CAPABILITY_V1_CHECKS, CAPABILITY_V1_MANIFEST, CAPABILITY_V1_SUITE, CAPABILITY_V1_TASKS, capabilityV1Route, gradeCapabilityV1Case } from './capability-v1.js';
 import { LIVE_V1_MANIFEST_FILE, LIVE_V1_SUITE, LIVE_V1_TASKS } from './live-v1.js';
 import { LONG_LIVE_V1_MANIFEST_FILE, LONG_LIVE_V1_SUITE, LONG_LIVE_V1_TASKS } from './long-live-v1.js';
 import { aggregateUsage, assertCompatibleResume, classifyAttempt, extractGradedAnswer, hashSources, isHarnessFailure, isSarvamStepLimit, makeMetadata, nextHarnessFailureStreak, parseClaudeStream, validateFlag, validatePositiveInt, wrongAnswerDetail } from './integrity.js';
@@ -106,7 +108,7 @@ interface RawCapture { step: number; png: Buffer | null; state: string | null; f
 type ToolResult = { isError?: boolean; content?: { type: string; mimeType?: string; data?: string; text?: string }[] };
 
 const sarvamMaxStepsForTask = (task: AgentTask): number =>
-  (SUITE === LOCAL_V2_DEVELOPMENT_SUITE || SUITE === LOCAL_V2_SUITE || SUITE === LOCAL_V21_SUITE) && task.category !== 'long' ? V2_STANDARD_MAX_STEPS : SARVAM_MAX_STEPS;
+  (SUITE === LOCAL_V2_DEVELOPMENT_SUITE || SUITE === LOCAL_V2_SUITE || SUITE === LOCAL_V21_SUITE || SUITE === CAPABILITY_V1_SUITE) && task.category !== 'long' ? V2_STANDARD_MAX_STEPS : SARVAM_MAX_STEPS;
 
 /** Viewport PNG when available plus page state (URL, text, form values) of the live page; rejects after 15 s. */
 async function captureOnce(server: Pick<McpProxy, 'call'>, approach: Approach, step: number, final: boolean): Promise<RawCapture> {
@@ -681,6 +683,8 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
       ? gradeLocalV2Case(task.id, gradedAnswer, fixtureEvidence?.events ?? [])
       : SUITE === LOCAL_V21_SUITE
         ? gradeLocalV21Case(task.id, gradedAnswer, fixtureEvidence?.events ?? [])
+        : SUITE === CAPABILITY_V1_SUITE
+          ? gradeCapabilityV1Case(task.id, gradedAnswer, fixtureEvidence?.events ?? [])
         : SUITE === LONG_LOCAL_V1_SUITE
           ? gradeLongLocalV1Case(task.id, gradedAnswer, fixtureEvidence?.events ?? [])
     : gradeTaskAnswer(task, rawAnswer);
@@ -850,15 +854,15 @@ function report(results: RunResult[], approaches: Approach[], tasks: AgentTask[]
 }
 
 const SUITE = process.env.AGENT_SUITE ?? 'local-v1';
-if (SUITE !== 'local-v1' && SUITE !== LOCAL_V2_DEVELOPMENT_SUITE && SUITE !== LOCAL_V2_SUITE && SUITE !== LOCAL_V21_SUITE && SUITE !== LIVE_V1_SUITE && SUITE !== LONG_LOCAL_V1_SUITE && SUITE !== LONG_LIVE_V1_SUITE) throw new Error(`unknown AGENT_SUITE ${JSON.stringify(SUITE)}; use local-v1, ${LOCAL_V2_DEVELOPMENT_SUITE}, ${LOCAL_V2_SUITE}, ${LOCAL_V21_SUITE}, ${LIVE_V1_SUITE}, ${LONG_LOCAL_V1_SUITE}, or ${LONG_LIVE_V1_SUITE}`);
-const isVersionedLocalSuite = SUITE === LOCAL_V2_DEVELOPMENT_SUITE || SUITE === LOCAL_V2_SUITE || SUITE === LOCAL_V21_SUITE;
+if (SUITE !== 'local-v1' && SUITE !== LOCAL_V2_DEVELOPMENT_SUITE && SUITE !== LOCAL_V2_SUITE && SUITE !== LOCAL_V21_SUITE && SUITE !== CAPABILITY_V1_SUITE && SUITE !== LIVE_V1_SUITE && SUITE !== LONG_LOCAL_V1_SUITE && SUITE !== LONG_LIVE_V1_SUITE) throw new Error(`unknown AGENT_SUITE ${JSON.stringify(SUITE)}; use local-v1, ${LOCAL_V2_DEVELOPMENT_SUITE}, ${LOCAL_V2_SUITE}, ${LOCAL_V21_SUITE}, ${CAPABILITY_V1_SUITE}, ${LIVE_V1_SUITE}, ${LONG_LOCAL_V1_SUITE}, or ${LONG_LIVE_V1_SUITE}`);
+const isVersionedLocalSuite = SUITE === LOCAL_V2_DEVELOPMENT_SUITE || SUITE === LOCAL_V2_SUITE || SUITE === LOCAL_V21_SUITE || SUITE === CAPABILITY_V1_SUITE;
 const isLiveV1Suite = SUITE === LIVE_V1_SUITE;
 const isLongLocalSuite = SUITE === LONG_LOCAL_V1_SUITE;
 const isLongLiveSuite = SUITE === LONG_LIVE_V1_SUITE;
-const suiteTasks = SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? LOCAL_V2_DEVELOPMENT_TASKS : SUITE === LOCAL_V2_SUITE ? LOCAL_V2_TASKS : SUITE === LOCAL_V21_SUITE ? LOCAL_V21_TASKS : isLongLocalSuite ? LONG_LOCAL_V1_TASKS : isLongLiveSuite ? LONG_LIVE_V1_TASKS : isLiveV1Suite ? LIVE_V1_TASKS : TASKS;
-const suiteChecks = SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? LOCAL_V2_DEVELOPMENT_CHECKS : SUITE === LOCAL_V2_SUITE ? LOCAL_V2_CHECKS : SUITE === LOCAL_V21_SUITE ? LOCAL_V21_CHECKS : isLongLocalSuite ? LONG_LOCAL_V1_CHECKS : undefined;
-const suiteManifest = SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? LOCAL_V2_DEVELOPMENT_MANIFEST : SUITE === LOCAL_V2_SUITE ? LOCAL_V2_MANIFEST : SUITE === LOCAL_V21_SUITE ? LOCAL_V21_MANIFEST : isLongLocalSuite ? LONG_LOCAL_V1_MANIFEST : isLongLiveSuite ? LONG_LIVE_V1_MANIFEST_FILE : isLiveV1Suite ? LIVE_V1_MANIFEST_FILE : undefined;
-const suiteRoute = SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? localV2DevelopmentRoute : SUITE === LOCAL_V2_SUITE ? localV2Route : SUITE === LOCAL_V21_SUITE ? localV21Route : isLongLocalSuite ? longLocalV1Route : undefined;
+const suiteTasks = SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? LOCAL_V2_DEVELOPMENT_TASKS : SUITE === LOCAL_V2_SUITE ? LOCAL_V2_TASKS : SUITE === LOCAL_V21_SUITE ? LOCAL_V21_TASKS : SUITE === CAPABILITY_V1_SUITE ? CAPABILITY_V1_TASKS : isLongLocalSuite ? LONG_LOCAL_V1_TASKS : isLongLiveSuite ? LONG_LIVE_V1_TASKS : isLiveV1Suite ? LIVE_V1_TASKS : TASKS;
+const suiteChecks = SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? LOCAL_V2_DEVELOPMENT_CHECKS : SUITE === LOCAL_V2_SUITE ? LOCAL_V2_CHECKS : SUITE === LOCAL_V21_SUITE ? LOCAL_V21_CHECKS : SUITE === CAPABILITY_V1_SUITE ? CAPABILITY_V1_CHECKS : isLongLocalSuite ? LONG_LOCAL_V1_CHECKS : undefined;
+const suiteManifest = SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? LOCAL_V2_DEVELOPMENT_MANIFEST : SUITE === LOCAL_V2_SUITE ? LOCAL_V2_MANIFEST : SUITE === LOCAL_V21_SUITE ? LOCAL_V21_MANIFEST : SUITE === CAPABILITY_V1_SUITE ? CAPABILITY_V1_MANIFEST : isLongLocalSuite ? LONG_LOCAL_V1_MANIFEST : isLongLiveSuite ? LONG_LIVE_V1_MANIFEST_FILE : isLiveV1Suite ? LIVE_V1_MANIFEST_FILE : undefined;
+const suiteRoute = SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? localV2DevelopmentRoute : SUITE === LOCAL_V2_SUITE ? localV2Route : SUITE === LOCAL_V21_SUITE ? localV21Route : SUITE === CAPABILITY_V1_SUITE ? capabilityV1Route : isLongLocalSuite ? longLocalV1Route : undefined;
 const want = process.env.AGENT_TASKS ?? (SUITE === 'local-v1' ? PILOT.join(',') : 'all');
 // "all", task ids, or categories ("cat:forms"), comma-separated.
 const picks = want.split(',');
@@ -883,7 +887,7 @@ if (PROVIDER === 'sarvam' && approaches.includes('screenshot') && !sarvamModelSu
   throw new Error(`AGENT_MODEL ${JSON.stringify(MODEL)} cannot run the screenshot approach because it does not support image observations.`);
 }
 const providerPrefix = PROVIDER;
-const rawName = process.env.AGENT_OUT ?? `${providerPrefix}-agent-verified${SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? '-local-v2-development' : SUITE === LOCAL_V2_SUITE ? '-local-v2' : SUITE === LOCAL_V21_SUITE ? '-local-v2.1' : isLongLocalSuite ? '-long-local-v1' : isLongLiveSuite ? '-long-live-v1' : isLiveV1Suite ? '-live-v1' : want === PILOT.join(',') ? '-pilot' : ''}`;
+const rawName = process.env.AGENT_OUT ?? `${providerPrefix}-agent-verified${SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? '-local-v2-development' : SUITE === LOCAL_V2_SUITE ? '-local-v2' : SUITE === LOCAL_V21_SUITE ? '-local-v2.1' : SUITE === CAPABILITY_V1_SUITE ? '-capability-v1' : isLongLocalSuite ? '-long-local-v1' : isLongLiveSuite ? '-long-live-v1' : isLiveV1Suite ? '-live-v1' : want === PILOT.join(',') ? '-pilot' : ''}`;
 if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$/.test(rawName) || rawName === '.' || rawName === '..') throw new Error(`invalid AGENT_OUT name: ${JSON.stringify(rawName)}`);
 const name = rawName;
 const jobs: { t: AgentTask; a: Approach; run: number }[] = [];
@@ -930,10 +934,10 @@ const settings = {
 };
 preflightApproaches(approaches);
 const sourceFiles = [
-  'bench/agent/run.ts', 'bench/agent/integrity.ts', 'bench/agent/active-timeout.ts', 'bench/agent/row-selector.ts', 'bench/agent/tasks.ts', 'bench/agent/local-v2-development.ts', 'bench/agent/local-v2.ts', 'bench/agent/local-v21.ts', 'bench/agent/live-v1.ts', 'bench/agent/long-live-v1.ts', 'bench/agent/long-local-v1.ts', 'bench/agent/long-telemetry.ts', 'bench/agent/live-v1-tasks.json', 'bench/agent/long-live-v1-draft.json', 'bench/agent/bridge.mjs', 'bench/fixture-variants.ts',
+  'bench/agent/run.ts', 'bench/agent/integrity.ts', 'bench/agent/active-timeout.ts', 'bench/agent/row-selector.ts', 'bench/agent/tasks.ts', 'bench/agent/local-v2-development.ts', 'bench/agent/local-v2.ts', 'bench/agent/local-v21.ts', 'bench/agent/capability-v1.ts', 'bench/agent/live-v1.ts', 'bench/agent/long-live-v1.ts', 'bench/agent/long-local-v1.ts', 'bench/agent/long-telemetry.ts', 'bench/agent/live-v1-tasks.json', 'bench/agent/long-live-v1-draft.json', 'bench/agent/bridge.mjs', 'bench/fixture-variants.ts',
   'bench/agent/codex.ts', 'bench/agent/codex-config.ts', 'bench/agent/sarvam.ts', 'bench/agent/sarvam-agent.ts', 'bench/agent/realsite.ts', 'bench/agent/grading.ts', 'bench/agent/evidence.ts', 'bench/agent/png.ts', 'bench/agent/mcp-proxy.ts',
   ...(existsSync(path.join(REPO, 'bench', 'agent', 'realsite-tasks.json')) ? ['bench/agent/realsite-tasks.json'] : []),
-  'bench/agent/screenshot-mcp.ts', 'bench/agent/screenshot-scroll.ts', 'bench/agent/guidance.ts', 'bench/fixtures.ts', 'bench/fixtures-more.ts', 'bench/fixtures-long.ts', 'bench/fixtures-v2-development.ts', 'bench/fixtures-v2-interaction-development.ts', 'bench/fixtures-v2-reading-workflows-development.ts', 'bench/fixtures-v2-remaining-heldout.ts', 'bench/fixtures-v2-reading-workflows-heldout.ts', 'bench/fixtures-v21-reliability.ts', 'bench/fixtures-long-local-records.ts', 'bench/fixtures-long-local-workflows.ts', 'bench/manifests/local-v2.json', 'bench/manifests/local-v21.json', 'bench/manifests/live-v1.json', 'bench/manifests/long-local-v1.json', 'bench/adapters.ts',
+  'bench/agent/screenshot-mcp.ts', 'bench/agent/screenshot-scroll.ts', 'bench/agent/guidance.ts', 'bench/fixtures.ts', 'bench/fixtures-more.ts', 'bench/fixtures-long.ts', 'bench/fixtures-v2-development.ts', 'bench/fixtures-v2-interaction-development.ts', 'bench/fixtures-v2-reading-workflows-development.ts', 'bench/fixtures-v2-remaining-heldout.ts', 'bench/fixtures-v2-reading-workflows-heldout.ts', 'bench/fixtures-v21-reliability.ts', 'bench/fixtures-capability-v1.ts', 'bench/manifests/capability-v1.json', 'bench/fixtures-long-local-records.ts', 'bench/fixtures-long-local-workflows.ts', 'bench/manifests/local-v2.json', 'bench/manifests/local-v21.json', 'bench/manifests/live-v1.json', 'bench/manifests/long-local-v1.json', 'bench/adapters.ts',
   ...(existsSync(path.join(REPO, 'bench', 'manifests', 'long-live-v1.json')) ? ['bench/manifests/long-live-v1.json'] : []),
   ...sourceFilesUnder('src'), ...sourceFilesUnder('dist'), 'package-lock.json',
 ];

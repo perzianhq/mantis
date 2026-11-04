@@ -4,7 +4,7 @@ import { chromium } from 'playwright';
 import type { Browser, BrowserContext, ElementHandle, Frame, Page } from 'playwright';
 import { bounded, capture, resolve } from './capture/index.js';
 import type { RawNode, Snapshot } from './capture/index.js';
-import { findInSnapshot, translate } from './translate.js';
+import { findInSnapshot, findMisses, translate } from './translate.js';
 import { matchOptions, optionHint } from './optionMatch.js';
 import type { ReadOptions } from './translate.js';
 import { SiteMemory, originOf } from './memory.js';
@@ -439,6 +439,10 @@ interface Cover {
  * One Chromium, one active page. Actions return short text; read() returns the
  * numbered view of the page.
  */
+/** Bounds for find()'s search through virtualized lists: viewport-sized scroll steps and total time. */
+const FIND_SCROLL_STEPS = 40;
+const FIND_SCROLL_MS = 8000;
+
 export class MantisBrowser {
   /** Last scan and the page state it was taken at (see observe / unchanged). */
   private last: { page: Page; doc: string; mut: number; snap: Snapshot } | null = null;
@@ -578,10 +582,127 @@ export class MantisBrowser {
       const observed = (await this.unchanged(page)) ?? (await this.timed('capture', () => this.observe(page)));
       const { snap } = observed;
       this.remember(snap, observed.doc);
-      const text = findInSnapshot(snap, query, 20, contextChars);
+      let text = findInSnapshot(snap, query, 20, contextChars);
+      // Nothing matched: a virtualized list renders only the rows near its scroll position, so look further along.
+      const budget = { steps: FIND_SCROLL_STEPS, until: Date.now() + FIND_SCROLL_MS };
+      for (const missing of findMisses(snap, query)) {
+        const miss = findInSnapshot(snap, missing);
+        if (!text.includes(miss)) continue;
+        const scan = await this.scrollSearch(page, missing, budget).catch(() => null);
+        if (!scan || (!scan.found && !scan.steps)) continue;
+        const where = scan.name ? `"${scan.name}"` : 'a scrollable list';
+        const steps = `${scan.steps} step${scan.steps === 1 ? '' : 's'}`;
+        if (!scan.found) {
+          text = text.replace(miss, `${miss}\n(scrolled through ${where} ${scan.end ? 'to its end' : 'as far as the search limit allows'}, ${steps}, and did not find it; its scroll position is restored)`);
+          continue;
+        }
+        const after = await this.timed('capture', () => this.observe(page));
+        this.remember(after.snap, after.doc);
+        text = text.replace(miss, `scrolled ${where} to it (${steps}; now at ${scan.pct}% of it)\n${findInSnapshot(after.snap, missing, 20, contextChars)}`);
+      }
       const captcha = await this.timed('captcha', () => captchaPromise);
       return [text, captcha, ...this.notes.splice(0)].filter(Boolean).join('\n');
     }, 'find');
+  }
+
+  /**
+   * Look for text a find() did not see inside scrollable containers (at least two heights tall). A list that draws only
+   * part of its rows (virtualized) is scrolled from the top in viewport-sized steps, letting each step settle, until
+   * `query` is in its text or its end is reached; a fully drawn one is only checked for the text. A found match is centred and the container
+   * is left there; otherwise every container goes back to where it was. The shared `budget` bounds steps and time.
+   * Returns null when the page has no such container.
+   */
+  private async scrollSearch(page: Page, query: string, budget: { steps: number; until: number }): Promise<{ found: boolean; name: string; steps: number; pct: number; end: boolean } | null> {
+    const r = await page.evaluate(async ({ query, steps, ms }) => {
+      const norm = (t: string): string => t.toLowerCase().replace(/\s+/g, ' ').trim();
+      const q = norm(query);
+      const started = performance.now();
+      const wait = (n: number): Promise<void> => new Promise((done) => setTimeout(done, n));
+      const frame = (): Promise<void> => new Promise((done) => { requestAnimationFrame(() => done()); setTimeout(done, 100); });
+      /** Two frames, then until the container's DOM has been quiet for a moment (virtual rows render on scroll). */
+      const settle = async (box: Element): Promise<void> => {
+        await frame();
+        await frame();
+        let last = performance.now();
+        const watch = new MutationObserver(() => { last = performance.now(); });
+        watch.observe(box, { subtree: true, childList: true, characterData: true, attributes: true });
+        const from = performance.now();
+        while (performance.now() - last < 60 && performance.now() - from < 300) await wait(20);
+        watch.disconnect();
+      };
+      /** Share of the scroll height that drawn descendants cover; low means most rows are not rendered. */
+      const coverage = (box: Element): number => {
+        const total = box.scrollHeight;
+        const top = box.getBoundingClientRect().top - box.scrollTop;
+        const spans: [number, number][] = [];
+        const all = box.querySelectorAll('*');
+        for (let i = 0; i < all.length && i < 3000; i++) {
+          const rect = all[i]!.getBoundingClientRect();
+          if (rect.height <= 0 || rect.height >= total * 0.8) continue; // wrappers and spacers stand for the whole list
+          spans.push([rect.top - top, rect.bottom - top]);
+        }
+        spans.sort((a, b) => a[0] - b[0]);
+        let covered = 0;
+        let end = -Infinity;
+        for (const [from, to] of spans) {
+          if (to <= end) continue;
+          covered += to - Math.max(from, end);
+          end = to;
+        }
+        return covered / total;
+      };
+      // `partial`: most of the scroll height is not drawn, so rows must be scrolled into existence.
+      const boxes: { box: Element; start: number; partial: boolean }[] = [];
+      for (const e of Array.from(document.querySelectorAll('*'))) {
+        if (e === document.body || e === document.documentElement || !/auto|scroll|overlay/.test(getComputedStyle(e).overflowY)) continue;
+        if (e.clientHeight < 60 || e.clientWidth < 60 || e.scrollHeight < e.clientHeight * 2) continue;
+        boxes.push({ box: e, start: e.scrollTop, partial: coverage(e) < 0.5 });
+      }
+      if (!boxes.length) return null;
+      boxes.sort((a, b) => Number(b.partial) - Number(a.partial) || b.box.clientHeight * b.box.clientWidth - a.box.clientHeight * a.box.clientWidth);
+      const searched = boxes.slice(0, 3);
+      let used = 0;
+      const has = (box: Element): boolean => norm(box.textContent ?? '').includes(q);
+      const labelOf = (box: Element): string => (box.getAttribute('aria-label') || box.getAttribute('title') || '').replace(/\s+/g, ' ').trim().slice(0, 40);
+      const within = (): boolean => used < steps && performance.now() - started < ms;
+      /** The first element holding the text whose own children do not (the innermost one). */
+      const smallest = (box: Element): Element | null => {
+        for (const e of Array.from(box.querySelectorAll('*'))) {
+          if (norm(e.textContent ?? '').includes(q) && !Array.from(e.children).some((c) => norm(c.textContent ?? '').includes(q))) return e;
+        }
+        return null;
+      };
+      for (const { box, partial } of searched) {
+        // A fully drawn list holds all its text already: bring the match into view, never scroll it blindly.
+        if (partial) {
+          box.scrollTop = 0;
+          await settle(box);
+        }
+        let found = has(box);
+        while (partial && !found && within() && box.scrollTop + box.clientHeight < box.scrollHeight - 2) {
+          const before = box.scrollTop;
+          box.scrollTop = before + Math.max(40, Math.round(box.clientHeight * 0.9));
+          used++;
+          await settle(box);
+          if (box.scrollTop === before) break;
+          found = has(box);
+        }
+        if (!found) continue;
+        // Centre the element holding the text; a virtual list may redraw it while it moves.
+        for (let tries = 0, target = smallest(box); target && tries < 2; tries++, target = target.isConnected ? target : smallest(box)) {
+          target.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' as ScrollBehavior });
+          await settle(box);
+          if (target.isConnected) break;
+        }
+        const max = box.scrollHeight - box.clientHeight;
+        return { found: true, name: labelOf(box), steps: used, pct: max > 0 ? Math.round((box.scrollTop / max) * 100) : 100, end: false };
+      }
+      const end = within();
+      for (const { box, start } of searched) { box.scrollTop = start; await frame(); }
+      return { found: false, name: labelOf(searched[0]!.box), steps: used, pct: 0, end };
+    }, { query, steps: budget.steps, ms: Math.max(500, budget.until - Date.now()) });
+    if (r) budget.steps -= r.steps;
+    return r;
   }
 
   /** Clear what site memory holds about the current site (this session and on disk). */

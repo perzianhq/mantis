@@ -21,6 +21,8 @@ Wall time is `timings.cliWallMs`. The replayed tree run is the median by tokens 
 
 Same-build Haiku rerun (`dickens-video-haiku-20261103`, 5 runs each, not used for the video): median by tokens Mantis 409k / 43 calls / 146 s vs tree 933k / 43 calls / 237 s. Gutenberg's search took over 5 s that night; Haiku on Mantis treated the click's "navigation did not finish in time" error as a failure and restarted the search about 7 times.
 
+After the slow-navigation fix (9d1676c, `dickens-slownav-haiku-20261104`, 5 runs each, all 10 success): median by tokens Mantis 278k / 21 calls / 75 s vs tree 793k / 23 calls / 86 s. Ranges: Mantis 210k to 342k, 16 to 22 calls, 52 to 84 s; tree 684k to 1,116k, 23 to 36 calls, 86 to 124 s. Mantis runs used 2 to 4 `open` calls each, down from about 7 search restarts.
+
 Previous video (run 20261027, 3 runs each, median by tokens): Mantis 249,752 / 11 calls / 42 s vs tree 1,166,463 / 35 / 96 s; that tree run included one 5 s click timeout.
 
 Earlier build (before the settle-timing changes), published run `long-live-v1-final-luna` and an independent rerun `long-live-v1-crosscheck-luna`. The video previously replayed the first column (Mantis run 2, tree run 1):

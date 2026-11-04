@@ -920,6 +920,56 @@ export function walker(includeSrOnly = false): WalkResult {
     const p = parseColor(c);
     return !!p && p.a > 0.5 && p.r >= 170 && p.g <= 100 && p.b <= 100 && p.r - Math.max(p.g, p.b) >= 90;
   }
+  /** Plain colour name for an RGB value, from a small fixed palette (hue bands plus lightness/saturation). */
+  function colourName(p: { r: number; g: number; b: number }): string {
+    const r = p.r / 255, g = p.g / 255, b = p.b / 255;
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+    const l = (mx + mn) / 2;
+    const d = mx - mn;
+    const sat = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+    if (l > 0.93) return 'white';
+    if (l < 0.12) return 'black';
+    if (sat < 0.18) return 'grey';
+    let h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    h = (h * 60 + 360) % 360;
+    if (h < 15 || h >= 340) return l > 0.72 ? 'pink' : 'red';
+    if (h < 45) return l < 0.42 ? 'brown' : 'orange';
+    if (h < 70) return l < 0.35 ? 'brown' : 'yellow';
+    if (h < 165) return 'green';
+    if (h < 195) return 'teal';
+    if (h < 255) return 'blue';
+    if (h < 290) return 'purple';
+    return l > 0.65 ? 'pink' : 'purple';
+  }
+  /**
+   * A control with no name or text whose whole visible content is one solid colour fill (its own
+   * background, or its single childless child's): a colour swatch. Returns e.g. "green #2f9e55".
+   * Large boxes, controls with any text/icon/image content, and the default button face are not swatches.
+   */
+  function swatchColour(el: Element): string {
+    if (/^(?:input|select|textarea)$/.test(el.localName) || collapse(el.textContent ?? '')) return '';
+    const box = rectOf(el);
+    if (box.width < 8 || box.height < 8 || box.width > 96 || box.height > 96) return '';
+    if (el.querySelector('svg,img,picture,canvas,video,input,select,textarea')) return '';
+    for (const pseudo of ['::before', '::after']) {
+      const content = getComputedStyle(el, pseudo).content;
+      if (content && content !== 'none' && content !== 'normal' && content !== '""' && content !== "''") return '';
+    }
+    const kids = Array.from(el.children);
+    if (kids.length > 1 || (kids[0] && kids[0].children.length)) return '';
+    const fill = (e: Element): { r: number; g: number; b: number } | null => {
+      const cs = styleOf(e);
+      if (cs.backgroundImage !== 'none') return null;
+      const p = parseColor(cs.backgroundColor);
+      if (!p || p.a < 0.9) return null;
+      if ((p.r === p.g && p.g === p.b && (p.r === 239 || p.r === 240)) || (p.r === 233 && p.g === 233 && p.b === 237)) return null; // default button face
+      return p;
+    };
+    const p = fill(el) ?? (kids[0] ? fill(kids[0]) : null);
+    if (!p) return '';
+    const hex = [p.r, p.g, p.b].map((v) => Math.round(v).toString(16).padStart(2, '0')).join('');
+    return `${colourName(p)} #${hex}`;
+  }
   /** 0 = plain; 1 = colored or dark opaque background (looks like a filled call-to-action). */
   function emphasis(cs: CSSStyleDeclaration): number {
     const p = parseColor(cs.backgroundColor);
@@ -1573,11 +1623,13 @@ export function walker(includeSrOnly = false): WalkResult {
   // bare controls are indistinguishable, so give those a hint from context or position.
   const bareByRole = new Map<string, number>();
   for (const u of unnamed) bareByRole.set(u.role, (bareByRole.get(u.role) ?? 0) + 1);
-  const hinted: { node: RawNode; hint: string }[] = [];
+  const hinted: { node: RawNode; hint: string; colour: string }[] = [];
   for (const u of unnamed) {
-    if ((bareByRole.get(u.role) ?? 0) < 2) continue;
-    const hint = contextualName(u.el, u.role);
-    if (hint !== u.role) hinted.push({ node: u.node, hint });
+    // A colour-only swatch is told apart by its colour, even when it is the only unnamed control.
+    const colour = swatchColour(u.el);
+    const hint = (bareByRole.get(u.role) ?? 0) < 2 ? u.role : contextualName(u.el, u.role);
+    if (hint !== u.role) hinted.push({ node: u.node, hint, colour });
+    else if (colour) { u.node.name = `${colour} ${u.role}`; u.node.inferred = true; }
   }
   // A shared context ("Play Area button") still does not tell controls apart: number the repeats.
   const hintCount = new Map<string, number>();
@@ -1587,7 +1639,8 @@ export function walker(includeSrOnly = false): WalkResult {
     const total = hintCount.get(h.hint) ?? 1;
     const at = (hintSeen.get(h.hint) ?? 0) + 1;
     hintSeen.set(h.hint, at);
-    h.node.name = total > 1 && !/ \d+( of \d+)?$/.test(h.hint) ? `${h.hint} ${at} of ${total}` : h.hint;
+    const base = total > 1 && !/ \d+( of \d+)?$/.test(h.hint) ? `${h.hint} ${at} of ${total}` : h.hint;
+    h.node.name = h.colour ? `${base}, ${h.colour}` : base;
     h.node.inferred = true;
   }
 

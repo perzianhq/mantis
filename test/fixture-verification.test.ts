@@ -13,6 +13,7 @@ import { V2_DEVELOPMENT_CASES, V2_DEVELOPMENT_CHECKS, gradeV2DevelopmentCase } f
 import { v2DevelopmentRoute } from '../bench/fixtures-v2-development.js';
 import { LONG_LOCAL_V1_CASES, LONG_LOCAL_V1_TASKS, gradeLongLocalV1Case } from '../bench/agent/long-local-v1.js';
 import { V21_RELIABILITY_CASES, gradeV21ReliabilityCase } from '../bench/fixtures-v21-reliability.js';
+import { BLUE_CODE, CAPABILITY_CASES, CAPABILITY_ROUTES, GREEN_CODE, LIVE_PICKUP_CODE, PHOTO_BATCH, PHOTO_SERIAL, REVISIT_DECOYS, REVISIT_ORDER_CODE, gradeCapabilityCase } from '../bench/fixtures-capability-v1.js';
 import { spawn } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import net from 'node:net';
@@ -1634,4 +1635,65 @@ it('long-local-v1: requires an interaction-specific hazard event instead of matc
   const containerOnly = gradeLongLocalV1Case(dispatch.id, answerFor(dispatch), [event(dispatch, 'click', sectionClick, 'dispatch-outbound'), event(dispatch, 'settled', target(), 'dispatch-receipt')]);
   expect(containerOnly.pass).toBe(false);
   expect(containerOnly.details).toContain('missing hazard-trigger evidence');
+});
+
+type CapEvent = import('../bench/fixtures.js').FixtureObservation;
+const capEvent = (kind: 'load' | 'settled', path: string, fixtureState: Record<string, unknown>): CapEvent => ({ kind, path, documentId: `${path}-doc`, fixtureState }) as unknown as CapEvent;
+const capCase = (id: string) => CAPABILITY_CASES.find((entry) => entry.id === id)!;
+const revisitWalk = (state: Record<string, unknown>, paths = [CAPABILITY_ROUTES.revisitA, CAPABILITY_ROUTES.revisitB, CAPABILITY_ROUTES.revisitC, CAPABILITY_ROUTES.revisitD]): CapEvent[] => [
+  ...paths.map((path) => capEvent('load', path, { kind: 'capability-v1', family: 'revisit-earlier' })),
+  capEvent('settled', paths.at(-1)!, state),
+];
+
+it('capability colour-swatch: grades the selected and carted variant plus the reported code, and rejects the blue variant', () => {
+  const entry = capCase('capability-colour-swatch');
+  const good = [capEvent('settled', CAPABILITY_ROUTES.swatch, entry.expected.state)];
+  expect(gradeCapabilityCase(entry.id, `ANSWER: ${GREEN_CODE}`, good)).toEqual({ ok: true });
+  // Near miss: the blue variant selected, added and reported.
+  const blue = [capEvent('settled', CAPABILITY_ROUTES.swatch, entry.nearMiss.state)];
+  expect(gradeCapabilityCase(entry.id, entry.nearMiss.answer, blue).ok).toBe(false);
+  // Right code reported but the wrong variant is in the final state, and the reverse.
+  expect(gradeCapabilityCase(entry.id, GREEN_CODE, blue).ok).toBe(false);
+  expect(gradeCapabilityCase(entry.id, BLUE_CODE, good).ok).toBe(false);
+  // Selected green but never added, and green plus blue both carted.
+  expect(gradeCapabilityCase(entry.id, GREEN_CODE, [capEvent('settled', CAPABILITY_ROUTES.swatch, { ...entry.expected.state, cart: [] })]).ok).toBe(false);
+  expect(gradeCapabilityCase(entry.id, GREEN_CODE, [capEvent('settled', CAPABILITY_ROUTES.swatch, { ...entry.expected.state, cart: [BLUE_CODE, GREEN_CODE].sort() })]).ok).toBe(false);
+});
+
+it('capability photo-fact: grades the serial read from the raster label and rejects the batch number', () => {
+  const entry = capCase('capability-photo-fact');
+  const loaded = [capEvent('load', CAPABILITY_ROUTES.photo, entry.expected.state)];
+  expect(gradeCapabilityCase(entry.id, PHOTO_SERIAL, loaded)).toEqual({ ok: true });
+  expect(gradeCapabilityCase(entry.id, `ANSWER: ${PHOTO_SERIAL.toLowerCase()}.`, loaded)).toEqual({ ok: true });
+  // Near miss: the decoy batch number printed on the same label.
+  expect(gradeCapabilityCase(entry.id, entry.nearMiss.answer, loaded).ok).toBe(false);
+  expect(gradeCapabilityCase(entry.id, PHOTO_BATCH, loaded).ok).toBe(false);
+  // Right answer but the label page was never observed.
+  expect(gradeCapabilityCase(entry.id, PHOTO_SERIAL, []).ok).toBe(false);
+});
+
+it('capability revisit-earlier: grades the page-A code submitted at the end of the walked flow and rejects decoy codes and skipped steps', () => {
+  const entry = capCase('capability-revisit-earlier');
+  expect(gradeCapabilityCase(entry.id, REVISIT_ORDER_CODE, revisitWalk(entry.expected.state))).toEqual({ ok: true });
+  expect(gradeCapabilityCase(entry.id, `ANSWER: ${REVISIT_ORDER_CODE}`, revisitWalk(entry.expected.state))).toEqual({ ok: true });
+  // Near miss: the delivery quote reference from step 2 reported and submitted.
+  expect(gradeCapabilityCase(entry.id, entry.nearMiss.answer, revisitWalk(entry.nearMiss.state)).ok).toBe(false);
+  expect(gradeCapabilityCase(entry.id, REVISIT_ORDER_CODE, revisitWalk(entry.nearMiss.state)).ok).toBe(false);
+  expect(gradeCapabilityCase(entry.id, REVISIT_DECOYS.basket, revisitWalk(entry.expected.state)).ok).toBe(false);
+  // Right value, but steps 2 and 3 were skipped, or nothing was submitted.
+  expect(gradeCapabilityCase(entry.id, REVISIT_ORDER_CODE, revisitWalk(entry.expected.state, [CAPABILITY_ROUTES.revisitA, CAPABILITY_ROUTES.revisitD])).ok).toBe(false);
+  expect(gradeCapabilityCase(entry.id, REVISIT_ORDER_CODE, revisitWalk({ ...entry.expected.state, submitted: null })).ok).toBe(false);
+});
+
+it('capability live-update: grades the pickup code collected after Ready and rejects an early or uncollected state', () => {
+  const entry = capCase('capability-live-update');
+  const good = [capEvent('load', CAPABILITY_ROUTES.live, { family: 'live-update', status: 'Pending', collected: false, code: null }), capEvent('settled', CAPABILITY_ROUTES.live, entry.expected.state)];
+  expect(gradeCapabilityCase(entry.id, LIVE_PICKUP_CODE, good)).toEqual({ ok: true });
+  expect(gradeCapabilityCase(entry.id, `ANSWER: ${LIVE_PICKUP_CODE}`, good)).toEqual({ ok: true });
+  // Near miss: a click while still Processing collects nothing, even if the code is guessed.
+  expect(gradeCapabilityCase(entry.id, entry.nearMiss.answer, [capEvent('settled', CAPABILITY_ROUTES.live, entry.nearMiss.state)]).ok).toBe(false);
+  expect(gradeCapabilityCase(entry.id, 'Ready', good).ok).toBe(false);
+  expect(gradeCapabilityCase(entry.id, 'PK-6193', good).ok).toBe(false);
+  // Ready but never collected.
+  expect(gradeCapabilityCase(entry.id, LIVE_PICKUP_CODE, [capEvent('settled', CAPABILITY_ROUTES.live, { ...entry.expected.state, collected: false, code: null })]).ok).toBe(false);
 });

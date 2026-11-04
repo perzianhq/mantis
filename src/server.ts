@@ -72,7 +72,8 @@ export function createServer(browser: MantisBrowser = new MantisBrowser()): McpS
       description:
         'Case-insensitive whole-page text search, including trimmed content; returns #numbers, actionable row neighbours, and bounded local context. ' +
         `Give a list of up to ${MAX_FIND_QUERIES} texts to search them all in one call. ` +
-        'Use context_chars to expand just that local context; a matched heading is not a region label.',
+        'Use context_chars to expand just that local context; a matched heading is not a region label. ' +
+        'With no match it scrolls virtualized lists to look, and says so.',
       inputSchema: { text: findText, context_chars: z.number().int().min(80).max(800).optional() },
     },
     async ({ text, context_chars }) => reply(await browser.find(text, context_chars)),
