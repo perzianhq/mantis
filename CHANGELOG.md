@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.11 (2026-11-04)
+- `find` with no match now scrolls virtualized and nested scroll lists to look for the text (bounded: 40 steps, 8 s), centres the match and says it scrolled. It also finds text clipped inside a fully drawn list.
+- Controls with no text or label whose only content is a solid colour now show the colour, e.g. `green #2f9e55`.
+- A navigation slower than 5 s is reported as still loading instead of an error; the next call waits for it, then stops it if it still hasn't committed.
+- Closed shadow roots created by `attachShadow` are read (declarative closed roots are still unsupported).
+- Settle: ignores 2 s+ one-shot timers on load, ends a quiet poll at 450 ms, caps non-submit typing at 1.5 s, and wakes as soon as a tracked timer finishes.
+
 ## 0.1.8 (2026-10-26)
 - Fixed a stale page view after a click that navigates, `type` with submit, and back-to-back `open()` calls.
 - `type` no longer waits the full settle time for a typeahead request that never changes the page: 2.9s to 1.1s on a hanging request. A result that renders within 600ms is still shown; plain inputs are unchanged.
