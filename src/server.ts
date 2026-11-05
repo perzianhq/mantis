@@ -73,7 +73,7 @@ export function createServer(browser: MantisBrowser = new MantisBrowser()): McpS
         'Case-insensitive whole-page text search, including trimmed content; returns #numbers, actionable row neighbours, and bounded local context. ' +
         `Give a list of up to ${MAX_FIND_QUERIES} texts to search them all in one call. ` +
         'Use context_chars to expand just that local context; a matched heading is not a region label. ' +
-        'With no match it scrolls virtualized lists to look, and says so.',
+        'With no match it scrolls virtualized lists and loads more of an infinite feed to look, and says so.',
       inputSchema: { text: findText, context_chars: z.number().int().min(80).max(800).optional() },
     },
     async ({ text, context_chars }) => reply(await browser.find(text, context_chars)),
@@ -115,7 +115,7 @@ export function createServer(browser: MantisBrowser = new MantisBrowser()): McpS
   server.registerTool(
     'press',
     {
-      description: 'Press a key, e.g. Enter. For bottom-loaded feeds, try End (Control+End if no movement) to load more; repeat only while new items appear.',
+      description: 'Press a key, e.g. Enter. For bottom-loaded feeds, try End (Control+End if no movement) to load more; a scroll key or scroll reports when the page grew; repeat only while new items appear.',
       inputSchema: { key: z.string() },
     },
     async ({ key }) => reply(await browser.press(key)),

@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Books</title>
+<style>
+body{font:15px system-ui;margin:16px}
+.icon-star::before{content:"\2605";font-size:16px}
+.icon-star,.icon-heart{display:inline-block;width:16px;height:16px;line-height:16px}
+.icon-heart::before{content:"\2665";font-size:16px}
+.big{width:48px;height:48px}
+.stars{color:#ccc}
+.stars.on3 i:nth-child(-n+3){color:#f5b301}
+.stars.on5 i{color:#f5b301}
+.stars.grey i{color:#bbb}
+.stars.gap i:nth-child(1),.stars.gap i:nth-child(3){color:#f5b301}
+.stars.dark i:nth-child(-n+2){color:#222}
+.item{margin:10px 0}
+svg{width:16px;height:16px}
+.svgs svg{fill:#ccc}.svgs.on2 svg:nth-child(-n+2){fill:#e8a400}
+</style></head><body><main>
+<h1>Books</h1>
+<div class="item"><span>Dune</span> <div class="stars on3"><i class="icon-star"></i><i class="icon-star"></i><i class="icon-star"></i><i class="icon-star"></i><i class="icon-star"></i></div></div>
+<div class="item"><span>Emma</span> <div class="stars on5"><i class="icon-star"></i><i class="icon-star"></i><i class="icon-star"></i><i class="icon-star"></i><i class="icon-star"></i></div></div>
+<div class="item"><span>Ulysses</span> <div class="stars grey"><i class="icon-star"></i><i class="icon-star"></i><i class="icon-star"></i><i class="icon-star"></i><i class="icon-star"></i></div></div>
+<div class="item"><span>Walden</span> <div class="stars dark"><i class="icon-star"></i><i class="icon-star"></i><i class="icon-star"></i><i class="icon-star"></i></div></div>
+<div class="item"><span>Kim</span> <div class="svgs on2"><svg viewBox="0 0 16 16"><path d="M8 1l2 5h5l-4 3 1 5-4-3-4 3 1-5-4-3h5z"/></svg><svg viewBox="0 0 16 16"><path d="M8 1l2 5h5l-4 3 1 5-4-3-4 3 1-5-4-3h5z"/></svg><svg viewBox="0 0 16 16"><path d="M8 1l2 5h5l-4 3 1 5-4-3-4 3 1-5-4-3h5z"/></svg><svg viewBox="0 0 16 16"><path d="M8 1l2 5h5l-4 3 1 5-4-3-4 3 1-5-4-3h5z"/></svg></div></div>
+<h2>Near misses</h2>
+<div class="item"><span>Gap</span> <div class="stars gap"><i class="icon-star"></i><i class="icon-star"></i><i class="icon-star"></i><i class="icon-star"></i><i class="icon-star"></i></div></div>
+<div class="item"><span>Mixed</span> <div class="stars on3"><i class="icon-star"></i><i class="icon-star"></i><i class="icon-heart"></i><i class="icon-star"></i><i class="icon-star"></i></div></div>
+<div class="item"><span>Labelled</span> <div class="stars on3" aria-label="Rated 2 out of 5 by readers"><i class="icon-star"></i><i class="icon-star"></i><i class="icon-star"></i><i class="icon-star"></i><i class="icon-star"></i></div></div>
+<div class="item"><span>Text</span> <div class="stars on3"><i class="icon-star">a</i><i class="icon-star">b</i><i class="icon-star">c</i><i class="icon-star">d</i></div></div>
+<div class="item"><span>Pair</span> <div class="stars on3"><i class="icon-star"></i><i class="icon-star"></i></div></div>
+<div class="item"><span>Dozen</span> <div class="stars on3"><i class="icon-star"></i><i class="icon-star"></i><i class="icon-star"></i><i class="icon-star"></i><i class="icon-star"></i><i class="icon-star"></i><i class="icon-star"></i><i class="icon-star"></i><i class="icon-star"></i><i class="icon-star"></i><i class="icon-star"></i><i class="icon-star"></i></div></div>
+<div class="item"><span>Huge</span> <div class="stars on3"><i class="icon-star big"></i><i class="icon-star big"></i><i class="icon-star big"></i><i class="icon-star big"></i><i class="icon-star big"></i></div></div>
+</main></body></html>

@@ -1,0 +1,1131 @@
+{
+  "metadata": {
+    "schemaVersion": 3,
+    "configFingerprint": "8f4b348866a22112ccab0d47c78fb181dfa6917b78e81fd57364a09168616c3e",
+    "settings": {
+      "provider": "codex",
+      "suite": "visual-live-v1",
+      "fixtureSeed": null,
+      "suiteVersion": 1,
+      "tasks": [
+        "visuallive-books-one-star",
+        "visuallive-books-five-star-page",
+        "visuallive-oscars-ajax-winner",
+        "visuallive-quotes-infinite-scroll",
+        "visuallive-quotes-delayed",
+        "visuallive-dynamic-loading",
+        "visuallive-xkcd-iso-date",
+        "visuallive-xkcd-worth-time"
+      ],
+      "approaches": [
+        "mantis"
+      ],
+      "runs": 1,
+      "rows": null,
+      "model": "gpt-6-luna",
+      "reasoning": "medium",
+      "maxSteps": null,
+      "timeoutMs": 600000,
+      "concurrency": 8,
+      "sarvamMaxTokens": null,
+      "toolRestrictions": {
+        "builtins": [
+          "shell",
+          "apps",
+          "plugins",
+          "multi_agent",
+          "goals",
+          "sleep_tool",
+          "skill_search",
+          "view_image",
+          "browser_use",
+          "computer_use",
+          "in_app_browser",
+          "web_search"
+        ],
+        "approaches": {
+          "mantis": {
+            "allow": [
+              "mcp__mantis"
+            ],
+            "deny": [
+              "mcp__mantis__bench_capture"
+            ]
+          }
+        }
+      },
+      "runtime": {
+        "nodeVersion": "v20.14.0",
+        "platform": "win32",
+        "arch": "x64"
+      },
+      "environment": {
+        "MANTIS_MEMORY": null,
+        "MANTIS_HEADLESS": null,
+        "BENCH_CHROMIUM": null,
+        "MANTIS_CHROMIUM": null,
+        "PLAYWRIGHT_BROWSERS_PATH": null,
+        "CODEX_BIN": null,
+        "CLAUDE_BIN": null,
+        "resolvedCliCommand": "codex"
+      },
+      "browserPaths": {
+        "chromiumForMcp": "C:\\Users\\aadit\\AppData\\Local\\ms-playwright\\chromium_headless_shell-1248\\chrome-headless-shell-win64\\chrome-headless-shell.exe",
+        "browserUsePlaywrightBrowsersPath": null
+      }
+    },
+    "sourceHashes": {
+      "bench/agent/run.ts": "07a0aabc0adc947bdd783dc267d6d6e04d4779ceedf465c7e8696b1f48bc0bdd",
+      "bench/agent/integrity.ts": "879157656e4d375ded331d4bde926301998f21432867ce5e7221f1f529fb9516",
+      "bench/agent/active-timeout.ts": "85334995541be4da3a169d3013e4741135174c0b166dae298648d8442ddf0d60",
+      "bench/agent/row-selector.ts": "37fa2aca183415f564f3b7663b3a8440e43817f37c2434953caa531b343b650e",
+      "bench/agent/tasks.ts": "e47b2f889eac7432f739d02c17eeeef3fe4c9f1f9e52be1141c99ab411d8b4d7",
+      "bench/agent/local-v2-development.ts": "da9f2fccc13eebda4054edc9efa14c14d9367a65b0ab0511071637b32bf0d4b6",
+      "bench/agent/local-v2.ts": "232ab63ae5194b520bb284e91ec43f8505f986df72f6ddfaf1fbcc442611b7d7",
+      "bench/agent/local-v21.ts": "f1fbdfc876ae2cd99368295c04a8f4bb2088dc382f1446b23aa507e3c5d3708d",
+      "bench/agent/capability-v1.ts": "04b725ce054d3818843b8e3560b824666b86272b18bb502d8d3f1d3cc61f246a",
+      "bench/agent/live-v1.ts": "eabca5f99a18c2c3733104be04182ccc8d404e945d9f45eed0bea5e8f1f9241a",
+      "bench/agent/long-live-v1.ts": "deeaa6c53543458e4a11d5de0ddfd7425d26815c6502ba07f9f78143e6e434c3",
+      "bench/agent/visual-live-v1.ts": "8d9bbe072e51195f681e18db76fb0b71b3151dcccbb37ffad9a6f722af764731",
+      "bench/agent/visual-live-v1-tasks.json": "e4ff5ed423f38e28699325ac9bf17ba247f77bde2ed0fa3d55f3df2ace881c56",
+      "bench/agent/long-local-v1.ts": "655816cd25ea011b0a69971bdf42c2ee396c04674974f41eee22744056b6aa57",
+      "bench/agent/long-telemetry.ts": "8287467e6df9c27db2180e2fae68e1f99606ccdcba52e82358f71d59327d14bd",
+      "bench/agent/live-v1-tasks.json": "ce7506ae099d7c073fa3ae0f1d2620e2ed76516ff911d9521e495debc1695dbf",
+      "bench/agent/long-live-v1-draft.json": "743c126784fb88d42d25cd4ef13b43785baa641189a7dbff0d836311883d5ca5",
+      "bench/agent/bridge.mjs": "ece1c2f7467cc26e6dcaf7c07ff11083e4b3938a4df41e9317bf06df02999138",
+      "bench/fixture-variants.ts": "98e6dd2d9bb156c7d3862f87a540e38fc6d4a9663410e3dd2bc6480507a9ea1e",
+      "bench/agent/codex.ts": "8f9917013ccf495aa1fd0a085d37a7e94540ff04908a3e81a4a2e10c62649baa",
+      "bench/agent/codex-config.ts": "a9436b14f70bcd503a9c63e81bf40927a438863d2dd3f4a814fa55e642e2764a",
+      "bench/agent/sarvam.ts": "6847d4f0b4ffc6449a96c4875e942d82eda0f537689b0c20a292d559c0ffc349",
+      "bench/agent/sarvam-agent.ts": "68e2725e594a3306d7757768dc9735ee1c67aa619a811213bed452c2f7f38790",
+      "bench/agent/realsite.ts": "32dbd55c7b828a0c283afe2aac85a2539927ecb7ccf1654182446d2bc0637a39",
+      "bench/agent/grading.ts": "9848f7737295dc43028690de69867b92fec38befce0c4c885ceecc86d90d63d9",
+      "bench/agent/evidence.ts": "6f9def0f1815cbc28ee5d3dc601e2a766e8cf7d9dafb12c9eee539694c6209f9",
+      "bench/agent/png.ts": "97812fc9ea7c48922fb7146ac4d58bd5ad8261cad4dc078a2ad026bdaab43632",
+      "bench/agent/mcp-proxy.ts": "b2874933265edfda4847af9f5f9fd0b683b9681e2175e28fdf84d77e6e5b0e4f",
+      "bench/agent/realsite-tasks.json": "4708f318c5c575a80b03601c0524ae9bc25ff5241c3d2d81913c040bbd19c96e",
+      "bench/agent/screenshot-mcp.ts": "ca74fc28c4693699bc9be7128bacd7342029e4d0f731a9953a3e319d86bb1355",
+      "bench/agent/screenshot-scroll.ts": "14790d3b4d6daee50a54eb2fba1d1c54d3afadd90a1f36bd60a26ea65b260bca",
+      "bench/agent/guidance.ts": "38cba256daea65a3fe8814297fae7f085040f97e04cd4f08a95f4263ae3f3533",
+      "bench/fixtures.ts": "b5b3d162c16799fccd8df2ff877acd6df3f11c69e4aa554597e660914ec6af19",
+      "bench/fixtures-more.ts": "c1a15f3e8f4d00366395994a4d81725203c736f25613150f26ca2b7a5006b594",
+      "bench/fixtures-long.ts": "3695294e9a18c96e237a524b0ba2b8d93953d9e4e1b7491c0f9943cf61559172",
+      "bench/fixtures-v2-development.ts": "995d05d1b0f800621ddd3a01999189fedf4a13dd4805c7a8476823d2157f8b1d",
+      "bench/fixtures-v2-interaction-development.ts": "647b6a4e33ab8386a686d56cfe16483e9b19326781932fac503e0f3be019e152",
+      "bench/fixtures-v2-reading-workflows-development.ts": "df6c4e71af3deb23c6c298500dd162c2fde3096bc51342946ac777fdb4132d89",
+      "bench/fixtures-v2-remaining-heldout.ts": "7199f2447aa6a03e74294e3d83dc2078d9106a0e0ba7c28e4ef260beb6ad3e88",
+      "bench/fixtures-v2-reading-workflows-heldout.ts": "31d9562c00cad55bc17f04f46b281df8ddaaed025928cce14e059646f53ed0fc",
+      "bench/fixtures-v21-reliability.ts": "211bc6b1950a59ba171147fbd18ea82d63e5a6d2a73ce7009c51d4adcbc7392d",
+      "bench/fixtures-capability-v1.ts": "46d018d41f9710cfa7a26c8a451c80c47cc74ac62360ba6fc1515b8dbb9e0392",
+      "bench/manifests/capability-v1.json": "e9294bcf0044f1852f75ba35c8049a4b84c2afabcc197893490019ce09e4fcea",
+      "bench/fixtures-long-local-records.ts": "7a02a354f968e47046670d1aee62925466b557c6fbab895a2db4c14b5c839f30",
+      "bench/fixtures-long-local-workflows.ts": "a60446a73b2aa41d8f081bdb5ab7aa9fbfae4ff72f1d913f0fc1fd188c7660d1",
+      "bench/manifests/local-v2.json": "37fb7707efe1ea618ddf54d43d14948ac442ead2cc89c7af72dd0aa2b6682983",
+      "bench/manifests/local-v21.json": "22f9dacf272ee7984f98977d36a40e18ae764fe94bf0de9e100d13c0618ecfbf",
+      "bench/manifests/live-v1.json": "ff1b160f6d7a7187352b04cc77b18cfbda096f24a6822d210a566a99bdb35720",
+      "bench/manifests/long-local-v1.json": "ab4a10e54068a921cbc9e01cfcf73ea908a1387f61c5cb674d0bcfd060390943",
+      "bench/adapters.ts": "f16af47f036efb1cdcced6d60aad062552736bd192a8dedfc9beed1fcac9c060",
+      "bench/manifests/long-live-v1.json": "18292416db3e403a695b9e674d74db7a7fe450433634e8c5ee9f01cd6fc438b1",
+      "src/browser.ts": "977b91e121c0fe0fbe4d3454c59f36823b932703957fb712560f45072fb3806c",
+      "src/capture/index.ts": "743a6f9d6a681de86790e2ee6c499a17e34e58492fa253a27fba5a8823f4e0c6",
+      "src/capture/walker.ts": "885531631f5fbd5d59c4702cf9ad35b5d569c2abb30d8a302b2111b70a34cefa",
+      "src/cli.ts": "d67622abcdc84873869f624847896698a0de854a88887e04bc63642f19b7f5ed",
+      "src/diff.ts": "5a73b382074393ef18523eff690b91c8366d2189b315e1e572ce3a5906be180f",
+      "src/fallback/askHuman.ts": "2ecbf4ff131b576050c553c8ff4cfc742673dc81ef9ffb876ec9d7cc5ce31d2f",
+      "src/fallback/captcha.ts": "729c61a191ad9612784a476b8f3aa737750d480fb7045cdf976f971e48c04303",
+      "src/fallback/look.ts": "0827a0b888544343999b2acc74b5faae22d4b6c0cdd63250687e0f5d6c9f808e",
+      "src/fallback/media.ts": "8ab8a64272fb25ebff1e239dfea585bc1f6a3e59cc3c9ec8d3f09252302aff8b",
+      "src/fallback/ocr.ts": "68a6de4b9ef96814f728d505055b6f7b9b5c0ad1f0da9f7fe6cdb8e1e75350da",
+      "src/fallback/probe.ts": "c5fe444f78a58268366f6f1293508406d0179d31a95847b864fd343f8d19392e",
+      "src/index.ts": "1bb51b56f839083c7ae3fca4066c48b6e16d2d4830d20d897b5c682366a2a83c",
+      "src/install.ts": "17a7f176c4e541c8fb5bf69efa14c0f115f08472dfe1e8b65a9f0c837ce1abf1",
+      "src/memory.ts": "e2cefbbe80ec33dee5149a238f49e8d57a4a60dcd012a6b47d36e0d09eea0368",
+      "src/optionMatch.ts": "3ac33d6ae11dd3410321bb9c46475f200b85f5089bcea96e060ccaf9030216c4",
+      "src/server.ts": "97257dfbb3fc530515b13b6d3cca39f23b51ee0620d08ae39a16c90ac13725ee",
+      "src/translate.ts": "59c5c39f115d3bb12162103d7b16fa57a71dd6a68739c4862122b9c64995d877",
+      "src/userAgent.ts": "6317f166a793b281f2ab5a9f39d14bc941a01272b2e22451952d412641fcfa35",
+      "dist/browser.d.ts": "e19d1ec4d7d276f4fd441f9980bbe51a8741861ecbd0eff90afe03f99cdea656",
+      "dist/browser.js": "d1bdde7a86994077b0fdf5e49dedc1a4e90890a5805036c0a727db66e94f8e90",
+      "dist/browser.js.map": "6a785d5676fca4b958e06947e5a0ed963a94e68ea27df5392521f659d105e34b",
+      "dist/capture/index.d.ts": "9c44fdf1c9e06b921a637ab2c0b2a076fce5f34273fce71c31bb3dd6f0f0f1b9",
+      "dist/capture/index.js": "d94c94321f97f0df1729df8c06a5fead5ace6e09f6a54ae71728d9bd0f0d58fe",
+      "dist/capture/index.js.map": "1e54386ba4673ba9d3aa7b597df444e1b4f7d8934e63db1602c927540259ec2a",
+      "dist/capture/walker.d.ts": "408034f330353dd5e082cfa31f63475c4d0b7df3b194acb3b03068ee45bc1661",
+      "dist/capture/walker.js": "f84fdf77b2018aac915d335fd75e1369581109bbb2c0e4baf4013d35195c2caa",
+      "dist/capture/walker.js.map": "6fdc6cf970aa6aec8195042552c5b9604626f0e61630e4dd9f584ef08fec07ed",
+      "dist/cli.d.ts": "e1fe0cad61240bf8aaad4fbe113e9341f0e380db197d3030a9e5bd118f26fc7f",
+      "dist/cli.js": "180f3baac458844688c02af10e8f5f017e6095cfc0835b5f8bb4b4509c8be847",
+      "dist/cli.js.map": "ccb65a89338a5eadfd382d573f7aea0642668dc645e2b2e4133096f2cfc324e7",
+      "dist/diff.d.ts": "c427aca6fd15fbcf4d5b3f44ebdc92828d1be9d10a247f80dc698813898139ef",
+      "dist/diff.js": "46123577bec576ae5fa9a94a9d19598a05699614dca4e1a7a87053f1f9669e84",
+      "dist/diff.js.map": "41ff128b2b15b6dbafda4e4e21d241dbe2c95545ad5c4a43277bce358a86708f",
+      "dist/fallback/askHuman.d.ts": "cce5053ca7a8ad7fd21ec8d4cf3e69c11cb8fe817d34fa746eba144f1420acfd",
+      "dist/fallback/askHuman.js": "016c9b8a214adf71bf8c8b8c41d9841df27cf704528703c60efecf41c67d8976",
+      "dist/fallback/askHuman.js.map": "85ea0fce9490ef7008d87301a0c47f4366eafd588fdcefffb09006241ee0676c",
+      "dist/fallback/captcha.d.ts": "be9ff0d8e92775f3b8aaba854f41d514954febe98f3f09cdb61e8a0702efa8b8",
+      "dist/fallback/captcha.js": "a15061b367128d5e0e1d73396fbebfdd251977b0935c0bbb62bdcee80dd37550",
+      "dist/fallback/captcha.js.map": "85c5ab213452eca5810515c226ba78bbe62d48177545d3bae1c79346616109f6",
+      "dist/fallback/look.d.ts": "955e64af5f409d668fdf46d9fdd877ae012f8d246caedeadfb313e0247ecd6af",
+      "dist/fallback/look.js": "8c33ec0526efad8885fad941d332472cd58115e417cb4f3ca9fb8e1f27329a30",
+      "dist/fallback/look.js.map": "9bcc391e5c964b1920fe5101c3fadcc40e053b5447b5e45ff4dff83e9692e805",
+      "dist/fallback/media.d.ts": "74df967f7254b4dd6e8416c6dd34548cf3d48b9486fd716d489abf886c7cf19b",
+      "dist/fallback/media.js": "27cc0f42532dcf018627550075b17caabfc2d0f063aa3ef2427d0aa8355cd018",
+      "dist/fallback/media.js.map": "a8704c02402c0adba3bb06e8e12e62080af7800f2c837babf3fc9ecd3046e6d3",
+      "dist/fallback/ocr.d.ts": "3ed82adbd733fd003ae7002f2ac25a00de1e0c3ed7287216eb021a2f6fe5b038",
+      "dist/fallback/ocr.js": "e45749d6b1e0ab7188914e00c1818724d111ed3c1344f19bbaf2940305d8e2a4",
+      "dist/fallback/ocr.js.map": "8e771a529f2ea1e4da4aca72a5c1334647e54cce4e5952168b4e0db147a6e5db",
+      "dist/fallback/probe.d.ts": "78c721cd2e4dd405e3270597853801396994f3d87180847d0bd4e3ba4a79f089",
+      "dist/fallback/probe.js": "6f822330221f6dd6b6a85bfccf1722d94ef06ec352c765cb679afbfea91ba3c8",
+      "dist/fallback/probe.js.map": "33ed4287e9c220c71d8a34ecde4000b1d8fd7c3afdf6e4f38c4a77db2072dc39",
+      "dist/index.d.ts": "1bb51b56f839083c7ae3fca4066c48b6e16d2d4830d20d897b5c682366a2a83c",
+      "dist/index.js": "cf623ed316f23cd356ce68b741e8192234de378587c880d11ce7448692e37ae7",
+      "dist/index.js.map": "ab61ed5039b37dfd5cc78232ec20f2737a407ad3124e87f4b9c2e02d43904127",
+      "dist/install.d.ts": "b83bb07f34017fd13f11a08215b3bd02fcb1a41e214982dc00d05f7aa71799e8",
+      "dist/install.js": "e18d661817fb398a34424c6fa07a5538a812b60acea10edaaa66faedda25fee4",
+      "dist/install.js.map": "d0f63b8a4f9b9db425b5eb1e654e5a3db57494bdef214edecf38a870bf1c3a8c",
+      "dist/memory.d.ts": "15258ea9433619fed0f2c921a8b4a584a79d7603acd26e4954cc535232668e46",
+      "dist/memory.js": "d886daad0a558521e4f0952ddb3a8e4fa0cc5a0b5830379d06d474014e44e65e",
+      "dist/memory.js.map": "092966360dd28b5acccbc1b2a5992d3fa8c4e7c6217e73219829e62535390481",
+      "dist/optionMatch.d.ts": "c57716ce79bd9ead10ed6c112ce19e6bb1d96bc1b1f10ec3ec37612de09b990e",
+      "dist/optionMatch.js": "feb942b4e84cc4eeaa433140aa85e8f9f917277e29ba148a1893178ec1b1c35d",
+      "dist/optionMatch.js.map": "6229750964cc63c026b5947af46f41fc37b605763f3c53a9c1342b2ab2ae36e9",
+      "dist/server.d.ts": "f5a308c57accaee9cbd094be29ada17c593a6f85c1cb2f1bad267413fe37d4b6",
+      "dist/server.js": "ae173550167e4b5123f8e1d52938060d157488596c74f76ab45a066212f625c7",
+      "dist/server.js.map": "986518d573eea6f7761622f767a16f6d451c6f536495f17a122288d3598bf2be",
+      "dist/translate.d.ts": "5657337b825317709add9f118457463a2db428d76951d44ff7a9ab087a96b6f5",
+      "dist/translate.js": "d13159aaca319ef123b36cd1ac78f0b9b6abd333def194c1493fbeecf442c1cd",
+      "dist/translate.js.map": "ad09c904ab00479d502076b7cbd5c4b4495725a349d5e5183f55ca5d50908349",
+      "dist/userAgent.d.ts": "e34aa1943eb7ea6af8746aad693bcbc95c018f07d906f172d4ed52a3cab32939",
+      "dist/userAgent.js": "d3ce4cadfaf84e1af168412f9f93f29a488e78808de00eb9609be2e91711b657",
+      "dist/userAgent.js.map": "33c1af90410917d6200d0b6cc05c32c7235abe02fab5cbe4703c5c9e342c5c54",
+      "package-lock.json": "6bc6e9c303723253b01b1dffc9ba415d673a7f848002353e79c982fea849018a"
+    },
+    "cliVersion": "codex-cli 0.166.0-alpha.6"
+  },
+  "model": "gpt-6-luna",
+  "runs": 1,
+  "results": [
+    {
+      "task": "visuallive-books-one-star",
+      "approach": "mantis",
+      "run": 1,
+      "attempt": 1,
+      "attemptId": "visuallive-books-one-star-mantis-1-1-1793867406774",
+      "logPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-books-one-star--mantis--1--attempt-1-1793867406774-q3dfz7.jsonl",
+      "status": "success",
+      "finalScreenshotPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-books-one-star--mantis--1--attempt-1-1793867406774-q3dfz7.final.png",
+      "evidencePath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-books-one-star--mantis--1--attempt-1-1793867406774-q3dfz7.evidence.json",
+      "evidenceFrames": [
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-books-one-star--mantis--1--attempt-1-1793867406774-q3dfz7.step-01.png",
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-books-one-star--mantis--1--attempt-1-1793867406774-q3dfz7.step-02.png",
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-books-one-star--mantis--1--attempt-1-1793867406774-q3dfz7.final.png"
+      ],
+      "valid": true,
+      "ok": true,
+      "harnessFailure": false,
+      "error": "",
+      "answer": "The Sports and Games page currently shows five books. The one-star book is **Sugar Rush (Offensive Line #2)**. The page shows its full title, “rating 1 of 5,” and price £24.42.",
+      "turns": 1,
+      "toolCalls": 2,
+      "toolErrors": 0,
+      "observationChars": 5910,
+      "observationImages": 0,
+      "inputTokens": 15923,
+      "cacheWriteTokens": 0,
+      "cacheReadTokens": 46208,
+      "totalInputTokens": 62131,
+      "outputTokens": 251,
+      "costUsd": null,
+      "costInr": null,
+      "timings": {
+        "mcpStartupMs": 2077,
+        "cliStartupMs": 907,
+        "cliExecutionMs": 13589,
+        "cliWallMs": 14496,
+        "verificationMs": 0,
+        "cleanupMs": 189,
+        "captureMs": 141
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "attemptId": "visuallive-books-one-star-mantis-1-1-1793867406774",
+          "logPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-books-one-star--mantis--1--attempt-1-1793867406774-q3dfz7.jsonl",
+          "finalScreenshotPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-books-one-star--mantis--1--attempt-1-1793867406774-q3dfz7.final.png",
+          "evidencePath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-books-one-star--mantis--1--attempt-1-1793867406774-q3dfz7.evidence.json",
+          "evidenceFrames": [
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-books-one-star--mantis--1--attempt-1-1793867406774-q3dfz7.step-01.png",
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-books-one-star--mantis--1--attempt-1-1793867406774-q3dfz7.step-02.png",
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-books-one-star--mantis--1--attempt-1-1793867406774-q3dfz7.final.png"
+          ],
+          "status": "success",
+          "connected": true,
+          "connectionState": "connected",
+          "error": "",
+          "answer": "The Sports and Games page currently shows five books. The one-star book is **Sugar Rush (Offensive Line #2)**. The page shows its full title, “rating 1 of 5,” and price £24.42.",
+          "initModel": null,
+          "resolvedModels": [],
+          "turns": 1,
+          "toolCalls": 2,
+          "toolErrors": 0,
+          "observationChars": 5910,
+          "observationImages": 0,
+          "totalInputTokens": 62131,
+          "usageComplete": true,
+          "usage": {
+            "inputTokens": 15923,
+            "cacheWriteTokens": 0,
+            "cacheReadTokens": 46208,
+            "outputTokens": 251,
+            "costUsd": null
+          },
+          "costInr": null,
+          "apiAttempts": 0,
+          "rateLimits": 0,
+          "timings": {
+            "mcpStartupMs": 2077,
+            "cliStartupMs": 907,
+            "cliExecutionMs": 13589,
+            "cliWallMs": 14496,
+            "verificationMs": 0,
+            "cleanupMs": 189,
+            "captureMs": 141
+          },
+          "exitCode": 0,
+          "signal": null,
+          "timedOut": false,
+          "fixtureCheck": null,
+          "fixtureEvidence": null,
+          "grading": null,
+          "diagnostics": [],
+          "harnessFailure": false,
+          "budget": {
+            "maxSteps": null,
+            "timeoutMs": 600000
+          }
+        }
+      ],
+      "firstPass": {
+        "status": "success",
+        "ok": true,
+        "valid": true
+      },
+      "recovery": {
+        "status": "success",
+        "ok": true,
+        "valid": true
+      },
+      "budget": {
+        "maxSteps": null,
+        "timeoutMs": 600000
+      },
+      "resolvedModels": []
+    },
+    {
+      "task": "visuallive-books-five-star-page",
+      "approach": "mantis",
+      "run": 1,
+      "attempt": 1,
+      "attemptId": "visuallive-books-five-star-page-mantis-1-1-1793867406783",
+      "logPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-books-five-star-page--mantis--1--attempt-1-1793867406783-oxetpw.jsonl",
+      "status": "success",
+      "finalScreenshotPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-books-five-star-page--mantis--1--attempt-1-1793867406783-oxetpw.final.png",
+      "evidencePath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-books-five-star-page--mantis--1--attempt-1-1793867406783-oxetpw.evidence.json",
+      "evidenceFrames": [
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-books-five-star-page--mantis--1--attempt-1-1793867406783-oxetpw.step-01.png",
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-books-five-star-page--mantis--1--attempt-1-1793867406783-oxetpw.final.png"
+      ],
+      "valid": true,
+      "ok": true,
+      "harnessFailure": false,
+      "error": "",
+      "answer": "The currently visible listing is **Page 4 of 50** (books 61–80). Its five-star titles are:\n\n- The Inefficiency Assassin: Time Management Tactics for Working Smarter, Not Longer\n- The Activist's Tao Te Ching: Ancient Advice for a Modern Revolution\n\nThese titles and ratings are shown in the current page observation. I opened the page directly; I did not use any sign-in or purchase flow.",
+      "turns": 1,
+      "toolCalls": 2,
+      "toolErrors": 0,
+      "observationChars": 8435,
+      "observationImages": 0,
+      "inputTokens": 9650,
+      "cacheWriteTokens": 0,
+      "cacheReadTokens": 53504,
+      "totalInputTokens": 63154,
+      "outputTokens": 283,
+      "costUsd": null,
+      "costInr": null,
+      "timings": {
+        "mcpStartupMs": 2080,
+        "cliStartupMs": 842,
+        "cliExecutionMs": 15240,
+        "cliWallMs": 16082,
+        "verificationMs": 0,
+        "cleanupMs": 149,
+        "captureMs": 144
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "attemptId": "visuallive-books-five-star-page-mantis-1-1-1793867406783",
+          "logPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-books-five-star-page--mantis--1--attempt-1-1793867406783-oxetpw.jsonl",
+          "finalScreenshotPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-books-five-star-page--mantis--1--attempt-1-1793867406783-oxetpw.final.png",
+          "evidencePath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-books-five-star-page--mantis--1--attempt-1-1793867406783-oxetpw.evidence.json",
+          "evidenceFrames": [
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-books-five-star-page--mantis--1--attempt-1-1793867406783-oxetpw.step-01.png",
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-books-five-star-page--mantis--1--attempt-1-1793867406783-oxetpw.final.png"
+          ],
+          "status": "success",
+          "connected": true,
+          "connectionState": "connected",
+          "error": "",
+          "answer": "The currently visible listing is **Page 4 of 50** (books 61–80). Its five-star titles are:\n\n- The Inefficiency Assassin: Time Management Tactics for Working Smarter, Not Longer\n- The Activist's Tao Te Ching: Ancient Advice for a Modern Revolution\n\nThese titles and ratings are shown in the current page observation. I opened the page directly; I did not use any sign-in or purchase flow.",
+          "initModel": null,
+          "resolvedModels": [],
+          "turns": 1,
+          "toolCalls": 2,
+          "toolErrors": 0,
+          "observationChars": 8435,
+          "observationImages": 0,
+          "totalInputTokens": 63154,
+          "usageComplete": true,
+          "usage": {
+            "inputTokens": 9650,
+            "cacheWriteTokens": 0,
+            "cacheReadTokens": 53504,
+            "outputTokens": 283,
+            "costUsd": null
+          },
+          "costInr": null,
+          "apiAttempts": 0,
+          "rateLimits": 0,
+          "timings": {
+            "mcpStartupMs": 2080,
+            "cliStartupMs": 842,
+            "cliExecutionMs": 15240,
+            "cliWallMs": 16082,
+            "verificationMs": 0,
+            "cleanupMs": 149,
+            "captureMs": 144
+          },
+          "exitCode": 0,
+          "signal": null,
+          "timedOut": false,
+          "fixtureCheck": null,
+          "fixtureEvidence": null,
+          "grading": null,
+          "diagnostics": [],
+          "harnessFailure": false,
+          "budget": {
+            "maxSteps": null,
+            "timeoutMs": 600000
+          }
+        }
+      ],
+      "firstPass": {
+        "status": "success",
+        "ok": true,
+        "valid": true
+      },
+      "recovery": {
+        "status": "success",
+        "ok": true,
+        "valid": true
+      },
+      "budget": {
+        "maxSteps": null,
+        "timeoutMs": 600000
+      },
+      "resolvedModels": []
+    },
+    {
+      "task": "visuallive-oscars-ajax-winner",
+      "approach": "mantis",
+      "run": 1,
+      "attempt": 1,
+      "attemptId": "visuallive-oscars-ajax-winner-mantis-1-1-1793867406789",
+      "logPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-oscars-ajax-winner--mantis--1--attempt-1-1793867406789-gnapb4.jsonl",
+      "status": "success",
+      "finalScreenshotPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-oscars-ajax-winner--mantis--1--attempt-1-1793867406789-gnapb4.final.png",
+      "evidencePath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-oscars-ajax-winner--mantis--1--attempt-1-1793867406789-gnapb4.evidence.json",
+      "evidenceFrames": [
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-oscars-ajax-winner--mantis--1--attempt-1-1793867406789-gnapb4.step-01.png",
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-oscars-ajax-winner--mantis--1--attempt-1-1793867406789-gnapb4.final.png"
+      ],
+      "valid": true,
+      "ok": true,
+      "harnessFailure": false,
+      "error": "",
+      "answer": "Spotlight\n\nThe page currently shows the 2015 film results, with “Best Picture” marked for Spotlight.",
+      "turns": 1,
+      "toolCalls": 2,
+      "toolErrors": 0,
+      "observationChars": 1747,
+      "observationImages": 0,
+      "inputTokens": 13465,
+      "cacheWriteTokens": 0,
+      "cacheReadTokens": 42496,
+      "totalInputTokens": 55961,
+      "outputTokens": 223,
+      "costUsd": null,
+      "costInr": null,
+      "timings": {
+        "mcpStartupMs": 2085,
+        "cliStartupMs": 855,
+        "cliExecutionMs": 14053,
+        "cliWallMs": 14908,
+        "verificationMs": 0,
+        "cleanupMs": 190,
+        "captureMs": 106
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "attemptId": "visuallive-oscars-ajax-winner-mantis-1-1-1793867406789",
+          "logPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-oscars-ajax-winner--mantis--1--attempt-1-1793867406789-gnapb4.jsonl",
+          "finalScreenshotPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-oscars-ajax-winner--mantis--1--attempt-1-1793867406789-gnapb4.final.png",
+          "evidencePath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-oscars-ajax-winner--mantis--1--attempt-1-1793867406789-gnapb4.evidence.json",
+          "evidenceFrames": [
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-oscars-ajax-winner--mantis--1--attempt-1-1793867406789-gnapb4.step-01.png",
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-oscars-ajax-winner--mantis--1--attempt-1-1793867406789-gnapb4.final.png"
+          ],
+          "status": "success",
+          "connected": true,
+          "connectionState": "connected",
+          "error": "",
+          "answer": "Spotlight\n\nThe page currently shows the 2015 film results, with “Best Picture” marked for Spotlight.",
+          "initModel": null,
+          "resolvedModels": [],
+          "turns": 1,
+          "toolCalls": 2,
+          "toolErrors": 0,
+          "observationChars": 1747,
+          "observationImages": 0,
+          "totalInputTokens": 55961,
+          "usageComplete": true,
+          "usage": {
+            "inputTokens": 13465,
+            "cacheWriteTokens": 0,
+            "cacheReadTokens": 42496,
+            "outputTokens": 223,
+            "costUsd": null
+          },
+          "costInr": null,
+          "apiAttempts": 0,
+          "rateLimits": 0,
+          "timings": {
+            "mcpStartupMs": 2085,
+            "cliStartupMs": 855,
+            "cliExecutionMs": 14053,
+            "cliWallMs": 14908,
+            "verificationMs": 0,
+            "cleanupMs": 190,
+            "captureMs": 106
+          },
+          "exitCode": 0,
+          "signal": null,
+          "timedOut": false,
+          "fixtureCheck": null,
+          "fixtureEvidence": null,
+          "grading": null,
+          "diagnostics": [],
+          "harnessFailure": false,
+          "budget": {
+            "maxSteps": null,
+            "timeoutMs": 600000
+          }
+        }
+      ],
+      "firstPass": {
+        "status": "success",
+        "ok": true,
+        "valid": true
+      },
+      "recovery": {
+        "status": "success",
+        "ok": true,
+        "valid": true
+      },
+      "budget": {
+        "maxSteps": null,
+        "timeoutMs": 600000
+      },
+      "resolvedModels": []
+    },
+    {
+      "task": "visuallive-quotes-infinite-scroll",
+      "approach": "mantis",
+      "run": 1,
+      "attempt": 1,
+      "attemptId": "visuallive-quotes-infinite-scroll-mantis-1-1-1793867406795",
+      "logPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-quotes-infinite-scroll--mantis--1--attempt-1-1793867406795-6ku1yy.jsonl",
+      "status": "success",
+      "finalScreenshotPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-quotes-infinite-scroll--mantis--1--attempt-1-1793867406795-6ku1yy.final.png",
+      "evidencePath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-quotes-infinite-scroll--mantis--1--attempt-1-1793867406795-6ku1yy.evidence.json",
+      "evidenceFrames": [
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-quotes-infinite-scroll--mantis--1--attempt-1-1793867406795-6ku1yy.step-01.png",
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-quotes-infinite-scroll--mantis--1--attempt-1-1793867406795-6ku1yy.final.png"
+      ],
+      "valid": true,
+      "ok": true,
+      "harnessFailure": false,
+      "error": "",
+      "answer": "The J.R.R. Tolkien quote is “Not all those who wander are lost.” Its tags are: **bilbo, journey, lost, quest, travel, wander**.\n\nThe page is currently showing the quote, author, and tags as evidence. Earlier, the page search found the quote after loading more of the infinite scroll feed.",
+      "turns": 1,
+      "toolCalls": 3,
+      "toolErrors": 0,
+      "observationChars": 2965,
+      "observationImages": 0,
+      "inputTokens": 15255,
+      "cacheWriteTokens": 0,
+      "cacheReadTokens": 58368,
+      "totalInputTokens": 73623,
+      "outputTokens": 332,
+      "costUsd": null,
+      "costInr": null,
+      "timings": {
+        "mcpStartupMs": 2091,
+        "cliStartupMs": 775,
+        "cliExecutionMs": 20698,
+        "cliWallMs": 21473,
+        "verificationMs": 0,
+        "cleanupMs": 144,
+        "captureMs": 156
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "attemptId": "visuallive-quotes-infinite-scroll-mantis-1-1-1793867406795",
+          "logPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-quotes-infinite-scroll--mantis--1--attempt-1-1793867406795-6ku1yy.jsonl",
+          "finalScreenshotPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-quotes-infinite-scroll--mantis--1--attempt-1-1793867406795-6ku1yy.final.png",
+          "evidencePath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-quotes-infinite-scroll--mantis--1--attempt-1-1793867406795-6ku1yy.evidence.json",
+          "evidenceFrames": [
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-quotes-infinite-scroll--mantis--1--attempt-1-1793867406795-6ku1yy.step-01.png",
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-quotes-infinite-scroll--mantis--1--attempt-1-1793867406795-6ku1yy.final.png"
+          ],
+          "status": "success",
+          "connected": true,
+          "connectionState": "connected",
+          "error": "",
+          "answer": "The J.R.R. Tolkien quote is “Not all those who wander are lost.” Its tags are: **bilbo, journey, lost, quest, travel, wander**.\n\nThe page is currently showing the quote, author, and tags as evidence. Earlier, the page search found the quote after loading more of the infinite scroll feed.",
+          "initModel": null,
+          "resolvedModels": [],
+          "turns": 1,
+          "toolCalls": 3,
+          "toolErrors": 0,
+          "observationChars": 2965,
+          "observationImages": 0,
+          "totalInputTokens": 73623,
+          "usageComplete": true,
+          "usage": {
+            "inputTokens": 15255,
+            "cacheWriteTokens": 0,
+            "cacheReadTokens": 58368,
+            "outputTokens": 332,
+            "costUsd": null
+          },
+          "costInr": null,
+          "apiAttempts": 0,
+          "rateLimits": 0,
+          "timings": {
+            "mcpStartupMs": 2091,
+            "cliStartupMs": 775,
+            "cliExecutionMs": 20698,
+            "cliWallMs": 21473,
+            "verificationMs": 0,
+            "cleanupMs": 144,
+            "captureMs": 156
+          },
+          "exitCode": 0,
+          "signal": null,
+          "timedOut": false,
+          "fixtureCheck": null,
+          "fixtureEvidence": null,
+          "grading": null,
+          "diagnostics": [],
+          "harnessFailure": false,
+          "budget": {
+            "maxSteps": null,
+            "timeoutMs": 600000
+          }
+        }
+      ],
+      "firstPass": {
+        "status": "success",
+        "ok": true,
+        "valid": true
+      },
+      "recovery": {
+        "status": "success",
+        "ok": true,
+        "valid": true
+      },
+      "budget": {
+        "maxSteps": null,
+        "timeoutMs": 600000
+      },
+      "resolvedModels": []
+    },
+    {
+      "task": "visuallive-quotes-delayed",
+      "approach": "mantis",
+      "run": 1,
+      "attempt": 1,
+      "attemptId": "visuallive-quotes-delayed-mantis-1-1-1793867406802",
+      "logPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-quotes-delayed--mantis--1--attempt-1-1793867406802-crjmxk.jsonl",
+      "status": "success",
+      "finalScreenshotPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-quotes-delayed--mantis--1--attempt-1-1793867406802-crjmxk.final.png",
+      "evidencePath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-quotes-delayed--mantis--1--attempt-1-1793867406802-crjmxk.evidence.json",
+      "evidenceFrames": [
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-quotes-delayed--mantis--1--attempt-1-1793867406802-crjmxk.step-01.png",
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-quotes-delayed--mantis--1--attempt-1-1793867406802-crjmxk.step-02.png",
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-quotes-delayed--mantis--1--attempt-1-1793867406802-crjmxk.step-04.png",
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-quotes-delayed--mantis--1--attempt-1-1793867406802-crjmxk.step-05.png",
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-quotes-delayed--mantis--1--attempt-1-1793867406802-crjmxk.step-07.png",
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-quotes-delayed--mantis--1--attempt-1-1793867406802-crjmxk.final.png"
+      ],
+      "valid": true,
+      "ok": true,
+      "harnessFailure": false,
+      "error": "",
+      "answer": "The first quote on page 3 is by **Pablo Neruda**. The page currently shows his quote, “I love you without knowing how, or when, or from where…” and the author attribution “by Pablo Neruda.” This is the site’s current result on page 3.",
+      "turns": 1,
+      "toolCalls": 9,
+      "toolErrors": 0,
+      "observationChars": 9056,
+      "observationImages": 0,
+      "inputTokens": 24561,
+      "cacheWriteTokens": 0,
+      "cacheReadTokens": 129792,
+      "totalInputTokens": 154353,
+      "outputTokens": 506,
+      "costUsd": null,
+      "costInr": null,
+      "timings": {
+        "mcpStartupMs": 2096,
+        "cliStartupMs": 867,
+        "cliExecutionMs": 50198,
+        "cliWallMs": 51065,
+        "verificationMs": 0,
+        "cleanupMs": 153,
+        "captureMs": 364
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "attemptId": "visuallive-quotes-delayed-mantis-1-1-1793867406802",
+          "logPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-quotes-delayed--mantis--1--attempt-1-1793867406802-crjmxk.jsonl",
+          "finalScreenshotPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-quotes-delayed--mantis--1--attempt-1-1793867406802-crjmxk.final.png",
+          "evidencePath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-quotes-delayed--mantis--1--attempt-1-1793867406802-crjmxk.evidence.json",
+          "evidenceFrames": [
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-quotes-delayed--mantis--1--attempt-1-1793867406802-crjmxk.step-01.png",
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-quotes-delayed--mantis--1--attempt-1-1793867406802-crjmxk.step-02.png",
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-quotes-delayed--mantis--1--attempt-1-1793867406802-crjmxk.step-04.png",
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-quotes-delayed--mantis--1--attempt-1-1793867406802-crjmxk.step-05.png",
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-quotes-delayed--mantis--1--attempt-1-1793867406802-crjmxk.step-07.png",
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-quotes-delayed--mantis--1--attempt-1-1793867406802-crjmxk.final.png"
+          ],
+          "status": "success",
+          "connected": true,
+          "connectionState": "connected",
+          "error": "",
+          "answer": "The first quote on page 3 is by **Pablo Neruda**. The page currently shows his quote, “I love you without knowing how, or when, or from where…” and the author attribution “by Pablo Neruda.” This is the site’s current result on page 3.",
+          "initModel": null,
+          "resolvedModels": [],
+          "turns": 1,
+          "toolCalls": 9,
+          "toolErrors": 0,
+          "observationChars": 9056,
+          "observationImages": 0,
+          "totalInputTokens": 154353,
+          "usageComplete": true,
+          "usage": {
+            "inputTokens": 24561,
+            "cacheWriteTokens": 0,
+            "cacheReadTokens": 129792,
+            "outputTokens": 506,
+            "costUsd": null
+          },
+          "costInr": null,
+          "apiAttempts": 0,
+          "rateLimits": 0,
+          "timings": {
+            "mcpStartupMs": 2096,
+            "cliStartupMs": 867,
+            "cliExecutionMs": 50198,
+            "cliWallMs": 51065,
+            "verificationMs": 0,
+            "cleanupMs": 153,
+            "captureMs": 364
+          },
+          "exitCode": 0,
+          "signal": null,
+          "timedOut": false,
+          "fixtureCheck": null,
+          "fixtureEvidence": null,
+          "grading": null,
+          "diagnostics": [],
+          "harnessFailure": false,
+          "budget": {
+            "maxSteps": null,
+            "timeoutMs": 600000
+          }
+        }
+      ],
+      "firstPass": {
+        "status": "success",
+        "ok": true,
+        "valid": true
+      },
+      "recovery": {
+        "status": "success",
+        "ok": true,
+        "valid": true
+      },
+      "budget": {
+        "maxSteps": null,
+        "timeoutMs": 600000
+      },
+      "resolvedModels": []
+    },
+    {
+      "task": "visuallive-dynamic-loading",
+      "approach": "mantis",
+      "run": 1,
+      "attempt": 1,
+      "attemptId": "visuallive-dynamic-loading-mantis-1-1-1793867406809",
+      "logPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-dynamic-loading--mantis--1--attempt-1-1793867406809-2t4ehs.jsonl",
+      "status": "success",
+      "finalScreenshotPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-dynamic-loading--mantis--1--attempt-1-1793867406809-2t4ehs.final.png",
+      "evidencePath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-dynamic-loading--mantis--1--attempt-1-1793867406809-2t4ehs.evidence.json",
+      "evidenceFrames": [
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-dynamic-loading--mantis--1--attempt-1-1793867406809-2t4ehs.final.png"
+      ],
+      "valid": true,
+      "ok": true,
+      "harnessFailure": false,
+      "error": "",
+      "answer": "The page-generated text is **“Hello World!”**. It is currently visible on the page after clicking Start; the earlier “Loading...” message has disappeared.",
+      "turns": 1,
+      "toolCalls": 3,
+      "toolErrors": 0,
+      "observationChars": 392,
+      "observationImages": 0,
+      "inputTokens": 6840,
+      "cacheWriteTokens": 0,
+      "cacheReadTokens": 64640,
+      "totalInputTokens": 71480,
+      "outputTokens": 270,
+      "costUsd": null,
+      "costInr": null,
+      "timings": {
+        "mcpStartupMs": 2102,
+        "cliStartupMs": 782,
+        "cliExecutionMs": 28393,
+        "cliWallMs": 29175,
+        "verificationMs": 0,
+        "cleanupMs": 129,
+        "captureMs": 188
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "attemptId": "visuallive-dynamic-loading-mantis-1-1-1793867406809",
+          "logPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-dynamic-loading--mantis--1--attempt-1-1793867406809-2t4ehs.jsonl",
+          "finalScreenshotPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-dynamic-loading--mantis--1--attempt-1-1793867406809-2t4ehs.final.png",
+          "evidencePath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-dynamic-loading--mantis--1--attempt-1-1793867406809-2t4ehs.evidence.json",
+          "evidenceFrames": [
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-dynamic-loading--mantis--1--attempt-1-1793867406809-2t4ehs.final.png"
+          ],
+          "status": "success",
+          "connected": true,
+          "connectionState": "connected",
+          "error": "",
+          "answer": "The page-generated text is **“Hello World!”**. It is currently visible on the page after clicking Start; the earlier “Loading...” message has disappeared.",
+          "initModel": null,
+          "resolvedModels": [],
+          "turns": 1,
+          "toolCalls": 3,
+          "toolErrors": 0,
+          "observationChars": 392,
+          "observationImages": 0,
+          "totalInputTokens": 71480,
+          "usageComplete": true,
+          "usage": {
+            "inputTokens": 6840,
+            "cacheWriteTokens": 0,
+            "cacheReadTokens": 64640,
+            "outputTokens": 270,
+            "costUsd": null
+          },
+          "costInr": null,
+          "apiAttempts": 0,
+          "rateLimits": 0,
+          "timings": {
+            "mcpStartupMs": 2102,
+            "cliStartupMs": 782,
+            "cliExecutionMs": 28393,
+            "cliWallMs": 29175,
+            "verificationMs": 0,
+            "cleanupMs": 129,
+            "captureMs": 188
+          },
+          "exitCode": 0,
+          "signal": null,
+          "timedOut": false,
+          "fixtureCheck": null,
+          "fixtureEvidence": null,
+          "grading": null,
+          "diagnostics": [],
+          "harnessFailure": false,
+          "budget": {
+            "maxSteps": null,
+            "timeoutMs": 600000
+          }
+        }
+      ],
+      "firstPass": {
+        "status": "success",
+        "ok": true,
+        "valid": true
+      },
+      "recovery": {
+        "status": "success",
+        "ok": true,
+        "valid": true
+      },
+      "budget": {
+        "maxSteps": null,
+        "timeoutMs": 600000
+      },
+      "resolvedModels": []
+    },
+    {
+      "task": "visuallive-xkcd-iso-date",
+      "approach": "mantis",
+      "run": 1,
+      "attempt": 1,
+      "attemptId": "visuallive-xkcd-iso-date-mantis-1-1-1793867406816",
+      "logPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-xkcd-iso-date--mantis--1--attempt-1-1793867406816-yflji5.jsonl",
+      "status": "success",
+      "finalScreenshotPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-xkcd-iso-date--mantis--1--attempt-1-1793867406816-yflji5.final.png",
+      "evidencePath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-xkcd-iso-date--mantis--1--attempt-1-1793867406816-yflji5.evidence.json",
+      "evidenceFrames": [
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-xkcd-iso-date--mantis--1--attempt-1-1793867406816-yflji5.step-01.png",
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-xkcd-iso-date--mantis--1--attempt-1-1793867406816-yflji5.final.png"
+      ],
+      "valid": true,
+      "ok": true,
+      "harnessFailure": false,
+      "error": "",
+      "answer": "The date written as the correct numeric format in the comic is **2013-02-27**. The current page is the xkcd “ISO 8601” comic; OCR of its image shows “THIS IS THE CORRECT WAY TO WRITE NUMERIC DATES: 2013-02-27.” That is the site image evidence, not a date I calculated.",
+      "turns": 1,
+      "toolCalls": 4,
+      "toolErrors": 0,
+      "observationChars": 4663,
+      "observationImages": 0,
+      "inputTokens": 39447,
+      "cacheWriteTokens": 0,
+      "cacheReadTokens": 49408,
+      "totalInputTokens": 88855,
+      "outputTokens": 460,
+      "costUsd": null,
+      "costInr": null,
+      "timings": {
+        "mcpStartupMs": 2110,
+        "cliStartupMs": 818,
+        "cliExecutionMs": 26497,
+        "cliWallMs": 27315,
+        "verificationMs": 0,
+        "cleanupMs": 141,
+        "captureMs": 511
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "attemptId": "visuallive-xkcd-iso-date-mantis-1-1-1793867406816",
+          "logPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-xkcd-iso-date--mantis--1--attempt-1-1793867406816-yflji5.jsonl",
+          "finalScreenshotPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-xkcd-iso-date--mantis--1--attempt-1-1793867406816-yflji5.final.png",
+          "evidencePath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-xkcd-iso-date--mantis--1--attempt-1-1793867406816-yflji5.evidence.json",
+          "evidenceFrames": [
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-xkcd-iso-date--mantis--1--attempt-1-1793867406816-yflji5.step-01.png",
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-xkcd-iso-date--mantis--1--attempt-1-1793867406816-yflji5.final.png"
+          ],
+          "status": "success",
+          "connected": true,
+          "connectionState": "connected",
+          "error": "",
+          "answer": "The date written as the correct numeric format in the comic is **2013-02-27**. The current page is the xkcd “ISO 8601” comic; OCR of its image shows “THIS IS THE CORRECT WAY TO WRITE NUMERIC DATES: 2013-02-27.” That is the site image evidence, not a date I calculated.",
+          "initModel": null,
+          "resolvedModels": [],
+          "turns": 1,
+          "toolCalls": 4,
+          "toolErrors": 0,
+          "observationChars": 4663,
+          "observationImages": 0,
+          "totalInputTokens": 88855,
+          "usageComplete": true,
+          "usage": {
+            "inputTokens": 39447,
+            "cacheWriteTokens": 0,
+            "cacheReadTokens": 49408,
+            "outputTokens": 460,
+            "costUsd": null
+          },
+          "costInr": null,
+          "apiAttempts": 0,
+          "rateLimits": 0,
+          "timings": {
+            "mcpStartupMs": 2110,
+            "cliStartupMs": 818,
+            "cliExecutionMs": 26497,
+            "cliWallMs": 27315,
+            "verificationMs": 0,
+            "cleanupMs": 141,
+            "captureMs": 511
+          },
+          "exitCode": 0,
+          "signal": null,
+          "timedOut": false,
+          "fixtureCheck": null,
+          "fixtureEvidence": null,
+          "grading": null,
+          "diagnostics": [],
+          "harnessFailure": false,
+          "budget": {
+            "maxSteps": null,
+            "timeoutMs": 600000
+          }
+        }
+      ],
+      "firstPass": {
+        "status": "success",
+        "ok": true,
+        "valid": true
+      },
+      "recovery": {
+        "status": "success",
+        "ok": true,
+        "valid": true
+      },
+      "budget": {
+        "maxSteps": null,
+        "timeoutMs": 600000
+      },
+      "resolvedModels": []
+    },
+    {
+      "task": "visuallive-xkcd-worth-time",
+      "approach": "mantis",
+      "run": 1,
+      "attempt": 1,
+      "attemptId": "visuallive-xkcd-worth-time-mantis-1-1-1793867406824",
+      "logPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-xkcd-worth-time--mantis--1--attempt-1-1793867406824-t0o724.jsonl",
+      "status": "success",
+      "finalScreenshotPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-xkcd-worth-time--mantis--1--attempt-1-1793867406824-t0o724.final.png",
+      "evidencePath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-xkcd-worth-time--mantis--1--attempt-1-1793867406824-t0o724.evidence.json",
+      "evidenceFrames": [
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-xkcd-worth-time--mantis--1--attempt-1-1793867406824-t0o724.step-01.png",
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-xkcd-worth-time--mantis--1--attempt-1-1793867406824-t0o724.step-02.png",
+        "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-xkcd-worth-time--mantis--1--attempt-1-1793867406824-t0o724.final.png"
+      ],
+      "valid": true,
+      "ok": true,
+      "harnessFailure": false,
+      "error": "",
+      "answer": "The chart shows **2 hours** for a task done daily that you make 5 seconds shorter.\n\nCurrently visible: the xkcd comic at https://xkcd.com/1205/, including the chart’s “5 seconds” row and “daily” column. That is the page evidence; I did not use a site-generated calculation result.",
+      "turns": 1,
+      "toolCalls": 5,
+      "toolErrors": 0,
+      "observationChars": 3145,
+      "observationImages": 1,
+      "inputTokens": 30280,
+      "cacheWriteTokens": 0,
+      "cacheReadTokens": 72832,
+      "totalInputTokens": 103112,
+      "outputTokens": 391,
+      "costUsd": null,
+      "costInr": null,
+      "timings": {
+        "mcpStartupMs": 2116,
+        "cliStartupMs": 827,
+        "cliExecutionMs": 26885,
+        "cliWallMs": 27712,
+        "verificationMs": 0,
+        "cleanupMs": 151,
+        "captureMs": 307
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "attemptId": "visuallive-xkcd-worth-time-mantis-1-1-1793867406824",
+          "logPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-xkcd-worth-time--mantis--1--attempt-1-1793867406824-t0o724.jsonl",
+          "finalScreenshotPath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-xkcd-worth-time--mantis--1--attempt-1-1793867406824-t0o724.final.png",
+          "evidencePath": "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-xkcd-worth-time--mantis--1--attempt-1-1793867406824-t0o724.evidence.json",
+          "evidenceFrames": [
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-xkcd-worth-time--mantis--1--attempt-1-1793867406824-t0o724.step-01.png",
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-xkcd-worth-time--mantis--1--attempt-1-1793867406824-t0o724.step-02.png",
+            "D:\\Aadit\\claudez\\mantis\\bench\\results\\agent-logs\\visual-live-v1-luna-mantisfix\\visuallive-xkcd-worth-time--mantis--1--attempt-1-1793867406824-t0o724.final.png"
+          ],
+          "status": "success",
+          "connected": true,
+          "connectionState": "connected",
+          "error": "",
+          "answer": "The chart shows **2 hours** for a task done daily that you make 5 seconds shorter.\n\nCurrently visible: the xkcd comic at https://xkcd.com/1205/, including the chart’s “5 seconds” row and “daily” column. That is the page evidence; I did not use a site-generated calculation result.",
+          "initModel": null,
+          "resolvedModels": [],
+          "turns": 1,
+          "toolCalls": 5,
+          "toolErrors": 0,
+          "observationChars": 3145,
+          "observationImages": 1,
+          "totalInputTokens": 103112,
+          "usageComplete": true,
+          "usage": {
+            "inputTokens": 30280,
+            "cacheWriteTokens": 0,
+            "cacheReadTokens": 72832,
+            "outputTokens": 391,
+            "costUsd": null
+          },
+          "costInr": null,
+          "apiAttempts": 0,
+          "rateLimits": 0,
+          "timings": {
+            "mcpStartupMs": 2116,
+            "cliStartupMs": 827,
+            "cliExecutionMs": 26885,
+            "cliWallMs": 27712,
+            "verificationMs": 0,
+            "cleanupMs": 151,
+            "captureMs": 307
+          },
+          "exitCode": 0,
+          "signal": null,
+          "timedOut": false,
+          "fixtureCheck": null,
+          "fixtureEvidence": null,
+          "grading": null,
+          "diagnostics": [],
+          "harnessFailure": false,
+          "budget": {
+            "maxSteps": null,
+            "timeoutMs": 600000
+          }
+        }
+      ],
+      "firstPass": {
+        "status": "success",
+        "ok": true,
+        "valid": true
+      },
+      "recovery": {
+        "status": "success",
+        "ok": true,
+        "valid": true
+      },
+      "budget": {
+        "maxSteps": null,
+        "timeoutMs": 600000
+      },
+      "resolvedModels": []
+    }
+  ]
+}

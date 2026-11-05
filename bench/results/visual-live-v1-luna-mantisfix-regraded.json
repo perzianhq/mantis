@@ -1,0 +1,196 @@
+{
+  "suite": "visual-live-v1",
+  "source": "visual-live-v1-luna-mantisfix",
+  "model": "gpt-6-luna",
+  "taskCount": 8,
+  "runsPerApproach": 24,
+  "excludedTasks": [],
+  "runs": [
+    {
+      "task": "visuallive-books-one-star",
+      "approach": "mantis",
+      "run": 1,
+      "status": "success",
+      "verdict": "success",
+      "reason": "",
+      "blocked": false,
+      "provenance": "visual-live-v1-luna-mantisfix",
+      "selected": true
+    },
+    {
+      "task": "visuallive-books-five-star-page",
+      "approach": "mantis",
+      "run": 1,
+      "status": "success",
+      "verdict": "success",
+      "reason": "",
+      "blocked": false,
+      "provenance": "visual-live-v1-luna-mantisfix",
+      "selected": true
+    },
+    {
+      "task": "visuallive-oscars-ajax-winner",
+      "approach": "mantis",
+      "run": 1,
+      "status": "success",
+      "verdict": "success",
+      "reason": "",
+      "blocked": false,
+      "provenance": "visual-live-v1-luna-mantisfix",
+      "selected": true
+    },
+    {
+      "task": "visuallive-quotes-infinite-scroll",
+      "approach": "mantis",
+      "run": 1,
+      "status": "success",
+      "verdict": "success",
+      "reason": "",
+      "blocked": false,
+      "provenance": "visual-live-v1-luna-mantisfix",
+      "selected": true
+    },
+    {
+      "task": "visuallive-quotes-delayed",
+      "approach": "mantis",
+      "run": 1,
+      "status": "success",
+      "verdict": "success",
+      "reason": "",
+      "blocked": false,
+      "provenance": "visual-live-v1-luna-mantisfix",
+      "selected": true
+    },
+    {
+      "task": "visuallive-dynamic-loading",
+      "approach": "mantis",
+      "run": 1,
+      "status": "success",
+      "verdict": "success",
+      "reason": "",
+      "blocked": false,
+      "provenance": "visual-live-v1-luna-mantisfix",
+      "selected": true
+    },
+    {
+      "task": "visuallive-xkcd-iso-date",
+      "approach": "mantis",
+      "run": 1,
+      "status": "success",
+      "verdict": "success",
+      "reason": "",
+      "blocked": false,
+      "provenance": "visual-live-v1-luna-mantisfix",
+      "selected": true
+    },
+    {
+      "task": "visuallive-xkcd-worth-time",
+      "approach": "mantis",
+      "run": 1,
+      "status": "success",
+      "verdict": "success",
+      "reason": "",
+      "blocked": false,
+      "provenance": "visual-live-v1-luna-mantisfix",
+      "selected": true
+    }
+  ],
+  "sourceRuns": [
+    {
+      "task": "visuallive-books-one-star",
+      "approach": "mantis",
+      "run": 1,
+      "status": "success",
+      "verdict": "success",
+      "reason": "",
+      "blocked": false,
+      "provenance": "visual-live-v1-luna-mantisfix",
+      "selected": true
+    },
+    {
+      "task": "visuallive-books-five-star-page",
+      "approach": "mantis",
+      "run": 1,
+      "status": "success",
+      "verdict": "success",
+      "reason": "",
+      "blocked": false,
+      "provenance": "visual-live-v1-luna-mantisfix",
+      "selected": true
+    },
+    {
+      "task": "visuallive-oscars-ajax-winner",
+      "approach": "mantis",
+      "run": 1,
+      "status": "success",
+      "verdict": "success",
+      "reason": "",
+      "blocked": false,
+      "provenance": "visual-live-v1-luna-mantisfix",
+      "selected": true
+    },
+    {
+      "task": "visuallive-quotes-infinite-scroll",
+      "approach": "mantis",
+      "run": 1,
+      "status": "success",
+      "verdict": "success",
+      "reason": "",
+      "blocked": false,
+      "provenance": "visual-live-v1-luna-mantisfix",
+      "selected": true
+    },
+    {
+      "task": "visuallive-quotes-delayed",
+      "approach": "mantis",
+      "run": 1,
+      "status": "success",
+      "verdict": "success",
+      "reason": "",
+      "blocked": false,
+      "provenance": "visual-live-v1-luna-mantisfix",
+      "selected": true
+    },
+    {
+      "task": "visuallive-dynamic-loading",
+      "approach": "mantis",
+      "run": 1,
+      "status": "success",
+      "verdict": "success",
+      "reason": "",
+      "blocked": false,
+      "provenance": "visual-live-v1-luna-mantisfix",
+      "selected": true
+    },
+    {
+      "task": "visuallive-xkcd-iso-date",
+      "approach": "mantis",
+      "run": 1,
+      "status": "success",
+      "verdict": "success",
+      "reason": "",
+      "blocked": false,
+      "provenance": "visual-live-v1-luna-mantisfix",
+      "selected": true
+    },
+    {
+      "task": "visuallive-xkcd-worth-time",
+      "approach": "mantis",
+      "run": 1,
+      "status": "success",
+      "verdict": "success",
+      "reason": "",
+      "blocked": false,
+      "provenance": "visual-live-v1-luna-mantisfix",
+      "selected": true
+    }
+  ],
+  "differences": [],
+  "counts": {
+    "mantis": 8
+  },
+  "totals": {
+    "mantis": 8
+  },
+  "reproducedExistingVerdicts": 0
+}

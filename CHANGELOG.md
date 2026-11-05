@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+- `find` with no match now also scrolls the page to the bottom while it keeps growing (infinite feeds; up to 30 loads / 12 s), centres a match and says how many times it loaded; on a miss it says so and restores the scroll position.
+- `scroll` appends `; more content loaded (page grew)` when the page grew; `press` of End, Home, PageDown, PageUp, Space and arrows reports `scrolled to N% of page` instead of `(no visible change)`.
+- Rows of 3-10 identical icon-only glyphs or svgs coloured in a leading run then another (e.g. star ratings) read as `rating N of M`.
+
 ## 0.1.11 (2026-11-04)
 - `find` with no match now scrolls virtualized and nested scroll lists to look for the text (bounded: 40 steps, 8 s), centres the match and says it scrolled. It also finds text clipped inside a fully drawn list.
 - Controls with no text or label whose only content is a solid colour now show the colour, e.g. `green #2f9e55`.

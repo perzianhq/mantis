@@ -730,6 +730,64 @@ export function walker(includeSrOnly = false): WalkResult {
     return /\b(?:ratings?|stars?)\b|\b\d(?:\.\d)?\s*(?:\/|out of)\s*\d\b/i.test(label) ? label : '';
   }
 
+  /**
+   * A row of 3-10 identical, textless small icons (glyph via pseudo-element, icon font, svg or background image)
+   * whose colours are one leading run then another: a star-style rating drawn only by colour. Returns e.g.
+   * "rating 3 of 5". The filled run is the more saturated colour (the darker if both are grey). One shared
+   * saturated colour reads as full; one grey colour is ambiguous and gives nothing. Any text or label wins over this.
+   */
+  function iconRating(el: Element): string {
+    const kids = Array.from(el.children);
+    if (kids.length < 3 || kids.length > 10) return '';
+    const sig = (e: Element): string => `${e.localName}|${e.getAttribute('class') ?? ''}`;
+    const first = kids[0]!;
+    if (kids.some((k) => sig(k) !== sig(first)) || collapse(el.textContent ?? '')) return '';
+    if (el.matches('[aria-label],[title],[aria-labelledby]') || el.querySelector('[aria-label],[title],[aria-labelledby],[alt],img,input,select,textarea,button,a,canvas,video')) return '';
+    const colours: { r: number; g: number; b: number }[] = [];
+    for (const k of kids) {
+      if (sig(k) !== sig(first)) return '';
+      const box = rectOf(k);
+      if (box.width < 4 || box.height < 4 || box.width > 40 || box.height > 40) return '';
+      const cs = getComputedStyle(k);
+      if (cs.display === 'none' || cs.visibility === 'hidden') return '';
+      let paint: string;
+      if (k.localName === 'svg') {
+        const shape = k.querySelector('path,polygon,circle');
+        paint = cs.fill !== 'none' ? cs.fill : shape ? getComputedStyle(shape).fill : cs.color;
+        if (/^url\(/.test(paint)) return '';
+      } else {
+        if (k.children.length) return '';
+        let glyph = '';
+        for (const pseudo of ['::before', '::after']) {
+          const content = getComputedStyle(k, pseudo).content;
+          if (content && content !== 'none' && content !== 'normal' && content !== '""' && content !== "''") glyph = pseudo;
+        }
+        if (!glyph && cs.backgroundImage === 'none') return '';
+        paint = glyph ? getComputedStyle(k, glyph).color : cs.color;
+      }
+      const p = parseColor(paint);
+      if (!p || p.a < 0.5) return '';
+      colours.push(p);
+    }
+    const key = (c: { r: number; g: number; b: number }): string => `${Math.round(c.r)},${Math.round(c.g)},${Math.round(c.b)}`;
+    const runs: { c: { r: number; g: number; b: number }; n: number }[] = [];
+    for (const c of colours) {
+      const last = runs[runs.length - 1];
+      if (last && key(last.c) === key(c)) last.n++;
+      else runs.push({ c, n: 1 });
+    }
+    const sat = (c: { r: number; g: number; b: number }): { s: number; l: number } => {
+      const mx = Math.max(c.r, c.g, c.b) / 255, mn = Math.min(c.r, c.g, c.b) / 255, l = (mx + mn) / 2;
+      return { s: mx === mn ? 0 : (mx - mn) / (1 - Math.abs(2 * l - 1)), l };
+    };
+    const total = kids.length;
+    if (runs.length === 1) return sat(runs[0]!.c).s >= 0.35 ? `rating ${total} of ${total}` : '';
+    if (runs.length !== 2) return '';
+    const a = sat(runs[0]!.c), b = sat(runs[1]!.c);
+    const filled = Math.abs(a.s - b.s) > 0.15 ? (a.s > b.s ? runs[0]! : runs[1]!) : (a.l < b.l ? runs[0]! : runs[1]!);
+    return `rating ${filled.n} of ${total}`;
+  }
+
   function regionInfo(el: Element, explicit: string): { label: string; name: string } | null {
     const tag = el.localName;
     let label = '';
@@ -1485,7 +1543,7 @@ export function walker(includeSrOnly = false): WalkResult {
       }
     }
     if (shown && !suppressText && !LABELLED_ROLES.has(explicit)) {
-      const rating = ratingText(el);
+      const rating = ratingText(el) || iconRating(el);
       if (rating) {
         const node = stamp({ kind: 'text', role: 'text', name: cap(rating, 120), states: [], parent, depth, inViewport: inView(r), covered: false }, r);
         if (requiresOpen) node.requiresOpen = requiresOpen;

@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Reading list</title>
+<style>body{font:15px system-ui;margin:0}h1{margin:12px}.item{height:60px;margin:0;padding:8px 12px;border-bottom:1px solid #ddd}</style></head><body>
+<main><h1>Reading list</h1><div id="feed"></div></main>
+<script>
+let n = 0, busy = false;
+const feed = document.getElementById('feed');
+function more() {
+  if (busy || n >= 60) return;
+  busy = true;
+  setTimeout(() => {
+    for (let i = 0; i < 10; i++, n++) { const p = document.createElement('p'); p.className = 'item'; p.textContent = n === 44 ? 'Item 44 by Tolkien' : 'Item ' + n + ' by Author ' + n; feed.appendChild(p); }
+    busy = false;
+  }, 120);
+}
+more();
+addEventListener('scroll', () => { if (scrollY + innerHeight > document.documentElement.scrollHeight - 300) more(); });
+setTimeout(() => { if (document.documentElement.scrollHeight <= innerHeight + 300) more(); }, 400);
+</script></body></html>

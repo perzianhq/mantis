@@ -442,6 +442,9 @@ interface Cover {
 /** Bounds for find()'s search through virtualized lists: viewport-sized scroll steps and total time. */
 const FIND_SCROLL_STEPS = 40;
 const FIND_SCROLL_MS = 8000;
+/** The document pass of find() (an infinite feed that grows when scrolled to the bottom) has its own, larger cap. */
+const FIND_FEED_LOADS = 30;
+const FIND_FEED_MS = 12_000;
 
 export class MantisBrowser {
   /** Last scan and the page state it was taken at (see observe / unchanged). */
@@ -589,11 +592,12 @@ export class MantisBrowser {
         const miss = findInSnapshot(snap, missing);
         if (!text.includes(miss)) continue;
         const scan = await this.scrollSearch(page, missing, budget).catch(() => null);
-        if (!scan || (!scan.found && !scan.steps)) continue;
+        if (!scan || (!scan.found && !scan.steps)) { text = await this.feedSearch(page, missing, miss, text, contextChars); continue; }
         const where = scan.name ? `"${scan.name}"` : 'a scrollable list';
         const steps = `${scan.steps} step${scan.steps === 1 ? '' : 's'}`;
         if (!scan.found) {
           text = text.replace(miss, `${miss}\n(scrolled through ${where} ${scan.end ? 'to its end' : 'as far as the search limit allows'}, ${steps}, and did not find it; its scroll position is restored)`);
+          text = await this.feedSearch(page, missing, miss, text, contextChars);
           continue;
         }
         const after = await this.timed('capture', () => this.observe(page));
@@ -603,6 +607,73 @@ export class MantisBrowser {
       const captcha = await this.timed('captcha', () => captchaPromise);
       return [text, captcha, ...this.notes.splice(0)].filter(Boolean).join('\n');
     }, 'find');
+  }
+
+  /**
+   * Last resort of find(): an infinite feed. While scrolling the document to its bottom makes it grow (more items load),
+   * keep going and look for `query` after each growth (own cap: FIND_FEED_LOADS loads / FIND_FEED_MS). A page that does
+   * not grow costs one bottom check. A match is centred; on a miss the loaded content stays and the scroll position is
+   * restored. Returns `text` with `miss` replaced by the outcome (unchanged when nothing loaded).
+   */
+  private async feedSearch(page: Page, query: string, miss: string, text: string, contextChars?: number): Promise<string> {
+    const r = await page.evaluate(async ({ query, maxLoads, ms }) => {
+      const norm = (t: string): string => t.toLowerCase().replace(/\s+/g, ' ').trim();
+      const q = norm(query);
+      const started = performance.now();
+      const wait = (n: number): Promise<void> => new Promise((done) => setTimeout(done, n));
+      const frame = (): Promise<void> => new Promise((done) => { requestAnimationFrame(() => done()); setTimeout(done, 100); });
+      const root = document.scrollingElement ?? document.documentElement;
+      const has = (): boolean => norm(document.body?.innerText ?? '').includes(q);
+      if (!document.body || has()) return { loads: 0, found: false, pct: 0, end: true };
+      const start = root.scrollTop;
+      /** At the bottom: two frames, a minimum wait for a loader to start, then until the DOM has been quiet a moment. */
+      const settle = async (): Promise<void> => {
+        await frame();
+        await frame();
+        let last = performance.now();
+        const watch = new MutationObserver(() => { last = performance.now(); });
+        watch.observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true });
+        const from = performance.now();
+        await wait(200);
+        while (performance.now() - last < 150 && performance.now() - from < 1500) await wait(25);
+        watch.disconnect();
+      };
+      let loads = 0;
+      let found = false;
+      let grew = true;
+      while (loads < maxLoads && performance.now() - started < ms) {
+        const height = root.scrollHeight;
+        root.scrollTop = root.scrollHeight;
+        await settle();
+        grew = root.scrollHeight > height + 1;
+        if (!grew) break;
+        loads++;
+        if (has()) { found = true; break; }
+      }
+      if (found) {
+        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+        for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+          if (norm(n.nodeValue ?? '').includes(q) && n.parentElement) {
+            n.parentElement.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' as ScrollBehavior });
+            break;
+          }
+        }
+        await settle();
+      } else {
+        root.scrollTop = start;
+        await frame();
+      }
+      const max = root.scrollHeight - root.clientHeight;
+      return { loads, found, pct: max > 0 ? Math.round((root.scrollTop / max) * 100) : 100, end: !grew };
+    }, { query, maxLoads: FIND_FEED_LOADS, ms: FIND_FEED_MS }).catch(() => null);
+    if (!r || !r.loads) return text;
+    const times = `${r.loads} time${r.loads === 1 ? '' : 's'}`;
+    if (!r.found) {
+      return text.replace(miss, `${miss}\n(loaded more by scrolling the page ${times}, ${r.end ? 'until it stopped growing' : 'as far as the search limit allows'}, and did not find it; the loaded content stays and the scroll position is restored)`);
+    }
+    const after = await this.timed('capture', () => this.observe(page));
+    this.remember(after.snap, after.doc);
+    return text.replace(miss, `loaded more by scrolling the page ${times}; found "${query}" (now at ${r.pct}% of page)\n${findInSnapshot(after.snap, query, 20, contextChars)}`);
   }
 
   /**
@@ -1034,14 +1105,46 @@ export class MantisBrowser {
   }
 
   async press(key: string): Promise<string> {
+    let scrolled = false;
     return this.act('press', async (page) => {
+      const metrics = (): Promise<{ top: number; height: number; pct: number }> => page.evaluate(() => {
+        const r = document.scrollingElement ?? document.documentElement;
+        const max = r.scrollHeight - r.clientHeight;
+        return { top: r.scrollTop, height: r.scrollHeight, pct: max > 0 ? Math.round((r.scrollTop / max) * 100) : 100 };
+      }).catch(() => ({ top: 0, height: 0, pct: 0 }));
+      const before = await metrics();
       try {
         await page.keyboard.press(key);
       } catch (e) {
         throw new ActionError(`could not press "${key}": ${brief(e)}`);
       }
-      return `pressed ${key}`;
-    });
+      if (!/^(?:End|Home|PageDown|PageUp|Space|Spacebar|ArrowDown|ArrowUp|Shift\+Space)$/.test(key) && key !== ' ') return `pressed ${key}`;
+      await this.settleGrowth(page);
+      const after = await metrics();
+      const grew = after.height > before.height + 1;
+      if (Math.abs(after.top - before.top) < 1 && !grew) return `pressed ${key}`;
+      scrolled = true;
+      return `pressed ${key}; scrolled to ${after.pct}% of page${grew ? '; more content loaded (page grew)' : ''}`;
+    }, { quietIf: () => scrolled });
+  }
+
+  /** After a scroll near the document's end, give a loader a moment to append content (frames, then DOM quiet; bounded). */
+  private async settleGrowth(page: Page): Promise<void> {
+    await page.evaluate(async () => {
+      const r = document.scrollingElement ?? document.documentElement;
+      const wait = (n: number): Promise<void> => new Promise((done) => setTimeout(done, n));
+      // a smooth-scrolling key or wheel step animates: wait until the position has held still for 3 frames (bounded)
+      const frame = (): Promise<void> => new Promise((done) => { requestAnimationFrame(() => done()); setTimeout(done, 100); });
+      for (let still = 0, prev = -1, n = 0; still < 3 && n < 40; n++) { await frame(); still = r.scrollTop === prev ? still + 1 : 0; prev = r.scrollTop; }
+      if (!document.body || r.scrollHeight - r.scrollTop - r.clientHeight > r.clientHeight * 1.5) return;
+      let last = performance.now();
+      const watch = new MutationObserver(() => { last = performance.now(); });
+      watch.observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true });
+      const from = performance.now();
+      await wait(200);
+      while (performance.now() - last < 150 && performance.now() - from < 1200) await wait(25);
+      watch.disconnect();
+    }).catch(() => undefined);
   }
 
   /**
@@ -1129,10 +1232,20 @@ export class MantisBrowser {
       }
       const after = position(scroller);
       const max = extent(scroller);
-      return { moved: after !== before, pct: max > 0 ? Math.round((after / max) * 100) : 100, max };
+      return { moved: after !== before, pct: max > 0 ? Math.round((after / max) * 100) : 100, max, height: pageScroller.scrollHeight, onPage: scroller === pageScroller && !horizontal };
     }, target);
+    let grew = '';
+    if (r.onPage && target === 'down') {
+      await this.settleGrowth(page);
+      const now = await page.evaluate(() => {
+        const e = document.scrollingElement ?? document.documentElement;
+        const max = e.scrollHeight - e.clientHeight;
+        return { height: e.scrollHeight, pct: max > 0 ? Math.round((e.scrollTop / max) * 100) : 100 };
+      }).catch(() => null);
+      if (now && now.height > r.height + 1) { grew = '; more content loaded (page grew)'; r.pct = now.pct; }
+    }
     if (r.max <= 0) return `scroll ${target}: nothing to scroll (page fits on screen)`;
-    return r.moved ? `scrolled ${target}; now at ${r.pct}% of page` : `scroll ${target}: already at the ${target === 'down' ? 'bottom' : target === 'up' ? 'top' : target === 'right' ? 'right edge' : 'left edge'}`;
+    return r.moved ? `scrolled ${target}; now at ${r.pct}% of page${grew}` : `scroll ${target}: already at the ${target === 'down' ? 'bottom' : target === 'up' ? 'top' : target === 'right' ? 'right edge' : 'left edge'}`;
   }
 
   async back(): Promise<string> {
@@ -1522,7 +1635,7 @@ export class MantisBrowser {
    * Run an action, wait for the page to settle, and report what changed: a diff
    * when the same document is still showing, the full view after a navigation.
    */
-  private act(tool: string, fn: (page: Page) => Promise<string>, opts: { quiet?: boolean; requestGrace?: boolean; targetScan?: boolean; bounds?: { max: number; idleGrace: number } } = {}): Promise<string> {
+  private act(tool: string, fn: (page: Page) => Promise<string>, opts: { quiet?: boolean; quietIf?: () => boolean; requestGrace?: boolean; targetScan?: boolean; bounds?: { max: number; idleGrace: number } } = {}): Promise<string> {
     return this.guard(async () => {
       this.pendingNavigation?.cancel();
       this.pendingNavigation = null;
@@ -1588,7 +1701,7 @@ export class MantisBrowser {
         const cue = answerReadyCue(before.snap, after.snap);
         if (cue) lines.push(cue);
         const d = this.timedSync('diff', () => diffSnapshots(before.snap, after.snap));
-        if (!(opts.quiet && d === NO_CHANGE)) lines.push(d);
+        if (!((opts.quiet || opts.quietIf?.()) && d === NO_CHANGE)) lines.push(d);
       } else {
         // A different document (ids restart, a diff would mislead): say where we are, show it whole.
         if (before && after) lines.push(...headerLines(before.snap, after.snap));
