@@ -1720,6 +1720,8 @@ it('visual-live-v1: every task has a passing captured state and a near-miss fail
   expect(grade(fiveStar, both, `${books}/catalogue/page-4.html`, page4)).toBe(true);
   expect(grade(fiveStar, 'The Inefficiency Assassin', `${books}/catalogue/page-4.html`, page4)).toBe(false);
   expect(grade(fiveStar, both, `${books}/catalogue/page-2.html`, 'Page 2 of 50 Chase Me (Paris Nights #2)')).toBe(false);
+  // Listing every book on the page is not an answer, even when the two five-star titles are among them.
+  expect(grade(fiveStar, `${both}; The Nameless City; The Gutsy Girl; Spark Joy; The Art Forger`, `${books}/catalogue/page-4.html`, page4)).toBe(false);
 
   // AJAX table with an icon-only winner: Spotlight passes once 2015 has loaded; The Revenant (most nominated) or an unloaded table fails.
   const oscars = 'visuallive-oscars-ajax-winner';
@@ -1727,6 +1729,8 @@ it('visual-live-v1: every task has a passing captured state and a near-miss fail
   expect(grade(oscars, 'Spotlight', ajaxUrl, 'Title Nominations Awards Best Picture Spotlight 6 2 Mad Max: Fury Road 10 6')).toBe(true);
   expect(grade(oscars, 'The Revenant', ajaxUrl, 'Title Spotlight 6 2 Mad Max: Fury Road 10 6 The Revenant 12 3')).toBe(false);
   expect(grade(oscars, 'Spotlight', 'https://www.scrapethissite.com/pages/ajax-javascript/', 'Oscar Winning Films Click on a year to see the nominees')).toBe(false);
+  // Naming every nominee is not an answer.
+  expect(grade(oscars, 'Spotlight, Mad Max: Fury Road, The Revenant, Bridge of Spies, The Big Short', ajaxUrl, 'Title Spotlight 6 2 Mad Max: Fury Road 10 6')).toBe(false);
 
   // Infinite scroll: all six tags with the loaded quote; page-1 tags, or no scroll, fail.
   const scroll = 'visuallive-quotes-infinite-scroll';

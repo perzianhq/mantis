@@ -1,10 +1,368 @@
 [
-  {"task_id":"visuallive-books-one-star","family":"visual","grading":"deterministic","level":"easy","website":"https://books.toscrape.com/","confirmed_task":"On the book-store site, open the Sports and Games category. Which book there has a one-star rating? Report its full title.","source":{"canonicalUrl":"https://books.toscrape.com/catalogue/category/books/sports-and-games_17/index.html","fingerprintBasis":"canonical-url-and-contract","preflight":"unverified-offline"},"deterministic":{"kind":"fact","answerIncludes":[{"type":"entity","value":"Sugar Rush (Offensive Line #2)"}],"final":{"url":[{"origin":"https://books.toscrape.com","path":"/catalogue/category/books/sports-and-games_17/index.html"},{"origin":"https://books.toscrape.com","path":"/catalogue/sugar-rush-offensive-line-2_108/index.html"}],"textIncludes":[{"type":"entity","value":"Sugar Rush"}]}},"judgeRubric":"Rating is shown only as star icons (class star-rating One). Exactly one Sports and Games book has one star.","keyNotes":{"verified":"Playwright 20261104: star-rating One class on exactly one of 5 Sports and Games books; the rating has no text, only an icon class. Travel was rejected: it has two one-star books.","nearMiss":"Another Sports and Games title, e.g. Icing (Aces Hockey #2)."}},
-  {"task_id":"visuallive-books-five-star-page","family":"visual","grading":"deterministic","level":"medium","website":"https://books.toscrape.com/","confirmed_task":"On the book-store site, go to page 4 of the full catalogue (the \"Page 4 of 50\" listing of all books). List the titles of the books rated five stars on that page.","source":{"canonicalUrl":"https://books.toscrape.com/catalogue/page-4.html","fingerprintBasis":"canonical-url-and-contract","preflight":"unverified-offline"},"deterministic":{"kind":"fact","answerIncludes":[{"type":"entity","value":"Inefficiency Assassin"},{"type":"entity","value":"Tao Te Ching"}],"final":{"url":{"origin":"https://books.toscrape.com","path":"/catalogue/page-4.html"},"textIncludes":[{"type":"entity","value":"Page 4 of 50"},{"type":"entity","value":"Inefficiency Assassin"}]}},"judgeRubric":"Page 4 has exactly two five-star books (page 2 has six, so page 4 was chosen).","keyNotes":{"verified":"Playwright 20261104: page-4 five-star books are The Inefficiency Assassin: Time Management Tactics for Working Smarter, Not Longer and The Activists Tao Te Ching: Ancient Advice for a Modern Revolution; listing text truncates titles so the key uses distinctive fragments. Page 2 was rejected: six five-star books.","nearMiss":"Only one of the two titles."}},
-  {"task_id":"visuallive-oscars-ajax-winner","family":"dynamic","grading":"deterministic","level":"medium","website":"https://www.scrapethissite.com/pages/ajax-javascript/","confirmed_task":"Open the 2015 films and report the film that won Best Picture.","source":{"canonicalUrl":"https://www.scrapethissite.com/pages/ajax-javascript/","fingerprintBasis":"canonical-url-and-contract","preflight":"unverified-offline"},"deterministic":{"kind":"fact","answerIncludes":[{"type":"entity","value":"Spotlight"}],"final":{"url":{"origin":"https://www.scrapethissite.com","path":"/pages/ajax-javascript/"},"textIncludes":[{"type":"entity","value":"Spotlight"},{"type":"entity","value":"Mad Max: Fury Road"}]}},"judgeRubric":"The 2015 table loads by AJAX after clicking the year; the winner has a flag icon in the Best Picture column.","keyNotes":{"verified":"Playwright 20261104: after clicking 2015, only the Spotlight row has a glyphicon-flag icon in .film-best-picture; the cell has no text.","nearMiss":"The Revenant (most nominated, no icon)."}},
-  {"task_id":"visuallive-quotes-infinite-scroll","family":"dynamic","grading":"deterministic","level":"hard","website":"https://quotes.toscrape.com/scroll","confirmed_task":"On the infinite-scroll quotes page, find the quote by J.R.R. Tolkien. Report its tags, comma-separated.","source":{"canonicalUrl":"https://quotes.toscrape.com/scroll","fingerprintBasis":"canonical-url-and-contract","preflight":"unverified-offline"},"deterministic":{"kind":"fact","answerIncludes":[{"type":"entity","value":"bilbo"},{"type":"entity","value":"journey"},{"type":"entity","value":"lost"},{"type":"entity","value":"quest"},{"type":"entity","value":"travel"},{"type":"entity","value":"wander"}],"final":{"url":{"origin":"https://quotes.toscrape.com","path":"/scroll"},"textIncludes":[{"type":"entity","value":"Not all those who wander are lost"}]}},"judgeRubric":"The Tolkien quote is in the 7th batch of the infinite scroll (quotes 61-70) and appears once on the whole site.","keyNotes":{"verified":"Playwright 20261104: /api/quotes?page=7 holds the only Tolkien quote; found on /scroll after 6 scrolls; tags: bilbo journey lost quest travel wander.","nearMiss":"Tags of a first-page quote (Einstein: change, deep-thoughts, thinking, world)."}},
-  {"task_id":"visuallive-quotes-delayed","family":"dynamic","grading":"deterministic","level":"medium","website":"https://quotes.toscrape.com/js-delayed/","confirmed_task":"On the delayed-JavaScript quotes site, open page 3 of the quotes. Report the author of the first quote on that page.","source":{"canonicalUrl":"https://quotes.toscrape.com/js-delayed/page/3/","fingerprintBasis":"canonical-url-and-contract","preflight":"unverified-offline"},"deterministic":{"kind":"fact","answerIncludes":[{"type":"entity","value":"Pablo Neruda"}],"final":{"url":{"origin":"https://quotes.toscrape.com","path":"/js-delayed/page/3/"},"textIncludes":[{"type":"entity","value":"Pablo Neruda"}]}},"judgeRubric":"Quotes render about ten seconds after load; page 3 is reached via the Next links or the path.","keyNotes":{"verified":"Playwright 20261104: no .quote before render, first .quote about 11.6 s after goto; first quote on page 3 is by Pablo Neruda, second by Ralph Waldo Emerson.","nearMiss":"Ralph Waldo Emerson (second quote), or the right author on another page path."}},
-  {"task_id":"visuallive-dynamic-loading","family":"dynamic","grading":"deterministic","level":"easy","website":"https://the-internet.herokuapp.com/dynamic_loading/2","confirmed_task":"On the page, click Start and report the text that appears.","source":{"canonicalUrl":"https://the-internet.herokuapp.com/dynamic_loading/2","fingerprintBasis":"canonical-url-and-contract","preflight":"unverified-offline"},"deterministic":{"kind":"fact","answerIncludes":[{"type":"entity","value":"Hello World!"}],"final":{"url":{"origin":"https://the-internet.herokuapp.com","path":"/dynamic_loading/2"},"textIncludes":[{"type":"entity","value":"Hello World!"}]}},"judgeRubric":"The text is rendered after a loading bar, never in the initial page.","keyNotes":{"verified":"Playwright 20261104: initial body text lacks Hello World!; after Start it appears in #finish. Replaces dynamic_controls: that disabled input has no label, id, name or placeholder, so the harness form capture (label required) cannot key it.","nearMiss":"Final page text still lacks Hello World! (Start never clicked)."}},
-  {"task_id":"visuallive-xkcd-iso-date","family":"visual","grading":"deterministic","level":"medium","website":"https://xkcd.com/1179/","confirmed_task":"Open this comic. Report the date written as the correct way to write numeric dates in the comic image, in YYYY-MM-DD form.","source":{"canonicalUrl":"https://xkcd.com/1179/","fingerprintBasis":"canonical-url-and-contract","preflight":"unverified-offline"},"deterministic":{"kind":"fact","answerIncludes":[{"type":"entity","value":"2013-02-27"}],"final":{"url":{"origin":"https://xkcd.com","path":"/1179/"},"textIncludes":[{"type":"entity","value":"ISO 8601"}]}},"judgeRubric":"The date exists only inside the comic image; the title text holds a different date (06/05/88).","keyNotes":{"verified":"Screenshot of the comic image viewed 20261104: boxed 2013-02-27 under THIS IS THE CORRECT WAY. Page innerText, alt (ISO 8601) and title (06/05/88, 12/01/04) do not contain it.","nearMiss":"06/05/88 from the title text."}},
-  {"task_id":"visuallive-xkcd-worth-time","family":"visual","grading":"deterministic","level":"hard","website":"https://xkcd.com/1205/","confirmed_task":"Open this comic. Using the chart in the comic image: for a task you do daily, how much time can you spend making it 5 seconds shorter before you spend more time than you save over five years? Report the amount with its unit, such as \"3 days\".","source":{"canonicalUrl":"https://xkcd.com/1205/","fingerprintBasis":"canonical-url-and-contract","preflight":"unverified-offline"},"deterministic":{"kind":"fact","answerIncludes":[{"type":"entity","value":"2 hours"}],"final":{"url":{"origin":"https://xkcd.com","path":"/1205/"},"textIncludes":[{"type":"entity","value":"Is It Worth the Time?"}]}},"judgeRubric":"The chart is only in the comic image; read row 5 seconds, column daily.","keyNotes":{"verified":"Screenshot viewed 20261104: row 5 SECONDS, column DAILY = 2 HOURS (5/day = 12 hours, weekly = 21 minutes). The brief expected 12 hours, which is the 5/day column.","nearMiss":"12 hours (neighbouring 5/day cell)."}}
+  {
+    "task_id": "visuallive-books-one-star",
+    "family": "visual",
+    "grading": "deterministic",
+    "level": "easy",
+    "website": "https://books.toscrape.com/",
+    "confirmed_task": "On the book-store site, open the Sports and Games category. Which book there has a one-star rating? Report its full title.",
+    "source": {
+      "canonicalUrl": "https://books.toscrape.com/catalogue/category/books/sports-and-games_17/index.html",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "unverified-offline"
+    },
+    "deterministic": {
+      "kind": "fact",
+      "answerIncludes": [
+        {
+          "type": "entity",
+          "value": "Sugar Rush (Offensive Line #2)"
+        }
+      ],
+      "final": {
+        "url": [
+          {
+            "origin": "https://books.toscrape.com",
+            "path": "/catalogue/category/books/sports-and-games_17/index.html"
+          },
+          {
+            "origin": "https://books.toscrape.com",
+            "path": "/catalogue/sugar-rush-offensive-line-2_108/index.html"
+          }
+        ],
+        "textIncludes": [
+          {
+            "type": "entity",
+            "value": "Sugar Rush"
+          }
+        ]
+      }
+    },
+    "judgeRubric": "Rating is shown only as star icons (class star-rating One). Exactly one Sports and Games book has one star.",
+    "keyNotes": {
+      "verified": "Playwright 20261104: star-rating One class on exactly one of 5 Sports and Games books; the rating has no text, only an icon class. Travel was rejected: it has two one-star books.",
+      "nearMiss": "Another Sports and Games title, e.g. Icing (Aces Hockey #2)."
+    }
+  },
+  {
+    "task_id": "visuallive-books-five-star-page",
+    "family": "visual",
+    "grading": "deterministic",
+    "level": "medium",
+    "website": "https://books.toscrape.com/",
+    "confirmed_task": "On the book-store site, go to page 4 of the full catalogue (the \"Page 4 of 50\" listing of all books). List the titles of the books rated five stars on that page. Report only the five-star titles; do not list the other books on the page.",
+    "source": {
+      "canonicalUrl": "https://books.toscrape.com/catalogue/page-4.html",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "unverified-offline"
+    },
+    "deterministic": {
+      "kind": "fact",
+      "answerIncludes": [
+        {
+          "type": "entity",
+          "value": "Inefficiency Assassin"
+        },
+        {
+          "type": "entity",
+          "value": "Tao Te Ching"
+        }
+      ],
+      "final": {
+        "url": {
+          "origin": "https://books.toscrape.com",
+          "path": "/catalogue/page-4.html"
+        },
+        "textIncludes": [
+          {
+            "type": "entity",
+            "value": "Page 4 of 50"
+          },
+          {
+            "type": "entity",
+            "value": "Inefficiency Assassin"
+          }
+        ]
+      },
+      "answerExcludes": [
+        "Nameless City",
+        "Gutsy Girl",
+        "Electric Pencil",
+        "Spark Joy",
+        "Art Forger",
+        "Soul Reader",
+        "Bulletproof Diet"
+      ]
+    },
+    "judgeRubric": "Page 4 has exactly two five-star books (page 2 has six, so page 4 was chosen).",
+    "keyNotes": {
+      "verified": "Playwright 20261104: page-4 five-star books are The Inefficiency Assassin: Time Management Tactics for Working Smarter, Not Longer and The Activists Tao Te Ching: Ancient Advice for a Modern Revolution; listing text truncates titles so the key uses distinctive fragments. Page 2 was rejected: six five-star books.",
+      "nearMiss": "Only one of the two titles."
+    }
+  },
+  {
+    "task_id": "visuallive-oscars-ajax-winner",
+    "family": "dynamic",
+    "grading": "deterministic",
+    "level": "medium",
+    "website": "https://www.scrapethissite.com/pages/ajax-javascript/",
+    "confirmed_task": "Open the 2015 films and report the film that won Best Picture. Report only the winning film; do not list the other nominees.",
+    "source": {
+      "canonicalUrl": "https://www.scrapethissite.com/pages/ajax-javascript/",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "unverified-offline"
+    },
+    "deterministic": {
+      "kind": "fact",
+      "answerIncludes": [
+        {
+          "type": "entity",
+          "value": "Spotlight"
+        }
+      ],
+      "final": {
+        "url": {
+          "origin": "https://www.scrapethissite.com",
+          "path": "/pages/ajax-javascript/"
+        },
+        "textIncludes": [
+          {
+            "type": "entity",
+            "value": "Spotlight"
+          },
+          {
+            "type": "entity",
+            "value": "Mad Max: Fury Road"
+          }
+        ]
+      },
+      "answerExcludes": [
+        "Revenant",
+        "Bridge of Spies",
+        "Big Short",
+        "Danish Girl",
+        "Mad Max"
+      ]
+    },
+    "judgeRubric": "The 2015 table loads by AJAX after clicking the year; the winner has a flag icon in the Best Picture column.",
+    "keyNotes": {
+      "verified": "Playwright 20261104: after clicking 2015, only the Spotlight row has a glyphicon-flag icon in .film-best-picture; the cell has no text.",
+      "nearMiss": "The Revenant (most nominated, no icon)."
+    }
+  },
+  {
+    "task_id": "visuallive-quotes-infinite-scroll",
+    "family": "dynamic",
+    "grading": "deterministic",
+    "level": "hard",
+    "website": "https://quotes.toscrape.com/scroll",
+    "confirmed_task": "On the infinite-scroll quotes page, find the quote by J.R.R. Tolkien. Report its tags, comma-separated.",
+    "source": {
+      "canonicalUrl": "https://quotes.toscrape.com/scroll",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "unverified-offline"
+    },
+    "deterministic": {
+      "kind": "fact",
+      "answerIncludes": [
+        {
+          "type": "entity",
+          "value": "bilbo"
+        },
+        {
+          "type": "entity",
+          "value": "journey"
+        },
+        {
+          "type": "entity",
+          "value": "lost"
+        },
+        {
+          "type": "entity",
+          "value": "quest"
+        },
+        {
+          "type": "entity",
+          "value": "travel"
+        },
+        {
+          "type": "entity",
+          "value": "wander"
+        }
+      ],
+      "final": {
+        "url": {
+          "origin": "https://quotes.toscrape.com",
+          "path": "/scroll"
+        },
+        "textIncludes": [
+          {
+            "type": "entity",
+            "value": "Not all those who wander are lost"
+          }
+        ]
+      }
+    },
+    "judgeRubric": "The Tolkien quote is in the 7th batch of the infinite scroll (quotes 61-70) and appears once on the whole site.",
+    "keyNotes": {
+      "verified": "Playwright 20261104: /api/quotes?page=7 holds the only Tolkien quote; found on /scroll after 6 scrolls; tags: bilbo journey lost quest travel wander.",
+      "nearMiss": "Tags of a first-page quote (Einstein: change, deep-thoughts, thinking, world)."
+    }
+  },
+  {
+    "task_id": "visuallive-quotes-delayed",
+    "family": "dynamic",
+    "grading": "deterministic",
+    "level": "medium",
+    "website": "https://quotes.toscrape.com/js-delayed/",
+    "confirmed_task": "On the delayed-JavaScript quotes site, open page 3 of the quotes. Report the author of the first quote on that page.",
+    "source": {
+      "canonicalUrl": "https://quotes.toscrape.com/js-delayed/page/3/",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "unverified-offline"
+    },
+    "deterministic": {
+      "kind": "fact",
+      "answerIncludes": [
+        {
+          "type": "entity",
+          "value": "Pablo Neruda"
+        }
+      ],
+      "final": {
+        "url": {
+          "origin": "https://quotes.toscrape.com",
+          "path": "/js-delayed/page/3/"
+        },
+        "textIncludes": [
+          {
+            "type": "entity",
+            "value": "Pablo Neruda"
+          }
+        ]
+      }
+    },
+    "judgeRubric": "Quotes render about ten seconds after load; page 3 is reached via the Next links or the path.",
+    "keyNotes": {
+      "verified": "Playwright 20261104: no .quote before render, first .quote about 11.6 s after goto; first quote on page 3 is by Pablo Neruda, second by Ralph Waldo Emerson.",
+      "nearMiss": "Ralph Waldo Emerson (second quote), or the right author on another page path."
+    }
+  },
+  {
+    "task_id": "visuallive-dynamic-loading",
+    "family": "dynamic",
+    "grading": "deterministic",
+    "level": "easy",
+    "website": "https://the-internet.herokuapp.com/dynamic_loading/2",
+    "confirmed_task": "On the page, click Start and report the text that appears.",
+    "source": {
+      "canonicalUrl": "https://the-internet.herokuapp.com/dynamic_loading/2",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "unverified-offline"
+    },
+    "deterministic": {
+      "kind": "fact",
+      "answerIncludes": [
+        {
+          "type": "entity",
+          "value": "Hello World!"
+        }
+      ],
+      "final": {
+        "url": {
+          "origin": "https://the-internet.herokuapp.com",
+          "path": "/dynamic_loading/2"
+        },
+        "textIncludes": [
+          {
+            "type": "entity",
+            "value": "Hello World!"
+          }
+        ]
+      }
+    },
+    "judgeRubric": "The text is rendered after a loading bar, never in the initial page.",
+    "keyNotes": {
+      "verified": "Playwright 20261104: initial body text lacks Hello World!; after Start it appears in #finish. Replaces dynamic_controls: that disabled input has no label, id, name or placeholder, so the harness form capture (label required) cannot key it.",
+      "nearMiss": "Final page text still lacks Hello World! (Start never clicked)."
+    }
+  },
+  {
+    "task_id": "visuallive-xkcd-iso-date",
+    "family": "visual",
+    "grading": "deterministic",
+    "level": "medium",
+    "website": "https://xkcd.com/1179/",
+    "confirmed_task": "Open this comic. Report the date written as the correct way to write numeric dates in the comic image, in YYYY-MM-DD form.",
+    "source": {
+      "canonicalUrl": "https://xkcd.com/1179/",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "unverified-offline"
+    },
+    "deterministic": {
+      "kind": "fact",
+      "answerIncludes": [
+        {
+          "type": "entity",
+          "value": "2013-02-27"
+        }
+      ],
+      "final": {
+        "url": {
+          "origin": "https://xkcd.com",
+          "path": "/1179/"
+        },
+        "textIncludes": [
+          {
+            "type": "entity",
+            "value": "ISO 8601"
+          }
+        ]
+      }
+    },
+    "judgeRubric": "The date exists only inside the comic image; the title text holds a different date (06/05/88).",
+    "keyNotes": {
+      "verified": "Screenshot of the comic image viewed 20261104: boxed 2013-02-27 under THIS IS THE CORRECT WAY. Page innerText, alt (ISO 8601) and title (06/05/88, 12/01/04) do not contain it.",
+      "nearMiss": "06/05/88 from the title text."
+    }
+  },
+  {
+    "task_id": "visuallive-xkcd-worth-time",
+    "family": "visual",
+    "grading": "deterministic",
+    "level": "hard",
+    "website": "https://xkcd.com/1205/",
+    "confirmed_task": "Open this comic. Using the chart in the comic image: for a task you do daily, how much time can you spend making it 5 seconds shorter before you spend more time than you save over five years? Report the amount with its unit, such as \"3 days\".",
+    "source": {
+      "canonicalUrl": "https://xkcd.com/1205/",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "unverified-offline"
+    },
+    "deterministic": {
+      "kind": "fact",
+      "answerIncludes": [
+        {
+          "type": "entity",
+          "value": "2 hours"
+        }
+      ],
+      "final": {
+        "url": {
+          "origin": "https://xkcd.com",
+          "path": "/1205/"
+        },
+        "textIncludes": [
+          {
+            "type": "entity",
+            "value": "Is It Worth the Time?"
+          }
+        ]
+      }
+    },
+    "judgeRubric": "The chart is only in the comic image; read row 5 seconds, column daily.",
+    "keyNotes": {
+      "verified": "Screenshot viewed 20261104: row 5 SECONDS, column DAILY = 2 HOURS (5/day = 12 hours, weekly = 21 minutes). The brief expected 12 hours, which is the 5/day column.",
+      "nearMiss": "12 hours (neighbouring 5/day cell)."
+    }
+  }
 ]
