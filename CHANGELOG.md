@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.12 (2026-11-05)
 - `find` with no match now also scrolls the page to the bottom while it keeps growing (infinite feeds; up to 30 loads / 12 s), centres a match and says how many times it loaded; on a miss it says so and restores the scroll position.
 - `scroll` appends `; more content loaded (page grew)` when the page grew; `press` of End, Home, PageDown, PageUp, Space and arrows reports `scrolled to N% of page` instead of `(no visible change)`.
 - Rows of 3-10 identical icon-only glyphs or svgs coloured in a leading run then another (e.g. star ratings) read as `rating N of M`.

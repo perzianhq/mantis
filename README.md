@@ -32,7 +32,7 @@ Security and threat model: [SECURITY.md](SECURITY.md).
 
 Mantis vs the accessibility tree (Playwright MCP) on public sites, `gpt-6-luna` and `claude-haiku-5-5`. Every cell is a per-run median; time is end-to-end wall time per run:
 
-*0.1.11: headline numbers are 0.1.9's; later builds checked on Dickens (Luna, Haiku) and the capability-v1 local set.*
+*0.1.12: headline numbers are 0.1.9's; later builds checked on Dickens (Luna, Haiku), the capability-v1 local set and the visual-live-v1 real-site set.*
 
 **Long tasks** (correct: 14 keyed tasks, 42 runs per cell; medians: all 16 tasks, 48 runs per cell; both approaches run in the same session):
 
