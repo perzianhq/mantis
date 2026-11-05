@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.13 (2026-11-05)
 - `MANTIS_CDP_URL` (or the `cdpUrl` option) attaches Mantis to an already running Chrome over its debugging port: it adopts the open tabs and the visible one, keeps your session, never closes your browser, and `ask_human` pauses on the open tab.
 - `mantis chrome [--port n] [--profile dir]` starts Chrome with a local debugging port and a dedicated profile, and prints the `MANTIS_CDP_URL` line to use.
 
