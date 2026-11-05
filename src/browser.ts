@@ -31,7 +31,11 @@ export interface MantisOptions {
   memory?: boolean;
   /** Where site memory is stored between sessions. Default MANTIS_MEMORY_DIR or ~/.cache/mantis/sites. */
   memoryDir?: string;
+  /** Attach to an already running Chrome through its remote-debugging endpoint (e.g. http://127.0.0.1:9222) instead of launching Chromium. Default MANTIS_CDP_URL. */
+  cdpUrl?: string;
 }
+
+const INTERNAL_PAGE = /^(chrome|edge|devtools|chrome-extension|chrome-untrusted|chrome-search):/i;
 
 /** A failure the agent should see as a plain message. */
 class ActionError extends Error {}
@@ -450,6 +454,8 @@ export class MantisBrowser {
   /** Last scan and the page state it was taken at (see observe / unchanged). */
   private last: { page: Page; doc: string; mut: number; snap: Snapshot } | null = null;
   private browser: Browser | null = null;
+  /** True while attached to the user's own Chrome over CDP. */
+  private attached = false;
   private context: BrowserContext | null = null;
   private page: Page | null = null;
   /** Pages whose listeners have already been installed (newPage also fires context's page event). */
@@ -469,6 +475,8 @@ export class MantisBrowser {
   private loadingNavigation: NavigationWatch | null = null;
   private notes: string[] = [];
   private scratch: BrowserContext | null = null;
+  /** Attach mode only: a private headless Chromium for image work, so no window opens in the user's Chrome. */
+  private scratchBrowser: Browser | null = null;
   private readonly actionTimeout: number;
   private readonly navigationTimeout: number;
   private readonly memory: SiteMemory;
@@ -483,8 +491,63 @@ export class MantisBrowser {
     this.memory = new SiteMemory({ enabled: opts.memory, dir: opts.memoryDir });
   }
 
+  /** True when driving the user's own running Chrome over CDP (opt-in). */
+  private cdpEndpoint(): string | undefined {
+    return this.opts.cdpUrl || process.env.MANTIS_CDP_URL || undefined;
+  }
+
+  private async attach(url: string): Promise<void> {
+    try {
+      this.browser = await chromium.connectOverCDP(url, { timeout: 10_000 });
+    } catch (e) {
+      throw new Error(
+        `could not attach to Chrome at ${url} (${brief(e)}). Start Chrome with \`mantis chrome\`, or with ` +
+          '--remote-debugging-port=9222 --user-data-dir=<dir>, and set MANTIS_CDP_URL to its address.',
+      );
+    }
+    const context = this.browser.contexts()[0];
+    if (!context) {
+      await this.browser.close().catch(() => undefined);
+      this.browser = null;
+      throw new Error(`Chrome at ${url} has no default browser context; start it with \`mantis chrome\``);
+    }
+    this.context = context;
+    this.attached = true;
+    await context.addInitScript(NAME_SHIM);
+    await context.addInitScript(TRACKER);
+    context.on('page', (p) => this.adopt(p));
+    const pages = context.pages();
+    for (const p of pages) this.adopt(p);
+    // Pages that were already open ran no init script: install both in them now (TRACKER is idempotent).
+    await Promise.all(pages.filter((p) => !INTERNAL_PAGE.test(p.url())).map((p) =>
+      bounded(p.evaluate(`${NAME_SHIM}
+${TRACKER}`).catch(() => undefined), FRAME_OPERATION_MS)));
+    const active = await this.pickVisiblePage(pages);
+    if (active) this.page = active;
+    else this.adopt(await context.newPage());
+  }
+
+  /** The tab the user is looking at: visible and focused if possible, else visible, else the last ordinary page. */
+  private async pickVisiblePage(pages: Page[]): Promise<Page | null> {
+    const ordinary = pages.filter((p) => !p.isClosed() && !INTERNAL_PAGE.test(p.url()));
+    const state = await Promise.all(ordinary.map(async (p) => {
+      const r = await bounded(
+        p.evaluate(() => ({ visible: document.visibilityState === 'visible', focus: document.hasFocus() })).catch(() => null),
+        FRAME_OPERATION_MS,
+      );
+      return r ?? { visible: false, focus: false };
+    }));
+    const focused = ordinary.findIndex((_, i) => state[i]!.visible && state[i]!.focus);
+    if (focused >= 0) return ordinary[focused]!;
+    const visible = ordinary.findIndex((_, i) => state[i]!.visible);
+    if (visible >= 0) return ordinary[visible]!;
+    return ordinary.at(-1) ?? null;
+  }
+
   async launch(): Promise<void> {
     if (this.browser) return;
+    const cdp = this.cdpEndpoint();
+    if (cdp) return this.attach(cdp);
     const headless = this.opts.headless ?? process.env.MANTIS_HEADLESS !== '0';
     this.browser = await chromium.launch({ headless, ...chromiumExecutable() }).catch((e: unknown) => {
       throw new Error(missingChromiumHint(e) ?? (e instanceof Error ? e.message : String(e)));
@@ -502,9 +565,14 @@ export class MantisBrowser {
 
   async close(): Promise<void> {
     const b = this.browser;
+    const sb = this.scratchBrowser;
     this.dropLoadingNavigation();
-    this.browser = this.context = this.page = this.scratch = null;
+    this.browser = this.context = this.page = this.scratch = this.scratchBrowser = null;
+    this.attached = false;
     await closeOcr();
+    await sb?.close().catch(() => undefined);
+    // Attached: Browser.close() on a CDP connection only drops the websocket and the contexts Mantis
+    // created itself; the user's Chrome, default context and tabs stay open (covered by test/live-chrome.test.ts).
     await b?.close().catch(() => undefined);
   }
 
@@ -1513,6 +1581,7 @@ export class MantisBrowser {
       const secs = `${Math.round(timeoutSeconds * 10) / 10}s`;
       console.error(`[mantis] human needed: ${reason} (waiting for ${what}, up to ${secs})`);
 
+      if (this.attached) await page.bringToFront().catch(() => undefined);
       if (!this.isHeadless() || process.env.MANTIS_ASK_HUMAN_HEADLESS === '1') {
         const ok = await waitForHuman(page, cond, { timeoutMs });
         if (!ok) return `error: timed out after ${secs} waiting for ${what} (${reason}); the page is unchanged, call read() to see it`;
@@ -2441,6 +2510,7 @@ export class MantisBrowser {
   }
 
   private isHeadless(): boolean {
+    if (this.attached) return false;
     return this.opts.headless ?? process.env.MANTIS_HEADLESS !== '0';
   }
 
@@ -2512,7 +2582,13 @@ export class MantisBrowser {
   private async scratchPage(): Promise<Page> {
     await this.launch();
     if (!this.scratch) {
-      this.scratch = await this.browser!.newContext();
+      // Attached: a context in the user's Chrome would open a visible window, so use a private headless Chromium.
+      if (this.attached && !this.scratchBrowser) {
+        this.scratchBrowser = await chromium.launch({ headless: true, ...chromiumExecutable() }).catch((e: unknown) => {
+          throw new Error(missingChromiumHint(e) ?? (e instanceof Error ? e.message : String(e)));
+        });
+      }
+      this.scratch = await (this.scratchBrowser ?? this.browser!).newContext();
       await this.scratch.addInitScript(NAME_SHIM);
     }
     return this.scratch.pages()[0] ?? this.scratch.newPage();
@@ -2520,6 +2596,7 @@ export class MantisBrowser {
 
   /** Replace the browser context with a fresh one holding `state` (cookies + localStorage). */
   private async swapContext(state: Awaited<ReturnType<BrowserContext['storageState']>>): Promise<void> {
+    if (this.attached) throw new ActionError('cannot replace the browser session while attached to your own Chrome (it would discard your logged-in tabs); complete this step in the open tab');
     const old = this.context;
     const ctx = await this.browser!.newContext({ viewport: { width: 1280, height: 800 }, storageState: state });
     await ctx.addInitScript(NAME_SHIM);

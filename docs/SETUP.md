@@ -39,6 +39,8 @@ To use a local build instead of npm: `claude mcp add mantis -- node /abs/path/to
 | Variable | Effect |
 |---|---|
 | `MANTIS_HEADLESS=0` | Show the browser window |
+| `MANTIS_CDP_URL` | Attach to a running Chrome at this debugging address (e.g. `http://127.0.0.1:9222`, started with `mantis chrome`) instead of launching Chromium |
+| `MANTIS_CHROME` | Path to Google Chrome for `mantis chrome` |
 | `MANTIS_MEMORY=0` | Turn off site memory (shortening menus already seen on a site) |
 | `MANTIS_MEMORY_DIR` | Site memory folder (default `~/.cache/mantis/sites`; hashes, counts and timestamps only, never page text; 30-day expiry) |
 | `MANTIS_CHROMIUM` | Path to an installed Chromium binary, for when Playwright's pinned build isn't installed (the test suite and benchmarks then use it) |

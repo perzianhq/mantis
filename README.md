@@ -65,6 +65,14 @@ Mantis vs the accessibility tree (Playwright MCP) on public sites, `gpt-6-luna` 
 - Scores come from deterministic answer keys on the final page state. Two long iframe/tab tasks can't be keyed and are left out of the long-task counts.
 - Method and full caveats: [bench/RESULTS.md](bench/RESULTS.md).
 
+## Use your own Chrome
+
+Optional. Mantis can drive your real Chrome (your tabs, your sign-ins) instead of launching a fresh browser:
+- Run `npx -y -p mantis-browser mantis chrome`. It starts Chrome on `127.0.0.1:9222` with a dedicated profile.
+- Add `MANTIS_CDP_URL=http://127.0.0.1:9222` to the `env` of the Mantis MCP config.
+- Sign in to your sites once in that profile; sign-ins persist there.
+- Mantis then acts on your real tabs, so act carefully. Without the variable nothing changes.
+
 ## Limitations
 
 - No canvas input: canvas, WebGL, maps and drawing apps are described only as canvas, with no coordinate click or draw tool.

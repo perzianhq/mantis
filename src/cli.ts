@@ -2,12 +2,15 @@
 import { realpathSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { MantisBrowser } from './browser.js';
+import { runChromeCommand } from './chrome.js';
 import { runInstallCommand } from './install.js';
 import { estimateTokens } from './translate.js';
 
 export async function main(args = process.argv.slice(2)): Promise<number> {
   const installCode = await runInstallCommand(args);
   if (installCode !== undefined) return installCode;
+  const chromeCode = await runChromeCommand(args);
+  if (chromeCode !== undefined) return chromeCode;
   const [cmd, url] = args;
   if (cmd !== 'read' || !url) {
     console.error('usage: mantis read <url>');

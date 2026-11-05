@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+- `MANTIS_CDP_URL` (or the `cdpUrl` option) attaches Mantis to an already running Chrome over its debugging port: it adopts the open tabs and the visible one, keeps your session, never closes your browser, and `ask_human` pauses on the open tab.
+- `mantis chrome [--port n] [--profile dir]` starts Chrome with a local debugging port and a dedicated profile, and prints the `MANTIS_CDP_URL` line to use.
+
 ## 0.1.12 (2026-11-05)
 - `find` with no match now also scrolls the page to the bottom while it keeps growing (infinite feeds; up to 30 loads / 12 s), centres a match and says how many times it loaded; on a miss it says so and restores the scroll position.
 - `scroll` appends `; more content loaded (page grew)` when the page grew; `press` of End, Home, PageDown, PageUp, Space and arrows reports `scrolled to N% of page` instead of `(no visible change)`.
