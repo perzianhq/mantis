@@ -1,12 +1,12 @@
 /**
- * Delayed-question revisit fixtures (three tasks). The question is withheld until the workflow reaches a gate, so
+ * Delayed-question revisit fixtures (four tasks). The question is withheld until the workflow reaches a gate, so
  * the agent cannot know what to look for while it first reads the pages. Pages only report events and the identity
  * (never the value) of the question target. The checkable answers exist only in this module's oracle tables, which
  * run in the harness process, not in any page served to the agent.
  */
 import type { FixtureCheck, FixtureCheckResult, FixtureObservation } from './fixtures.js';
 
-export type RevisitFamily = 'accordion-field' | 'visible-field' | 'changing-value';
+export type RevisitFamily = 'accordion-field' | 'visible-field' | 'changing-value' | 'visual-value';
 export interface RevisitProduct {
   id: string; name: string; price: string; blurb: string;
   visible: Readonly<Record<'Brand' | 'Colour' | 'Weight', string>>;
@@ -23,6 +23,52 @@ export const REVISIT_IDS = Object.freeze(REVISIT_PRODUCTS.map((product) => produ
 export const REVISIT_ROUTES = Object.freeze({ history: '/revisit/history', question: '/revisit/question', product: (id: string) => `/revisit/p/${id}`, order: '/revisit/order' });
 export const REVISIT_FULL_LABELS = Object.freeze(Object.keys(REVISIT_PRODUCTS[0]!.full));
 export const REVISIT_VISIBLE_LABELS = Object.freeze(['Brand', 'Colour', 'Weight'] as const);
+
+/**
+ * Visual-value family: each product page carries a battery-returns bar chart drawn only as vector shapes (inline SVG
+ * paths for the bars, the month labels and the count labels). No text node, attribute or script holds a month label
+ * or a count, so the peak month is readable only from the rendered pixels. The four charts share one axis and look
+ * alike; each has a different peak month, and the runner-up is close (1 to 5 units behind).
+ */
+export const REVISIT_CHART_LABEL = 'Battery returns chart';
+export const REVISIT_CHART_MONTHS = Object.freeze(['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN'] as const);
+export const REVISIT_CHARTS: Readonly<Record<string, readonly number[]>> = Object.freeze({
+  'lf-101': Object.freeze([34, 41, 58, 55, 47, 39]),
+  'lf-184': Object.freeze([44, 39, 36, 52, 57, 49]),
+  'lf-233': Object.freeze([46, 59, 54, 41, 38, 43]),
+  'lf-297': Object.freeze([37, 45, 42, 56, 51, 40]),
+});
+/** The month label of the tallest bar of a product's chart, or undefined for an unknown product. */
+export const revisitChartPeak = (id: string): string | undefined => { const counts = REVISIT_CHARTS[id]; return counts ? REVISIT_CHART_MONTHS[counts.indexOf(Math.max(...counts))] : undefined; };
+const GLYPHS: Readonly<Record<string, readonly string[]>> = {
+  '0': ['01110', '10001', '10011', '10101', '11001', '10001', '01110'], '1': ['00100', '01100', '00100', '00100', '00100', '00100', '01110'],
+  '2': ['01110', '10001', '00001', '00010', '00100', '01000', '11111'], '3': ['11110', '00001', '00001', '01110', '00001', '00001', '11110'],
+  '4': ['00010', '00110', '01010', '10010', '11111', '00010', '00010'], '5': ['11111', '10000', '11110', '00001', '00001', '10001', '01110'],
+  '6': ['00110', '01000', '10000', '11110', '10001', '10001', '01110'], '7': ['11111', '00001', '00010', '00100', '01000', '01000', '01000'],
+  '8': ['01110', '10001', '10001', '01110', '10001', '10001', '01110'], '9': ['01110', '10001', '10001', '01111', '00001', '00010', '01100'],
+  A: ['01110', '10001', '10001', '11111', '10001', '10001', '10001'], B: ['11110', '10001', '10001', '11110', '10001', '10001', '11110'],
+  E: ['11111', '10000', '10000', '11110', '10000', '10000', '11111'], F: ['11111', '10000', '10000', '11110', '10000', '10000', '10000'],
+  J: ['00111', '00010', '00010', '00010', '00010', '10010', '01100'], M: ['10001', '11011', '10101', '10101', '10001', '10001', '10001'],
+  N: ['10001', '11001', '10101', '10011', '10001', '10001', '10001'], P: ['11110', '10001', '10001', '11110', '10000', '10000', '10000'],
+  R: ['11110', '10001', '10001', '11110', '10100', '10010', '10001'], U: ['10001', '10001', '10001', '10001', '10001', '10001', '01110'],
+  Y: ['10001', '10001', '01010', '00100', '00100', '00100', '00100'],
+};
+/** Path data drawing `text` as filled pixel runs (5x7 glyphs, one pixel of spacing), centred on `x`, top at `y`. */
+const glyphPath = (text: string, x: number, y: number, scale: number): string => {
+  let cursor = x - ((text.length * 6 - 1) * scale) / 2; let d = '';
+  for (const ch of text) {
+    GLYPHS[ch]!.forEach((row, r) => { for (const run of row.matchAll(/1+/g)) d += `M${cursor + run.index! * scale} ${y + r * scale}h${run[0].length * scale}v${scale}h-${run[0].length * scale}z`; });
+    cursor += 6 * scale;
+  }
+  return d;
+};
+const chartSvg = (id: string): string => {
+  const counts = REVISIT_CHARTS[id]!; const base = 205; const barW = 46; const step = 68; const left = 34; const high = (count: number) => Math.round(count * 3);
+  const bars = counts.map((count, i) => `M${left + i * step} ${base}v-${high(count)}h${barW}v${high(count)}z`).join('');
+  const values = counts.map((count, i) => glyphPath(String(count), left + i * step + barW / 2, base - high(count) - 18, 2)).join('');
+  const months = REVISIT_CHART_MONTHS.map((month, i) => glyphPath(month, left + i * step + barW / 2, base + 9, 3)).join('');
+  return `<svg viewBox="0 0 460 250" width="460" height="250" role="img" aria-label="Returns by month"><rect width="460" height="250" fill="#f4f7f8"/><path d="M24 205h420" stroke="#273746" stroke-width="2" fill="none"/><path d="${bars}" fill="#4f7c94"/><path d="${values}" fill="#1b2630"/><path d="${months}" fill="#1b2630"/></svg>`;
+};
 
 /**
  * Changing-value order page. The queried row is one of `span` rows starting at `firstRow` (well below the first
@@ -55,16 +101,16 @@ const hash = (text: string): number => { let n = 2166136261; for (let i = 0; i <
  * the case's own manifest seed is used.
  */
 const seedFrom = (attemptId: string | undefined, fallback: number): number => { const match = attemptId?.match(/(?:^|-)seed-(\d+)-(\d+)(?:-|$)/); return hash(match ? `${match[1]}-${match[2]}` : `${fallback}-1`); };
-const familyFor = (taskId?: string): RevisitFamily => taskId === 'revisit-changing-value' ? 'changing-value' : taskId === 'revisit-visible-field' ? 'visible-field' : 'accordion-field';
+const familyFor = (taskId?: string): RevisitFamily => taskId === 'revisit-changing-value' ? 'changing-value' : taskId === 'revisit-visual-value' ? 'visual-value' : taskId === 'revisit-visible-field' ? 'visible-field' : 'accordion-field';
 const caseSeed = (family: RevisitFamily): number => REVISIT_CASES.find((entry) => entry.family === family)!.seed;
-const productTarget = (family: RevisitFamily, seed: number): { id: string; label: string; name: string } => { const product = REVISIT_PRODUCTS[1 + (seed % 2)]!; const labels = family === 'visible-field' ? REVISIT_VISIBLE_LABELS : REVISIT_FULL_LABELS; return { id: product.id, label: labels[(seed >>> 8) % labels.length]!, name: product.name }; };
+const productTarget = (family: RevisitFamily, seed: number): { id: string; label: string; name: string } => { if (family === 'visual-value') { const chosen = REVISIT_PRODUCTS[seed % REVISIT_PRODUCTS.length]!; return { id: chosen.id, label: REVISIT_CHART_LABEL, name: chosen.name }; } const product = REVISIT_PRODUCTS[1 + (seed % 2)]!; const labels = family === 'visible-field' ? REVISIT_VISIBLE_LABELS : REVISIT_FULL_LABELS; return { id: product.id, label: labels[(seed >>> 8) % labels.length]!, name: product.name }; };
 const changeRow = (seed: number): number => REVISIT_ORDER.firstRow + ((seed >>> 4) % REVISIT_ORDER.span);
 
 const historyPage = (family: RevisitFamily): string => page(family, 'Recently viewed', '', `<h1>Recently viewed</h1><p>Items you looked at recently, oldest first.</p><ol id="viewed">${REVISIT_PRODUCTS.map((product) => `<li class="card"><a href="p/${product.id}">${product.name}</a> <span>${product.price}</span></li>`).join('')}</ol>`, 'sync();');
 const productPage = (family: RevisitFamily, product: RevisitProduct): string => {
   const visible = Object.entries(product.visible).map(([label, value]) => `<tr><th scope="row">${label}</th><td>${value}</td></tr>`).join('');
   const full = Object.entries(product.full).map(([label, value]) => `<tr><th scope="row">${label}</th><td>${value}</td></tr>`).join('');
-  return page(family, product.name, '../', `<h1>${product.name}</h1><p><strong>${product.price}</strong></p><p>${product.blurb}</p><table id="visible-specs"><tbody>${visible}</tbody></table><div class="panel"><button type="button" id="full-specs" aria-expanded="false" aria-controls="full-specs-panel">Full specifications</button><div id="full-specs-panel" role="region" aria-label="Full specifications" hidden><table><tbody>${full}</tbody></table></div></div>`, `
+  return page(family, product.name, '../', `<h1>${product.name}</h1><p><strong>${product.price}</strong></p><p>${product.blurb}</p><table id="visible-specs"><tbody>${visible}</tbody></table><div class="panel"><button type="button" id="full-specs" aria-expanded="false" aria-controls="full-specs-panel">Full specifications</button><div id="full-specs-panel" role="region" aria-label="Full specifications" hidden><table><tbody>${full}</tbody></table></div></div>${family === 'visual-value' ? `<h2>Battery returns by month</h2><p>Units returned each month, January to June.</p><div id="returns-chart">${chartSvg(product.id)}</div>` : ''}`, `
 var ID=${JSON.stringify(product.id)};mark(ID);record('/revisit/p/'+ID,'view');save();var button=document.getElementById('full-specs'),panel=document.getElementById('full-specs-panel');button.addEventListener('click',function(){var open=button.getAttribute('aria-expanded')==='true';button.setAttribute('aria-expanded',open?'false':'true');panel.hidden=open;record('/revisit/p/'+ID,open?'collapse-specs':'expand-specs');save();});`);
 };
 /**
@@ -77,7 +123,7 @@ const questionPage = (family: RevisitFamily, seed: number): string => {
   const target = changing ? { id: revisitRowId(changeRow(seed)), label: REVISIT_ORDER.label } : productTarget(family, seed);
   const ready = changing ? `S.events.some(function(e){return e.page==='/revisit/order'&&e.action==='view';})` : 'S.visited.length===4';
   const wait = changing ? 'Open the order status page first, then come back to this page.' : 'Finish reviewing your recently viewed items first.';
-  const question = changing ? `'<p id="question-text">What is the current dock status in the '+T.label+' for line '+T.id+'? Answer with the dock status text only (the "Dock ... received" part), without the package or depot details.</p>'` : `'<p id="question-text">What is the '+T.label+' of '+T.name+'?</p>'`;
+  const question = changing ? `'<p id="question-text">What is the current dock status in the '+T.label+' for line '+T.id+'? Answer with the dock status text only (the "Dock ... received" part), without the package or depot details.</p>'` : family === 'visual-value' ? `'<p id="question-text">In the '+T.label+' on the '+T.name+' page, which month had the highest count? Answer with the three-letter month label printed under that bar, nothing else.</p>'` : `'<p id="question-text">What is the '+T.label+' of '+T.name+'?</p>'`;
   const reveal = changing ? `var req=new XMLHttpRequest();req.open('POST','/__revisit-reveal/'+encodeURIComponent(tok),false);req.send('');` : '';
   return page(family, 'Question', '', `<h1>Question</h1><div id="question"><p>${wait}</p></div>`, `
 var T=${JSON.stringify(target)};record('/revisit/question','view');var box=document.getElementById('question');
@@ -99,13 +145,14 @@ const normalize = (value: string): string => value.trim().replace(/^(?:final(?: 
 const finalState = (events: FixtureObservation[]): Record<string, unknown> | undefined => events.map((event) => event.fixtureState).filter((state): state is Record<string, unknown> => !!state && typeof state === 'object' && !Array.isArray(state)).at(-1);
 interface RevisitEvent { page?: unknown; action?: unknown }
 const eventList = (state: Record<string, unknown>): RevisitEvent[] | null => Array.isArray(state.events) && state.events.every((event) => !!event && typeof event === 'object' && !Array.isArray(event)) ? state.events as RevisitEvent[] : null;
-const FAMILIES: readonly string[] = ['accordion-field', 'visible-field', 'changing-value'];
+const FAMILIES: readonly string[] = ['accordion-field', 'visible-field', 'changing-value', 'visual-value'];
 /** The expected value for a reported target, or undefined when the target is not a real question for the family. */
 function expectedFor(family: RevisitFamily, target: unknown): string | undefined {
   if (!target || typeof target !== 'object' || Array.isArray(target)) return undefined;
   const { id, label } = target as { id?: unknown; label?: unknown };
   if (typeof id !== 'string' || typeof label !== 'string') return undefined;
   if (family === 'changing-value') { const row = rowFromId(id); return row !== null && label === REVISIT_ORDER.label ? revisitChangeFor(row).after : undefined; }
+  if (family === 'visual-value') return label === REVISIT_CHART_LABEL ? revisitChartPeak(id) : undefined;
   const product = REVISIT_PRODUCTS.find((candidate) => candidate.id === id);
   if (!product) return undefined;
   const values = (family === 'visible-field' ? product.visible : product.full) as Record<string, string>;
@@ -137,6 +184,7 @@ function inspect(entry: RevisitCase, state: Record<string, unknown>): Inspection
   if (!REVISIT_IDS.every((id) => visited.includes(id) && viewed(before, REVISIT_ROUTES.product(id)))) return { expected, workflowFail: 'all four viewed products must be opened' };
   const path = REVISIT_ROUTES.product(target.id); const returned = viewed(after, path);
   if (entry.family === 'visible-field') return { expected, returned };
+  if (entry.family === 'visual-value') return { expected, returned, ...(returned ? {} : { workflowFail: 'target product must be revisited after question' }) };
   const workflowFail = !returned ? 'target product must be revisited after question' : !viewed(after, path, 'expand-specs') ? 'target specifications must be expanded after question' : undefined;
   return { expected, returned, ...(workflowFail ? { workflowFail } : {}) };
 }
@@ -153,6 +201,7 @@ const cases: RevisitCase[] = [
   { id: 'revisit-accordion-field', category: 'navigation', family: 'accordion-field', seed: 730101, route: REVISIT_ROUTES.history, prompt: productPrompt, expected: { answer: '' }, oracleId: 'revisit-accordion-field-oracle', nearMiss: { id: 'revisit-accordion-wrong-product' }, structuralVariant: 'question is withheld until four product visits; its target is a collapsed specification on a middle product and requires a post-reveal return and expansion', check: checkFor('accordion-field') },
   { id: 'revisit-visible-field', category: 'navigation', family: 'visible-field', seed: 730102, route: REVISIT_ROUTES.history, prompt: productPrompt, expected: { answer: '' }, oracleId: 'revisit-visible-field-oracle', nearMiss: { id: 'revisit-visible-wrong-answer' }, structuralVariant: 'control: question is withheld until four product visits and targets a visible specification; returning is recorded but not required', check: checkFor('visible-field') },
   { id: 'revisit-changing-value', category: 'navigation', family: 'changing-value', seed: 730103, route: REVISIT_ROUTES.order, prompt: (base) => `Open the order status page at ${base}${REVISIT_ROUTES.order}, note its title and status summary, then open the Question page and answer it with the current value. Report only the answer.`, expected: { answer: '' }, oracleId: 'revisit-changing-value-oracle', nearMiss: { id: 'revisit-changing-stale-value' }, structuralVariant: 'a deep shipment row (one of many near-duplicates) changes when the question is first shown; only a post-reveal order-page view exposes its current value', check: checkFor('changing-value') },
+  { id: 'revisit-visual-value', category: 'navigation', family: 'visual-value', seed: 730104, route: REVISIT_ROUTES.history, prompt: (base) => `Open the recently viewed page at ${base}${REVISIT_ROUTES.history}, open each of the four products the shopper viewed and note what they are and what their pages show. Then open the Question page and answer it. Report only the answer.`, expected: { answer: '' }, oracleId: 'revisit-visual-value-oracle', nearMiss: { id: 'revisit-visual-wrong-product' }, structuralVariant: 'question is withheld until four product visits; its target is the peak month of a bar chart drawn only as vector shapes (no text node, attribute or script holds a label or count) on a seeded product page, and requires a post-reveal return to that page', check: checkFor('visual-value') },
 ];
 export const REVISIT_CASES = Object.freeze(cases);
 export const REVISIT_CHECKS = REVISIT_CASES.map(({ id, check }) => ({ taskId: id, check }));
@@ -179,8 +228,9 @@ export function gradeRevisitCase(id: string, answer: string, events: FixtureObse
   const answerCorrect = result.fail === undefined && result.expected !== undefined && normalize(answer) === normalize(result.expected);
   const targetId = (state.target as { id?: unknown } | null | undefined)?.id;
   const row = typeof targetId === 'string' ? rowFromId(targetId) : null;
+  const other = entry.family === 'visual-value' && result.fail === undefined && !answerCorrect && REVISIT_IDS.some((id) => id !== targetId && revisitChartPeak(id) !== undefined && normalize(answer) === normalize(revisitChartPeak(id)!));
   const stale = entry.family === 'changing-value' && result.fail === undefined && row !== null && normalize(answer) === normalize(revisitChangeFor(row).before);
-  const answerDetails = answerCorrect ? undefined : result.fail ?? (stale ? 'answer is stale (value before the update)' : 'answer does not match target value');
+  const answerDetails = answerCorrect ? undefined : result.fail ?? (stale ? 'answer is stale (value before the update)' : other ? "answer is another product's chart value" : 'answer does not match target value');
   const workflowDetails = result.fail ?? result.workflowFail;
   const details = answerDetails ?? workflowDetails;
   return { ok: answerCorrect && workflowDetails === undefined, answerCorrect, workflowOk: workflowDetails === undefined, ...(details ? { details } : {}), ...(answerDetails ? { answerDetails } : {}), ...(workflowDetails ? { workflowDetails } : {}), ...(result.returned === undefined ? {} : { returned: result.returned }), ...(result.rowSeen === undefined ? {} : { rowSeen: result.rowSeen }) };

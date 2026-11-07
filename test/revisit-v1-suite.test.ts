@@ -4,14 +4,14 @@ import { chromium } from 'playwright';
 import type { Browser, Page } from 'playwright';
 import { chromiumExecutable } from '../src/userAgent.js';
 import { startFixtures, type FixtureObservation } from '../bench/fixtures.js';
-import { answerForRevisitState, gradeRevisitCase, REVISIT_FULL_LABELS, REVISIT_IDS, REVISIT_ORDER, REVISIT_PRODUCTS, REVISIT_ROUTES, revisitChangeFor, revisitRoute } from '../bench/fixtures-revisit-v1.js';
+import { answerForRevisitState, gradeRevisitCase, REVISIT_CHARTS, REVISIT_CHART_MONTHS, REVISIT_FULL_LABELS, REVISIT_IDS, REVISIT_ORDER, REVISIT_PRODUCTS, REVISIT_ROUTES, revisitChangeFor, revisitChartPeak, revisitRoute } from '../bench/fixtures-revisit-v1.js';
 import { gradeRevisitV1Case, REVISIT_V1_CHECKS, REVISIT_V1_MANIFEST, REVISIT_V1_SUITE, REVISIT_V1_TASKS, revisitV1Route } from '../bench/agent/revisit-v1.js';
 
 let browser: Browser; let page: Page; let fixtures: Awaited<ReturnType<typeof startFixtures>>;
 beforeAll(async () => { browser = await chromium.launch(chromiumExecutable()); page = await browser.newPage({ viewport: { width: 900, height: 600 } }); fixtures = await startFixtures({ checks: REVISIT_V1_CHECKS, developmentRoute: revisitV1Route }); });
 afterAll(async () => { await page?.close(); await browser?.close(); await fixtures?.close(); });
 
-const ACCORDION = 'revisit-accordion-field'; const VISIBLE = 'revisit-visible-field'; const CHANGING = 'revisit-changing-value';
+const ACCORDION = 'revisit-accordion-field'; const VISIBLE = 'revisit-visible-field'; const CHANGING = 'revisit-changing-value'; const VISUAL = 'revisit-visual-value';
 const bases = new Map<string, string>();
 const baseFor = (task: string, attempt: string) => bases.get(attempt) ?? (() => { const base = fixtures.baseFor(task, attempt); bases.set(attempt, base); return base; })();
 const open = async (task: string, attempt: string, route: string) => { await page.goto(`${baseFor(task, attempt)}${route}`); await page.waitForLoadState('domcontentloaded'); };
@@ -28,18 +28,18 @@ const revisitTarget = async (task: string, attempt: string, fixtureState: Record
 const rowOf = (fixtureState: Record<string, unknown>) => Number(target(fixtureState).id.replace('LN-', '')) - 5800;
 const questionBody = (task: string, attempt: string) => revisitRoute(REVISIT_ROUTES.question, { taskId: task, attemptId: attempt })?.body ?? '';
 
-it('registers three named tasks and the matching manifest', () => {
-  const ids = [ACCORDION, VISIBLE, CHANGING];
+it('registers four named tasks and the matching manifest', () => {
+  const ids = [ACCORDION, VISIBLE, CHANGING, VISUAL];
   expect(REVISIT_V1_SUITE).toBe('revisit-v1'); expect(REVISIT_V1_TASKS.map((task) => task.id)).toEqual(ids);
-  expect(REVISIT_V1_CHECKS.map((entry) => entry.taskId).sort()).toEqual([...ids].sort()); expect(REVISIT_V1_MANIFEST).toHaveLength(3);
+  expect(REVISIT_V1_CHECKS.map((entry) => entry.taskId).sort()).toEqual([...ids].sort()); expect(REVISIT_V1_MANIFEST).toHaveLength(4);
   const manifest = JSON.parse(readFileSync(new URL('../bench/manifests/revisit-v1.json', import.meta.url), 'utf8')) as { taskCount: number; tasks: string[] };
-  expect(manifest.taskCount).toBe(3); expect(manifest.tasks).toEqual(ids);
+  expect(manifest.taskCount).toBe(4); expect(manifest.tasks).toEqual(ids);
 });
 
 it('keeps collapsed product fields hidden and serves no answer inventory in any question page', async () => {
   await open(ACCORDION, 'revisit-accordion-field-initial', REVISIT_ROUTES.product(REVISIT_PRODUCTS[0]!.id));
   const text = await page.locator('body').innerText(); for (const [label, value] of Object.entries(REVISIT_PRODUCTS[0]!.full)) { expect(text).not.toContain(label); expect(text).not.toContain(value); }
-  for (const task of [ACCORDION, VISIBLE, CHANGING]) {
+  for (const task of [ACCORDION, VISIBLE, CHANGING, VISUAL]) {
     const body = questionBody(task, `${task}-x-1-seed-1-1`); expect(body).not.toContain('var PRODUCTS=');
     for (const product of REVISIT_PRODUCTS) for (const value of [...Object.values(product.full), ...Object.values(product.visible)]) expect(body).not.toContain(value);
     expect(body).not.toMatch(/Dock \d[A-D] received/);
@@ -47,7 +47,7 @@ it('keeps collapsed product fields hidden and serves no answer inventory in any 
 });
 
 it('shares the target between approaches for one (task, run) and varies it across runs', () => {
-  for (const task of [ACCORDION, VISIBLE, CHANGING]) {
+  for (const task of [ACCORDION, VISIBLE, CHANGING, VISUAL]) {
     const id = (approach: string, run: number) => `${task}-${approach}-${run}-1-1700000000${approach.length}-seed-7301-${run}`;
     for (const run of [1, 2, 3]) { const bodies = ['mantis', 'tree', 'screenshot'].map((approach) => questionBody(task, id(approach, run))); expect(new Set(bodies).size).toBe(1); }
     const targets = new Set(Array.from({ length: 12 }, (_, i) => /var T=(\{[^}]*\})/.exec(questionBody(task, id('mantis', i + 1)))?.[1]));
@@ -148,4 +148,88 @@ it('changing-value: stale, near-duplicate, no-return and unopened-question answe
   await expectFailure(CHANGING, unopened, revisitChangeFor(REVISIT_ORDER.firstRow).after, 'question page must be opened');
   const skipped = 'revisit-changing-value-skip-seed-730103-8'; const early = await showQuestion(CHANGING, skipped); expect(early.questionShownAt).toBeNull();
   await open(CHANGING, skipped, REVISIT_ROUTES.order); await expectFailure(CHANGING, skipped, 'x', 'question page must be opened');
+});
+// ---- visual-value: the answer exists only as drawn shapes ----
+const visualAttempt = (name: string) => `revisit-visual-value-${name}-seed-730104-1`;
+const visualState = async (attempt: string) => { await browse(VISUAL, attempt); return showQuestion(VISUAL, attempt); };
+/** An attempt token for each of the four target products (the target is seeded from the token's seed and run). */
+const attemptsByTarget = (): Map<string, string> => { const found = new Map<string, string>(); for (let run = 1; run <= 200 && found.size < REVISIT_IDS.length; run++) { const id = `${VISUAL}-mantis-${run}-seed-730104-${run}`; const targetId = /"id":"(lf-\d+)"/.exec(questionBody(VISUAL, id))?.[1]; if (targetId && !found.has(targetId)) found.set(targetId, id); } return found; };
+const chartMarkup = (body: string) => /<div id="returns-chart">([\s\S]*?)<\/div>/.exec(body)?.[1] ?? '';
+
+it('visual-value: every chart has a distinct peak month and a close runner-up', () => {
+  const peaks = REVISIT_IDS.map((id) => revisitChartPeak(id)); expect(new Set(peaks).size).toBe(REVISIT_IDS.length);
+  for (const id of REVISIT_IDS) { const counts = [...REVISIT_CHARTS[id]!].sort((a, b) => b - a); expect(counts[0]! - counts[1]!).toBeGreaterThan(0); expect(counts[0]! - counts[1]!).toBeLessThanOrEqual(5); expect(REVISIT_CHARTS[id]).toHaveLength(REVISIT_CHART_MONTHS.length); }
+  expect(revisitChartPeak('missing')).toBeUndefined();
+});
+
+it('visual-value: no served page contains a month label or a text equivalent of a chart, for any seed', () => {
+  const answers = [...new Set(REVISIT_IDS.map((id) => revisitChartPeak(id)!))];
+  const seen = attemptsByTarget(); expect(seen.size).toBe(REVISIT_IDS.length);
+  const attempts = [...seen.values(), ...Array.from({ length: 24 }, (_, i) => `${VISUAL}-tree-${i + 1}-seed-730104-${i + 1}`), `${VISUAL}-adhoc`];
+  for (const attempt of attempts) {
+    for (const route of [REVISIT_ROUTES.history, REVISIT_ROUTES.question, REVISIT_ROUTES.order, ...REVISIT_IDS.map(REVISIT_ROUTES.product)]) {
+      for (const revealed of [false, true]) {
+        const body = revisitRoute(route, { taskId: VISUAL, attemptId: attempt, revealed })?.body; expect(body, route).toBeTruthy();
+        for (const month of REVISIT_CHART_MONTHS) expect(body, `${route} ${month}`).not.toContain(month);
+        for (const month of answers) expect(body, `${route} ${month}`).not.toMatch(new RegExp(`\\b${month}\\b`, 'i'));
+      }
+    }
+    for (const id of REVISIT_IDS) {
+      const chart = chartMarkup(revisitRoute(REVISIT_ROUTES.product(id), { taskId: VISUAL, attemptId: attempt })!.body); expect(chart).toContain('<svg');
+      expect(chart).not.toMatch(/<text[\s>]|<title|<desc|<img|<canvas|<script|\balt=|\btitle=|data-/i);
+      expect(chart.replace(/<[^>]*>/g, '').trim(), 'no text node inside the chart').toBe('');
+      expect(chart.match(/aria-label="[^"]*"/g)).toEqual(['aria-label="Returns by month"']);
+    }
+    expect(questionBody(VISUAL, attempt)).not.toMatch(/"(?:answer|expected|peak|month)"/i);
+  }
+  // Only the visual family draws a chart.
+  for (const task of [ACCORDION, VISIBLE, CHANGING]) expect(revisitRoute(REVISIT_ROUTES.product(REVISIT_IDS[0]!), { taskId: task, attemptId: `${task}-x` })!.body).not.toContain('<svg');
+});
+
+it('visual-value: the browser exposes no text for the chart, and the target varies across all four products', async () => {
+  await open(VISUAL, visualAttempt('dom'), REVISIT_ROUTES.product(REVISIT_IDS[0]!));
+  const dom = await page.evaluate(() => { const chart = document.getElementById('returns-chart')!; const svg = chart.querySelector('svg')!; return { text: chart.textContent?.trim() ?? '', pageText: document.body.innerText, title: document.title, url: location.href, shapes: chart.querySelectorAll('path').length, height: svg.getBoundingClientRect().height }; });
+  expect(dom.text).toBe(''); expect(dom.shapes).toBeGreaterThanOrEqual(4); expect(dom.height).toBeGreaterThan(200);
+  for (const month of REVISIT_CHART_MONTHS) for (const where of [dom.pageText, dom.title, dom.url]) expect(where).not.toMatch(new RegExp(`\\b${month}\\b`));
+  expect(new Set(attemptsByTarget().keys()).size).toBe(REVISIT_IDS.length);
+});
+
+it('visual-value: passes with the target peak and a return visit after the question', async () => {
+  const attempt = visualAttempt('pass'); const revealed = await visualState(attempt); const id = target(revealed).id;
+  expect(target(revealed).label).toBe('Battery returns chart'); expect(answer(revealed)).toBe(revisitChartPeak(id));
+  await open(VISUAL, attempt, REVISIT_ROUTES.product(id));
+  const pass = await verify(VISUAL, attempt, answer(revealed).toLowerCase());
+  expect(pass.full.ok, JSON.stringify(pass)).toBe(true); expect(pass.answer.pass).toBe(true); expect(pass.check?.ok).toBe(true); expect(pass.full.returned).toBe(true);
+});
+
+it('visual-value near misses: another product peak, no return visit, fewer than four visits, question never opened', async () => {
+  const wrongProduct = visualAttempt('wrong'); const w = await visualState(wrongProduct); await open(VISUAL, wrongProduct, REVISIT_ROUTES.product(target(w).id));
+  const otherId = REVISIT_IDS.find((id) => id !== target(w).id)!;
+  const wrong = await expectFailure(VISUAL, wrongProduct, revisitChartPeak(otherId)!, "answer is another product's chart value");
+  expect(wrong.full.workflowOk).toBe(true); expect(wrong.answer.pass).toBe(false); expect(wrong.check?.ok).toBe(true);
+  const nonsenseAttempt = visualAttempt('nonsense'); const n = await visualState(nonsenseAttempt); await open(VISUAL, nonsenseAttempt, REVISIT_ROUTES.product(target(n).id));
+  const nonsense = await expectFailure(VISUAL, nonsenseAttempt, 'DEC', 'answer does not match target value'); expect(nonsense.answer.pass).toBe(false);
+  const memory = visualAttempt('memory'); const m = await visualState(memory);
+  const remembered = await expectFailure(VISUAL, memory, answer(m), 'target product must be revisited after question');
+  expect(remembered.full.answerCorrect).toBe(true); expect(remembered.answer.pass).toBe(true); expect(remembered.check?.ok).toBe(false); expect(remembered.full.returned).toBe(false);
+  // Viewing only a different product after the question is not a return to the target.
+  const elsewhere = visualAttempt('elsewhere'); const e = await visualState(elsewhere); await open(VISUAL, elsewhere, REVISIT_ROUTES.product(REVISIT_IDS.find((id) => id !== target(e).id)!));
+  await expectFailure(VISUAL, elsewhere, answer(e), 'target product must be revisited after question');
+  const partial = visualAttempt('partial'); await browse(VISUAL, partial, REVISIT_IDS.slice(0, 3)); const p = await showQuestion(VISUAL, partial); expect(p.questionShownAt).toBeNull();
+  await expectFailure(VISUAL, partial, 'MAR', 'question page must be opened');
+  const unopened = visualAttempt('unopened'); await browse(VISUAL, unopened); await expectFailure(VISUAL, unopened, 'MAR', 'question page must be opened');
+});
+
+it('visual-value: strict state validation (fewer than four visits, wrong family, wrong target label or id)', () => {
+  const view = (path: string) => ({ page: path, action: 'view' }); const targetId = REVISIT_IDS[2]!; const peak = revisitChartPeak(targetId)!;
+  const questionShown = { page: REVISIT_ROUTES.question, action: 'question-shown' };
+  const full = { kind: 'revisit-v1', family: 'visual-value', visited: [...REVISIT_IDS], questionShownAt: 4, target: { id: targetId, label: 'Battery returns chart' }, events: [...REVISIT_IDS.map((id) => view(REVISIT_ROUTES.product(id))), questionShown, view(REVISIT_ROUTES.product(targetId))] };
+  const grade = (fixtureState: unknown, given: string) => gradeRevisitCase(VISUAL, given, [{ fixtureState } as FixtureObservation]);
+  expect(grade(full, peak).ok).toBe(true); expect(grade(full, peak.toLowerCase()).ok).toBe(true);
+  const three = { ...full, visited: REVISIT_IDS.slice(0, 3), questionShownAt: 3, events: [...REVISIT_IDS.slice(0, 3).map((id) => view(REVISIT_ROUTES.product(id))), questionShown, view(REVISIT_ROUTES.product(targetId))] };
+  expect(grade(three, peak).details).toBe('all four viewed products must be opened');
+  expect(grade({ ...full, events: full.events.slice(0, 5) }, peak).details).toBe('target product must be revisited after question');
+  expect(grade({ ...full, family: 'accordion-field' }, peak).details).toBe('revisit state family does not match task');
+  expect(grade({ ...full, target: { id: targetId, label: 'Weight' } }, peak).details).toBe('malformed revisit target');
+  expect(grade({ ...full, target: { id: 'missing', label: 'Battery returns chart' } }, peak).details).toBe('malformed revisit target');
 });

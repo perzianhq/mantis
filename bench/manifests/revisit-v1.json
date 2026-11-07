@@ -4,14 +4,15 @@
   "kind": "local-fixture-revisit-probe",
   "status": "configured",
   "sourceSelector": "bench/agent/revisit-v1.ts",
-  "taskCount": 3,
-  "splits": { "newSynthetic": 3 },
-  "purpose": "Checks delayed-question recovery, including a deep current value that changes after the first view; not a headline scorecard.",
-  "tasks": ["revisit-accordion-field", "revisit-visible-field", "revisit-changing-value"],
+  "taskCount": 4,
+  "splits": { "newSynthetic": 4 },
+  "purpose": "Checks delayed-question recovery, including a deep current value that changes after the first view and a value that exists only in a drawn chart; not a headline scorecard.",
+  "tasks": ["revisit-accordion-field", "revisit-visible-field", "revisit-changing-value", "revisit-visual-value"],
   "newCases": [
     { "id": "revisit-accordion-field", "description": "recover a collapsed full-specification value from the target product after the delayed question" },
     { "id": "revisit-visible-field", "description": "control: answer a visible specification after the delayed question; return behavior is informational" },
-    { "id": "revisit-changing-value", "description": "recover a current deep shipment-row value after it changes when the question is shown" }
+    { "id": "revisit-changing-value", "description": "recover a current deep shipment-row value after it changes when the question is shown" },
+    { "id": "revisit-visual-value", "description": "revisit a product page after the delayed question and read the peak month of a bar chart that exists only as drawn vector shapes (no text equivalent)" }
   ],
   "approaches": ["mantis", "tree", "screenshot"],
   "runs": 1,

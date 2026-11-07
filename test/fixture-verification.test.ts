@@ -30,6 +30,7 @@ import { buildAuditManifest, summarizeAudit } from '../bench/agent/judge-audit.j
 import type { AuditPacket, AuditRun } from '../bench/agent/judge-audit.js';
 import { evaluateDeterministicGrader, loadRealsiteRows, sanitizeAnswer, validateChecks, validateDeterministicGrader } from '../bench/agent/realsite.js';
 import { VISUAL_LIVE_V1_ROWS } from '../bench/agent/visual-live-v1.js';
+import { REVISIT_LIVE_V1_ROWS } from '../bench/agent/revisit-live-v1.js';
 import { uploadFixturePath } from '../bench/agent/upload-fixture.js';
 import { LIVE_V1_ROWS } from '../bench/agent/live-v1.js';
 import { LONG_LIVE_V1_ROWS } from '../bench/agent/long-live-v1.js';
@@ -1794,4 +1795,42 @@ it('visual-live-v1: every task has a passing captured state and a near-miss fail
   expect(grade(worth, '2 hours', 'https://xkcd.com/1205/', 'Is It Worth the Time?')).toBe(true);
   expect(grade(worth, '12 hours', 'https://xkcd.com/1205/', 'Is It Worth the Time?')).toBe(false);
   expect(grade(worth, '2 hours', 'https://xkcd.com/1179/', 'ISO 8601')).toBe(false);
+});
+
+it('revisit-live-v1: every task needs the deep answer and a final return to page A (near misses fail)', () => {
+  const grade = (id: string, answer: string, url: string, text: string) =>
+    evaluateDeterministicGrader(REVISIT_LIVE_V1_ROWS.find((row) => row.task_id === id)!.deterministic!, answer, [{ final: true, url, text }])?.pass;
+
+  // Long registry table: RFC 7725 (row 451) passes on the registry; RFC 6585 (adjacent row 431) fails; the right answer from another page fails.
+  const iana = 'revisitlive-iana-451-reference';
+  const registry = 'https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml';
+  const registryText = 'Hypertext Transfer Protocol (HTTP) Status Code Registry 431 Request Header Fields Too Large RFC 6585';
+  expect(grade(iana, 'Status 451 is referenced by RFC 7725.', registry, registryText)).toBe(true);
+  expect(grade(iana, 'RFC 6585', registry, registryText)).toBe(false);
+  expect(grade(iana, 'RFC 7725', 'https://www.iana.org/help/example-domains', 'Example Domains')).toBe(false);
+
+  // Collapsed FAQ answer: the first answer's phone number passes; the holiday-hours answer (adjacent item) fails.
+  const faq = 'revisitlive-apg-faq-phone';
+  const faqUrl = 'https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/examples/disclosure-faq/';
+  const faqText = 'Example Disclosure (Show/Hide) for Answers to Frequently Asked Questions Parking FAQs';
+  expect(grade(faq, 'Call 999-999-9999.', faqUrl, faqText)).toBe(true);
+  expect(grade(faq, '2:00 am - 6:00 am', faqUrl, faqText)).toBe(false);
+  expect(grade(faq, '999-999-9999', 'https://www.w3.org/WAI/ARIA/apg/patterns/accordion/examples/accordion/', 'Accordion Example')).toBe(false);
+
+  // Deep PEP 8 sentence: 72 passes; 79 (the code limit in the same paragraph) fails; ending on PEP 20 fails.
+  const pep = 'revisitlive-pep8-docstring-limit';
+  const pepUrl = 'https://peps.python.org/pep-0008/';
+  const pepText = 'PEP 8 - Style Guide for Python Code Maximum Line Length';
+  expect(grade(pep, '72 characters', pepUrl, pepText)).toBe(true);
+  expect(grade(pep, '79 characters', pepUrl, pepText)).toBe(false);
+  expect(grade(pep, '72 characters', 'https://peps.python.org/pep-0020/', 'PEP 20 - The Zen of Python')).toBe(false);
+
+  // Deep release entry: 2021-12-09 passes; the neighbouring go1.17.4 and go1.17.6 dates fail; ending on the install page fails.
+  const go = 'revisitlive-go-release-date';
+  const goUrl = 'https://go.dev/doc/devel/release';
+  const goText = 'Release History go1.17.5 (released 2021-12-09)';
+  expect(grade(go, 'go1.17.5 was released 2021-12-09', goUrl, goText)).toBe(true);
+  expect(grade(go, '2021-12-02', goUrl, goText)).toBe(false);
+  expect(grade(go, '2022-01-06', goUrl, goText)).toBe(false);
+  expect(grade(go, '2021-12-09', 'https://go.dev/doc/install', 'Download and install')).toBe(false);
 });

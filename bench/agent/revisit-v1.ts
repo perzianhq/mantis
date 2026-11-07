@@ -1,4 +1,4 @@
-/** Three local tasks that separate answer accuracy from delayed-question workflow evidence. */
+/** Four local tasks that separate answer accuracy from delayed-question workflow evidence. */
 import type { DevelopmentFixtureRouter, FixtureCheckEntry, FixtureObservation } from '../fixtures.js';
 import { REVISIT_CASES, REVISIT_CHECKS, gradeRevisitCase, revisitRoute } from '../fixtures-revisit-v1.js';
 import type { AgentTask } from './tasks.js';

@@ -1,0 +1,158 @@
+[
+  {
+    "task_id": "revisitlive-iana-451-reference",
+    "family": "table",
+    "grading": "deterministic",
+    "level": "medium",
+    "website": "https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml",
+    "confirmed_task": "Open the IANA HTTP status code registry at https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml and note only the page title. Then visit https://example.com/ and then https://www.iana.org/help/example-domains. Now, without any search engine, answer from the registry: which RFC is listed as the reference for status code 451 (Unavailable For Legal Reasons)? Finish with the registry page open in the browser and report the RFC.",
+    "source": {
+      "canonicalUrl": "https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "unverified-offline"
+    },
+    "deterministic": {
+      "kind": "fact",
+      "answerIncludes": [
+        {
+          "type": "entity",
+          "value": "RFC 7725"
+        }
+      ],
+      "final": {
+        "url": {
+          "origin": "https://www.iana.org",
+          "path": "/assignments/http-status-codes/http-status-codes.xhtml"
+        },
+        "textIncludes": [
+          {
+            "type": "entity",
+            "value": "Hypertext Transfer Protocol (HTTP) Status Code Registry"
+          }
+        ]
+      }
+    },
+    "judgeRubric": "Row 451 sits in the middle of a long registry table, between the unassigned range 432-450 and 452-499; its reference is RFC 7725.",
+    "keyNotes": {
+      "verified": "curl 20261107: registry table cell text reads '451 Unavailable For Legal Reasons RFC 7725'. Quote location: the Registry table, row 451, Reference column, after '432-450 Unassigned'. Pages B (example.com) and C (iana.org/help/example-domains) contain no RFC reference.",
+      "nearMiss": "RFC 6585, the reference for the adjacent row 431 (Request Header Fields Too Large) and for 428-429."
+    }
+  },
+  {
+    "task_id": "revisitlive-apg-faq-phone",
+    "family": "collapsed",
+    "grading": "deterministic",
+    "level": "medium",
+    "website": "https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/examples/disclosure-faq/",
+    "confirmed_task": "Open the W3C APG disclosure FAQ example at https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/examples/disclosure-faq/ and note only the page title. Then visit https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/examples/disclosure-image-description/ and then https://www.w3.org/WAI/ARIA/apg/patterns/accordion/examples/accordion/. Now go back to the FAQ example: the answer to \"What do I do if I have a permit for an assigned lot, but can't find a space there?\" tells you to call a phone number. Report that phone number and finish with the FAQ example page open.",
+    "source": {
+      "canonicalUrl": "https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/examples/disclosure-faq/",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "unverified-offline"
+    },
+    "deterministic": {
+      "kind": "fact",
+      "answerIncludes": [
+        {
+          "type": "entity",
+          "value": "999-999-9999"
+        }
+      ],
+      "final": {
+        "url": {
+          "origin": "https://www.w3.org",
+          "path": "/WAI/ARIA/apg/patterns/disclosure/examples/disclosure-faq/"
+        },
+        "textIncludes": [
+          {
+            "type": "entity",
+            "value": "Example Disclosure (Show/Hide) for Answers to Frequently Asked Questions"
+          }
+        ]
+      }
+    },
+    "judgeRubric": "The answer is inside a collapsed disclosure (button aria-expanded=false, answer hidden) under 'Parking FAQs'; the number is the only phone number on the page.",
+    "keyNotes": {
+      "verified": "curl 20261107: the first FAQ answer reads 'Park at the nearest available parking meter without paying the meter and call 999-999-9999 to report the problem.' Quote location: Parking FAQs list, first item, answer region hidden until its button is activated. It is the only phone-number pattern on the page. Pages B and C contain no phone number or '2:00 am'.",
+      "nearMiss": "The third FAQ answer's hours, '2:00 am - 6:00 am' (the holiday enforcement window), which has no phone number."
+    }
+  },
+  {
+    "task_id": "revisitlive-pep8-docstring-limit",
+    "family": "deep",
+    "grading": "deterministic",
+    "level": "medium",
+    "website": "https://peps.python.org/pep-0008/",
+    "confirmed_task": "Open PEP 8 at https://peps.python.org/pep-0008/ and note only the page title. Then visit https://peps.python.org/pep-0020/ and then https://peps.python.org/pep-0257/. Now answer from PEP 8: in the 'Maximum Line Length' guidance, to how many characters should docstrings and comments be limited? Report the number and finish with PEP 8 open.",
+    "source": {
+      "canonicalUrl": "https://peps.python.org/pep-0008/",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "unverified-offline"
+    },
+    "deterministic": {
+      "kind": "fact",
+      "answerIncludes": [
+        {
+          "type": "number",
+          "value": 72
+        }
+      ],
+      "final": {
+        "url": {
+          "origin": "https://peps.python.org",
+          "path": "/pep-0008/"
+        },
+        "textIncludes": [
+          {
+            "type": "entity",
+            "value": "Style Guide for Python Code"
+          }
+        ]
+      }
+    },
+    "judgeRubric": "The 72 limit sits in the Maximum Line Length section, deep in a long page (the 79 limit for code is in the sentence before it).",
+    "keyNotes": {
+      "verified": "curl 20261107: 'Limit all lines to a maximum of 79 characters. For flowing long blocks of text with fewer structural restrictions (docstrings or comments), the line length should be limited to 72 characters.' Quote location: section 'Maximum Line Length', first paragraph. PEP 20 and PEP 257 contain no '72'.",
+      "nearMiss": "79, the general code line limit stated in the same paragraph."
+    }
+  },
+  {
+    "task_id": "revisitlive-go-release-date",
+    "family": "deep",
+    "grading": "deterministic",
+    "level": "medium",
+    "website": "https://go.dev/doc/devel/release",
+    "confirmed_task": "Open the Go release history at https://go.dev/doc/devel/release and note only the page title. Then visit https://go.dev/doc/install and then https://go.dev/doc/tutorial/getting-started. Now answer from the release history: on what date was go1.17.5 released? Report the date as YYYY-MM-DD exactly as the page shows it, and finish with the release history page open.",
+    "source": {
+      "canonicalUrl": "https://go.dev/doc/devel/release",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "unverified-offline"
+    },
+    "deterministic": {
+      "kind": "fact",
+      "answerIncludes": [
+        {
+          "type": "text",
+          "value": "2021-12-09"
+        }
+      ],
+      "final": {
+        "url": {
+          "origin": "https://go.dev",
+          "path": "/doc/devel/release"
+        },
+        "textIncludes": [
+          {
+            "type": "entity",
+            "value": "Release History"
+          }
+        ]
+      }
+    },
+    "judgeRubric": "The go1.17.5 entry is far down a very long page (63k characters of text, about 290 release entries).",
+    "keyNotes": {
+      "verified": "curl 20261107: 'go1.17.5 (released 2021-12-09) includes security fixes to the net/http and syscall packages.' Quote location: Release History, minor revisions under go1.17. Pages B and C do not mention go1.17.5. Old release entries are immutable.",
+      "nearMiss": "2021-12-02 (go1.17.4, the entry just before) or 2022-01-06 (go1.17.6, the entry just after)."
+    }
+  }
+]

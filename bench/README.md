@@ -63,7 +63,7 @@ Mantis runs set `MANTIS_NO_HUMAN=1` on the MCP server (`ask_human` returns immed
 | Variable | Default | Meaning |
 |---|---|---|
 | `AGENT_PROVIDER` | `codex` | `codex`, `claude`, or `sarvam` |
-| `AGENT_SUITE` | `local-v1` | `local-v2-development`, `local-v2`, `local-v2.1`, `capability-v1` (12-task dynamic/visual probe: 8 reused v2 list/chart tasks plus 4 synthetic ones), `shopping-v1` (2-task preference-carry probe, see below), `visual-live-v1` (8 real-site visual/dynamic-content tasks, see below), or `live-v1` (see [live-v1](live-v1.md)); use with `AGENT_TASKS=all` |
+| `AGENT_SUITE` | `local-v1` | `local-v2-development`, `local-v2`, `local-v2.1`, `capability-v1` (12-task dynamic/visual probe: 8 reused v2 list/chart tasks plus 4 synthetic ones), `shopping-v1` (2-task preference-carry probe, see below), `visual-live-v1` (8 real-site visual/dynamic-content tasks, see below), `revisit-live-v1` (4 real-site revisit-after-leaving tasks, see below), or `live-v1` (see [live-v1](live-v1.md)); use with `AGENT_TASKS=all` |
 | `AGENT_TASKS` | pilot | `all`, task ids, or `cat:<category>`, comma-separated |
 | `AGENT_ROWS` | unset | exact recovery rows: comma-separated `task|approach|run` triples; each must exist in the selected task/approach/run plan |
 | `AGENT_FIXTURE_SEED` | unset | frozen local-fixture variant seed; requires `AGENT_TASKS=local` or explicit local task IDs. Current seed: `20261018` is one frozen profile spanning all 25 local tasks; it is not 25 independently generated profiles. |
@@ -101,10 +101,11 @@ AGENT_SUITE=shopping-v1 AGENT_APPROACHES=mantis,tree,screenshot AGENT_RUNS=1 AGE
 
 ### revisit-v1 (return after a delayed question)
 
-Three local tasks (`revisit-accordion-field`, `revisit-visible-field`, `revisit-changing-value`). The question target is derived only from a seed suffix the harness appends to each attempt token, `-seed-<manifest seed>-<run index>`, which is identical for every approach of one (task, run) and differs between runs; there is no per-approach or timestamp input. The family comes from the task id on the server, never from the token.
+Four local tasks (`revisit-accordion-field`, `revisit-visible-field`, `revisit-changing-value`, `revisit-visual-value`). The question target is derived only from a seed suffix the harness appends to each attempt token, `-seed-<manifest seed>-<run index>`, which is identical for every approach of one (task, run) and differs between runs; there is no per-approach or timestamp input. The family comes from the task id on the server, never from the token.
 - accordion: collapsed full-specification field of a middle product; success = exact answer (`answerCorrect`) AND workflow (all four products opened, target product revisited and its specifications expanded after the question). A memory-only answer fails with `target product must be revisited after question` while its answer grade still passes.
 - visible-field (control): a visible specification; success = exact answer + four products opened + question opened. Returning is recorded as `returned` only.
 - changing-value: a long order page (96 near-duplicate shipment rows, about 5k characters before the queried row, well before the footer) whose deep target row changes from V1 to a near-duplicate V2 the first time the Question page is shown (the question page tells the fixture server to switch; V2 is never served before that). Success = exactly V2 AND an order-page view after the question. V1 fails with `answer is stale (value before the update)`; the neighbouring rows carry near-duplicate values (`answer does not match target value`). Mantis is expected to elide the row (prose cap in the default view, then out-of-viewport collapse), so the agent must `find` or `read` it. The `row-seen` event (IntersectionObserver) is recorded but not graded: it can fire after the last observation the harness posts, so it is not reliable evidence for every approach.
+- visual-value: each of the four product pages carries a battery-returns bar chart drawn only as inline-SVG shapes (bars, month labels and counts are paths from a pixel font; no text node, attribute, title or script holds a label or count), so the answer exists only in the drawn graphic and a text-only view cannot read it. The seeded target is any of the four products (seed mod 4); the question asks for the month label under the tallest bar. Success = exactly that label AND all four products opened before the question AND a view of the target product page after the question (`target product must be revisited after question`); another product's peak fails with `answer is another product's chart value`.
 Answers are held grader-side: the question page ships only the question's identity (id/label), the page reports events, and the expected value is computed in `bench/fixtures-revisit-v1.ts` from the reported target. State is validated strictly (kind, family vs task, target shape and membership, visited ids, question marker); a malformed target always fails. `regrade` uses the separate answer grade and includes the revisit fixture and task hashes in its version check.
 
 ```
@@ -118,6 +119,15 @@ Eight public-site tasks for what a text-only reader tends to miss: icon-only sta
 ```
 AGENT_SUITE=visual-live-v1 AGENT_TASKS=all npx tsx bench/agent/run.ts
 LIVE_V1_PREFLIGHT_SUITE=visual-live-v1 LIVE_V1_PREFLIGHT_NETWORK=1 npx tsx bench/agent/live-v1-preflight.ts   # no-LLM source check, writes bench/visual-live-v1-preflight.json
+```
+
+### revisit-live-v1 (real-site revisit after leaving a page)
+
+Four public-site tasks for how a compact text view copes when the agent must come back to information after leaving it. Each prompt says to open page A (note only its title), visit two other pages, then answer a question about a deep detail of page A and finish on page A: a row in the middle of the IANA HTTP status table (451), an answer hidden in a collapsed disclosure on a W3C APG FAQ example, a sentence deep in PEP 8, and an old release entry far down the Go release history. Rows live in `bench/agent/revisit-live-v1-tasks.json` (ids `revisitlive-*`), are graded only by the deterministic grader on the captured final state (the answer from the key and final URL equal to page A; no judge), and each `keyNotes` records the 2026-11-07 verification, the quote location and the near miss (the adjacent row or neighbouring value). Limits match live-v1 (no tool cap, 600 s).
+
+```
+AGENT_SUITE=revisit-live-v1 AGENT_TASKS=all npx tsx bench/agent/run.ts
+LIVE_V1_PREFLIGHT_SUITE=revisit-live-v1 LIVE_V1_PREFLIGHT_NETWORK=1 npx tsx bench/agent/live-v1-preflight.ts   # no-LLM source check, writes bench/revisit-live-v1-preflight.json
 ```
 
 ### Real-site tasks (blind judge)

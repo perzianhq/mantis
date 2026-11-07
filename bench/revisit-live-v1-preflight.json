@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "suite": "revisit-live-v1",
+  "mode": "network",
+  "taskHash": "ca3363d39f57f0effe86caa28792b546d59e59b0631ab011db2e1efb9f742f89",
+  "note": "Public GET probes only; review redirects and content changes before promoting a candidate.",
+  "candidates": [
+    {
+      "taskId": "revisitlive-iana-451-reference",
+      "canonicalUrl": "https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml",
+      "sourceFingerprint": "7c948a3531dac99190927506e3b226c28e1c4593333e2a1376b8c9f88af5db32",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://www.iana.org/assignments/http-status-codes"
+    },
+    {
+      "taskId": "revisitlive-apg-faq-phone",
+      "canonicalUrl": "https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/examples/disclosure-faq/",
+      "sourceFingerprint": "37870c9ed74da3a1a544169d7bf10f1b82f58ea995204d3b63f631994457fba9",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/examples/disclosure-faq/"
+    },
+    {
+      "taskId": "revisitlive-pep8-docstring-limit",
+      "canonicalUrl": "https://peps.python.org/pep-0008/",
+      "sourceFingerprint": "c61035549583bb24032b332282c93bec7839edd3e2c58deb1c43f50dd7176f8d",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://peps.python.org/pep-0008/"
+    },
+    {
+      "taskId": "revisitlive-go-release-date",
+      "canonicalUrl": "https://go.dev/doc/devel/release",
+      "sourceFingerprint": "419af7e8b996eeb1e49e00a246d9dc49f963522987edd368983813e51871e2bd",
+      "status": "reachable",
+      "detail": "public GET completed",
+      "httpStatus": 200,
+      "finalUrl": "https://go.dev/doc/devel/release"
+    }
+  ]
+}
