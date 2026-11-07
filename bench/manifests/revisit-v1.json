@@ -4,13 +4,14 @@
   "kind": "local-fixture-revisit-probe",
   "status": "configured",
   "sourceSelector": "bench/agent/revisit-v1.ts",
-  "taskCount": 2,
-  "splits": { "newSynthetic": 2 },
-  "purpose": "Checks whether compact observations support returning to a product after a delayed question reveals the required field; not a headline scorecard.",
-  "tasks": ["revisit-accordion-field", "revisit-visible-field"],
+  "taskCount": 3,
+  "splits": { "newSynthetic": 3 },
+  "purpose": "Checks delayed-question recovery, including a deep current value that changes after the first view; not a headline scorecard.",
+  "tasks": ["revisit-accordion-field", "revisit-visible-field", "revisit-changing-value"],
   "newCases": [
     { "id": "revisit-accordion-field", "description": "recover a collapsed full-specification value from the target product after the delayed question" },
-    { "id": "revisit-visible-field", "description": "control: recover a visible specification value from the target product after the delayed question" }
+    { "id": "revisit-visible-field", "description": "control: answer a visible specification after the delayed question; return behavior is informational" },
+    { "id": "revisit-changing-value", "description": "recover a current deep shipment-row value after it changes when the question is shown" }
   ],
   "approaches": ["mantis", "tree", "screenshot"],
   "runs": 1,

@@ -1,7 +1,7 @@
 # Changelog
 
 ## Unreleased
-- bench: new local `revisit-v1` suite (2 tasks, deterministic graders) checks returning to a product after a question reveals the required field.
+- bench: harden local `revisit-v1` to three deterministic delayed-question tasks with shared task/run seeds, separate answer/workflow grades, strict state validation, and a changing deep-row current-value task.
 - bench: new local `shopping-v1` suite (2 tasks, deterministic graders) checks whether compact observations keep preference-relevant detail when facts must be carried across several product pages.
 
 ## 0.1.13 (2026-11-05)

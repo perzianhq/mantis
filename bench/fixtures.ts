@@ -56,7 +56,7 @@ export interface FixtureVerification extends FixtureCheckResult {
 export type FixtureCheck = (events: FixtureObservation[]) => boolean | FixtureCheckResult;
 export interface FixtureCheckEntry { taskId: string; check?: FixtureCheck }
 export interface DevelopmentFixtureRoute { body: string; type: string }
-export type DevelopmentFixtureRouter = (path: string) => DevelopmentFixtureRoute | null;
+export type DevelopmentFixtureRouter = (path: string, context?: { taskId?: string; attemptId?: string; revealed?: boolean }) => DevelopmentFixtureRoute | null;
 
 /** Hidden benchmark instrumentation. It records ordinary DOM events and post-action page state. */
 const attemptBootstrap = String.raw`<script>(() => {
@@ -343,8 +343,14 @@ export async function startFixtures(options: { checks?: FixtureCheckEntry[]; var
   // the frame-message settlement hook remain explicit opt-ins below.
   const instrumentResponses = true;
   const attempts = new Map<string, AttemptState>();
+  const revealed = new Set<string>();
   const server: Server = createServer((req, res) => {
     const url = new URL(req.url ?? '/', 'http://x');
+    if (req.method === 'POST' && url.pathname.startsWith('/__revisit-reveal/')) {
+      revealed.add(decodeURIComponent(url.pathname.slice('/__revisit-reveal/'.length)));
+      res.writeHead(204).end();
+      return;
+    }
     if (req.method === 'POST' && url.pathname.startsWith('/__verify/')) {
       const token = decodeURIComponent(url.pathname.slice('/__verify/'.length));
       const pending = attempts.get(token);
@@ -371,7 +377,7 @@ export async function startFixtures(options: { checks?: FixtureCheckEntry[]; var
       if (!attempts.has(token)) attempts.set(token, newAttempt(''));
     }
     const long = LONG_PAGES[path];
-    const v2 = long === undefined ? (options.developmentRoute?.(path) ?? null) : null;
+    const v2 = long === undefined ? (options.developmentRoute?.(path, attemptPrefix ? { taskId: attempts.get(attemptPrefix[1]!)?.taskId, attemptId: attemptPrefix[1]!, revealed: revealed.has(attemptPrefix[1]!) } : undefined) ?? null) : null;
     const more = long === undefined ? (v2 ?? moreRoute(path)) : { body: long, type: 'text/html; charset=utf-8' };
     if (more) {
       res.writeHead(200, { 'content-type': more.type }).end(more.type.startsWith('text/html') ? (instrumentResponses ? instrument(options.variant?.html(more.body) ?? more.body, !!options.developmentRoute) : options.variant?.html(more.body) ?? more.body) : more.body);
@@ -397,14 +403,14 @@ export async function startFixtures(options: { checks?: FixtureCheckEntry[]; var
     verify: async (taskId, attemptId) => {
       if (attemptId === undefined) return null;
       const check = checks.get(taskId);
-      if (!check) { attempts.delete(attemptId); return null; }
+      if (!check) { attempts.delete(attemptId); revealed.delete(attemptId); return null; }
       // Let the final keepalive observations land, including after the agent closes its browser.
       const state = attempts.get(attemptId);
       await quiet(state);
       if (state && state.taskId !== taskId) return { ok: false, details: 'attempt belongs to a different task', provenance: { version: 1, taskId, attemptId, observationCount: 0, events: [] } };
       const events = orderObservations(state?.events ?? []);
       const result = check(options.variant ? events.map((event) => options.variant!.canonicalObservation(event)) : events);
-      attempts.delete(attemptId);
+      attempts.delete(attemptId); revealed.delete(attemptId);
       const checked = typeof result === 'boolean' ? { ok: result, details: result ? undefined : `fixture check failed (${events.length} observations)` } : result;
       const longTerminal = longTerminalObservation(events);
       return { ...checked, provenance: { version: 1, taskId, attemptId, observationCount: events.length, events: [...events], ...(longTerminal ? { longTerminal } : {}) } };

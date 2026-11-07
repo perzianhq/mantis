@@ -11,7 +11,7 @@
  *   AGENT_SUITE=local-v2.1 AGENT_TASKS=all npx tsx bench/agent/run.ts            # permanent 54-case scorecard
  *   AGENT_SUITE=capability-v1 AGENT_TASKS=all npx tsx bench/agent/run.ts         # 12-task dynamic/visual capability probe
  *   AGENT_SUITE=shopping-v1 AGENT_TASKS=all npx tsx bench/agent/run.ts           # 2-task preference-carry shopping probe
- *   AGENT_SUITE=revisit-v1 AGENT_TASKS=all npx tsx bench/agent/run.ts            # 2-task delayed-question revisit probe
+ *   AGENT_SUITE=revisit-v1 AGENT_TASKS=all npx tsx bench/agent/run.ts            # 3-task delayed-question revisit probe
  *   AGENT_SUITE=live-v1 AGENT_TASKS=all npx tsx bench/agent/run.ts                # frozen 30-task public live suite
  *   AGENT_SUITE=long-live-v1 AGENT_TASKS=all npx tsx bench/agent/run.ts           # reviewed long live-task draft
  *   AGENT_SUITE=visual-live-v1 AGENT_TASKS=all npx tsx bench/agent/run.ts         # 8 real-site visual/dynamic-content tasks
@@ -414,7 +414,10 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
   const unique = `${task.id}--${approach}--${run}--attempt-${attempt}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const logPath = path.join(logDir, `${unique}.jsonl`);
   const serverLog = path.join(logDir, `${unique}.server.log`);
-  const attemptId = `${task.id}-${approach}-${run}-${attempt}-${Date.now()}`;
+  // Revisit targets parse this suffix, so every approach receives the same seeded question
+  // for one task/run while the rest of the attempt token remains unique.
+  const revisitSeed = SUITE === REVISIT_V1_SUITE ? REVISIT_V1_MANIFEST.find((entry) => entry.id === task.id)?.seed : undefined;
+  const attemptId = `${task.id}-${approach}-${run}-${attempt}-${Date.now()}${revisitSeed === undefined ? '' : `-seed-${revisitSeed}-${run}`}`;
   let server: Awaited<ReturnType<typeof startServer>> | null = null;
   let mcpStartupMs = 0;
   let cliStart: number | null = null;
