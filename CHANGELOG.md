@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.14 (2026-11-08)
 - Mantis now automatically attaches to Chrome listening on `127.0.0.1:9222`; set `MANTIS_AUTO_ATTACH=0` to always launch a fresh browser, or use `MANTIS_CDP_URL` for another debugging address.
 - bench: expand `revisit-live-v1` to 7 tasks with `revisitlive-variant-price-after-detours`: after eight product-page detours, select ORANGE LARGE and report its current $19.99 price, ending on `variant=orange-large`. Deterministic checks reject stale/crossed-out prices, wrong final URLs and missing answers. Uses user-supplied 2026-11-08 raw-HTML verification, corroborated with cached web captures of both variants and all detour headings; fresh sandbox network preflight remains unverified.
 - bench: expand real-site `revisit-live-v1` to 6 public-page tasks, adding an eight-detour book-UPC recall task and an eight-detour collapsed Minard-chart task; final deterministic evidence now must render the keyed answer text as well as end on page A. The variant-price candidate was not added because this sandbox could not complete its raw-HTML curl verification.
