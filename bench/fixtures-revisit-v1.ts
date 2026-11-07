@@ -77,7 +77,7 @@ const questionPage = (family: RevisitFamily, seed: number): string => {
   const target = changing ? { id: revisitRowId(changeRow(seed)), label: REVISIT_ORDER.label } : productTarget(family, seed);
   const ready = changing ? `S.events.some(function(e){return e.page==='/revisit/order'&&e.action==='view';})` : 'S.visited.length===4';
   const wait = changing ? 'Open the order status page first, then come back to this page.' : 'Finish reviewing your recently viewed items first.';
-  const question = changing ? `'<p id="question-text">What is the current '+T.label+' for line '+T.id+'?</p>'` : `'<p id="question-text">What is the '+T.label+' of '+T.name+'?</p>'`;
+  const question = changing ? `'<p id="question-text">What is the current dock status in the '+T.label+' for line '+T.id+'? Answer with the dock status text only (the "Dock ... received" part), without the package or depot details.</p>'` : `'<p id="question-text">What is the '+T.label+' of '+T.name+'?</p>'`;
   const reveal = changing ? `var req=new XMLHttpRequest();req.open('POST','/__revisit-reveal/'+encodeURIComponent(tok),false);req.send('');` : '';
   return page(family, 'Question', '', `<h1>Question</h1><div id="question"><p>${wait}</p></div>`, `
 var T=${JSON.stringify(target)};record('/revisit/question','view');var box=document.getElementById('question');
