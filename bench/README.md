@@ -63,7 +63,7 @@ Mantis runs set `MANTIS_NO_HUMAN=1` on the MCP server (`ask_human` returns immed
 | Variable | Default | Meaning |
 |---|---|---|
 | `AGENT_PROVIDER` | `codex` | `codex`, `claude`, or `sarvam` |
-| `AGENT_SUITE` | `local-v1` | `local-v2-development`, `local-v2`, `local-v2.1`, `capability-v1` (12-task dynamic/visual probe: 8 reused v2 list/chart tasks plus 4 synthetic ones), `visual-live-v1` (8 real-site visual/dynamic-content tasks, see below), or `live-v1` (see [live-v1](live-v1.md)); use with `AGENT_TASKS=all` |
+| `AGENT_SUITE` | `local-v1` | `local-v2-development`, `local-v2`, `local-v2.1`, `capability-v1` (12-task dynamic/visual probe: 8 reused v2 list/chart tasks plus 4 synthetic ones), `shopping-v1` (2-task preference-carry probe, see below), `visual-live-v1` (8 real-site visual/dynamic-content tasks, see below), or `live-v1` (see [live-v1](live-v1.md)); use with `AGENT_TASKS=all` |
 | `AGENT_TASKS` | pilot | `all`, task ids, or `cat:<category>`, comma-separated |
 | `AGENT_ROWS` | unset | exact recovery rows: comma-separated `task|approach|run` triples; each must exist in the selected task/approach/run plan |
 | `AGENT_FIXTURE_SEED` | unset | frozen local-fixture variant seed; requires `AGENT_TASKS=local` or explicit local task IDs. Current seed: `20261018` is one frozen profile spanning all 25 local tasks; it is not 25 independently generated profiles. |
@@ -90,6 +90,14 @@ Sarvam agent models are `gemma-4-31b`, `deepseek-v4.1-flash`, `glm-5.3`, and `sa
 The harness converts MCP schemas to function tools, writes per-attempt JSONL traces/evidence, retries malformed tool arguments once, and uses Sarvam's retry/backoff client. Traces now retain full replies, tool arguments and result text; the judge parses Sarvam traces for the full reply and `FINAL_URL`. Sarvam costs are published-rate INR estimates; USD remains unknown. Summaries include API attempts, response tokens and HTTP 429 counts.
 
 For trace/log analysis and doc-summary trials, use source references and sample outputs for omissions and invented claims. DeepSeek can trial structured extraction, failure clustering and candidate answer-key annotations; sol verifies keys against sources and passing/near-miss graders. `sarvam-105b` drafts summaries with reasoning off. Before relying on analysis, audit flagged and unflagged traces for attribution precision/recall; measure summary omissions, unsupported claims and net reviewer usage/time saved. Outcome-judge calibration does not validate these uses.
+
+### shopping-v1 (preferences carried across pages)
+
+Two local tasks on a synthetic shop for whether compact observations keep enough preference-relevant detail when facts must be carried across several product pages. Four recently viewed products share two attributes that appear in the blurb, the spec table, a Details panel that must be opened and an icon-only rating; no page states the preference. `shopping-pick-from-history` must add the one recommendation that fits both shared attributes (cart exactly that item, all four pages opened); `shopping-recall-earlier-detail` must report a fact only in the first product's Details panel. Deterministic graders, no model judge.
+
+```
+AGENT_SUITE=shopping-v1 AGENT_APPROACHES=mantis,tree,screenshot AGENT_RUNS=1 AGENT_MAX_STEPS=50 AGENT_V2_STANDARD_MAX_STEPS=50 npm run bench:agent
+```
 
 ### visual-live-v1 (real-site visual and dynamic content)
 

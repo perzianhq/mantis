@@ -76,7 +76,9 @@ describe('harness failure classification', () => {
     } finally {
       rmSync(folder, { recursive: true, force: true });
     }
-  }, 15_000);
+  // This starts several real shell watchers; default-parallel browser tests can delay their
+  // process events even though each watcher polls every 20 ms.
+  }, 30_000);
 
   it('counts transport, API, network, and browser startup evidence', () => {
     expect(isHarnessFailure({ status: 'connection_failure', error: 'MCP connection failed' })).toBe(true);

@@ -14,6 +14,7 @@ import { v2DevelopmentRoute } from '../bench/fixtures-v2-development.js';
 import { LONG_LOCAL_V1_CASES, LONG_LOCAL_V1_TASKS, gradeLongLocalV1Case } from '../bench/agent/long-local-v1.js';
 import { V21_RELIABILITY_CASES, gradeV21ReliabilityCase } from '../bench/fixtures-v21-reliability.js';
 import { BLUE_CODE, CAPABILITY_CASES, CAPABILITY_ROUTES, GREEN_CODE, LIVE_PICKUP_CODE, PHOTO_BATCH, PHOTO_SERIAL, REVISIT_DECOYS, REVISIT_ORDER_CODE, gradeCapabilityCase } from '../bench/fixtures-capability-v1.js';
+import { SHOPPING_CASES, SHOPPING_CORRECT_ID, SHOPPING_CORRECT_NAME, SHOPPING_DECOY_ID, SHOPPING_FIRST_MATERIAL, SHOPPING_LAST_MATERIAL, SHOPPING_ROUTES, SHOPPING_VIEWED_IDS, gradeShoppingCase } from '../bench/fixtures-shopping-v1.js';
 import { spawn } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import net from 'node:net';
@@ -1697,6 +1698,35 @@ it('capability live-update: grades the pickup code collected after Ready and rej
   expect(gradeCapabilityCase(entry.id, 'PK-6193', good).ok).toBe(false);
   // Ready but never collected.
   expect(gradeCapabilityCase(entry.id, LIVE_PICKUP_CODE, [capEvent('settled', CAPABILITY_ROUTES.live, { ...entry.expected.state, collected: false, code: null })]).ok).toBe(false);
+});
+
+const shopEvent = (kind: 'load' | 'settled', path: string, fixtureState: Record<string, unknown>): FixtureObservation =>
+  ({ kind, path, documentId: `${path}-doc`, fixtureState }) as FixtureObservation;
+const shopCase = (id: string) => SHOPPING_CASES.find((entry) => entry.id === id)!;
+const shopWalk = (state: Record<string, unknown>, ids = SHOPPING_VIEWED_IDS): FixtureObservation[] => [
+  ...ids.map((id) => shopEvent('load', SHOPPING_ROUTES.product(id), { kind: 'shopping-v1', family: 'preference-carry' })),
+  shopEvent('settled', SHOPPING_ROUTES.recs, state),
+];
+
+it('shopping pick-from-history: grades exactly the shared-attribute recommendation after all four pages, and rejects decoys or incomplete carts', () => {
+  const entry = shopCase('shopping-pick-from-history');
+  const good = shopWalk(entry.expected.state);
+  expect(gradeShoppingCase(entry.id, `Added ${SHOPPING_CORRECT_NAME}.`, good)).toEqual({ ok: true });
+  // Near miss: the card sharing only the newest item's non-preference details.
+  expect(gradeShoppingCase(entry.id, entry.nearMiss.answer, shopWalk(entry.nearMiss.state)).ok).toBe(false);
+  // Correct answer/cart without all history, or with a second cart item, cannot pass.
+  expect(gradeShoppingCase(entry.id, SHOPPING_CORRECT_NAME, shopWalk(entry.expected.state, SHOPPING_VIEWED_IDS.slice(1))).ok).toBe(false);
+  expect(gradeShoppingCase(entry.id, SHOPPING_CORRECT_NAME, shopWalk({ ...entry.expected.state, cart: [SHOPPING_CORRECT_ID, SHOPPING_DECOY_ID] })).ok).toBe(false);
+});
+
+it('shopping recall-earlier-detail: grades the first Details-only fabric and rejects the last-page fabric or an unopened detail panel', () => {
+  const entry = shopCase('shopping-recall-earlier-detail');
+  const good = shopWalk(entry.expected.state);
+  expect(gradeShoppingCase(entry.id, SHOPPING_FIRST_MATERIAL, good)).toEqual({ ok: true });
+  // Near miss: material from the last viewed page, despite the otherwise complete visit history.
+  expect(gradeShoppingCase(entry.id, SHOPPING_LAST_MATERIAL, good).ok).toBe(false);
+  expect(gradeShoppingCase(entry.id, SHOPPING_FIRST_MATERIAL, shopWalk({ ...entry.expected.state, detailsOpened: [] })).ok).toBe(false);
+  expect(gradeShoppingCase(entry.id, SHOPPING_FIRST_MATERIAL, shopWalk(entry.expected.state, SHOPPING_VIEWED_IDS.slice(0, 3))).ok).toBe(false);
 });
 
 it('visual-live-v1: every task has a passing captured state and a near-miss failing state', () => {

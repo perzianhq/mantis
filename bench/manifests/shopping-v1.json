@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "shopping-v1",
+  "kind": "local-fixture-preference-carry-probe",
+  "status": "configured",
+  "sourceSelector": "bench/agent/shopping-v1.ts",
+  "taskCount": 2,
+  "splits": { "newSynthetic": 2 },
+  "purpose": "Checks whether compact observations keep enough preference-relevant detail when information must be carried across several product pages; not a headline scorecard.",
+  "tasks": ["shopping-pick-from-history", "shopping-recall-earlier-detail"],
+  "newCases": [
+    { "id": "shopping-pick-from-history", "description": "four recently viewed products share two attributes spread over blurb, spec table, a Details panel and an icon-only rating; add the one recommendation that fits both" },
+    { "id": "shopping-recall-earlier-detail", "description": "after opening all four viewed products, report the shell fabric shown only in the first product's Details panel" }
+  ],
+  "approaches": ["mantis", "tree", "screenshot"],
+  "runs": 1,
+  "limits": { "standardMaxSteps": 50 },
+  "command": "AGENT_SUITE=shopping-v1 AGENT_APPROACHES=mantis,tree,screenshot AGENT_RUNS=1 AGENT_MAX_STEPS=50 AGENT_V2_STANDARD_MAX_STEPS=50 npm run bench:agent"
+}

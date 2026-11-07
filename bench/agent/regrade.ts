@@ -10,6 +10,7 @@ import { TASKS, gradeTaskAnswer, normalizeGradedAnswer, type AgentTask } from '.
 import { LOCAL_V2_TASKS, gradeLocalV2Case } from './local-v2.js';
 import { LOCAL_V21_TASKS, gradeLocalV21Case } from './local-v21.js';
 import { CAPABILITY_V1_TASKS, gradeCapabilityV1Case } from './capability-v1.js';
+import { SHOPPING_V1_TASKS, gradeShoppingV1Case } from './shopping-v1.js';
 import { fixtureVariant } from '../fixture-variants.js';
 import type { FixtureVariant } from '../fixture-variants.js';
 import { fullReplyInTrace, matchSavedTraces, savedResults, type SavedAttempt, type SavedResults, type SavedRun } from './offline-metrics.js';
@@ -74,9 +75,10 @@ export function buildRegrade(input: SavedResults, options: { inputName: string; 
   const variantError = typeof seed === 'number' ? (() => { try { variant = fixtureVariant(seed); return null; } catch (error) { return error instanceof Error ? error.message : String(error); } })() : seed == null ? null : 'saved fixtureSeed is not a number';
   const savedSuite = typeof savedSettings?.suite === 'string' ? savedSettings.suite : null;
   const capability = savedSuite === 'capability-v1';
-  const localV21 = !capability && (savedSuite === 'local-v2.1' || (input.results.length > 0 && input.results.some((run) => run.task.startsWith('v21-reliability-')) && input.results.every((run) => LOCAL_V21_TASKS.some((task) => task.id === run.task))));
-  const localV2 = !capability && !localV21 && input.results.length > 0 && input.results.every((run) => LOCAL_V2_TASKS.some((task) => task.id === run.task));
-  const catalog = capability ? CAPABILITY_V1_TASKS : localV21 ? LOCAL_V21_TASKS : localV2 ? LOCAL_V2_TASKS : TASKS;
+  const shopping = savedSuite === 'shopping-v1';
+  const localV21 = !capability && !shopping && (savedSuite === 'local-v2.1' || (input.results.length > 0 && input.results.some((run) => run.task.startsWith('v21-reliability-')) && input.results.every((run) => LOCAL_V21_TASKS.some((task) => task.id === run.task))));
+  const localV2 = !capability && !shopping && !localV21 && input.results.length > 0 && input.results.every((run) => LOCAL_V2_TASKS.some((task) => task.id === run.task));
+  const catalog = capability ? CAPABILITY_V1_TASKS : shopping ? SHOPPING_V1_TASKS : localV21 ? LOCAL_V21_TASKS : localV2 ? LOCAL_V2_TASKS : TASKS;
   const tasks = new Map(catalog.map((task) => [task.id, variant ? variant.task(task) : task])); const traces = matchSavedTraces(input.results, options.traceDirectory);
   const savedTaskIds = (input.metadata?.settings as Json | undefined)?.tasks;
   const expectedIds = Array.isArray(savedTaskIds) ? savedTaskIds.filter((value): value is string => typeof value === 'string') : [...new Set(input.results.map((run) => run.task))];
@@ -95,10 +97,10 @@ export function buildRegrade(input: SavedResults, options: { inputName: string; 
     const evidence = evidenceOf(attempt);
     // Local-v2 stored its already-normalized final answer separately; use that
     // contract value rather than the conversational trace narration.
-    const gradingAnswer = localV2 || localV21 || capability ? (run.answer ?? null) : rawReply;
+    const gradingAnswer = localV2 || localV21 || capability || shopping ? (run.answer ?? null) : rawReply;
     const grade = task && gradingAnswer !== null
-      ? localV2 || localV21 || capability
-        ? Array.isArray(evidence?.events) ? (capability ? gradeCapabilityV1Case(task.id, gradingAnswer, evidence.events as never[]) : localV21 ? gradeLocalV21Case(task.id, gradingAnswer, evidence.events as never[]) : gradeLocalV2Case(task.id, gradingAnswer, evidence.events as never[])) : null
+      ? localV2 || localV21 || capability || shopping
+        ? Array.isArray(evidence?.events) ? (capability ? gradeCapabilityV1Case(task.id, gradingAnswer, evidence.events as never[]) : shopping ? gradeShoppingV1Case(task.id, gradingAnswer, evidence.events as never[]) : localV21 ? gradeLocalV21Case(task.id, gradingAnswer, evidence.events as never[]) : gradeLocalV2Case(task.id, gradingAnswer, evidence.events as never[])) : null
         : gradeTaskAnswer(task, gradingAnswer)
       : null;
     // v2.1 has a case-scoped answer predicate for its receipt workflow;
