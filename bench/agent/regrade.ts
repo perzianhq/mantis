@@ -12,6 +12,7 @@ import { LOCAL_V21_TASKS, gradeLocalV21Case } from './local-v21.js';
 import { CAPABILITY_V1_TASKS, gradeCapabilityV1Case } from './capability-v1.js';
 import { SHOPPING_V1_TASKS, gradeShoppingV1Case } from './shopping-v1.js';
 import { REVISIT_V1_TASKS, gradeRevisitV1Case } from './revisit-v1.js';
+import { gradeRevisitCase } from '../fixtures-revisit-v1.js';
 import { fixtureVariant } from '../fixture-variants.js';
 import type { FixtureVariant } from '../fixture-variants.js';
 import { fullReplyInTrace, matchSavedTraces, savedResults, type SavedAttempt, type SavedResults, type SavedRun } from './offline-metrics.js';
@@ -21,6 +22,8 @@ export type HardenedState = 'not_required' | 'pass' | 'fail' | 'unknown_rerun_ne
 export interface AnswerRegrade {
   task: string; approach: string; run: number; status: string; terminalAttempt: number;
   trace: string | null; rawReply: string | null; answer: { pass: boolean | null; failed: string[]; replayedLegacyRegexPass: boolean | null; change: 'same' | 'wrong_answer_to_success' | 'success_to_wrong_answer' | 'unknown' };
+  /** Only revisit-v1 has a distinct workflow grade. */
+  workflow?: { pass: boolean | null; failed: string[] };
   legacy: { outcomeOk: boolean; fixtureCheck: boolean | null };
   hardenedState: HardenedState;
   finalOutcome: 'success' | 'failure' | 'unknown_rerun_needed';
@@ -103,6 +106,9 @@ export function buildRegrade(input: SavedResults, options: { inputName: string; 
     // Local-v2 stored its already-normalized final answer separately; use that
     // contract value rather than the conversational trace narration.
     const gradingAnswer = localV2 || localV21 || capability || shopping || revisit ? (run.answer ?? null) : rawReply;
+    const revisitGrade = revisit && task && gradingAnswer !== null && Array.isArray(evidence?.events)
+      ? gradeRevisitCase(task.id, gradingAnswer, evidence.events as never[])
+      : null;
     const grade = task && gradingAnswer !== null
       ? localV2 || localV21 || capability || shopping || revisit
         ? Array.isArray(evidence?.events) ? (capability ? gradeCapabilityV1Case(task.id, gradingAnswer, evidence.events as never[]) : shopping ? gradeShoppingV1Case(task.id, gradingAnswer, evidence.events as never[]) : revisit ? gradeRevisitV1Case(task.id, gradingAnswer, evidence.events as never[]) : localV21 ? gradeLocalV21Case(task.id, gradingAnswer, evidence.events as never[]) : gradeLocalV2Case(task.id, gradingAnswer, evidence.events as never[])) : null
@@ -118,13 +124,17 @@ export function buildRegrade(input: SavedResults, options: { inputName: string; 
     const legacyFixture = attempt.fixtureCheck?.ok ?? null;
     const state = task && !variantError ? hardenedState(task, attempt, variant) : { state: 'unknown_rerun_needed' as const, needs: ['task ID is unavailable for state validation'] };
     needs.push(...state.needs);
-    const answerPass = grade?.pass ?? null;
+    // Answer scoring for revisit-v1 deliberately excludes the workflow result;
+    // finalOutcome still incorporates the state checker below.
+    const answerPass = revisit ? revisitGrade?.answerCorrect ?? null : grade?.pass ?? null;
     const change: AnswerRegrade['answer']['change'] = answerPass === null || replayedLegacyRegexPass === null ? 'unknown' : !replayedLegacyRegexPass && answerPass ? 'wrong_answer_to_success' : replayedLegacyRegexPass && !answerPass ? 'success_to_wrong_answer' : 'same';
     const completed = run.valid === true && (run.status === 'success' || run.status === 'wrong_answer');
     if (!completed && answerPass) needs.push(`non-completed ${run.status || 'unknown'} attempt cannot be promoted by a post-hoc answer match`);
     const finalOutcome: AnswerRegrade['finalOutcome'] = !completed ? (run.valid ? 'failure' : 'unknown_rerun_needed') : answerPass === null ? 'unknown_rerun_needed' : !answerPass ? 'failure' : state.state === 'fail' ? 'failure' : state.state === 'unknown_rerun_needed' ? 'unknown_rerun_needed' : 'success';
     return { task: run.task, approach: run.approach, run: run.run, status: run.status, terminalAttempt: attempt.attempt ?? index + 1, trace: tracePath, rawReply,
-      answer: { pass: answerPass, failed: grade?.failed ?? (rawReply === null ? ['full provider reply unavailable'] : ['task unavailable']), replayedLegacyRegexPass, change }, legacy: { outcomeOk: run.ok, fixtureCheck: legacyFixture }, hardenedState: state.state, finalOutcome, needs };
+      answer: { pass: answerPass, failed: revisit ? (revisitGrade?.answerDetails ? [revisitGrade.answerDetails] : answerPass === null ? (rawReply === null ? ['full provider reply unavailable'] : ['task unavailable']) : []) : grade?.failed ?? (rawReply === null ? ['full provider reply unavailable'] : ['task unavailable']), replayedLegacyRegexPass, change },
+      ...(revisit ? { workflow: { pass: revisitGrade?.workflowOk ?? null, failed: revisitGrade?.workflowDetails ? [revisitGrade.workflowDetails] : [] } } : {}),
+      legacy: { outcomeOk: run.ok, fixtureCheck: legacyFixture }, hardenedState: state.state, finalOutcome, needs };
   });
   const answerPass = runs.filter((run) => run.answer.pass === true).length; const answerFail = runs.filter((run) => run.answer.pass === false).length;
   return { schemaVersion: 1, kind: 'offline-regrade', provenance: { input: options.inputName, inputSha256: sha256(options.inputText), generatedAt: new Date().toISOString(), savedTaskHash, currentTaskHash, savedGradingHash, currentGradingHash, savedVariantHash, currentVariantHash, savedRevisitFixtureHash, currentRevisitFixtureHash, savedRevisitTaskHash, currentRevisitTaskHash, currentTaskIds: [...tasks.keys()].sort(), savedTaskIds: expectedIds.sort() },
@@ -135,6 +145,11 @@ export function buildRegrade(input: SavedResults, options: { inputName: string; 
 export function regradeMarkdown(report: RegradeReport): string {
   const s = report.summary; const lines = ['# Offline saved-run regrade', '', `Source: \`${report.provenance.input}\` (SHA-256 \`${report.provenance.inputSha256}\`).`, '', `Answer regrade: ${s.answerPass} pass, ${s.answerFail} fail, ${s.answerUnknown} unknown; changes: ${s.answerPromotions} wrong-answer → success and ${s.answerDemotions} success → wrong-answer.`, `Legacy fixture checks: ${s.legacyFixturePass} pass, ${s.legacyFixtureFail} fail, ${s.legacyFixtureUnknown} unknown. Hardened state: ${s.hardenedStateUnknownRerun} unknown/rerun-needed.`, '', '## Runs needing evidence, task review, or a rerun', '', '| Task | Approach | Run | Answer | Legacy fixture | Hardened state | Why |', '| --- | --- | ---: | --- | --- | --- | --- |'];
   for (const run of report.runs.filter((run) => run.needs.length || run.hardenedState === 'unknown_rerun_needed')) lines.push(`| ${run.task} | ${run.approach} | ${run.run} | ${run.answer.pass === null ? 'unknown' : run.answer.pass ? 'pass' : 'fail'} | ${run.legacy.fixtureCheck === null ? 'unknown' : run.legacy.fixtureCheck ? 'pass' : 'fail'} | ${run.hardenedState} | ${run.needs.join('; ').replaceAll('|', '\\|')} |`);
+  const revisit = report.runs.filter((run) => run.workflow !== undefined);
+  if (revisit.length) {
+    lines.push('', '## Revisit answer and workflow', '', '| Task | Approach | Run | Answer | Workflow |', '| --- | --- | ---: | --- | --- |');
+    for (const run of revisit) lines.push(`| ${run.task} | ${run.approach} | ${run.run} | ${run.answer.pass === null ? 'unknown' : run.answer.pass ? 'pass' : 'fail'} | ${run.workflow!.pass === null ? 'unknown' : run.workflow!.pass ? 'pass' : 'fail'} |`);
+  }
   lines.push('', '## Limits', ''); for (const caveat of report.caveats) lines.push(`- ${caveat}`);
   return `${lines.join('\n')}\n`;
 }

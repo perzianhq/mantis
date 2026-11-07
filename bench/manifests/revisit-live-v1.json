@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "revisit-live-v1",
+  "kind": "real-site-revisit-probe",
+  "status": "configured",
+  "sourceSelector": "bench/agent/revisit-live-v1-tasks.json",
+  "taskCount": 7,
+  "splits": { "reviewedPublic": 7 },
+  "purpose": "Checks recovery of a keyed public-page detail after a delayed question and intervening public pages; not a headline scorecard.",
+  "tasks": [
+    "revisitlive-iana-451-reference",
+    "revisitlive-apg-faq-phone",
+    "revisitlive-pep8-docstring-limit",
+    "revisitlive-go-release-date",
+    "revisitlive-books-upc-after-detours",
+    "revisitlive-apg-minard-retreat-after-detours",
+    "revisitlive-variant-price-after-detours"
+  ],
+  "approaches": ["mantis", "tree", "screenshot"],
+  "runs": 1,
+  "limits": { "timeoutSeconds": 600 },
+  "command": "AGENT_SUITE=revisit-live-v1 AGENT_APPROACHES=mantis,tree,screenshot AGENT_RUNS=1 npm run bench:agent"
+}

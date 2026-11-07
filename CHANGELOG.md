@@ -1,7 +1,9 @@
 # Changelog
 
 ## Unreleased
-- bench: new real-site `revisit-live-v1` suite (4 public-page tasks, deterministic graders, `AGENT_SUITE=revisit-live-v1`): the agent opens page A, visits two other pages, then answers a deep detail of page A (an IANA status table row, a collapsed FAQ answer, a PEP 8 sentence, an old Go release date) and must finish on page A; `LIVE_V1_PREFLIGHT_SUITE=revisit-live-v1` supports the no-LLM source check.
+- bench: expand `revisit-live-v1` to 7 tasks with `revisitlive-variant-price-after-detours`: after eight product-page detours, select ORANGE LARGE and report its current $19.99 price, ending on `variant=orange-large`. Deterministic checks reject stale/crossed-out prices, wrong final URLs and missing answers. Uses user-supplied 2026-11-08 raw-HTML verification, corroborated with cached web captures of both variants and all detour headings; fresh sandbox network preflight remains unverified.
+- bench: expand real-site `revisit-live-v1` to 6 public-page tasks, adding an eight-detour book-UPC recall task and an eight-detour collapsed Minard-chart task; final deterministic evidence now must render the keyed answer text as well as end on page A. The variant-price candidate was not added because this sandbox could not complete its raw-HTML curl verification.
+- bench: `revisit-v1` result JSON/Markdown and offline regrades now report answer-only recall separately from workflow, while preserving the combined status.
 - bench: add a fourth local `revisit-v1` task, `revisit-visual-value`: the answer (peak month of a battery-returns chart) exists only as drawn vector shapes on a seeded product page, so a text-only view cannot read it and the agent must revisit the page after the delayed question.
 - bench: harden local `revisit-v1` to three deterministic delayed-question tasks with shared task/run seeds, separate answer/workflow grades, strict state validation, and a changing deep-row current-value task.
 - bench: new local `shopping-v1` suite (2 tasks, deterministic graders) checks whether compact observations keep preference-relevant detail when facts must be carried across several product pages.

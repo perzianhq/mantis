@@ -2,13 +2,13 @@
   "schemaVersion": 1,
   "suite": "revisit-live-v1",
   "mode": "network",
-  "taskHash": "ca3363d39f57f0effe86caa28792b546d59e59b0631ab011db2e1efb9f742f89",
+  "taskHash": "5f5a5d7eabdd1b21b4ac3474b341a2651c4359f70a4b02081fdcc31f7dc2ab19",
   "note": "Public GET probes only; review redirects and content changes before promoting a candidate.",
   "candidates": [
     {
       "taskId": "revisitlive-iana-451-reference",
       "canonicalUrl": "https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml",
-      "sourceFingerprint": "7c948a3531dac99190927506e3b226c28e1c4593333e2a1376b8c9f88af5db32",
+      "sourceFingerprint": "a8277b2eb75afff5270f9efd5919678dc664257cbf066005075142f8116c72a3",
       "status": "reachable",
       "detail": "public GET completed",
       "httpStatus": 200,
@@ -17,7 +17,7 @@
     {
       "taskId": "revisitlive-apg-faq-phone",
       "canonicalUrl": "https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/examples/disclosure-faq/",
-      "sourceFingerprint": "37870c9ed74da3a1a544169d7bf10f1b82f58ea995204d3b63f631994457fba9",
+      "sourceFingerprint": "06e12ccfa92b69c47b1afa69b898734573de972cfb7b7562bbc230967604ed06",
       "status": "reachable",
       "detail": "public GET completed",
       "httpStatus": 200,
@@ -26,7 +26,7 @@
     {
       "taskId": "revisitlive-pep8-docstring-limit",
       "canonicalUrl": "https://peps.python.org/pep-0008/",
-      "sourceFingerprint": "c61035549583bb24032b332282c93bec7839edd3e2c58deb1c43f50dd7176f8d",
+      "sourceFingerprint": "2d805fc8b452342b9c04f8c203e23767ad01254f84223852706c3ca40a30ad49",
       "status": "reachable",
       "detail": "public GET completed",
       "httpStatus": 200,
@@ -35,11 +35,32 @@
     {
       "taskId": "revisitlive-go-release-date",
       "canonicalUrl": "https://go.dev/doc/devel/release",
-      "sourceFingerprint": "419af7e8b996eeb1e49e00a246d9dc49f963522987edd368983813e51871e2bd",
+      "sourceFingerprint": "76c87b929f5b629ecc733ce722f8ea4dbe6c88fbf921a611121d4a49eaba4170",
       "status": "reachable",
       "detail": "public GET completed",
       "httpStatus": 200,
       "finalUrl": "https://go.dev/doc/devel/release"
+    },
+    {
+      "taskId": "revisitlive-books-upc-after-detours",
+      "canonicalUrl": "https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html",
+      "sourceFingerprint": "25e5912ad41564be6fa3ae5225e0fac8d8290b4a178f3ab975e885ad208f67e6",
+      "status": "blocked",
+      "detail": "curl attempted 2026-11-07; sandbox outbound HTTPS was unavailable"
+    },
+    {
+      "taskId": "revisitlive-apg-minard-retreat-after-detours",
+      "canonicalUrl": "https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/examples/disclosure-image-description/",
+      "sourceFingerprint": "a0e8fa899672a627af506b9ff071dc2a16addc7d92a47b4243db0f5b90205615",
+      "status": "blocked",
+      "detail": "curl attempted 2026-11-07; sandbox outbound HTTPS was unavailable"
+    },
+    {
+      "taskId": "revisitlive-variant-price-after-detours",
+      "canonicalUrl": "https://web-scraping.dev/product/1?variant=orange-small",
+      "sourceFingerprint": "761c01231e7b54aac857cefb2a4dc89b10c56a0c55a2584314d782f4898faa12",
+      "status": "blocked",
+      "detail": "Sandbox curl could not connect. Key and server-rendered variant links supplied by user from raw HTML verified 2026-11-08; cached web-tool captures corroborate both variant prices, the large-variant link and headings on all eight product detours. Fresh sandbox network preflight remains unverified."
     }
   ]
 }

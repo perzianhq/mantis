@@ -79,6 +79,8 @@ it('retains neutral fallback order, visual targeting and human safety in compact
   expect(description('ocr')).toContain('Text-only OCR for image/canvas. Use if data found nothing');
   expect(description('look')).toContain('LAST RESORT; only image-returning tool (PNG, max 800px)');
   expect(description('look')).toContain('Only after read/data/ocr failed');
+  expect(description('look')).toContain('spatial or visual comparisons');
+  expect(description('look')).toContain('aria-label alone is not chart data');
   for (const name of ['ocr', 'look']) expect(description(name)).toContain('id or CSS selector');
   expect(description('ask_human')).toContain('CAPTCHA, 2FA, payment or login; never solves CAPTCHAs');
   expect(description('ask_human')).toContain('Waits for a page change, then returns the page');

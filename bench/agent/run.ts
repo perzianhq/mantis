@@ -15,7 +15,7 @@
  *   AGENT_SUITE=live-v1 AGENT_TASKS=all npx tsx bench/agent/run.ts                # frozen 30-task public live suite
  *   AGENT_SUITE=long-live-v1 AGENT_TASKS=all npx tsx bench/agent/run.ts           # reviewed long live-task draft
  *   AGENT_SUITE=visual-live-v1 AGENT_TASKS=all npx tsx bench/agent/run.ts         # 8 real-site visual/dynamic-content tasks
- *   AGENT_SUITE=revisit-live-v1 AGENT_TASKS=all npx tsx bench/agent/run.ts        # 4 real-site revisit-after-leaving tasks
+ *   AGENT_SUITE=revisit-live-v1 AGENT_TASKS=all npx tsx bench/agent/run.ts        # 7 real-site revisit-after-leaving tasks
  *   AGENT_RESUME=1 ...                                   (continue a stopped run)
  *   AGENT_PROVIDER=codex AGENT_MODEL=gpt-6.1-sol AGENT_REASONING=medium ... (defaults)
  *
@@ -42,10 +42,11 @@ import { LOCAL_V21_CHECKS, LOCAL_V21_MANIFEST, LOCAL_V21_SUITE, LOCAL_V21_TASKS,
 import { CAPABILITY_V1_CHECKS, CAPABILITY_V1_MANIFEST, CAPABILITY_V1_SUITE, CAPABILITY_V1_TASKS, capabilityV1Route, gradeCapabilityV1Case } from './capability-v1.js';
 import { SHOPPING_V1_CHECKS, SHOPPING_V1_MANIFEST, SHOPPING_V1_SUITE, SHOPPING_V1_TASKS, gradeShoppingV1Case, shoppingV1Route } from './shopping-v1.js';
 import { REVISIT_V1_CHECKS, REVISIT_V1_MANIFEST, REVISIT_V1_SUITE, REVISIT_V1_TASKS, gradeRevisitV1Case, revisitV1Route } from './revisit-v1.js';
+import { gradeRevisitCase } from '../fixtures-revisit-v1.js';
 import { LIVE_V1_MANIFEST_FILE, LIVE_V1_SUITE, LIVE_V1_TASKS } from './live-v1.js';
 import { LONG_LIVE_V1_MANIFEST_FILE, LONG_LIVE_V1_SUITE, LONG_LIVE_V1_TASKS } from './long-live-v1.js';
 import { VISUAL_LIVE_V1_SUITE, VISUAL_LIVE_V1_TASKS } from './visual-live-v1.js';
-import { REVISIT_LIVE_V1_SUITE, REVISIT_LIVE_V1_TASKS } from './revisit-live-v1.js';
+import { REVISIT_LIVE_V1_MANIFEST_FILE, REVISIT_LIVE_V1_SUITE, REVISIT_LIVE_V1_TASKS } from './revisit-live-v1.js';
 import { aggregateUsage, assertCompatibleResume, classifyAttempt, extractGradedAnswer, hashSources, isHarnessFailure, isSarvamStepLimit, makeMetadata, nextHarnessFailureStreak, parseClaudeStream, validateFlag, validatePositiveInt, wrongAnswerDetail } from './integrity.js';
 import type { AttemptStatus, RunMetadata, StreamUsage } from './integrity.js';
 import { codexArgs, rawMcpToolName } from './codex-config.js';
@@ -375,6 +376,8 @@ interface AttemptResult {
   signal: string | null;
   timedOut: boolean;
   fixtureCheck: { ok: boolean | null; details?: string } | null;
+  /** Revisit-v1 keeps factual recall distinct from its required workflow. */
+  revisit?: { answerCorrect: boolean; workflowOk: boolean };
   /** Present only for future local-fixture attempts; historical runs may lack raw observations. */
   fixtureEvidence: FixtureVerification['provenance'] | null;
   /** Declarative answer facts used for this attempt, retained for future regrading. */
@@ -391,6 +394,8 @@ interface RunResult {
   finalScreenshotPath?: string | null;
   evidencePath: string | null; evidenceFrames: string[];
   status: AttemptStatus; ok: boolean; error: string; answer: string;
+  /** Present for revisit-v1 so JSON retains the answer-only result beside status. */
+  revisit?: { answerCorrect: boolean; workflowOk: boolean };
   harnessFailure: boolean;
   /** A connection failure is excluded from correctness; a timeout after launch remains attempted. */
   valid: boolean;
@@ -688,6 +693,7 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
   const gradedAnswer = isVersionedLocalSuite || SUITE === LONG_LOCAL_V1_SUITE ? localV2FinalAnswer(rawAnswer) : normalizeGradedAnswer(rawAnswer);
   // Grade agent-visible seeded facts. Fixture event state is canonicalized
   // separately inside startFixtures so action checks remain deterministic.
+  const revisitGrade = SUITE === REVISIT_V1_SUITE ? gradeRevisitCase(task.id, gradedAnswer, fixtureEvidence?.events ?? []) : null;
   const answerGrade = task.judged ? null : SUITE === LOCAL_V2_DEVELOPMENT_SUITE
     ? gradeLocalV2DevelopmentCase(task.id, gradedAnswer, fixtureEvidence?.events ?? [])
     : SUITE === LOCAL_V2_SUITE
@@ -758,6 +764,7 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
       })() : {}),
     },
     exitCode: processResult.exitCode, signal: processResult.signal, timedOut: processResult.timedOut, fixtureCheck, fixtureEvidence,
+    ...(revisitGrade ? { revisit: { answerCorrect: revisitGrade.answerCorrect, workflowOk: revisitGrade.workflowOk } } : {}),
     grading: task.judged ? null : { version: 1, hash: createHash('sha256').update(JSON.stringify(answerGrade!.requirements)).digest('hex'), requirements: answerGrade!.requirements },
     diagnostics, harnessFailure: isHarnessFailure({ status, error, diagnostics }),
     budget: { maxSteps: PROVIDER === 'sarvam' ? sarvamMaxStepsForTask(task) : null, timeoutMs: TIMEOUT_MS },
@@ -808,6 +815,7 @@ function report(results: RunResult[], approaches: Approach[], tasks: AgentTask[]
   };
   L.push(`| First-pass correct (attempt 1) | ${approaches.map((a) => { const c = outcomes(a); return `${c.firstPassSuccesses} / ${c.firstPassValid}`; }).join(' | ')} |`);
   L.push(`| After reruns / merged correct | ${approaches.map((a) => { const c = outcomes(a); return `${c.recoveredSuccesses} / ${c.recoveredValid}`; }).join(' | ')} |`);
+  if (results.some((r) => r.revisit)) L.push(`| Answer-only correct (revisit) | ${approaches.map((a) => `${by(a).filter((r) => r.revisit?.answerCorrect).length} / ${by(a).filter((r) => r.valid).length}`).join(' | ')} |`);
   L.push(`| Rows with unknown usage | ${approaches.map((a) => `${outcomes(a).unknownUsageRows} rows have unknown usage`).join(' | ')} |`);
   L.push(`| Correct (legacy terminal row) | ${approaches.map((a) => `${by(a).filter((r) => r.ok).length} / ${by(a).filter((r) => r.valid).length}`).join(' | ')} |`);
   L.push(`| Connection-failure attempts | ${approaches.map((a) => by(a).reduce((n, r) => n + r.attempts.filter((attempt) => attempt.status === 'connection_failure').length, 0)).join(' | ')} |`);
@@ -848,12 +856,12 @@ function report(results: RunResult[], approaches: Approach[], tasks: AgentTask[]
   L.push('');
   L.push('## Per run');
   L.push('');
-  L.push(`| Task | Approach | Run | Status | First pass | Recovery | Attempts | Max steps | Timeout (s) | Tool calls | Tool errors |${PROVIDER === 'sarvam' ? ' API attempts | 429s |' : ''} Obs. chars | Obs. images | Normal in | Cache write | Cache read | Output | MCP startup (s) | CLI startup (s) | CLI execution (s) | CLI wall (s) | Verify (s) | Cleanup (s) | Answer / error |`);
-  L.push(`|---|---|---:|---|---|---|---:|---:|---:|---:|---:|${PROVIDER === 'sarvam' ? '---:|---:|' : ''}---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|`);
+  L.push(`| Task | Approach | Run | Status | Answer-only | Workflow | First pass | Recovery | Attempts | Max steps | Timeout (s) | Tool calls | Tool errors |${PROVIDER === 'sarvam' ? ' API attempts | 429s |' : ''} Obs. chars | Obs. images | Normal in | Cache write | Cache read | Output | MCP startup (s) | CLI startup (s) | CLI execution (s) | CLI wall (s) | Verify (s) | Cleanup (s) | Answer / error |`);
+  L.push(`|---|---|---:|---|---|---|---|---|---:|---:|---:|---:|---:|${PROVIDER === 'sarvam' ? '---:|---:|' : ''}---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|`);
   for (const t of tasks) {
     for (const r of results.filter((x) => x.task === t.id)) {
       const note = (r.error || r.answer).replace(/\|/g, '\\|').replace(/\s+/g, ' ');
-      L.push(`| \`${r.task}\` | ${APPROACHES[r.approach].label} | ${r.run} | ${r.status} | ${r.firstPass.status} | ${r.recovery.status} | ${r.attempts.length} | ${r.budget.maxSteps ?? 'n/a'} | ${(r.budget.timeoutMs / 1000).toFixed(0)} | ${r.toolCalls} | ${r.toolErrors} |${PROVIDER === 'sarvam' ? ` ${r.attempts.reduce((n, a) => n + a.apiAttempts, 0)} | ${r.attempts.reduce((n, a) => n + a.rateLimits, 0)} |` : ''} ${fmt(r.observationChars)} | ${r.observationImages} | ${fmtMaybe(r.inputTokens)} | ${fmtMaybe(r.cacheWriteTokens)} | ${fmtMaybe(r.cacheReadTokens)} | ${fmtMaybe(r.outputTokens)} | ${(r.timings.mcpStartupMs / 1000).toFixed(1)} | ${r.timings.cliStartupMs === null ? 'unknown' : (r.timings.cliStartupMs / 1000).toFixed(1)} | ${r.timings.cliExecutionMs === null ? 'unknown' : (r.timings.cliExecutionMs / 1000).toFixed(1)} | ${r.timings.cliWallMs === null ? 'unknown' : (r.timings.cliWallMs / 1000).toFixed(1)} | ${(r.timings.verificationMs / 1000).toFixed(2)} | ${(r.timings.cleanupMs / 1000).toFixed(2)} | ${note} |`);
+      L.push(`| \`${r.task}\` | ${APPROACHES[r.approach].label} | ${r.run} | ${r.status} | ${r.revisit ? (r.revisit.answerCorrect ? 'pass' : 'fail') : 'n/a'} | ${r.revisit ? (r.revisit.workflowOk ? 'pass' : 'fail') : 'n/a'} | ${r.firstPass.status} | ${r.recovery.status} | ${r.attempts.length} | ${r.budget.maxSteps ?? 'n/a'} | ${(r.budget.timeoutMs / 1000).toFixed(0)} | ${r.toolCalls} | ${r.toolErrors} |${PROVIDER === 'sarvam' ? ` ${r.attempts.reduce((n, a) => n + a.apiAttempts, 0)} | ${r.attempts.reduce((n, a) => n + a.rateLimits, 0)} |` : ''} ${fmt(r.observationChars)} | ${r.observationImages} | ${fmtMaybe(r.inputTokens)} | ${fmtMaybe(r.cacheWriteTokens)} | ${fmtMaybe(r.cacheReadTokens)} | ${fmtMaybe(r.outputTokens)} | ${(r.timings.mcpStartupMs / 1000).toFixed(1)} | ${r.timings.cliStartupMs === null ? 'unknown' : (r.timings.cliStartupMs / 1000).toFixed(1)} | ${r.timings.cliExecutionMs === null ? 'unknown' : (r.timings.cliExecutionMs / 1000).toFixed(1)} | ${r.timings.cliWallMs === null ? 'unknown' : (r.timings.cliWallMs / 1000).toFixed(1)} | ${(r.timings.verificationMs / 1000).toFixed(2)} | ${(r.timings.cleanupMs / 1000).toFixed(2)} | ${note} |`);
     }
   }
   L.push('');
@@ -878,7 +886,7 @@ const isLongLocalSuite = SUITE === LONG_LOCAL_V1_SUITE;
 const isLongLiveSuite = SUITE === LONG_LIVE_V1_SUITE;
 const suiteTasks = SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? LOCAL_V2_DEVELOPMENT_TASKS : SUITE === LOCAL_V2_SUITE ? LOCAL_V2_TASKS : SUITE === LOCAL_V21_SUITE ? LOCAL_V21_TASKS : SUITE === CAPABILITY_V1_SUITE ? CAPABILITY_V1_TASKS : SUITE === SHOPPING_V1_SUITE ? SHOPPING_V1_TASKS : SUITE === REVISIT_V1_SUITE ? REVISIT_V1_TASKS : isLongLocalSuite ? LONG_LOCAL_V1_TASKS : isLongLiveSuite ? LONG_LIVE_V1_TASKS : isLiveV1Suite ? LIVE_V1_TASKS : isVisualLiveSuite ? VISUAL_LIVE_V1_TASKS : isRevisitLiveSuite ? REVISIT_LIVE_V1_TASKS : TASKS;
 const suiteChecks = SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? LOCAL_V2_DEVELOPMENT_CHECKS : SUITE === LOCAL_V2_SUITE ? LOCAL_V2_CHECKS : SUITE === LOCAL_V21_SUITE ? LOCAL_V21_CHECKS : SUITE === CAPABILITY_V1_SUITE ? CAPABILITY_V1_CHECKS : SUITE === SHOPPING_V1_SUITE ? SHOPPING_V1_CHECKS : SUITE === REVISIT_V1_SUITE ? REVISIT_V1_CHECKS : isLongLocalSuite ? LONG_LOCAL_V1_CHECKS : undefined;
-const suiteManifest = SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? LOCAL_V2_DEVELOPMENT_MANIFEST : SUITE === LOCAL_V2_SUITE ? LOCAL_V2_MANIFEST : SUITE === LOCAL_V21_SUITE ? LOCAL_V21_MANIFEST : SUITE === CAPABILITY_V1_SUITE ? CAPABILITY_V1_MANIFEST : SUITE === SHOPPING_V1_SUITE ? SHOPPING_V1_MANIFEST : SUITE === REVISIT_V1_SUITE ? REVISIT_V1_MANIFEST : isLongLocalSuite ? LONG_LOCAL_V1_MANIFEST : isLongLiveSuite ? LONG_LIVE_V1_MANIFEST_FILE : isLiveV1Suite ? LIVE_V1_MANIFEST_FILE : undefined;
+const suiteManifest = SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? LOCAL_V2_DEVELOPMENT_MANIFEST : SUITE === LOCAL_V2_SUITE ? LOCAL_V2_MANIFEST : SUITE === LOCAL_V21_SUITE ? LOCAL_V21_MANIFEST : SUITE === CAPABILITY_V1_SUITE ? CAPABILITY_V1_MANIFEST : SUITE === SHOPPING_V1_SUITE ? SHOPPING_V1_MANIFEST : SUITE === REVISIT_V1_SUITE ? REVISIT_V1_MANIFEST : isLongLocalSuite ? LONG_LOCAL_V1_MANIFEST : isLongLiveSuite ? LONG_LIVE_V1_MANIFEST_FILE : isLiveV1Suite ? LIVE_V1_MANIFEST_FILE : isRevisitLiveSuite ? REVISIT_LIVE_V1_MANIFEST_FILE : undefined;
 const suiteRoute = SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? localV2DevelopmentRoute : SUITE === LOCAL_V2_SUITE ? localV2Route : SUITE === LOCAL_V21_SUITE ? localV21Route : SUITE === CAPABILITY_V1_SUITE ? capabilityV1Route : SUITE === SHOPPING_V1_SUITE ? shoppingV1Route : SUITE === REVISIT_V1_SUITE ? revisitV1Route : isLongLocalSuite ? longLocalV1Route : undefined;
 const want = process.env.AGENT_TASKS ?? (SUITE === 'local-v1' ? PILOT.join(',') : 'all');
 // "all", task ids, or categories ("cat:forms"), comma-separated.
@@ -951,7 +959,7 @@ const settings = {
 };
 preflightApproaches(approaches);
 const sourceFiles = [
-  'bench/agent/run.ts', 'bench/agent/integrity.ts', 'bench/agent/active-timeout.ts', 'bench/agent/row-selector.ts', 'bench/agent/tasks.ts', 'bench/agent/local-v2-development.ts', 'bench/agent/local-v2.ts', 'bench/agent/local-v21.ts', 'bench/agent/capability-v1.ts', 'bench/agent/shopping-v1.ts', 'bench/agent/revisit-v1.ts', 'bench/agent/live-v1.ts', 'bench/agent/long-live-v1.ts', 'bench/agent/visual-live-v1.ts', 'bench/agent/visual-live-v1-tasks.json', 'bench/agent/revisit-live-v1.ts', 'bench/agent/revisit-live-v1-tasks.json', 'bench/agent/long-local-v1.ts', 'bench/agent/long-telemetry.ts', 'bench/agent/live-v1-tasks.json', 'bench/agent/long-live-v1-draft.json', 'bench/agent/bridge.mjs', 'bench/fixture-variants.ts',
+  'bench/agent/run.ts', 'bench/agent/integrity.ts', 'bench/agent/active-timeout.ts', 'bench/agent/row-selector.ts', 'bench/agent/tasks.ts', 'bench/agent/local-v2-development.ts', 'bench/agent/local-v2.ts', 'bench/agent/local-v21.ts', 'bench/agent/capability-v1.ts', 'bench/agent/shopping-v1.ts', 'bench/agent/revisit-v1.ts', 'bench/agent/live-v1.ts', 'bench/agent/long-live-v1.ts', 'bench/agent/visual-live-v1.ts', 'bench/agent/visual-live-v1-tasks.json', 'bench/agent/revisit-live-v1.ts', 'bench/agent/revisit-live-v1-tasks.json', 'bench/manifests/revisit-live-v1.json', 'bench/agent/long-local-v1.ts', 'bench/agent/long-telemetry.ts', 'bench/agent/live-v1-tasks.json', 'bench/agent/long-live-v1-draft.json', 'bench/agent/bridge.mjs', 'bench/fixture-variants.ts',
   'bench/agent/codex.ts', 'bench/agent/codex-config.ts', 'bench/agent/sarvam.ts', 'bench/agent/sarvam-agent.ts', 'bench/agent/realsite.ts', 'bench/agent/grading.ts', 'bench/agent/evidence.ts', 'bench/agent/png.ts', 'bench/agent/mcp-proxy.ts',
   ...(existsSync(path.join(REPO, 'bench', 'agent', 'realsite-tasks.json')) ? ['bench/agent/realsite-tasks.json'] : []),
   'bench/agent/screenshot-mcp.ts', 'bench/agent/screenshot-scroll.ts', 'bench/agent/guidance.ts', 'bench/fixtures.ts', 'bench/fixtures-more.ts', 'bench/fixtures-long.ts', 'bench/fixtures-v2-development.ts', 'bench/fixtures-v2-interaction-development.ts', 'bench/fixtures-v2-reading-workflows-development.ts', 'bench/fixtures-v2-remaining-heldout.ts', 'bench/fixtures-v2-reading-workflows-heldout.ts', 'bench/fixtures-v21-reliability.ts', 'bench/fixtures-capability-v1.ts', 'bench/manifests/capability-v1.json', 'bench/fixtures-shopping-v1.ts', 'bench/manifests/shopping-v1.json', 'bench/fixtures-revisit-v1.ts', 'bench/manifests/revisit-v1.json', 'bench/fixtures-long-local-records.ts', 'bench/fixtures-long-local-workflows.ts', 'bench/manifests/local-v2.json', 'bench/manifests/local-v21.json', 'bench/manifests/live-v1.json', 'bench/manifests/long-local-v1.json', 'bench/adapters.ts',
@@ -1019,6 +1027,7 @@ try {
         evidencePath: finalAttempt.evidencePath, evidenceFrames: finalAttempt.evidenceFrames,
         valid: finalAttempt.status !== 'connection_failure', ok: finalAttempt.status === 'success', harnessFailure: finalAttempt.harnessFailure,
         error: finalAttempt.error, answer: finalAttempt.answer,
+        ...(finalAttempt.revisit ? { revisit: finalAttempt.revisit } : {}),
         turns: allTurnsKnown ? attempts.reduce((s, x) => s + (x.turns ?? 0), 0) : null,
         toolCalls: attempts.reduce((s, x) => s + x.toolCalls, 0),
         toolErrors: attempts.reduce((s, x) => s + x.toolErrors, 0),

@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { collectLiveV1Preflight } from '../bench/agent/live-v1-preflight.js';
 import { liveV1SourceFingerprint } from '../bench/agent/live-v1.js';
@@ -7,17 +8,23 @@ import type { RevisitLiveV1Row } from '../bench/agent/revisit-live-v1.js';
 
 const IDS = [
   'revisitlive-iana-451-reference', 'revisitlive-apg-faq-phone', 'revisitlive-pep8-docstring-limit', 'revisitlive-go-release-date',
+  'revisitlive-books-upc-after-detours', 'revisitlive-apg-minard-retreat-after-detours',
+  'revisitlive-variant-price-after-detours',
 ];
 
 describe('revisit-live-v1 catalog', () => {
-  it('loads the four reviewed rows and schedules each as a live task', () => {
+  it('loads the seven reviewed rows and schedules each as a live task', () => {
     expect(REVISIT_LIVE_V1_SUITE).toBe('revisit-live-v1');
     expect(REVISIT_LIVE_V1_ROWS.map((row) => row.task_id)).toEqual(IDS);
     expect(REVISIT_LIVE_V1_ROWS.filter((row) => row.excluded)).toEqual([]);
-    expect(REVISIT_LIVE_V1_SCORED_ROWS).toHaveLength(4);
+    expect(REVISIT_LIVE_V1_SCORED_ROWS).toHaveLength(7);
     // What AGENT_SUITE=revisit-live-v1 AGENT_TASKS=all selects.
     expect(REVISIT_LIVE_V1_TASKS.map((task) => task.id)).toEqual(IDS);
     expect(REVISIT_LIVE_V1_TASKS.every((task) => task.site === 'live' && task.judged === true)).toBe(true);
+    const manifest = JSON.parse(readFileSync(new URL('../bench/manifests/revisit-live-v1.json', import.meta.url), 'utf8')) as { taskCount: number; splits: { reviewedPublic: number }; tasks: string[] };
+    expect(manifest.taskCount).toBe(7);
+    expect(manifest.splits.reviewedPublic).toBe(7);
+    expect(manifest.tasks).toEqual(IDS);
   });
 
   it('keys every row deterministically on an https source with reviewed notes', () => {
@@ -39,11 +46,35 @@ describe('revisit-live-v1 catalog', () => {
       const finalUrl = row.deterministic!.final.url;
       const alternatives = Array.isArray(finalUrl) ? finalUrl : [finalUrl];
       expect(alternatives, row.task_id).toHaveLength(1);
-      expect(row.source.canonicalUrl, row.task_id).toBe(alternatives[0]!.origin + alternatives[0]!.path);
+      const source = new URL(row.source.canonicalUrl);
+      expect(source.origin + source.pathname, row.task_id).toBe(alternatives[0]!.origin + alternatives[0]!.path);
       expect(row.task, row.task_id).toContain(row.source.canonicalUrl);
     }
     expect(REVISIT_LIVE_V1_ROWS.some((row) => row.family === 'collapsed')).toBe(true);
     expect(REVISIT_LIVE_V1_ROWS.some((row) => row.family === 'table')).toBe(true);
+  });
+
+  it('asks for the large variant only after eight detours from the small variant', () => {
+    const row = REVISIT_LIVE_V1_ROWS.find((entry) => entry.task_id === 'revisitlive-variant-price-after-detours')!;
+    expect(row.website).toBe('https://web-scraping.dev/product/1?variant=orange-small');
+    expect(row.source.canonicalUrl).toBe(row.website);
+    const [beforeQuestion, question] = row.task.split('After visiting all eight,');
+    expect(beforeQuestion).toContain('note only the page title');
+    expect(beforeQuestion).not.toMatch(/orange-large|19\.99/i);
+    expect(beforeQuestion!.match(/https:\/\/web-scraping\.dev\/product\/\d+(?!\?)/g)).toEqual(
+      [4, 12, 17, 20, 2, 3, 6, 7].map((id) => `https://web-scraping.dev/product/${id}`),
+    );
+    expect(question).toContain('select the ORANGE LARGE variant');
+    expect(row.deterministic!.final.url).toEqual({ origin: 'https://web-scraping.dev', path: '/product/1', query: { variant: 'orange-large' } });
+  });
+
+  it('keeps the saved preflight task hash and source fingerprints current', () => {
+    const preflight = JSON.parse(readFileSync(new URL('../bench/revisit-live-v1-preflight.json', import.meta.url), 'utf8')) as { taskHash: string; candidates: { taskId: string; sourceFingerprint: string }[] };
+    expect(preflight.taskHash).toBe(REVISIT_LIVE_V1_TASK_HASH);
+    expect(preflight.candidates.map((candidate) => candidate.taskId)).toEqual(IDS);
+    for (const candidate of preflight.candidates) {
+      expect(candidate.sourceFingerprint, candidate.taskId).toBe(REVISIT_LIVE_V1_SOURCE_FINGERPRINTS[candidate.taskId]);
+    }
   });
 
   it('rejects malformed rows before any run begins', () => {
@@ -67,7 +98,7 @@ describe('revisit-live-v1 catalog', () => {
     expect(offline.candidates.every((candidate) => candidate.status === 'unverified-offline')).toBe(true);
     const network = await collectLiveV1Preflight(true, async (url) => ({ ok: url.includes('peps') || url.includes('go.dev'), status: url.includes('peps') || url.includes('go.dev') ? 200 : 503 }), 'revisit-live-v1');
     expect(network.candidates.filter((candidate) => candidate.status === 'reachable')).toHaveLength(2);
-    expect(network.candidates.filter((candidate) => candidate.status === 'blocked').map((candidate) => candidate.taskId)).toEqual(['revisitlive-iana-451-reference', 'revisitlive-apg-faq-phone']);
+    expect(network.candidates.filter((candidate) => candidate.status === 'blocked').map((candidate) => candidate.taskId)).toEqual(['revisitlive-iana-451-reference', 'revisitlive-apg-faq-phone', 'revisitlive-books-upc-after-detours', 'revisitlive-apg-minard-retreat-after-detours', 'revisitlive-variant-price-after-detours']);
     expect((await collectLiveV1Preflight(false)).suite).toBe('live-v1');
   });
 });

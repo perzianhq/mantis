@@ -1804,7 +1804,7 @@ it('revisit-live-v1: every task needs the deep answer and a final return to page
   // Long registry table: RFC 7725 (row 451) passes on the registry; RFC 6585 (adjacent row 431) fails; the right answer from another page fails.
   const iana = 'revisitlive-iana-451-reference';
   const registry = 'https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml';
-  const registryText = 'Hypertext Transfer Protocol (HTTP) Status Code Registry 431 Request Header Fields Too Large RFC 6585';
+  const registryText = 'Hypertext Transfer Protocol (HTTP) Status Code Registry 451 Unavailable For Legal Reasons RFC 7725 431 Request Header Fields Too Large RFC 6585';
   expect(grade(iana, 'Status 451 is referenced by RFC 7725.', registry, registryText)).toBe(true);
   expect(grade(iana, 'RFC 6585', registry, registryText)).toBe(false);
   expect(grade(iana, 'RFC 7725', 'https://www.iana.org/help/example-domains', 'Example Domains')).toBe(false);
@@ -1812,15 +1812,18 @@ it('revisit-live-v1: every task needs the deep answer and a final return to page
   // Collapsed FAQ answer: the first answer's phone number passes; the holiday-hours answer (adjacent item) fails.
   const faq = 'revisitlive-apg-faq-phone';
   const faqUrl = 'https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/examples/disclosure-faq/';
-  const faqText = 'Example Disclosure (Show/Hide) for Answers to Frequently Asked Questions Parking FAQs';
+  const faqText = 'Example Disclosure (Show/Hide) for Answers to Frequently Asked Questions Parking FAQs Park at the nearest available parking meter and call 999-999-9999.';
   expect(grade(faq, 'Call 999-999-9999.', faqUrl, faqText)).toBe(true);
+  // Near miss: a closed disclosure may leave the page heading intact, but does not prove the keyed answer survived in final evidence.
+  expect(grade(faq, 'Call 999-999-9999.', faqUrl, 'Example Disclosure (Show/Hide) for Answers to Frequently Asked Questions Parking FAQs')).toBe(false);
+  expect(evaluateDeterministicGrader(REVISIT_LIVE_V1_ROWS.find((row) => row.task_id === faq)!.deterministic!, 'Call 999-999-9999.', [])?.pass).toBe(false);
   expect(grade(faq, '2:00 am - 6:00 am', faqUrl, faqText)).toBe(false);
   expect(grade(faq, '999-999-9999', 'https://www.w3.org/WAI/ARIA/apg/patterns/accordion/examples/accordion/', 'Accordion Example')).toBe(false);
 
   // Deep PEP 8 sentence: 72 passes; 79 (the code limit in the same paragraph) fails; ending on PEP 20 fails.
   const pep = 'revisitlive-pep8-docstring-limit';
   const pepUrl = 'https://peps.python.org/pep-0008/';
-  const pepText = 'PEP 8 - Style Guide for Python Code Maximum Line Length';
+  const pepText = 'PEP 8 - Style Guide for Python Code Maximum Line Length docstrings or comments should be limited to 72 characters';
   expect(grade(pep, '72 characters', pepUrl, pepText)).toBe(true);
   expect(grade(pep, '79 characters', pepUrl, pepText)).toBe(false);
   expect(grade(pep, '72 characters', 'https://peps.python.org/pep-0020/', 'PEP 20 - The Zen of Python')).toBe(false);
@@ -1833,4 +1836,43 @@ it('revisit-live-v1: every task needs the deep answer and a final return to page
   expect(grade(go, '2021-12-02', goUrl, goText)).toBe(false);
   expect(grade(go, '2022-01-06', goUrl, goText)).toBe(false);
   expect(grade(go, '2021-12-09', 'https://go.dev/doc/install', 'Download and install')).toBe(false);
+
+  // Eight-detour book recall: the target UPC and its final evidence pass; another viewed book's UPC or missing keyed evidence fails.
+  const booksAfterDetours = 'revisitlive-books-upc-after-detours';
+  const bookUrl = 'https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html';
+  const bookText = 'A Light in the Attic Product Information UPC a897fe39b1053632';
+  expect(grade(booksAfterDetours, 'a897fe39b1053632', bookUrl, bookText)).toBe(true);
+  expect(grade(booksAfterDetours, '90fa61229261140a', bookUrl, bookText)).toBe(false);
+  expect(grade(booksAfterDetours, 'a897fe39b1053632', bookUrl, 'A Light in the Attic Product Information')).toBe(false);
+
+  // Collapsed Minard table: the Retreat row is keyed by men and Celsius; Advance men and Fahrenheit are near misses.
+  const minardAfterDetours = 'revisitlive-apg-minard-retreat-after-detours';
+  const minardUrl = 'https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/examples/disclosure-image-description/';
+  const minardText = "Data for Charles Minard's Chart of Napoleon's Invasion of Russia Smolensk November 14th 37,000 -26 -13 Retreat";
+  expect(grade(minardAfterDetours, '37,000 men and -26 C', minardUrl, minardText)).toBe(true);
+  expect(grade(minardAfterDetours, '145,000 men and -26 C', minardUrl, minardText)).toBe(false);
+  expect(grade(minardAfterDetours, '37,000 men and -13 C', minardUrl, minardText)).toBe(false);
+});
+
+it('revisit-live-v1: variant price after detours requires the current large price and final variant URL', () => {
+  const row = REVISIT_LIVE_V1_ROWS.find((entry) => entry.task_id === 'revisitlive-variant-price-after-detours')!;
+  const smallUrl = 'https://web-scraping.dev/product/1?variant=orange-small';
+  const largeUrl = 'https://web-scraping.dev/product/1?variant=orange-large';
+  const largeText = 'ORANGE LARGE Price $19.99 $24.99 Total $19.99';
+  const grade = (answer: string, url = largeUrl, text = largeText) =>
+    evaluateDeterministicGrader(row.deterministic!, answer, [{ final: true, url, text }])?.pass;
+
+  expect(grade('$19.99')).toBe(true);
+  expect(grade('The current price is $19.99.')).toBe(true);
+  expect(grade('$19.99', `${largeUrl}&ref=detour#price`)).toBe(true);
+  expect(grade('$19.99', 'https://web-scraping.dev/product/1?ref=detour&variant=orange-large')).toBe(true);
+  for (const nearMiss of ['$9.99', '$24.99', '$12.99', '$19.99; price $9.99', '$19.99; price $24.99']) {
+    expect(grade(nearMiss), nearMiss).toBe(false);
+  }
+  for (const wrongUrl of [smallUrl, 'https://web-scraping.dev/product/1?variant=orange-medium', 'https://web-scraping.dev/product/1?ref=orange-large', 'https://web-scraping.dev/product/1', 'https://web-scraping.dev/product/2?variant=orange-large', 'https://example.com/product/1?variant=orange-large']) {
+    expect(grade('$19.99', wrongUrl), wrongUrl).toBe(false);
+  }
+  expect(grade('ORANGE LARGE selected.')).toBe(false);
+  expect(grade(`ORANGE LARGE selected.\nFINAL_URL: ${largeUrl}&price=19.99`)).toBe(false);
+  expect(grade('$19.99', largeUrl, 'ORANGE SMALL Price $9.99 $12.99 Total $9.99')).toBe(false);
 });

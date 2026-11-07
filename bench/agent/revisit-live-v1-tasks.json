@@ -28,6 +28,10 @@
           {
             "type": "entity",
             "value": "Hypertext Transfer Protocol (HTTP) Status Code Registry"
+        },
+        {
+          "type": "entity",
+          "value": "RFC 7725"
           }
         ]
       }
@@ -67,6 +71,10 @@
           {
             "type": "entity",
             "value": "Example Disclosure (Show/Hide) for Answers to Frequently Asked Questions"
+        },
+        {
+          "type": "entity",
+          "value": "999-999-9999"
           }
         ]
       }
@@ -104,8 +112,12 @@
         },
         "textIncludes": [
           {
-            "type": "entity",
+          "type": "text",
             "value": "Style Guide for Python Code"
+        },
+        {
+          "type": "number",
+          "value": 72
           }
         ]
       }
@@ -145,6 +157,10 @@
           {
             "type": "entity",
             "value": "Release History"
+        },
+        {
+          "type": "text",
+          "value": "2021-12-09"
           }
         ]
       }
@@ -153,6 +169,102 @@
     "keyNotes": {
       "verified": "curl 20261107: 'go1.17.5 (released 2021-12-09) includes security fixes to the net/http and syscall packages.' Quote location: Release History, minor revisions under go1.17. Pages B and C do not mention go1.17.5. Old release entries are immutable.",
       "nearMiss": "2021-12-02 (go1.17.4, the entry just before) or 2022-01-06 (go1.17.6, the entry just after)."
+    }
+  },
+  {
+    "task_id": "revisitlive-books-upc-after-detours",
+    "family": "table",
+    "grading": "deterministic",
+    "level": "hard",
+    "website": "https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html",
+    "confirmed_task": "Open https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html and note only its page title. Then visit each of these eight other book detail pages and note each page title: https://books.toscrape.com/catalogue/tipping-the-velvet_999/index.html, https://books.toscrape.com/catalogue/soumission_998/index.html, https://books.toscrape.com/catalogue/sharp-objects_997/index.html, https://books.toscrape.com/catalogue/sapiens-a-brief-history-of-humankind_996/index.html, https://books.toscrape.com/catalogue/the-requiem-red_995/index.html, https://books.toscrape.com/catalogue/the-dirty-little-secrets-of-getting-your-dream-job_994/index.html, https://books.toscrape.com/catalogue/the-coming-woman-a-novel-based-on-the-life-of-the-infamous-feminist-victoria-woodhull_993/index.html, and https://books.toscrape.com/catalogue/the-boys-in-the-boat-nine-americans-and-their-epic-quest-for-gold-at-the-1936-berlin-olympics_992/index.html. After visiting all eight, return to A: what UPC is listed in Product Information? Report only the UPC and finish on page A.",
+    "source": {
+      "canonicalUrl": "https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "unverified-offline"
+    },
+    "deterministic": {
+      "kind": "fact",
+      "answerIncludes": [
+        { "type": "entity", "value": "a897fe39b1053632" }
+      ],
+      "final": {
+        "url": { "origin": "https://books.toscrape.com", "path": "/catalogue/a-light-in-the-attic_1000/index.html" },
+        "textIncludes": [
+          { "type": "entity", "value": "A Light in the Attic" },
+          { "type": "entity", "value": "a897fe39b1053632" }
+        ]
+      }
+    },
+    "judgeRubric": "The answer is the target book's Product Information UPC, not the UPC from a detour book.",
+    "keyNotes": {
+      "verified": "curl attempted 2026-11-07 but this sandbox cannot open outbound HTTPS; the raw-HTML key remains the supplied frozen value a897fe39b1053632, in Product Information on A. Independent page capture lists it as the UPC.",
+      "nearMiss": "90fa61229261140a, a UPC from another viewed book (Tipping the Velvet), must not pass."
+    }
+  },
+  {
+    "task_id": "revisitlive-apg-minard-retreat-after-detours",
+    "family": "collapsed",
+    "grading": "deterministic",
+    "level": "hard",
+    "website": "https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/examples/disclosure-image-description/",
+    "confirmed_task": "Open https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/examples/disclosure-image-description/. Expand the Data Table for Minard's Chart, read it, then collapse it again. Then visit each of these eight other APG pages and note its page title: https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/examples/disclosure-faq/, https://www.w3.org/WAI/ARIA/apg/patterns/accordion/examples/accordion/, https://www.w3.org/WAI/ARIA/apg/patterns/alertdialog/examples/alertdialog/, https://www.w3.org/WAI/ARIA/apg/patterns/button/examples/button/, https://www.w3.org/WAI/ARIA/apg/patterns/checkbox/examples/checkbox/, https://www.w3.org/WAI/ARIA/apg/patterns/combobox/examples/combobox-autocomplete-both/, https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/examples/dialog/, and https://www.w3.org/WAI/ARIA/apg/patterns/tabs/examples/tabs-automatic/. After visiting all eight, return to A and expand the data table: for Smolensk on the Retreat, report the number of men and the temperature in C. Finish on page A.",
+    "source": {
+      "canonicalUrl": "https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/examples/disclosure-image-description/",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "unverified-offline"
+    },
+    "deterministic": {
+      "kind": "fact",
+      "answerIncludes": [
+        { "type": "number", "value": 37000 },
+        { "type": "text", "value": "-26" }
+      ],
+      "final": {
+        "url": { "origin": "https://www.w3.org", "path": "/WAI/ARIA/apg/patterns/disclosure/examples/disclosure-image-description/" },
+        "textIncludes": [
+          { "type": "entity", "value": "Data for Charles Minard's Chart of Napoleon's Invasion of Russia" },
+          { "type": "entity", "value": "Smolensk" },
+          { "type": "number", "value": 37000 },
+          { "type": "text", "value": "-26" }
+        ]
+      }
+    },
+    "judgeRubric": "The Retreat row for Smolensk gives 37,000 and -26 C; the Advance row is 145,000 and the Fahrenheit value is -13.",
+    "keyNotes": {
+      "verified": "curl attempted 2026-11-07 but this sandbox cannot open outbound HTTPS; the supplied frozen raw-page row is Smolensk | November 14th | 37,000 | -26 | -13 | Retreat.",
+      "nearMiss": "145,000 is Smolensk on Advance; -13 is the Fahrenheit value for the Retreat row."
+    }
+  },
+  {
+    "task_id": "revisitlive-variant-price-after-detours",
+    "family": "deep",
+    "grading": "deterministic",
+    "level": "hard",
+    "website": "https://web-scraping.dev/product/1?variant=orange-small",
+    "confirmed_task": "Open https://web-scraping.dev/product/1?variant=orange-small and note only the page title. Then visit each of these eight other public pages and note each page's title or heading: https://web-scraping.dev/product/4, https://web-scraping.dev/product/12, https://web-scraping.dev/product/17, https://web-scraping.dev/product/20, https://web-scraping.dev/product/2, https://web-scraping.dev/product/3, https://web-scraping.dev/product/6, and https://web-scraping.dev/product/7. After visiting all eight, return to page A's product and select the ORANGE LARGE variant using its variant link. What is its current price? Report only the current price, excluding crossed-out prices, and finish on https://web-scraping.dev/product/1?variant=orange-large.",
+    "source": {
+      "canonicalUrl": "https://web-scraping.dev/product/1?variant=orange-small",
+      "fingerprintBasis": "canonical-url-and-contract",
+      "preflight": "unverified-offline"
+    },
+    "deterministic": {
+      "kind": "fact",
+      "answerIncludes": [
+        { "type": "number", "value": 19.99 }
+      ],
+      "answerExcludes": ["\\b(?:9\\.99|24\\.99|12\\.99)\\b"],
+      "final": {
+        "url": { "origin": "https://web-scraping.dev", "path": "/product/1", "query": { "variant": "orange-large" } },
+        "textIncludes": [
+          { "type": "number", "value": 19.99 }
+        ]
+      }
+    },
+    "judgeRubric": "ORANGE LARGE has current price $19.99, not its crossed-out $24.99 or ORANGE SMALL's $9.99 (also JSON-LD lowPrice) and crossed-out $12.99. Require the product/1 destination with query variant=orange-large; unrelated query parameters and fragments are allowed by the shared URL contract.",
+    "keyNotes": {
+      "verified": "User-supplied curl raw-HTML verification 2026-11-08: orange-small displays price $9.99, crossed-out $12.99 and total $9.99; orange-large displays price $19.99, crossed-out $24.99 and total $19.99, with JSON-LD lowPrice 9.99 and highPrice 19.99. Variant links including ?variant=orange-large are server-rendered. Sandbox curl could not connect; web-tool captures independently corroborate both variant prices and the large-variant link, but are cached rather than a fresh raw-HTML probe. Detours were found through product links and https://web-scraping.dev/sitemap.xml; web-tool captures show headings for /product/4 Red Energy Potion, /product/12 Cat-Ear Beanie, /product/17 Blue Energy Potion, /product/20 Women's High Heel Sandals, /product/2 Dark Red Energy Potion, /product/3 Teal Energy Potion, /product/6 Dragon Energy Potion, and /product/7 Hiking Boots for Outdoor Adventures. Fresh sandbox network preflight remains unverified.",
+      "nearMiss": "Stale ORANGE SMALL price $9.99 / JSON-LD lowPrice, crossed-out large $24.99 or small $12.99, correct price on the small/default/wrong product URL, or a correct final URL without a price in the answer must fail."
     }
   }
 ]

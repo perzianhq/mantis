@@ -1,7 +1,7 @@
 /**
  * revisit-live-v1: a small public real-site suite for revisiting information after leaving a page (a value deep in a
- * long table or page, inside a collapsed disclosure).  The agent visits page A, then two other pages, then answers
- * from page A and must finish there.  Every row is graded by the deterministic grader on the harness-captured final
+ * long table or page, inside a collapsed disclosure). The agent visits page A, follows its required detours, then answers
+ * from page A and must finish there. Every row is graded by the deterministic grader on the harness-captured final
  * state; there is no judge path.
  */
 import { createHash } from 'node:crypto';
@@ -15,6 +15,7 @@ import type { LiveV1Source } from './live-v1.js';
 
 export const REVISIT_LIVE_V1_SUITE = 'revisit-live-v1' as const;
 export const REVISIT_LIVE_V1_FILE = path.join(import.meta.dirname, 'revisit-live-v1-tasks.json');
+export const REVISIT_LIVE_V1_MANIFEST_FILE = path.join(import.meta.dirname, '..', 'manifests', 'revisit-live-v1.json');
 export const REVISIT_LIVE_V1_FAMILIES = ['table', 'collapsed', 'deep'] as const;
 export type RevisitLiveV1Family = typeof REVISIT_LIVE_V1_FAMILIES[number];
 

@@ -211,7 +211,7 @@ export function createServer(browser: MantisBrowser = new MantisBrowser()): McpS
     'look',
     {
       description:
-        'LAST RESORT; only image-returning tool (PNG, max 800px). Only after read/data/ocr failed. id or CSS selector.',
+        'LAST RESORT; only image-returning tool (PNG, max 800px). Only after read/data/ocr failed, except use it on the relevant region for spatial or visual comparisons (charts, swatches, or drawn values): OCR text or an aria-label alone is not chart data. id or CSS selector.',
       inputSchema: visual,
     },
     async ({ id, selector }) => {

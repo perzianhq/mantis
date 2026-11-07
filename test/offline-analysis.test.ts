@@ -5,6 +5,7 @@ import path from 'node:path';
 import { buildOfflineMetrics, type SavedResults } from '../bench/agent/offline-metrics.js';
 import { buildRegrade, fullReplyFromTrace } from '../bench/agent/regrade.js';
 import { V21_RELIABILITY_CASES } from '../bench/fixtures-v21-reliability.js';
+import { REVISIT_FULL_LABELS, REVISIT_IDS, REVISIT_PRODUCTS, REVISIT_ROUTES } from '../bench/fixtures-revisit-v1.js';
 
 const trace = (answer: string, observation = 'Team costs $29'): string => [
   JSON.stringify({ type: 'sarvam.tool_result', name: 'read', error: false, resultText: observation, chars: observation.length }),
@@ -107,5 +108,27 @@ describe('offline saved-run analysis', () => {
       expect(report.runs[0]!.answer.pass).toBe(true);
       expect(report.runs[0]!.answer.replayedLegacyRegexPass).toBe(true);
     } finally { rmSync(root, { recursive: true, force: true }); }
+  });
+
+  it('keeps revisit answer accuracy separate from failed workflow evidence', () => {
+    const task = 'revisit-accordion-field';
+    const target = REVISIT_IDS[1]!;
+    const answer = REVISIT_PRODUCTS[1]!.full[REVISIT_FULL_LABELS[0]!]!;
+    const state = (returned: boolean) => ({
+      kind: 'revisit-v1', family: 'accordion-field', visited: [...REVISIT_IDS], questionShownAt: 4,
+      target: { id: target, label: REVISIT_FULL_LABELS[0] },
+      events: [...REVISIT_IDS.map((id) => ({ page: REVISIT_ROUTES.product(id), action: 'view' })), { page: REVISIT_ROUTES.question, action: 'question-shown' }, ...(returned ? [{ page: REVISIT_ROUTES.product(target), action: 'view' }, { page: REVISIT_ROUTES.product(target), action: 'expand-specs' }] : [])],
+    });
+    const saved = (returned: boolean) => ({
+      metadata: { settings: { suite: 'revisit-v1' } },
+      results: [{ ...run({ task, answer, status: returned ? 'success' : 'wrong_answer', ok: returned }), attempts: [{ attempt: 1, attemptId: 'revisit-attempt', status: returned ? 'success' : 'wrong_answer', fixtureCheck: { ok: returned }, fixtureEvidence: { version: 1, taskId: task, attemptId: 'revisit-attempt', observationCount: 1, events: [{ arrival: 0, path: REVISIT_ROUTES.product(target), documentId: 'document', kind: 'settled', target: {}, controls: {}, text: '', fixtureState: state(returned) }] } }] }],
+    }) as SavedResults;
+    for (const returned of [true, false]) {
+      const input = saved(returned);
+      const report = buildRegrade(input, { inputName: 'saved.json', inputText: JSON.stringify(input), traceDirectory: '', taskFileText: readFileSync(path.resolve(import.meta.dirname, '../bench/agent/tasks.ts'), 'utf8') });
+      expect(report.runs[0]!.answer.pass).toBe(true);
+      expect(report.runs[0]!.workflow?.pass).toBe(returned);
+      expect(report.runs[0]!.finalOutcome).toBe(returned ? 'success' : 'failure');
+    }
   });
 });
