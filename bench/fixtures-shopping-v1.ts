@@ -4,9 +4,9 @@
  * agent's answer plus the page-reported state (`window.__fixtureState`) are graded deterministically.
  *
  * The shopper's preference is never stated. The four recently viewed products share exactly two attributes
- * (waterproof = yes, colour = olive). Every smaller two- or three-item intersection also has a misleading extra
- * attribute, so only all four pages isolate that pair. Those facts are spread
- * across the blurb, the spec table, a "Details" panel that only renders when opened, and an icon-only rating row.
+ * (waterproof = yes, colour = olive). Each three-item intersection has a misleading extra
+ * attribute, but only one recommendation matches the true pair. Those facts are spread
+ * across blurbs and spec tables, plus an icon-only rating row. Details supplies only the recall fact.
  */
 import type { FixtureCheck, FixtureCheckResult, FixtureObservation } from './fixtures.js';
 
@@ -52,7 +52,7 @@ export const shoppingAttributes = (item: Pick<Viewed | Rec, 'colour' | 'waterpro
 export const SHOPPING_VIEWED: readonly Viewed[] = Object.freeze([
   {
     id: 'rl-2041', name: 'Ashgrove Shell Jacket', price: '$149.00', brand: 'Tarn & Co', weight: '640 g', material: 'Recycled nylon ripstop', colour: 'Olive', waterproof: 'Yes',
-    blurb: 'A packable shell for long, wet ridge walks.', rating: 4, table: ['waterproof'],
+    blurb: 'A packable shell for long, wet ridge walks.', rating: 4, table: ['colour', 'waterproof'],
     details: ['Colourway: Olive.', 'Shell fabric: Recycled nylon ripstop.', 'Care: machine wash cold, hang dry.'],
     signals: { cut: 'Alpine', hood: 'Roll-away', cuff: 'Storm', pocket: 'Zip' },
   },
@@ -78,11 +78,11 @@ export const SHOPPING_VIEWED: readonly Viewed[] = Object.freeze([
 
 /** Display order on the recommendations page. */
 export const SHOPPING_RECS: readonly Rec[] = Object.freeze([
-  // Each of the first four is a decoy for one of the four three-item intersections.
-  { id: 'rl-3046', name: 'Marsh Field Coat', price: '$129.00', brand: 'Hollis', colour: 'Olive', material: 'Cotton canvas', waterproof: 'Yes', signals: { cut: 'Alpine', hood: 'Roll-away', cuff: 'Storm', pocket: 'None' } },
-  { id: 'rl-3024', name: 'Kestrel Stretch Sleeve', price: '$44.00', brand: 'Kestrel', colour: 'Olive', material: 'Neoprene-nylon blend', waterproof: 'Yes', signals: { cut: 'Alpine', hood: 'Roll-away', cuff: 'None', pocket: 'Map' } },
-  { id: 'rl-3052', name: 'Delta Rain Shell', price: '$139.00', brand: 'Northfold', colour: 'Olive', material: 'Recycled polyester', waterproof: 'Yes', signals: { cut: 'Alpine', hood: 'None', cuff: 'Storm', pocket: 'Map' } },
-  { id: 'rl-3031', name: 'Pebble Day Cape', price: '$24.00', brand: 'Tarn & Co', colour: 'Olive', material: 'Cotton blend', waterproof: 'Yes', signals: { cut: 'None', hood: 'Roll-away', cuff: 'Storm', pocket: 'Map' } },
+  // Each of the first four mirrors one three-item intersection's extra marker, while visibly missing one true preference.
+  { id: 'rl-3046', name: 'Marsh Field Coat', price: '$129.00', brand: 'Hollis', colour: 'Navy', material: 'Cotton canvas', waterproof: 'Yes', signals: { cut: 'Alpine', hood: 'Roll-away', cuff: 'Storm', pocket: 'None' } },
+  { id: 'rl-3024', name: 'Kestrel Stretch Sleeve', price: '$44.00', brand: 'Kestrel', colour: 'Sand', material: 'Neoprene-nylon blend', waterproof: 'Yes', signals: { cut: 'Alpine', hood: 'Roll-away', cuff: 'None', pocket: 'Map' } },
+  { id: 'rl-3052', name: 'Delta Rain Shell', price: '$139.00', brand: 'Northfold', colour: 'Olive', material: 'Recycled polyester', waterproof: 'No', signals: { cut: 'Alpine', hood: 'None', cuff: 'Storm', pocket: 'Map' } },
+  { id: 'rl-3031', name: 'Pebble Day Cape', price: '$24.00', brand: 'Tarn & Co', colour: 'Olive', material: 'Cotton blend', waterproof: 'No', signals: { cut: 'None', hood: 'Roll-away', cuff: 'Storm', pocket: 'Map' } },
   { id: 'rl-3010', name: 'Sedge Hardshell Jacket', price: '$159.00', brand: 'Brisk', colour: 'Olive', material: 'Laminated nylon', waterproof: 'Yes', signals: { cut: 'Tailored', hood: 'Attached', cuff: 'Adjustable', pocket: 'Internal' } },
   { id: 'rl-3067', name: 'Slate Ridge Overtrousers', price: '$99.00', brand: 'Kestrel', colour: 'Charcoal', material: 'Neoprene-nylon blend', waterproof: 'No', signals: { cut: 'Utility', hood: 'None', cuff: 'Elastic', pocket: 'Map' } },
 ]);
@@ -207,9 +207,9 @@ const recallCheck: FixtureCheck = (events) => {
 const CASES: ShoppingCase[] = [
   {
     id: 'shopping-pick-from-history', category: 'navigation', family: 'history-pick',
-    structuralVariant: 'only all four viewed products isolate two shared attributes; every pair and triple has a matching decoy, with the true pair spread over blurb, table and Details',
+    structuralVariant: 'only all four viewed products isolate two shared attributes; preference facts appear in blurbs and spec tables (and one icon-only rating), while Details supplies only the recall fact; each three-item intersection has a decoy for its extra marker that misses one true attribute',
     seed: 620101, route: ROUTES.history,
-    prompt: (b) => `Open the recently viewed page at ${b}${ROUTES.history}, look at all four products the shopper viewed, work out what they have in common, then add the intended recommended product to the cart. Report the name of the product you added.`,
+    prompt: (b) => `Open the recently viewed page at ${b}${ROUTES.history}, look at all four products the shopper viewed, identify the attributes shared by all four, then add the recommended product that matches every shared attribute to the cart. Report the name of the product you added.`,
     expected: { answer: SHOPPING_CORRECT_NAME, state: { kind: 'shopping-v1', family: 'preference-carry', cart: [SHOPPING_CORRECT_ID], visited: [...SHOPPING_VIEWED_IDS] } },
     oracleId: 'shopping-pick-from-history-oracle',
     nearMiss: { id: 'shopping-pick-from-history-newest-only-decoy', answer: SHOPPING_DECOY_NAME, state: { kind: 'shopping-v1', family: 'preference-carry', cart: [SHOPPING_DECOY_ID], visited: [...SHOPPING_VIEWED_IDS] } },

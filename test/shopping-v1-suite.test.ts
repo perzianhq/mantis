@@ -92,24 +92,40 @@ it('routes the history, four product and recommendation pages, each with the sha
   expect(shoppingRoute('/shopping/unknown')).toBeNull();
 });
 
-it('only all four viewed products isolate the preference; every pair and triple has a decoy that matches its extra shared attributes', () => {
+it('only all four viewed products isolate the preference; triples have misleading extras without making the answer key ambiguous', () => {
   const attributes = (items: readonly (typeof SHOPPING_VIEWED)[number][]) => SHOPPING_INTERSECTION_ATTRIBUTES.filter((key) =>
     items.every((item) => shoppingAttributes(item)[key] === shoppingAttributes(items[0])[key]));
-  const combinations = (size: number) => SHOPPING_VIEWED.flatMap((item, index) =>
-    size === 2
-      ? SHOPPING_VIEWED.slice(index + 1).map((other) => [item, other] as const)
-      : SHOPPING_VIEWED.slice(index + 1).flatMap((second, secondIndex) => SHOPPING_VIEWED.slice(index + secondIndex + 2).map((third) => [item, second, third] as const)));
+  const triples = SHOPPING_VIEWED.flatMap((item, index) =>
+    SHOPPING_VIEWED.slice(index + 1).flatMap((second, secondIndex) =>
+      SHOPPING_VIEWED.slice(index + secondIndex + 2).map((third) => [item, second, third] as const)));
   const all = attributes(SHOPPING_VIEWED);
   expect(all).toEqual(SHOPPING_PREFERENCE_ATTRIBUTES);
-  for (const subset of [...combinations(2), ...combinations(3)]) {
+  const matchingPreference = SHOPPING_RECS.filter((rec) => SHOPPING_PREFERENCE_ATTRIBUTES.every((key) =>
+    shoppingAttributes(rec)[key] === shoppingAttributes(SHOPPING_VIEWED[0])[key]));
+  expect(matchingPreference.map((rec) => rec.id)).toEqual([SHOPPING_CORRECT_ID]);
+  expect(SHOPPING_RECS[0].id).toBe('rl-3046');
+  expect(SHOPPING_RECS.findIndex((rec) => rec.id === SHOPPING_CORRECT_ID)).toBeGreaterThan(0);
+  for (const subset of triples) {
     const shared = attributes(subset);
-    expect(shared.length).toBeGreaterThan(all.length);
-    expect(all.every((key) => shared.includes(key))).toBe(true);
-    expect(SHOPPING_RECS.some((rec) => rec.id !== SHOPPING_CORRECT_ID && shared.every((key) => shoppingAttributes(rec)[key] === shoppingAttributes(subset[0])[key]))).toBe(true);
+    const extras = shared.filter((key) => !SHOPPING_PREFERENCE_ATTRIBUTES.includes(key));
+    expect(extras.length).toBeGreaterThan(0);
+    expect(SHOPPING_RECS.some((rec) => rec.id !== SHOPPING_CORRECT_ID
+      && extras.every((key) => shoppingAttributes(rec)[key] === shoppingAttributes(subset[0])[key])
+      && SHOPPING_PREFERENCE_ATTRIBUTES.some((key) => shoppingAttributes(rec)[key] !== shoppingAttributes(subset[0])[key]))).toBe(true);
   }
-  // One true attribute is unavailable until the first Details panel is opened.
+  const earlyDecoys = SHOPPING_RECS.slice(0, 4);
+  expect(earlyDecoys).toHaveLength(4);
+  for (const decoy of earlyDecoys) expect(SHOPPING_PREFERENCE_ATTRIBUTES.filter((key) =>
+    shoppingAttributes(decoy)[key] !== shoppingAttributes(SHOPPING_VIEWED[0])[key])).toHaveLength(1);
+  const recsPage = shoppingV1Route(SHOPPING_ROUTES.recs)!.body;
+  for (const rec of SHOPPING_RECS) {
+    expect(recsPage).toContain(`data-id="${rec.id}"`);
+    expect(recsPage).toContain(`<li>Colour: ${rec.colour}</li>`);
+    expect(recsPage).toContain(`<li>Waterproof: ${rec.waterproof}</li>`);
+  }
+  // Preference attributes are visible without opening Details; only the recall fabric is gated there.
   expect(SHOPPING_VIEWED[0].details.some((line) => line.includes(SHOPPING_VIEWED[0].colour))).toBe(true);
-  expect(shoppingRoute(SHOPPING_ROUTES.product(SHOPPING_VIEWED[0].id))!.body).not.toMatch(/<th scope="row">Colour<\/th>/);
+  expect(shoppingRoute(SHOPPING_ROUTES.product(SHOPPING_VIEWED[0].id))!.body).toMatch(/<th scope="row">Colour<\/th><td>Olive<\/td>/);
   const newest = SHOPPING_VIEWED.at(-1)!;
   const decoy = SHOPPING_RECS.find((rec) => rec.id === SHOPPING_DECOY_ID)!;
   expect(decoy.name).toBe(SHOPPING_DECOY_NAME);
@@ -134,12 +150,12 @@ it('icon-only rating page has no rating text in the served HTML: five identical 
   for (const item of SHOPPING_VIEWED.filter((entry) => entry.id !== SHOPPING_ICON_RATING_ID)) expect(shoppingV1Route(SHOPPING_ROUTES.product(item.id))!.body, item.id).toMatch(/Rating<\/th><td>\d\.0 \/ 5/);
 });
 
-it('first page shows its colour and fabric only inside the Details panel until that panel is opened', async () => {
+it('first page keeps only its fabric hidden until the Details panel is opened', async () => {
   const first = SHOPPING_VIEWED[0];
   await open(RECALL, 'shop-details', SHOPPING_ROUTES.product(first.id));
   const before = await page.evaluate(() => document.body.innerText);
   expect(before).not.toContain(first.material);
-  expect(before).not.toMatch(/olive/i);
+  expect(before).toMatch(/olive/i);
   expect(await page.getAttribute('#details-tab', 'aria-expanded')).toBe('false');
   await page.click('#details-tab');
   expect(await page.textContent('#details-panel')).toContain(first.material);
@@ -166,6 +182,10 @@ it('pick task near misses: newest-only decoy, no history visit, a partial visit 
   await browseViewed(PICK, 'shop-pick-decoy');
   await addToCart(PICK, 'shop-pick-decoy', SHOPPING_DECOY_ID);
   await expectFailure(PICK, 'shop-pick-decoy', SHOPPING_DECOY_NAME, `cart must contain only ${SHOPPING_CORRECT_NAME}`);
+
+  await browseViewed(PICK, 'shop-pick-marsh');
+  await addToCart(PICK, 'shop-pick-marsh', 'rl-3046');
+  await expectFailure(PICK, 'shop-pick-marsh', 'Marsh Field Coat', `cart must contain only ${SHOPPING_CORRECT_NAME}`);
 
   await addToCart(PICK, 'shop-pick-skip', SHOPPING_CORRECT_ID);
   expect(await page.textContent('#cart-list')).toContain(SHOPPING_CORRECT_NAME);

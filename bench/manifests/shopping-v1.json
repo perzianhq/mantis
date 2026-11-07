@@ -9,7 +9,7 @@
   "purpose": "Checks whether compact observations keep enough preference-relevant detail when information must be carried across several product pages; not a headline scorecard.",
   "tasks": ["shopping-pick-from-history", "shopping-recall-earlier-detail"],
   "newCases": [
-    { "id": "shopping-pick-from-history", "description": "four recently viewed products share two attributes spread over blurb, spec table, a Details panel and an icon-only rating; add the one recommendation that fits both" },
+    { "id": "shopping-pick-from-history", "description": "four recently viewed products share two attributes shown across blurbs and spec tables; add the one recommendation matching both" },
     { "id": "shopping-recall-earlier-detail", "description": "after opening all four viewed products, report the shell fabric shown only in the first product's Details panel" }
   ],
   "approaches": ["mantis", "tree", "screenshot"],
