@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "revisit-v1",
+  "kind": "local-fixture-revisit-probe",
+  "status": "configured",
+  "sourceSelector": "bench/agent/revisit-v1.ts",
+  "taskCount": 2,
+  "splits": { "newSynthetic": 2 },
+  "purpose": "Checks whether compact observations support returning to a product after a delayed question reveals the required field; not a headline scorecard.",
+  "tasks": ["revisit-accordion-field", "revisit-visible-field"],
+  "newCases": [
+    { "id": "revisit-accordion-field", "description": "recover a collapsed full-specification value from the target product after the delayed question" },
+    { "id": "revisit-visible-field", "description": "control: recover a visible specification value from the target product after the delayed question" }
+  ],
+  "approaches": ["mantis", "tree", "screenshot"],
+  "runs": 1,
+  "limits": { "standardMaxSteps": 50 },
+  "command": "AGENT_SUITE=revisit-v1 AGENT_APPROACHES=mantis,tree,screenshot AGENT_RUNS=1 AGENT_MAX_STEPS=50 AGENT_V2_STANDARD_MAX_STEPS=50 npm run bench:agent"
+}

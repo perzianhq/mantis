@@ -99,6 +99,14 @@ Two local tasks on a synthetic shop for whether compact observations keep enough
 AGENT_SUITE=shopping-v1 AGENT_APPROACHES=mantis,tree,screenshot AGENT_RUNS=1 AGENT_MAX_STEPS=50 AGENT_V2_STANDARD_MAX_STEPS=50 npm run bench:agent
 ```
 
+### revisit-v1 (return after a delayed question)
+
+Two local revisit tasks where the question appears only after all four recently viewed products have been opened. The grader requires the exact target value and a post-reveal return to the target product; the accordion task additionally requires opening its Full specifications panel after the question.
+
+```
+AGENT_SUITE=revisit-v1 AGENT_APPROACHES=mantis,tree,screenshot AGENT_RUNS=1 AGENT_MAX_STEPS=50 AGENT_V2_STANDARD_MAX_STEPS=50 npm run bench:agent
+```
+
 ### visual-live-v1 (real-site visual and dynamic content)
 
 Eight public-site tasks for what a text-only reader tends to miss: icon-only star ratings, an AJAX table with an icon-only winner, infinite scroll, a delayed JavaScript render, text revealed after a loading bar, and two facts that exist only inside an image (a comic date, a chart cell). Rows live in `bench/agent/visual-live-v1-tasks.json` (ids `visuallive-*`), are graded only by the deterministic grader on the captured final state (no judge), and each `keyNotes` records how the key was verified and its near miss. Limits match live-v1 (no tool cap, 600 s).
