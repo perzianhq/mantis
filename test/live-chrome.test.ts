@@ -80,13 +80,65 @@ it('attaches to a running Chrome: sees its tabs and session, acts, and leaves th
   expect(texts).toContain('clicked hello');
 }, 60_000);
 
+it('automatically attaches to a detected Chrome, unless autoAttach is false', async () => {
+  const previous = {
+    cdp: process.env.MANTIS_CDP_URL,
+    auto: process.env.MANTIS_AUTO_ATTACH,
+    autoUrl: process.env.MANTIS_AUTO_ATTACH_URL,
+  };
+  delete process.env.MANTIS_CDP_URL;
+  process.env.MANTIS_AUTO_ATTACH = '1';
+  process.env.MANTIS_AUTO_ATTACH_URL = cdpUrl;
+  try {
+    const automatic = new MantisBrowser();
+    try {
+      expect(await automatic.tabs('list')).toContain('"First"');
+    } finally {
+      await automatic.close();
+    }
+
+    const disabled = new MantisBrowser({ autoAttach: false });
+    try {
+      expect(await disabled.tabs('list')).not.toContain('"First"');
+    } finally {
+      await disabled.close();
+    }
+  } finally {
+    if (previous.cdp === undefined) delete process.env.MANTIS_CDP_URL;
+    else process.env.MANTIS_CDP_URL = previous.cdp;
+    if (previous.auto === undefined) delete process.env.MANTIS_AUTO_ATTACH;
+    else process.env.MANTIS_AUTO_ATTACH = previous.auto;
+    if (previous.autoUrl === undefined) delete process.env.MANTIS_AUTO_ATTACH_URL;
+    else process.env.MANTIS_AUTO_ATTACH_URL = previous.autoUrl;
+  }
+}, 60_000);
+
+it('uses an explicit cdpUrl before the automatic endpoint', async () => {
+  const previous = {
+    auto: process.env.MANTIS_AUTO_ATTACH,
+    autoUrl: process.env.MANTIS_AUTO_ATTACH_URL,
+  };
+  process.env.MANTIS_AUTO_ATTACH = '1';
+  process.env.MANTIS_AUTO_ATTACH_URL = 'http://127.0.0.1:1';
+  const m = new MantisBrowser({ cdpUrl });
+  try {
+    expect(await m.tabs('list')).toContain('"First"');
+  } finally {
+    await m.close();
+    if (previous.auto === undefined) delete process.env.MANTIS_AUTO_ATTACH;
+    else process.env.MANTIS_AUTO_ATTACH = previous.auto;
+    if (previous.autoUrl === undefined) delete process.env.MANTIS_AUTO_ATTACH_URL;
+    else process.env.MANTIS_AUTO_ATTACH_URL = previous.autoUrl;
+  }
+}, 60_000);
+
 it('reports a clear error when nothing listens at cdpUrl', async () => {
   const port = await freePort();
   const m = new MantisBrowser({ cdpUrl: `http://127.0.0.1:${port}` });
   const out = await m.open('about:blank');
   expect(out).toMatch(/^error: could not attach to Chrome at/);
   expect(out).toContain('mantis chrome');
-  expect(out).toContain('--remote-debugging-port=9222');
+  expect(out).toContain('automatically finds its default');
   await m.close();
 }, 30_000);
 

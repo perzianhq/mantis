@@ -69,9 +69,9 @@ Mantis vs the accessibility tree (Playwright MCP) on public sites, `gpt-6-luna` 
 
 Optional. Mantis can drive your real Chrome (your tabs, your sign-ins) instead of launching a fresh browser:
 - Run `npx -y -p mantis-browser mantis chrome`. It starts Chrome on `127.0.0.1:9222` with a dedicated profile.
-- Add `MANTIS_CDP_URL=http://127.0.0.1:9222` to the `env` of the Mantis MCP config.
+- Mantis automatically attaches while that Chrome is running. Set `MANTIS_CDP_URL` only when Chrome uses another debugging port.
 - Sign in to your sites once in that profile; sign-ins persist there.
-- Mantis then acts on your real tabs, so act carefully. Without the variable nothing changes.
+- Mantis then acts on your real tabs, so act carefully. Set `MANTIS_AUTO_ATTACH=0` to always launch a fresh browser.
 
 ## Limitations
 

@@ -11,7 +11,8 @@ Starts Google Chrome with a local remote-debugging port so Mantis can drive your
                    recent Chrome refuses the debug port on its default profile
   MANTIS_CHROME    path to the Chrome executable, if it is not found automatically
 
-Then set MANTIS_CDP_URL=http://127.0.0.1:<port> in your MCP config. Sign in to your sites once
+Mantis attaches automatically when this runs on its default port (127.0.0.1:9222). For another port, set
+MANTIS_CDP_URL=http://127.0.0.1:<port> in your MCP config. Sign in to your sites once
 in this profile; the sign-ins persist. Anything on this machine can use the port while Chrome is open.`;
 
 export interface FindChromeEnv {
@@ -105,7 +106,9 @@ export async function runChromeCommand(args: readonly string[], deps: ChromeDepe
   const endpoint = `http://127.0.0.1:${port}`;
   const summary = (): void => {
     log(`Chrome debugging endpoint: ${endpoint}`);
-    log(`Add to your MCP config env: MANTIS_CDP_URL=${endpoint}`);
+    log(port === 9222
+      ? 'Mantis automatically attaches to Chrome on 127.0.0.1:9222.'
+      : `Add to your MCP config env: MANTIS_CDP_URL=${endpoint} (needed for a non-default port).`);
     log('Sign in to your sites once in this Chrome profile; the sign-ins persist.');
   };
   if (await probe(port)) {

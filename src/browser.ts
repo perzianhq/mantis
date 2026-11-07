@@ -33,6 +33,30 @@ export interface MantisOptions {
   memoryDir?: string;
   /** Attach to an already running Chrome through its remote-debugging endpoint (e.g. http://127.0.0.1:9222) instead of launching Chromium. Default MANTIS_CDP_URL. */
   cdpUrl?: string;
+  /** Detect and attach to Chrome's default local debugging endpoint. Default true; MANTIS_AUTO_ATTACH=0 turns it off. */
+  autoAttach?: boolean;
+}
+
+const DEFAULT_DEBUG_CHROME_URL = 'http://127.0.0.1:9222';
+
+/**
+ * Return a local Chrome debugging endpoint when it answers its version probe.
+ * This deliberately treats every probe error as "not found", so launching a
+ * regular browser remains reliable when another local service uses the port.
+ */
+export async function detectDebugChrome(url = DEFAULT_DEBUG_CHROME_URL, timeoutMs = 500): Promise<string | undefined> {
+  try {
+    const endpoint = url.replace(/\/+$/, '');
+    // Only ever probe this machine: a remote override would leak a request to another host.
+    if (!['127.0.0.1', 'localhost', '[::1]'].includes(new URL(endpoint).hostname)) return undefined;
+    const response = await fetch(`${endpoint}/json/version`, { signal: AbortSignal.timeout(timeoutMs), redirect: 'error' });
+    if (response.status !== 200) return undefined;
+    const version: unknown = await response.json();
+    if (!version || typeof version !== 'object' || typeof (version as { webSocketDebuggerUrl?: unknown }).webSocketDebuggerUrl !== 'string') return undefined;
+    return endpoint;
+  } catch {
+    return undefined;
+  }
 }
 
 const INTERNAL_PAGE = /^(chrome|edge|devtools|chrome-extension|chrome-untrusted|chrome-search):/i;
@@ -496,13 +520,24 @@ export class MantisBrowser {
     return this.opts.cdpUrl || process.env.MANTIS_CDP_URL || undefined;
   }
 
+  private autoAttachEnabled(): boolean {
+    return this.opts.autoAttach !== false && process.env.MANTIS_AUTO_ATTACH !== '0';
+  }
+
+  private async abandonFailedAttachment(): Promise<void> {
+    const browser = this.browser;
+    this.browser = this.context = this.page = null;
+    this.attached = false;
+    await browser?.close().catch(() => undefined);
+  }
+
   private async attach(url: string): Promise<void> {
     try {
       this.browser = await chromium.connectOverCDP(url, { timeout: 10_000 });
     } catch (e) {
       throw new Error(
-        `could not attach to Chrome at ${url} (${brief(e)}). Start Chrome with \`mantis chrome\`, or with ` +
-          '--remote-debugging-port=9222 --user-data-dir=<dir>, and set MANTIS_CDP_URL to its address.',
+        `could not attach to Chrome at ${url} (${brief(e)}). Start Chrome with \`mantis chrome\` (Mantis automatically finds its default ` +
+          '127.0.0.1:9222 endpoint), or set MANTIS_CDP_URL to a different debugging address.',
       );
     }
     const context = this.browser.contexts()[0];
@@ -548,6 +583,18 @@ ${TRACKER}`).catch(() => undefined), FRAME_OPERATION_MS)));
     if (this.browser) return;
     const cdp = this.cdpEndpoint();
     if (cdp) return this.attach(cdp);
+    if (this.autoAttachEnabled()) {
+      const detected = await detectDebugChrome(process.env.MANTIS_AUTO_ATTACH_URL ?? DEFAULT_DEBUG_CHROME_URL);
+      if (detected) {
+        try {
+          return await this.attach(detected);
+        } catch {
+          // A discovered endpoint is only a convenience. Disconnect it and use
+          // a private browser if it stops accepting CDP before attach completes.
+          await this.abandonFailedAttachment();
+        }
+      }
+    }
     const headless = this.opts.headless ?? process.env.MANTIS_HEADLESS !== '0';
     this.browser = await chromium.launch({ headless, ...chromiumExecutable() }).catch((e: unknown) => {
       throw new Error(missingChromiumHint(e) ?? (e instanceof Error ? e.message : String(e)));

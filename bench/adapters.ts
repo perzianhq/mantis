@@ -47,6 +47,7 @@ class McpTool {
   async start(): Promise<void> {
     const env: Record<string, string> = {};
     for (const [k, v] of Object.entries(process.env)) if (v !== undefined) env[k] = v;
+    env.MANTIS_AUTO_ATTACH ??= '0';
     const transport = new StdioClientTransport({ command: process.execPath, args: this.args, env, stderr: 'ignore', ...(this.cwd ? { cwd: this.cwd } : {}) });
     this.client = new Client({ name: 'mantis-bench', version: '0.0.0' });
     await this.client.connect(transport);

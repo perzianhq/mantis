@@ -40,6 +40,8 @@ To use a local build instead of npm: `claude mcp add mantis -- node /abs/path/to
 |---|---|
 | `MANTIS_HEADLESS=0` | Show the browser window |
 | `MANTIS_CDP_URL` | Attach to a running Chrome at this debugging address (e.g. `http://127.0.0.1:9222`, started with `mantis chrome`) instead of launching Chromium |
+| `MANTIS_AUTO_ATTACH=0` | Launch a fresh Chromium instead of automatically attaching (an explicit `MANTIS_CDP_URL` still wins) to Chrome on `http://127.0.0.1:9222` |
+| `MANTIS_AUTO_ATTACH_URL` | Advanced/test override for the automatically probed debugging address (default `http://127.0.0.1:9222`) |
 | `MANTIS_CHROME` | Path to Google Chrome for `mantis chrome` |
 | `MANTIS_MEMORY=0` | Turn off site memory (shortening menus already seen on a site) |
 | `MANTIS_MEMORY_DIR` | Site memory folder (default `~/.cache/mantis/sites`; hashes, counts and timestamps only, never page text; 30-day expiry) |
