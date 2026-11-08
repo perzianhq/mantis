@@ -15,6 +15,7 @@ import { LONG_LOCAL_V1_CASES, LONG_LOCAL_V1_TASKS, gradeLongLocalV1Case } from '
 import { V21_RELIABILITY_CASES, gradeV21ReliabilityCase } from '../bench/fixtures-v21-reliability.js';
 import { BLUE_CODE, CAPABILITY_CASES, CAPABILITY_ROUTES, GREEN_CODE, LIVE_PICKUP_CODE, PHOTO_BATCH, PHOTO_SERIAL, REVISIT_DECOYS, REVISIT_ORDER_CODE, gradeCapabilityCase } from '../bench/fixtures-capability-v1.js';
 import { SHOPPING_CASES, SHOPPING_CORRECT_ID, SHOPPING_CORRECT_NAME, SHOPPING_DECOY_ID, SHOPPING_FIRST_MATERIAL, SHOPPING_LAST_MATERIAL, SHOPPING_ROUTES, SHOPPING_VIEWED_IDS, gradeShoppingCase } from '../bench/fixtures-shopping-v1.js';
+import { SHOPPING_V2_CASES, SHOPPING_V2_ROUTES, shoppingV2Data, gradeShoppingV2Case } from '../bench/fixtures-shopping-v2.js';
 import { spawn } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import net from 'node:net';
@@ -1708,6 +1709,56 @@ const shopWalk = (state: Record<string, unknown>, ids = SHOPPING_VIEWED_IDS): Fi
   ...ids.map((id) => shopEvent('load', SHOPPING_ROUTES.product(id), { kind: 'shopping-v1', family: 'preference-carry' })),
   shopEvent('settled', SHOPPING_ROUTES.recs, state),
 ];
+
+/** Cumulative page snapshots, as captured by the fixture harness during an actual walkthrough. */
+function shoppingV2Walk(task: string, cart: string[], omitHistory = false, omitDetour = false): FixtureObservation[] {
+  const data = shoppingV2Data(task); const routes = SHOPPING_V2_ROUTES;
+  const events: { page: string; action: string }[] = [];
+  const observations: FixtureObservation[] = [];
+  const visit = (path: string, action: string) => {
+    events.push({ page: path, action });
+    observations.push(shopEvent('load', path, { kind: 'shopping-v2', task, variant: data.seed, cart: [], events: [...events] }));
+  };
+  // The history order is intentionally reversed; no preference is given to recency.
+  for (const item of [...data.viewed].reverse().slice(omitHistory ? 1 : 0)) visit(routes.product(item.id), 'view');
+  visit(routes.gap, 'gap-start');
+  for (const detour of data.detours.slice(omitDetour ? 1 : 0)) visit(routes.detour(detour.id), 'view');
+  visit(routes.catalog, 'catalog-shown');
+  observations.push(shopEvent('settled', routes.catalog, { kind: 'shopping-v2', task, variant: data.seed, cart, events: [...events] }));
+  return observations;
+}
+
+for (const entry of SHOPPING_V2_CASES) {
+  it(`${entry.id}: accepts a full walkthrough and rejects each decoy, incomplete visits and empty carts`, () => {
+    const data = shoppingV2Data(entry.id);
+    const grade = (cart: string[], omitHistory = false, omitDetour = false, answer = 'Done') =>
+      gradeShoppingV2Case(entry.id, answer, shoppingV2Walk(entry.id, cart, omitHistory, omitDetour));
+    expect(grade([data.correctId])).toEqual({ ok: true, recommendationCorrect: true, visitsComplete: true });
+    // No answer-text content is required or scored beyond non-empty.
+    expect(grade([data.correctId], false, false, 'Any non-empty reply')).toEqual(grade([data.correctId]));
+    for (const decoy of [...data.oneAttributeIds, data.popularId]) {
+      expect(grade([decoy])).toMatchObject({ ok: false, recommendationCorrect: false, visitsComplete: true });
+    }
+    expect(grade([data.correctId], true)).toMatchObject({ ok: false, recommendationCorrect: true, visitsComplete: false });
+    expect(grade([data.correctId], false, true)).toMatchObject({ ok: false, recommendationCorrect: true, visitsComplete: false });
+    expect(grade([])).toMatchObject({ ok: false, recommendationCorrect: false, visitsComplete: true });
+    expect(grade([data.correctId, data.popularId]).ok).toBe(false);
+    expect(grade([data.correctId], false, false, '  ').ok).toBe(false);
+    // Claimed page events without captured visits cannot prove completion.
+    const good = shoppingV2Walk(entry.id, [data.correctId]);
+    expect(gradeShoppingV2Case(entry.id, 'Done', good.slice(-1)).visitsComplete).toBe(false);
+    // A real detour observation made before history does not satisfy the gap.
+    const moved = [...good]; const detourIndex = moved.findIndex((e) => e.path === SHOPPING_V2_ROUTES.detour(data.detours[0]!.id));
+    moved.unshift(...moved.splice(detourIndex, 1));
+    expect(gradeShoppingV2Case(entry.id, 'Done', moved).visitsComplete).toBe(false);
+    // The terminal cart wins over a previous successful state.
+    const last = good.at(-1)!;
+    expect(gradeShoppingV2Case(entry.id, 'Done', [...good, { ...last, fixtureState: { ...(last.fixtureState as object), cart: [] } }]).ok).toBe(false);
+    for (const patch of [{ kind: 'other' }, { task: 'other' }, { variant: -1 }, { variant: '1' }, { cart: [data.correctId, data.correctId] }, { cart: ['missing'] }, { events: null }]) {
+      expect(gradeShoppingV2Case(entry.id, 'Done', [...good.slice(0, -1), { ...last, fixtureState: { ...(last.fixtureState as object), ...patch } }]).ok).toBe(false);
+    }
+  });
+}
 
 it('shopping pick-from-history: grades exactly the shared-attribute recommendation after all four pages, and rejects decoys or incomplete carts', () => {
   const entry = shopCase('shopping-pick-from-history');

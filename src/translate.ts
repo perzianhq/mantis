@@ -549,6 +549,10 @@ function renderBody(nodes: RawNode[], lvl: Level, ctx: Ctx): { lines: string[]; 
           out.push(pad + regionLine(n), ...inner);
         }
         k++;
+      } else if (n.kind === 'image') {
+        const label = n.name ? ` "${quote(n.name)}"` : '';
+        out.push(`${pad}#${n.id} [image${label}]`);
+        k++;
       } else if (n.kind === 'prose') {
         let j = k + 1;
         while (j < items.length && nodes[items[j]].inline) j++;
@@ -703,6 +707,11 @@ export function translate(snap: Snapshot, budget: number = BUDGET_CHARS, opts: R
     budget = Math.max(budget, 2 * BUDGET_CHARS); // the agent asked for this region: allow more room
     head.push(picked.note ?? `(region "${opts.region}" only)`);
   }
+  const visualOnly = nodes.filter((n) => n.kind === 'image' && !n.name);
+  const imageHint = visualOnly.length
+    ? `images: ${visualOnly.length} shown only visually; look({id: ${visualOnly[0].id}}) to view`
+    : '';
+  const fixedTail = [...tail, ...(imageHint ? [imageHint] : [])];
   const full = opts.full === true;
   if (full) budget = FULL_BUDGET_CHARS;
 
@@ -730,7 +739,7 @@ export function translate(snap: Snapshot, budget: number = BUDGET_CHARS, opts: R
     // Reserve enough room to explain how to request the next excerpt. The source body is never
     // structurally trimmed in full mode; a caller can page through every character by offset.
     const reserve = 180;
-    const available = Math.max(256, budget - head.join('\n').length - tail.join('\n').length - reserve);
+    const available = Math.max(256, budget - head.join('\n').length - fixedTail.join('\n').length - reserve);
     const excerpt = body.slice(offset, offset + available);
     const next = offset + excerpt.length;
     const continuation = opts.region
@@ -757,9 +766,9 @@ export function translate(snap: Snapshot, budget: number = BUDGET_CHARS, opts: R
         .filter((r): r is RegionInfo => r !== undefined);
       hook.shown(shown, []);
     }
-    return [...head, ...(excerpt ? [excerpt] : ['(no visible content)']), ...tail, ...(note ? [note] : [])].join('\n');
+    return [...head, ...(excerpt ? [excerpt] : ['(no visible content)']), ...tail, ...(note ? [note] : []), ...(imageHint ? [imageHint] : [])].join('\n');
   }
-  const fits = (r: { lines: string[] }): boolean => [...head, ...r.lines, ...tail].join('\n').length <= budget;
+  const fits = (r: { lines: string[] }): boolean => [...head, ...r.lines, ...fixedTail].join('\n').length <= budget;
   for (let i = 1; !fits(result) && i < levels.length; i++) result = renderBody(nodes, levels[i], ctx);
 
   let lines = result.lines;
@@ -767,7 +776,7 @@ export function translate(snap: Snapshot, budget: number = BUDGET_CHARS, opts: R
   let note = result.dropped > 0 ? `(trimmed: ${result.dropped} items offscreen — scroll or read again)` : '';
   if (!fits(result)) {
     // Last resort: cut lines to the budget.
-    let size = head.join('\n').length + tail.join('\n').length + 80;
+    let size = head.join('\n').length + fixedTail.join('\n').length + 80;
     let cut = 0;
     while (cut < lines.length && size + lines[cut].length + 1 <= budget) size += lines[cut++].length + 1;
     const left = lines.length - cut;
@@ -784,7 +793,7 @@ export function translate(snap: Snapshot, budget: number = BUDGET_CHARS, opts: R
     );
   }
   if (!lines.length) lines = ['(no visible content)'];
-  return [...head, ...lines, ...tail, ...(note ? [note] : [])].join('\n');
+  return [...head, ...lines, ...tail, ...(note ? [note] : []), ...(imageHint ? [imageHint] : [])].join('\n');
 }
 
 // ---- find ------------------------------------------------------------------

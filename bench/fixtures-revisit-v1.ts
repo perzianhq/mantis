@@ -100,7 +100,7 @@ const hash = (text: string): number => { let n = 2166136261; for (let i = 0; i <
  * all approaches of one (task, run), and the question target is derived only from it. Without a suffix (ad hoc use)
  * the case's own manifest seed is used.
  */
-const seedFrom = (attemptId: string | undefined, fallback: number): number => { const match = attemptId?.match(/(?:^|-)seed-(\d+)-(\d+)(?:-|$)/); return hash(match ? `${match[1]}-${match[2]}` : `${fallback}-1`); };
+export const seedFrom = (attemptId: string | undefined, fallback: number): number => { const match = attemptId?.match(/(?:^|-)seed-(\d+)-(\d+)(?:-|$)/); return hash(match ? `${match[1]}-${match[2]}` : `${fallback}-1`); };
 const familyFor = (taskId?: string): RevisitFamily => taskId === 'revisit-changing-value' ? 'changing-value' : taskId === 'revisit-visual-value' ? 'visual-value' : taskId === 'revisit-visible-field' ? 'visible-field' : 'accordion-field';
 const caseSeed = (family: RevisitFamily): number => REVISIT_CASES.find((entry) => entry.family === family)!.seed;
 const productTarget = (family: RevisitFamily, seed: number): { id: string; label: string; name: string } => { if (family === 'visual-value') { const chosen = REVISIT_PRODUCTS[seed % REVISIT_PRODUCTS.length]!; return { id: chosen.id, label: REVISIT_CHART_LABEL, name: chosen.name }; } const product = REVISIT_PRODUCTS[1 + (seed % 2)]!; const labels = family === 'visible-field' ? REVISIT_VISIBLE_LABELS : REVISIT_FULL_LABELS; return { id: product.id, label: labels[(seed >>> 8) % labels.length]!, name: product.name }; };

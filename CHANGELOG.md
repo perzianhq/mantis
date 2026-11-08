@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+- Mantis observations now surface up to four nearby content-sized images as numbered `[image]` entries and give one `look({id: N})` cue for unlabeled visuals, while skipping icons, hidden media and page chrome.
+- bench: add `shopping-v2`, six seeded preference-inference and cart-recommendation tasks with 5-8 unrelated detours, two drawn-only preference variants, deterministic cart/visit graders, and separate recommendation/visit results; correct the `shopping-v1` description.
+
 ## 0.1.14 (2026-11-08)
 - Mantis now automatically attaches to Chrome listening on `127.0.0.1:9222`; set `MANTIS_AUTO_ATTACH=0` to always launch a fresh browser, or use `MANTIS_CDP_URL` for another debugging address.
 - bench: expand `revisit-live-v1` to 7 tasks with `revisitlive-variant-price-after-detours`: after eight product-page detours, select ORANGE LARGE and report its current $19.99 price, ending on `variant=orange-large`. Deterministic checks reject stale/crossed-out prices, wrong final URLs and missing answers. Uses user-supplied 2026-11-08 raw-HTML verification, corroborated with cached web captures of both variants and all detour headings; fresh sandbox network preflight remains unverified.

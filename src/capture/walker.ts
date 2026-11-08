@@ -11,7 +11,7 @@
  * keeps the host -> root pair; see window.__mantisShadowOf). Declarative closed roots stay unreadable.
  */
 
-export type NodeKind = 'interactive' | 'heading' | 'region' | 'text' | 'prose';
+export type NodeKind = 'interactive' | 'heading' | 'region' | 'text' | 'prose' | 'image';
 
 export interface RawNode {
   kind: NodeKind;
@@ -103,6 +103,8 @@ export function walker(includeSrOnly = false): WalkResult {
   const clickListeners = (window as unknown as { __mantisClick?: WeakSet<Element> }).__mantisClick;
 
   const MAX_NODES = 3000;
+  /** A handful of nearby visual-only images is enough to prompt look() without turning galleries into noise. */
+  const MAX_IMAGE_NODES = 4;
   // The walk itself stops at a multiple of the cap so a huge page stays cheap; the nodes kept in the
   // end are chosen by closeness to the viewport (see the budgeting step after the walk).
   const WALK_LIMIT = MAX_NODES * 4;
@@ -1326,6 +1328,39 @@ export function walker(includeSrOnly = false): WalkResult {
     }
   }
 
+  /** Text supplied by an image author, not text inferred from its pixels or file name. */
+  function imageLabel(el: Element): string {
+    const own = collapse(el.getAttribute('aria-label') || (el.localName === 'img' ? el.getAttribute('alt') || '' : '') || el.getAttribute('title') || '');
+    if (own) return own;
+    if (el.localName === 'svg') {
+      const title = Array.from(childrenOf(el)).find((child): child is Element => child.nodeType === 1 && (child as Element).localName === 'title');
+      return title ? collapse(title.textContent || '') : '';
+    }
+    return '';
+  }
+
+  /** An image inside a named action is that action's icon, rather than independent page content. */
+  function isNamedActionIcon(el: Element): boolean {
+    const action = el.closest('a[href],button,[role~="link"],[role~="button"]');
+    return !!action && (!!accName(action, explicitRole(action) || implicitRole(action)) || !!imageLabel(el));
+  }
+
+  /** Emit one content-sized visual, retaining a usable id for look({id: N}). */
+  function imageMark(source: Element, parent: number, depth: number): boolean {
+    const target = source.localName === 'picture' ? source.querySelector('img') : source;
+    if (!target || target.closest('[aria-hidden="true"],[inert]') || isNamedActionIcon(target)) return false;
+    if (target.closest('header,footer,nav,[role~="banner"],[role~="navigation"],[role~="contentinfo"]')) return false;
+    const cs = styleOf(target);
+    if (cs.display === 'none' || cs.visibility !== 'visible' || effectiveOpacity(target) === 0) return false;
+    const r = rectOf(target);
+    if (r.width < 64 || r.height < 64 || !inDoc(r)) return false;
+    const id = idFor(target);
+    if (id === undefined) return false;
+    const label = imageLabel(source) || imageLabel(target);
+    nodes.push(stamp({ kind: 'image', id, role: 'image', name: cap(label, 120), states: [], parent, depth, inViewport: inView(r), covered: false }, r));
+    return true;
+  }
+
   /** A visible canvas (a chart or drawing) gets one line, so the agent knows media()/data() can read it. */
   function canvasMark(el: Element, parent: number, depth: number): void {
     if (el.getAttribute('aria-hidden') === 'true') return;
@@ -1482,6 +1517,8 @@ export function walker(includeSrOnly = false): WalkResult {
   function visit(el: Element, parent: number, depth: number, box: DOMRect, inheritedSr = false, inheritedOpen?: { id: number; name: string }, inheritedLabelled = false): void {
     if (nodes.length >= WALK_LIMIT || outOfTime()) { truncated = true; return; }
     if (el.localName === 'canvas') { canvasMark(el, parent, depth); return; }
+    // A content-sized visual with no text of its own gets a cue; anything else keeps its old handling.
+    if ((el.localName === 'svg' || el.localName === 'picture') && imageMark(el, parent, depth)) return;
     if (SKIP.has(el.localName)) return;
     if (el.localName === 'iframe' || el.localName === 'frame') { frameMark(el, parent, depth); return; }
     if (el.getAttribute('aria-hidden') === 'true' || (el as HTMLElement).inert) return;
@@ -1502,6 +1539,7 @@ export function walker(includeSrOnly = false): WalkResult {
       (contents || (r.width > 0 && r.height > 0 && inDoc(r)));
 
     const explicit = explicitRole(el);
+    if ((el.localName === 'img' || explicit === 'img' || explicit === 'image') && imageMark(el, parent, depth)) return;
     const labelled = inheritedLabelled || el.localName === 'dt' || el.localName === 'dd' || el.localName === 'th' ||
       (el.localName === 'td' && !!el.parentElement?.querySelector(':scope > th'));
     const labelledValue = el.localName === 'dd' ||
@@ -1676,6 +1714,27 @@ export function walker(includeSrOnly = false): WalkResult {
   visit(rootEl, -1, 0, rectOf(rootEl));
 
   markPrimary();
+
+  // Image galleries can contain dozens of equally unhelpful thumbnails. Keep the few closest to
+  // the current viewport; ordinary node budgeting below still handles unusually large pages.
+  const imageNodes = nodes
+    .map((node, index) => ({ node, index }))
+    .filter(({ node }) => node.kind === 'image')
+    .sort((a, b) => {
+      const distance = ({ node }: typeof a): number => {
+        const box = node.box;
+        if (!box) return Infinity;
+        const top = box[1];
+        const bottom = top + box[3];
+        if (bottom > window.scrollY && top < window.scrollY + vh) return 0;
+        return bottom <= window.scrollY ? window.scrollY - bottom : top - (window.scrollY + vh);
+      };
+      return distance(a) - distance(b) || a.index - b.index;
+    });
+  if (imageNodes.length > MAX_IMAGE_NODES) {
+    const keepImages = new Set(imageNodes.slice(0, MAX_IMAGE_NODES).map(({ index }) => index));
+    nodes = nodes.filter((node, index) => node.kind !== 'image' || keepImages.has(index));
+  }
 
   // A lone unnamed control stays a bare role (no evidence to guess from). Several identical
   // bare controls are indistinguishable, so give those a hint from context or position.

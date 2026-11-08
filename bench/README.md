@@ -63,7 +63,7 @@ Mantis runs set `MANTIS_NO_HUMAN=1` on the MCP server (`ask_human` returns immed
 | Variable | Default | Meaning |
 |---|---|---|
 | `AGENT_PROVIDER` | `codex` | `codex`, `claude`, or `sarvam` |
-| `AGENT_SUITE` | `local-v1` | `local-v2-development`, `local-v2`, `local-v2.1`, `capability-v1` (12-task dynamic/visual probe: 8 reused v2 list/chart tasks plus 4 synthetic ones), `shopping-v1` (2-task preference-carry probe, see below), `visual-live-v1` (8 real-site visual/dynamic-content tasks, see below), `revisit-live-v1` (7 real-site revisit-after-leaving tasks, see below), or `live-v1` (see [live-v1](live-v1.md)); use with `AGENT_TASKS=all` |
+| `AGENT_SUITE` | `local-v1` | `local-v2-development`, `local-v2`, `local-v2.1`, `capability-v1` (12-task dynamic/visual probe: 8 reused v2 list/chart tasks plus 4 synthetic ones), `shopping-v1` (2-task shared-attribute control), `shopping-v2` (6-task seeded inference with a gap, see below), `visual-live-v1` (8 real-site visual/dynamic-content tasks, see below), `revisit-live-v1` (7 real-site revisit-after-leaving tasks, see below), or `live-v1` (see [live-v1](live-v1.md)); use with `AGENT_TASKS=all` |
 | `AGENT_TASKS` | pilot | `all`, task ids, or `cat:<category>`, comma-separated |
 | `AGENT_ROWS` | unset | exact recovery rows: comma-separated `task|approach|run` triples; each must exist in the selected task/approach/run plan |
 | `AGENT_FIXTURE_SEED` | unset | frozen local-fixture variant seed; requires `AGENT_TASKS=local` or explicit local task IDs. Current seed: `20261018` is one frozen profile spanning all 25 local tasks; it is not 25 independently generated profiles. |
@@ -93,10 +93,20 @@ For trace/log analysis and doc-summary trials, use source references and sample 
 
 ### shopping-v1 (preferences carried across pages)
 
-Two local tasks on a synthetic shop for whether compact observations keep enough preference-relevant detail when facts must be carried across several product pages. Four recently viewed products share two attributes that appear in the blurb, the spec table, a Details panel that must be opened and an icon-only rating; no page states the preference. `shopping-pick-from-history` must add the one recommendation that fits both shared attributes (cart exactly that item, all four pages opened); `shopping-recall-earlier-detail` must report a fact only in the first product's Details panel. Deterministic graders, no model judge.
+Two local tasks on a synthetic shop. The pick prompt explicitly asks for the attributes shared by four viewed products, then the matching recommendation: this is a set-intersection control, not an open-ended preference-inference test. The shared attributes (waterproof and olive) appear in blurbs and spec tables. Details supplies only the first product's shell-fabric recall fact; icon ratings are displayed but never graded. The pick grader requires exactly the keyed cart item and all four pages opened. Recall requires the exact fabric, all four pages opened and the first Details panel opened. Neither visit order nor a return after a delay is required; there is no unrelated-page gap. Deterministic graders, no model judge.
 
 ```
 AGENT_SUITE=shopping-v1 AGENT_APPROACHES=mantis,tree,screenshot AGENT_RUNS=1 AGENT_MAX_STEPS=50 AGENT_V2_STANDARD_MAX_STEPS=50 npm run bench:agent
+```
+
+### shopping-v2 (inferred preferences across an unrelated gap)
+
+Six seeded local tasks ask for a shopper recommendation without naming attributes or a comparison procedure. Four earlier products share two attributes. Candidate specifications are distributed among stockroom previews on those earlier pages; the later catalog has only opaque references, names, equal prices and cart buttons. Two variants convey one preference only through SVG colour/pattern shapes, with no textual equivalent.
+
+The catalog unlocks after all four products (any order), then 5-8 unrelated notice pages. Deterministic grading requires exactly the preferred cart item plus captured visits in those phases; final answer text need only be non-empty. JSON and Markdown retain recommendation correctness, visits complete and calls per task/approach. Seeds reuse revisit-v1's task/run suffix, identical across approaches. This is a synthetic inference-and-retrieval probe, not a pure memory test, a real-shopper study or headline scorecard: returning to earlier pages is allowed. See [task IDs, key isolation and verification](shopping-v2.md).
+
+```
+AGENT_SUITE=shopping-v2 AGENT_TASKS=all AGENT_APPROACHES=mantis,tree,screenshot AGENT_RUNS=1 npm run bench:agent
 ```
 
 ### revisit-v1 (return after a delayed question)

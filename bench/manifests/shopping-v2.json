@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "shopping-v2",
+  "kind": "local-fixture-preference-inference-gap-probe",
+  "status": "configured",
+  "sourceSelector": "bench/agent/shopping-v2.ts",
+  "taskCount": 6,
+  "splits": { "newSynthetic": 6, "visualOnly": 2 },
+  "purpose": "Synthetic preference inference and recommendation across a forced 5-8-page unrelated gap, with two drawn-only preference variants; not a headline scorecard or a pure memory test.",
+  "tasks": ["shopping-v2-material-colour", "shopping-v2-tier-size", "shopping-v2-closure-capacity", "shopping-v2-finish-shape", "shopping-v2-textile-pattern", "shopping-v2-material-swatch"],
+  "newCases": [
+    { "id": "shopping-v2-material-colour", "description": "material and colour family in tables; five unrelated detours" },
+    { "id": "shopping-v2-tier-size", "description": "brand tier and size class in prose; six unrelated detours" },
+    { "id": "shopping-v2-closure-capacity", "description": "closure and capacity in definition lists; seven unrelated detours" },
+    { "id": "shopping-v2-finish-shape", "description": "finish and shape in tables; eight unrelated detours" },
+    { "id": "shopping-v2-textile-pattern", "description": "textile in prose and pattern in SVG shapes only; six unrelated detours" },
+    { "id": "shopping-v2-material-swatch", "description": "material in definition lists and colour in SVG shapes only; seven unrelated detours" }
+  ],
+  "approaches": ["mantis", "tree", "screenshot"],
+  "runs": 1,
+  "limits": { "standardMaxSteps": 50 },
+  "command": "AGENT_SUITE=shopping-v2 AGENT_TASKS=all AGENT_APPROACHES=mantis,tree,screenshot AGENT_RUNS=1 npm run bench:agent"
+}

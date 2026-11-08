@@ -10,6 +10,7 @@
  *   AGENT_SUITE=local-v2 AGENT_TASKS=all npx tsx bench/agent/run.ts              # frozen historical 48-case scorecard
  *   AGENT_SUITE=local-v2.1 AGENT_TASKS=all npx tsx bench/agent/run.ts            # permanent 54-case scorecard
  *   AGENT_SUITE=capability-v1 AGENT_TASKS=all npx tsx bench/agent/run.ts         # 12-task dynamic/visual capability probe
+ *   AGENT_SUITE=shopping-v2 AGENT_TASKS=all npx tsx bench/agent/run.ts           # 6-task preference inference with a gap
  *   AGENT_SUITE=shopping-v1 AGENT_TASKS=all npx tsx bench/agent/run.ts           # 2-task preference-carry shopping probe
  *   AGENT_SUITE=revisit-v1 AGENT_TASKS=all npx tsx bench/agent/run.ts            # 3-task delayed-question revisit probe
  *   AGENT_SUITE=live-v1 AGENT_TASKS=all npx tsx bench/agent/run.ts                # frozen 30-task public live suite
@@ -43,6 +44,8 @@ import { CAPABILITY_V1_CHECKS, CAPABILITY_V1_MANIFEST, CAPABILITY_V1_SUITE, CAPA
 import { SHOPPING_V1_CHECKS, SHOPPING_V1_MANIFEST, SHOPPING_V1_SUITE, SHOPPING_V1_TASKS, gradeShoppingV1Case, shoppingV1Route } from './shopping-v1.js';
 import { REVISIT_V1_CHECKS, REVISIT_V1_MANIFEST, REVISIT_V1_SUITE, REVISIT_V1_TASKS, gradeRevisitV1Case, revisitV1Route } from './revisit-v1.js';
 import { gradeRevisitCase } from '../fixtures-revisit-v1.js';
+import { SHOPPING_V2_CHECKS, SHOPPING_V2_MANIFEST, SHOPPING_V2_SUITE, SHOPPING_V2_TASKS, gradeShoppingV2Answer, shoppingV2AgentRoute, shoppingV2Summary, shoppingV2Markdown } from './shopping-v2.js';
+import { gradeShoppingV2Case } from '../fixtures-shopping-v2.js';
 import { LIVE_V1_MANIFEST_FILE, LIVE_V1_SUITE, LIVE_V1_TASKS } from './live-v1.js';
 import { LONG_LIVE_V1_MANIFEST_FILE, LONG_LIVE_V1_SUITE, LONG_LIVE_V1_TASKS } from './long-live-v1.js';
 import { VISUAL_LIVE_V1_SUITE, VISUAL_LIVE_V1_TASKS } from './visual-live-v1.js';
@@ -117,7 +120,7 @@ interface RawCapture { step: number; png: Buffer | null; state: string | null; f
 type ToolResult = { isError?: boolean; content?: { type: string; mimeType?: string; data?: string; text?: string }[] };
 
 const sarvamMaxStepsForTask = (task: AgentTask): number =>
-  (SUITE === LOCAL_V2_DEVELOPMENT_SUITE || SUITE === LOCAL_V2_SUITE || SUITE === LOCAL_V21_SUITE || SUITE === CAPABILITY_V1_SUITE || SUITE === SHOPPING_V1_SUITE || SUITE === REVISIT_V1_SUITE) && task.category !== 'long' ? V2_STANDARD_MAX_STEPS : SARVAM_MAX_STEPS;
+  (SUITE === LOCAL_V2_DEVELOPMENT_SUITE || SUITE === LOCAL_V2_SUITE || SUITE === LOCAL_V21_SUITE || SUITE === CAPABILITY_V1_SUITE || SUITE === SHOPPING_V1_SUITE || SUITE === SHOPPING_V2_SUITE || SUITE === REVISIT_V1_SUITE) && task.category !== 'long' ? V2_STANDARD_MAX_STEPS : SARVAM_MAX_STEPS;
 
 /** Viewport PNG when available plus page state (URL, text, form values) of the live page; rejects after 15 s. */
 async function captureOnce(server: Pick<McpProxy, 'call'>, approach: Approach, step: number, final: boolean): Promise<RawCapture> {
@@ -378,6 +381,7 @@ interface AttemptResult {
   fixtureCheck: { ok: boolean | null; details?: string } | null;
   /** Revisit-v1 keeps factual recall distinct from its required workflow. */
   revisit?: { answerCorrect: boolean; workflowOk: boolean };
+  shopping?: { recommendationCorrect: boolean; visitsComplete: boolean };
   /** Present only for future local-fixture attempts; historical runs may lack raw observations. */
   fixtureEvidence: FixtureVerification['provenance'] | null;
   /** Declarative answer facts used for this attempt, retained for future regrading. */
@@ -396,6 +400,7 @@ interface RunResult {
   status: AttemptStatus; ok: boolean; error: string; answer: string;
   /** Present for revisit-v1 so JSON retains the answer-only result beside status. */
   revisit?: { answerCorrect: boolean; workflowOk: boolean };
+  shopping?: { recommendationCorrect: boolean; visitsComplete: boolean };
   harnessFailure: boolean;
   /** A connection failure is excluded from correctness; a timeout after launch remains attempted. */
   valid: boolean;
@@ -423,7 +428,7 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
   const serverLog = path.join(logDir, `${unique}.server.log`);
   // Revisit targets parse this suffix, so every approach receives the same seeded question
   // for one task/run while the rest of the attempt token remains unique.
-  const revisitSeed = SUITE === REVISIT_V1_SUITE ? REVISIT_V1_MANIFEST.find((entry) => entry.id === task.id)?.seed : undefined;
+  const revisitSeed = (SUITE === REVISIT_V1_SUITE ? REVISIT_V1_MANIFEST : SUITE === SHOPPING_V2_SUITE ? SHOPPING_V2_MANIFEST : []).find((entry) => entry.id === task.id)?.seed;
   const attemptId = `${task.id}-${approach}-${run}-${attempt}-${Date.now()}${revisitSeed === undefined ? '' : `-seed-${revisitSeed}-${run}`}`;
   let server: Awaited<ReturnType<typeof startServer>> | null = null;
   let mcpStartupMs = 0;
@@ -694,6 +699,7 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
   // Grade agent-visible seeded facts. Fixture event state is canonicalized
   // separately inside startFixtures so action checks remain deterministic.
   const revisitGrade = SUITE === REVISIT_V1_SUITE ? gradeRevisitCase(task.id, gradedAnswer, fixtureEvidence?.events ?? []) : null;
+  const shoppingGrade = SUITE === SHOPPING_V2_SUITE ? gradeShoppingV2Case(task.id, gradedAnswer, fixtureEvidence?.events ?? []) : null;
   const answerGrade = task.judged ? null : SUITE === LOCAL_V2_DEVELOPMENT_SUITE
     ? gradeLocalV2DevelopmentCase(task.id, gradedAnswer, fixtureEvidence?.events ?? [])
     : SUITE === LOCAL_V2_SUITE
@@ -702,6 +708,8 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
         ? gradeLocalV21Case(task.id, gradedAnswer, fixtureEvidence?.events ?? [])
         : SUITE === CAPABILITY_V1_SUITE
           ? gradeCapabilityV1Case(task.id, gradedAnswer, fixtureEvidence?.events ?? [])
+        : SUITE === SHOPPING_V2_SUITE
+          ? gradeShoppingV2Answer(task.id, gradedAnswer, fixtureEvidence?.events ?? [])
         : SUITE === SHOPPING_V1_SUITE
           ? gradeShoppingV1Case(task.id, gradedAnswer, fixtureEvidence?.events ?? [])
           : SUITE === REVISIT_V1_SUITE
@@ -765,6 +773,7 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
     },
     exitCode: processResult.exitCode, signal: processResult.signal, timedOut: processResult.timedOut, fixtureCheck, fixtureEvidence,
     ...(revisitGrade ? { revisit: { answerCorrect: revisitGrade.answerCorrect, workflowOk: revisitGrade.workflowOk } } : {}),
+    ...(shoppingGrade ? { shopping: { recommendationCorrect: shoppingGrade.recommendationCorrect, visitsComplete: shoppingGrade.visitsComplete } } : {}),
     grading: task.judged ? null : { version: 1, hash: createHash('sha256').update(JSON.stringify(answerGrade!.requirements)).digest('hex'), requirements: answerGrade!.requirements },
     diagnostics, harnessFailure: isHarnessFailure({ status, error, diagnostics }),
     budget: { maxSteps: PROVIDER === 'sarvam' ? sarvamMaxStepsForTask(task) : null, timeoutMs: TIMEOUT_MS },
@@ -774,7 +783,7 @@ async function runOnce(task: AgentTask, approach: Approach, base: string, run: n
 const fmt = (n: number): string => n.toLocaleString('en-US');
 const fmtMaybe = (n: number | null): string => n === null ? 'unknown' : fmt(n);
 
-function report(results: RunResult[], approaches: Approach[], tasks: AgentTask[], metadata: RunMetadata, plannedRuns: number): string {
+function report(results: RunResult[], approaches: Approach[], tasks: readonly AgentTask[], metadata: RunMetadata, plannedRuns: number): string {
   const L: string[] = [];
   const providerLabel = PROVIDER === 'codex' ? 'Codex CLI (`codex exec`)' : PROVIDER === 'claude' ? 'Claude Code (`claude -p`)' : 'Sarvam V2 API tool loop';
   const providerShort = PROVIDER === 'codex' ? 'Codex' : PROVIDER === 'claude' ? 'Claude' : 'Sarvam';
@@ -854,6 +863,7 @@ function report(results: RunResult[], approaches: Approach[], tasks: AgentTask[]
   L.push('');
   L.push(`- Effective budgets: ${PROVIDER === 'sarvam' ? 'per-row max steps are retained below (including suite-specific caps)' : 'no provider max-step loop'}; timeout ${TIMEOUT_S}s per attempt${PROVIDER === 'sarvam' ? `; wall cap ${WALL_TIMEOUT_S}s` : ''}.`);
   L.push('');
+  L.push(...shoppingV2Markdown(results));
   L.push('## Per run');
   L.push('');
   L.push(`| Task | Approach | Run | Status | Answer-only | Workflow | First pass | Recovery | Attempts | Max steps | Timeout (s) | Tool calls | Tool errors |${PROVIDER === 'sarvam' ? ' API attempts | 429s |' : ''} Obs. chars | Obs. images | Normal in | Cache write | Cache read | Output | MCP startup (s) | CLI startup (s) | CLI execution (s) | CLI wall (s) | Verify (s) | Cleanup (s) | Answer / error |`);
@@ -877,17 +887,17 @@ function report(results: RunResult[], approaches: Approach[], tasks: AgentTask[]
 }
 
 const SUITE = process.env.AGENT_SUITE ?? 'local-v1';
-if (SUITE !== 'local-v1' && SUITE !== LOCAL_V2_DEVELOPMENT_SUITE && SUITE !== LOCAL_V2_SUITE && SUITE !== LOCAL_V21_SUITE && SUITE !== CAPABILITY_V1_SUITE && SUITE !== SHOPPING_V1_SUITE && SUITE !== REVISIT_V1_SUITE && SUITE !== LIVE_V1_SUITE && SUITE !== VISUAL_LIVE_V1_SUITE && SUITE !== REVISIT_LIVE_V1_SUITE && SUITE !== LONG_LOCAL_V1_SUITE && SUITE !== LONG_LIVE_V1_SUITE) throw new Error(`unknown AGENT_SUITE ${JSON.stringify(SUITE)}; use local-v1, ${LOCAL_V2_DEVELOPMENT_SUITE}, ${LOCAL_V2_SUITE}, ${LOCAL_V21_SUITE}, ${CAPABILITY_V1_SUITE}, ${SHOPPING_V1_SUITE}, ${REVISIT_V1_SUITE}, ${LIVE_V1_SUITE}, ${VISUAL_LIVE_V1_SUITE}, ${REVISIT_LIVE_V1_SUITE}, ${LONG_LOCAL_V1_SUITE}, or ${LONG_LIVE_V1_SUITE}`);
-const isVersionedLocalSuite = SUITE === LOCAL_V2_DEVELOPMENT_SUITE || SUITE === LOCAL_V2_SUITE || SUITE === LOCAL_V21_SUITE || SUITE === CAPABILITY_V1_SUITE || SUITE === SHOPPING_V1_SUITE || SUITE === REVISIT_V1_SUITE;
+if (SUITE !== 'local-v1' && SUITE !== LOCAL_V2_DEVELOPMENT_SUITE && SUITE !== LOCAL_V2_SUITE && SUITE !== LOCAL_V21_SUITE && SUITE !== CAPABILITY_V1_SUITE && SUITE !== SHOPPING_V1_SUITE && SUITE !== SHOPPING_V2_SUITE && SUITE !== REVISIT_V1_SUITE && SUITE !== LIVE_V1_SUITE && SUITE !== VISUAL_LIVE_V1_SUITE && SUITE !== REVISIT_LIVE_V1_SUITE && SUITE !== LONG_LOCAL_V1_SUITE && SUITE !== LONG_LIVE_V1_SUITE) throw new Error(`unknown AGENT_SUITE ${JSON.stringify(SUITE)}; use local-v1, ${LOCAL_V2_DEVELOPMENT_SUITE}, ${LOCAL_V2_SUITE}, ${LOCAL_V21_SUITE}, ${CAPABILITY_V1_SUITE}, ${SHOPPING_V1_SUITE}, ${SHOPPING_V2_SUITE}, ${REVISIT_V1_SUITE}, ${LIVE_V1_SUITE}, ${VISUAL_LIVE_V1_SUITE}, ${REVISIT_LIVE_V1_SUITE}, ${LONG_LOCAL_V1_SUITE}, or ${LONG_LIVE_V1_SUITE}`);
+const isVersionedLocalSuite = SUITE === LOCAL_V2_DEVELOPMENT_SUITE || SUITE === LOCAL_V2_SUITE || SUITE === LOCAL_V21_SUITE || SUITE === CAPABILITY_V1_SUITE || SUITE === SHOPPING_V1_SUITE || SUITE === SHOPPING_V2_SUITE || SUITE === REVISIT_V1_SUITE;
 const isLiveV1Suite = SUITE === LIVE_V1_SUITE;
 const isVisualLiveSuite = SUITE === VISUAL_LIVE_V1_SUITE;
 const isRevisitLiveSuite = SUITE === REVISIT_LIVE_V1_SUITE;
 const isLongLocalSuite = SUITE === LONG_LOCAL_V1_SUITE;
 const isLongLiveSuite = SUITE === LONG_LIVE_V1_SUITE;
-const suiteTasks = SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? LOCAL_V2_DEVELOPMENT_TASKS : SUITE === LOCAL_V2_SUITE ? LOCAL_V2_TASKS : SUITE === LOCAL_V21_SUITE ? LOCAL_V21_TASKS : SUITE === CAPABILITY_V1_SUITE ? CAPABILITY_V1_TASKS : SUITE === SHOPPING_V1_SUITE ? SHOPPING_V1_TASKS : SUITE === REVISIT_V1_SUITE ? REVISIT_V1_TASKS : isLongLocalSuite ? LONG_LOCAL_V1_TASKS : isLongLiveSuite ? LONG_LIVE_V1_TASKS : isLiveV1Suite ? LIVE_V1_TASKS : isVisualLiveSuite ? VISUAL_LIVE_V1_TASKS : isRevisitLiveSuite ? REVISIT_LIVE_V1_TASKS : TASKS;
-const suiteChecks = SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? LOCAL_V2_DEVELOPMENT_CHECKS : SUITE === LOCAL_V2_SUITE ? LOCAL_V2_CHECKS : SUITE === LOCAL_V21_SUITE ? LOCAL_V21_CHECKS : SUITE === CAPABILITY_V1_SUITE ? CAPABILITY_V1_CHECKS : SUITE === SHOPPING_V1_SUITE ? SHOPPING_V1_CHECKS : SUITE === REVISIT_V1_SUITE ? REVISIT_V1_CHECKS : isLongLocalSuite ? LONG_LOCAL_V1_CHECKS : undefined;
-const suiteManifest = SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? LOCAL_V2_DEVELOPMENT_MANIFEST : SUITE === LOCAL_V2_SUITE ? LOCAL_V2_MANIFEST : SUITE === LOCAL_V21_SUITE ? LOCAL_V21_MANIFEST : SUITE === CAPABILITY_V1_SUITE ? CAPABILITY_V1_MANIFEST : SUITE === SHOPPING_V1_SUITE ? SHOPPING_V1_MANIFEST : SUITE === REVISIT_V1_SUITE ? REVISIT_V1_MANIFEST : isLongLocalSuite ? LONG_LOCAL_V1_MANIFEST : isLongLiveSuite ? LONG_LIVE_V1_MANIFEST_FILE : isLiveV1Suite ? LIVE_V1_MANIFEST_FILE : isRevisitLiveSuite ? REVISIT_LIVE_V1_MANIFEST_FILE : undefined;
-const suiteRoute = SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? localV2DevelopmentRoute : SUITE === LOCAL_V2_SUITE ? localV2Route : SUITE === LOCAL_V21_SUITE ? localV21Route : SUITE === CAPABILITY_V1_SUITE ? capabilityV1Route : SUITE === SHOPPING_V1_SUITE ? shoppingV1Route : SUITE === REVISIT_V1_SUITE ? revisitV1Route : isLongLocalSuite ? longLocalV1Route : undefined;
+const suiteTasks = SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? LOCAL_V2_DEVELOPMENT_TASKS : SUITE === LOCAL_V2_SUITE ? LOCAL_V2_TASKS : SUITE === LOCAL_V21_SUITE ? LOCAL_V21_TASKS : SUITE === CAPABILITY_V1_SUITE ? CAPABILITY_V1_TASKS : SUITE === SHOPPING_V2_SUITE ? SHOPPING_V2_TASKS : SUITE === SHOPPING_V1_SUITE ? SHOPPING_V1_TASKS : SUITE === REVISIT_V1_SUITE ? REVISIT_V1_TASKS : isLongLocalSuite ? LONG_LOCAL_V1_TASKS : isLongLiveSuite ? LONG_LIVE_V1_TASKS : isLiveV1Suite ? LIVE_V1_TASKS : isVisualLiveSuite ? VISUAL_LIVE_V1_TASKS : isRevisitLiveSuite ? REVISIT_LIVE_V1_TASKS : TASKS;
+const suiteChecks = SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? LOCAL_V2_DEVELOPMENT_CHECKS : SUITE === LOCAL_V2_SUITE ? LOCAL_V2_CHECKS : SUITE === LOCAL_V21_SUITE ? LOCAL_V21_CHECKS : SUITE === CAPABILITY_V1_SUITE ? CAPABILITY_V1_CHECKS : SUITE === SHOPPING_V2_SUITE ? SHOPPING_V2_CHECKS : SUITE === SHOPPING_V1_SUITE ? SHOPPING_V1_CHECKS : SUITE === REVISIT_V1_SUITE ? REVISIT_V1_CHECKS : isLongLocalSuite ? LONG_LOCAL_V1_CHECKS : undefined;
+const suiteManifest = SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? LOCAL_V2_DEVELOPMENT_MANIFEST : SUITE === LOCAL_V2_SUITE ? LOCAL_V2_MANIFEST : SUITE === LOCAL_V21_SUITE ? LOCAL_V21_MANIFEST : SUITE === CAPABILITY_V1_SUITE ? CAPABILITY_V1_MANIFEST : SUITE === SHOPPING_V2_SUITE ? SHOPPING_V2_MANIFEST : SUITE === SHOPPING_V1_SUITE ? SHOPPING_V1_MANIFEST : SUITE === REVISIT_V1_SUITE ? REVISIT_V1_MANIFEST : isLongLocalSuite ? LONG_LOCAL_V1_MANIFEST : isLongLiveSuite ? LONG_LIVE_V1_MANIFEST_FILE : isLiveV1Suite ? LIVE_V1_MANIFEST_FILE : isRevisitLiveSuite ? REVISIT_LIVE_V1_MANIFEST_FILE : undefined;
+const suiteRoute = SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? localV2DevelopmentRoute : SUITE === LOCAL_V2_SUITE ? localV2Route : SUITE === LOCAL_V21_SUITE ? localV21Route : SUITE === CAPABILITY_V1_SUITE ? capabilityV1Route : SUITE === SHOPPING_V2_SUITE ? shoppingV2AgentRoute : SUITE === SHOPPING_V1_SUITE ? shoppingV1Route : SUITE === REVISIT_V1_SUITE ? revisitV1Route : isLongLocalSuite ? longLocalV1Route : undefined;
 const want = process.env.AGENT_TASKS ?? (SUITE === 'local-v1' ? PILOT.join(',') : 'all');
 // "all", task ids, or categories ("cat:forms"), comma-separated.
 const picks = want.split(',');
@@ -912,7 +922,7 @@ if (PROVIDER === 'sarvam' && approaches.includes('screenshot') && !sarvamModelSu
   throw new Error(`AGENT_MODEL ${JSON.stringify(MODEL)} cannot run the screenshot approach because it does not support image observations.`);
 }
 const providerPrefix = PROVIDER;
-const rawName = process.env.AGENT_OUT ?? `${providerPrefix}-agent-verified${SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? '-local-v2-development' : SUITE === LOCAL_V2_SUITE ? '-local-v2' : SUITE === LOCAL_V21_SUITE ? '-local-v2.1' : SUITE === CAPABILITY_V1_SUITE ? '-capability-v1' : SUITE === SHOPPING_V1_SUITE ? '-shopping-v1' : SUITE === REVISIT_V1_SUITE ? '-revisit-v1' : isLongLocalSuite ? '-long-local-v1' : isLongLiveSuite ? '-long-live-v1' : isLiveV1Suite ? '-live-v1' : isVisualLiveSuite ? '-visual-live-v1' : isRevisitLiveSuite ? '-revisit-live-v1' : want === PILOT.join(',') ? '-pilot' : ''}`;
+const rawName = process.env.AGENT_OUT ?? `${providerPrefix}-agent-verified${SUITE === LOCAL_V2_DEVELOPMENT_SUITE ? '-local-v2-development' : SUITE === LOCAL_V2_SUITE ? '-local-v2' : SUITE === LOCAL_V21_SUITE ? '-local-v2.1' : SUITE === CAPABILITY_V1_SUITE ? '-capability-v1' : SUITE === SHOPPING_V2_SUITE ? '-shopping-v2' : SUITE === SHOPPING_V1_SUITE ? '-shopping-v1' : SUITE === REVISIT_V1_SUITE ? '-revisit-v1' : isLongLocalSuite ? '-long-local-v1' : isLongLiveSuite ? '-long-live-v1' : isLiveV1Suite ? '-live-v1' : isVisualLiveSuite ? '-visual-live-v1' : isRevisitLiveSuite ? '-revisit-live-v1' : want === PILOT.join(',') ? '-pilot' : ''}`;
 if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$/.test(rawName) || rawName === '.' || rawName === '..') throw new Error(`invalid AGENT_OUT name: ${JSON.stringify(rawName)}`);
 const name = rawName;
 const jobs: { t: AgentTask; a: Approach; run: number }[] = [];
@@ -959,10 +969,10 @@ const settings = {
 };
 preflightApproaches(approaches);
 const sourceFiles = [
-  'bench/agent/run.ts', 'bench/agent/integrity.ts', 'bench/agent/active-timeout.ts', 'bench/agent/row-selector.ts', 'bench/agent/tasks.ts', 'bench/agent/local-v2-development.ts', 'bench/agent/local-v2.ts', 'bench/agent/local-v21.ts', 'bench/agent/capability-v1.ts', 'bench/agent/shopping-v1.ts', 'bench/agent/revisit-v1.ts', 'bench/agent/live-v1.ts', 'bench/agent/long-live-v1.ts', 'bench/agent/visual-live-v1.ts', 'bench/agent/visual-live-v1-tasks.json', 'bench/agent/revisit-live-v1.ts', 'bench/agent/revisit-live-v1-tasks.json', 'bench/manifests/revisit-live-v1.json', 'bench/agent/long-local-v1.ts', 'bench/agent/long-telemetry.ts', 'bench/agent/live-v1-tasks.json', 'bench/agent/long-live-v1-draft.json', 'bench/agent/bridge.mjs', 'bench/fixture-variants.ts',
+  'bench/agent/run.ts', 'bench/agent/integrity.ts', 'bench/agent/active-timeout.ts', 'bench/agent/row-selector.ts', 'bench/agent/tasks.ts', 'bench/agent/local-v2-development.ts', 'bench/agent/local-v2.ts', 'bench/agent/local-v21.ts', 'bench/agent/capability-v1.ts', 'bench/agent/shopping-v1.ts', 'bench/agent/shopping-v2.ts', 'bench/agent/revisit-v1.ts', 'bench/agent/live-v1.ts', 'bench/agent/long-live-v1.ts', 'bench/agent/visual-live-v1.ts', 'bench/agent/visual-live-v1-tasks.json', 'bench/agent/revisit-live-v1.ts', 'bench/agent/revisit-live-v1-tasks.json', 'bench/manifests/revisit-live-v1.json', 'bench/agent/long-local-v1.ts', 'bench/agent/long-telemetry.ts', 'bench/agent/live-v1-tasks.json', 'bench/agent/long-live-v1-draft.json', 'bench/agent/bridge.mjs', 'bench/fixture-variants.ts',
   'bench/agent/codex.ts', 'bench/agent/codex-config.ts', 'bench/agent/sarvam.ts', 'bench/agent/sarvam-agent.ts', 'bench/agent/realsite.ts', 'bench/agent/grading.ts', 'bench/agent/evidence.ts', 'bench/agent/png.ts', 'bench/agent/mcp-proxy.ts',
   ...(existsSync(path.join(REPO, 'bench', 'agent', 'realsite-tasks.json')) ? ['bench/agent/realsite-tasks.json'] : []),
-  'bench/agent/screenshot-mcp.ts', 'bench/agent/screenshot-scroll.ts', 'bench/agent/guidance.ts', 'bench/fixtures.ts', 'bench/fixtures-more.ts', 'bench/fixtures-long.ts', 'bench/fixtures-v2-development.ts', 'bench/fixtures-v2-interaction-development.ts', 'bench/fixtures-v2-reading-workflows-development.ts', 'bench/fixtures-v2-remaining-heldout.ts', 'bench/fixtures-v2-reading-workflows-heldout.ts', 'bench/fixtures-v21-reliability.ts', 'bench/fixtures-capability-v1.ts', 'bench/manifests/capability-v1.json', 'bench/fixtures-shopping-v1.ts', 'bench/manifests/shopping-v1.json', 'bench/fixtures-revisit-v1.ts', 'bench/manifests/revisit-v1.json', 'bench/fixtures-long-local-records.ts', 'bench/fixtures-long-local-workflows.ts', 'bench/manifests/local-v2.json', 'bench/manifests/local-v21.json', 'bench/manifests/live-v1.json', 'bench/manifests/long-local-v1.json', 'bench/adapters.ts',
+  'bench/agent/screenshot-mcp.ts', 'bench/agent/screenshot-scroll.ts', 'bench/agent/guidance.ts', 'bench/fixtures.ts', 'bench/fixtures-more.ts', 'bench/fixtures-long.ts', 'bench/fixtures-v2-development.ts', 'bench/fixtures-v2-interaction-development.ts', 'bench/fixtures-v2-reading-workflows-development.ts', 'bench/fixtures-v2-remaining-heldout.ts', 'bench/fixtures-v2-reading-workflows-heldout.ts', 'bench/fixtures-v21-reliability.ts', 'bench/fixtures-capability-v1.ts', 'bench/manifests/capability-v1.json', 'bench/fixtures-shopping-v1.ts', 'bench/fixtures-shopping-v2.ts', 'bench/manifests/shopping-v2.json', 'bench/manifests/shopping-v1.json', 'bench/fixtures-revisit-v1.ts', 'bench/manifests/revisit-v1.json', 'bench/fixtures-long-local-records.ts', 'bench/fixtures-long-local-workflows.ts', 'bench/manifests/local-v2.json', 'bench/manifests/local-v21.json', 'bench/manifests/live-v1.json', 'bench/manifests/long-local-v1.json', 'bench/adapters.ts',
   ...(existsSync(path.join(REPO, 'bench', 'manifests', 'long-live-v1.json')) ? ['bench/manifests/long-live-v1.json'] : []),
   ...sourceFilesUnder('src'), ...sourceFilesUnder('dist'), 'package-lock.json',
 ];
@@ -998,7 +1008,7 @@ function writeCheckpoint(file: string, content: string): void {
 }
 function save(): void {
   results.sort((x, y) => order(x) - order(y));
-  writeCheckpoint(jsonPath, JSON.stringify({ metadata, model: MODEL, runs: RUNS, results }, null, 2));
+  writeCheckpoint(jsonPath, JSON.stringify({ metadata, model: MODEL, runs: RUNS, results, ...(SUITE === SHOPPING_V2_SUITE ? { shoppingSummary: shoppingV2Summary(results) } : {}) }, null, 2));
   writeCheckpoint(markdownPath, report(results, approaches, tasks, metadata, plannedJobs.length));
 }
 
@@ -1028,6 +1038,7 @@ try {
         valid: finalAttempt.status !== 'connection_failure', ok: finalAttempt.status === 'success', harnessFailure: finalAttempt.harnessFailure,
         error: finalAttempt.error, answer: finalAttempt.answer,
         ...(finalAttempt.revisit ? { revisit: finalAttempt.revisit } : {}),
+        ...(finalAttempt.shopping ? { shopping: finalAttempt.shopping } : {}),
         turns: allTurnsKnown ? attempts.reduce((s, x) => s + (x.turns ?? 0), 0) : null,
         toolCalls: attempts.reduce((s, x) => s + x.toolCalls, 0),
         toolErrors: attempts.reduce((s, x) => s + x.toolErrors, 0),

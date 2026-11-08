@@ -85,6 +85,8 @@ Verdict (Opus review, 2026-10-24): good enough to launch as a v0.x beta. Accurac
 ### After launch
 - ~~Add `upload` to the tool table in SETUP.md~~ (done).
 - **0.2: canvas input.** A `draw`/pointer tool for canvas, WebGL and map elements: points on a 0-100 grid relative to a numbered canvas, run as mouse down, move and up, plus a grid overlay on `look` so the model can pick cells. Gap found in the stress pass (Excalidraw tools visible, no way to draw). Check what Playwright MCP's coordinate tools do before claiming a difference. Needs a fixture (canvas that records strokes) with a passing case and a near miss, then a small canvas/map task set.
+- **Persistent login profile (likely the first thing launch readers ask for).** Mantis launches a fresh Chromium each run (`chromium.launch` in `src/browser.ts`), so logins last only for the session: `ask_human` hands off to a visible window and carries the cookies forward, but nothing persists and it never attaches to the user's own Chrome. Add an opt-in flag that uses `launchPersistentContext` with a dedicated Mantis profile folder (log in once, reused next run), the way Playwright MCP does by default; check its docs before describing its options. Do not point at the user's default Chrome profile: Chrome limits remote control of it and an agent would get every real login. Attach-to-Chrome (CDP) is a later, separate option. Needs a fixture (a site that sets a cookie) with a passing case (second run is still logged in) and a near miss (without the flag, a new run is logged out).
+- Firefox and WebKit: not planned. Only Chromium is tested.
 - Integration PRs and guides: [LAUNCH.md](LAUNCH.md#5-after-launch-becoming-the-default).
 
 ### Action plan (remaining)
@@ -97,6 +99,7 @@ Verdict (Opus review, 2026-10-24): good enough to launch as a v0.x beta. Accurac
 5c. ~~Write launch drafts~~ (done: [LAUNCH.md](LAUNCH.md#4-drafts); re-check numbers against README.md and bench/RESULTS.md before posting).
 6. ~~Record the 30-second video and GIF; README opens with it~~ (done, [video/gif.md](../video/gif.md)).
 7. Not started: Show HN, Tue-Thu 8-10am US Eastern, then X, Reddit and LinkedIn per [LAUNCH.md](LAUNCH.md#3-launch-week).
+8a. After launch: persistent login profile (see "After launch"), then 0.2 canvas input, unless launch feedback says otherwise.
 8. After launch: build 0.2 canvas input (see "After launch" above), keep it to one small tool, and test it on a map and a drawing app before any claim. Ship 0.1.8 first; the README Limitations section says there is no coordinate input yet.
 
 ### Biggest risks

@@ -49,6 +49,30 @@ describe('generic capture fixes', () => {
     expect(names.filter((n) => n.includes('disk icon'))).toHaveLength(1);
   });
 
+  it('shows nearby content images and a look hint, but not icons, hidden images or chrome', async () => {
+    const view = await browser.open(fixture('generic-content-images.html'));
+    expect(view).toMatch(/#\d+ \[image "Product surface"\]/);
+    expect(view).toMatch(/#\d+ \[image\]/);
+    expect(view).toMatch(/images: 2 shown only visually; look\(\{id: \d+\}\) to view/);
+    // Near misses: a small icon, aria-hidden visual, named-button icon, and header logo.
+    for (const label of ['Small icon', 'Choose item', 'Brand mark']) expect(view).not.toContain(`[image "${label}"]`);
+    const images = (await browser.snapshot()).nodes.filter((node) => node.kind === 'image');
+    expect(images).toHaveLength(3);
+    expect(images.filter((node) => !node.name)).toHaveLength(2); // unlabeled SVG and IMG
+    const looked = await browser.look({ id: images.find((node) => !node.name)!.id });
+    if ('error' in looked) throw new Error(looked.error);
+    expect(looked.text).toContain('PNG');
+  });
+
+  it('caps image cues and keeps those nearest the viewport', async () => {
+    await browser.open(fixture('generic-image-budget.html'));
+    const page = (browser as unknown as { page: { evaluate: (fn: () => void) => Promise<void> } }).page;
+    await page.evaluate(() => window.scrollTo(0, 1300));
+    const images = (await browser.snapshot()).nodes.filter((node) => node.kind === 'image');
+    expect(images).toHaveLength(4);
+    expect(Math.min(...images.map((node) => node.box![1]))).toBeGreaterThan(400);
+  });
+
   it('keeps the current viewport when a page exceeds the capture cap', async () => {
     await browser.open(fixture('viewport-cap.html'));
     const page = (browser as unknown as { page: { evaluate: (fn: () => void) => Promise<void> } }).page;
