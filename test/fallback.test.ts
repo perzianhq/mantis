@@ -340,11 +340,11 @@ describe('over MCP', () => {
     expect(bad.isError).toBe(true);
   });
 
-  it('registers the ladder in order, with look flagged as last resort', async () => {
+  it('registers the ladder in order, with look flagged as first choice for appearance', async () => {
     const { tools } = await client.listTools();
     const names = tools.map((t) => t.name);
     expect(names.slice(-5)).toEqual(['media', 'data', 'ocr', 'look', 'ask_human']);
-    expect(tools.find((t) => t.name === 'look')!.description).toMatch(/LAST RESORT/);
+    expect(tools.find((t) => t.name === 'look')!.description).toMatch(/Use it directly, not last/);
     const readDescription = tools.find((t) => t.name === 'read')!.description;
     expect(readDescription).toMatch(/Before finishing, re-read and visibly verify every task constraint \(filters, sort, size, quantity, date range\)/);
     expect(readDescription).toMatch(/If #number is stale, read\(\) and retry; if on the wrong page, back\(\) and keep searching/);

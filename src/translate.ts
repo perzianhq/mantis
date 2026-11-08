@@ -707,9 +707,9 @@ export function translate(snap: Snapshot, budget: number = BUDGET_CHARS, opts: R
     budget = Math.max(budget, 2 * BUDGET_CHARS); // the agent asked for this region: allow more room
     head.push(picked.note ?? `(region "${opts.region}" only)`);
   }
-  const visualOnly = nodes.filter((n) => n.kind === 'image' && !n.name);
+  const visualOnly = nodes.filter((n) => n.kind === 'image');
   const imageHint = visualOnly.length
-    ? `images: ${visualOnly.length} shown only visually; look({id: ${visualOnly[0].id}}) to view`
+    ? `images: ${visualOnly.length} not shown in this text; for colour, pattern or appearance use look({id: ${visualOnly[0].id}})`
     : '';
   const fixedTail = [...tail, ...(imageHint ? [imageHint] : [])];
   const full = opts.full === true;

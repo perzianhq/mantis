@@ -185,7 +185,7 @@ export function createServer(browser: MantisBrowser = new MantisBrowser()): McpS
   server.registerTool(
     'media',
     {
-      description: `Only if read is insufficient: media → data (prefer) → ocr → look (last resort)${humanAvailable ? ' → ask_human' : ''}. Numbered images/canvases/charts.`,
+      description: `Only if read is insufficient: media → data (prefer) → ocr → look (last resort for text; first for appearance)${humanAvailable ? ' → ask_human' : ''}. Numbered images/canvases/charts.`,
       inputSchema: {},
     },
     async () => reply(await browser.media()),
@@ -211,7 +211,7 @@ export function createServer(browser: MantisBrowser = new MantisBrowser()): McpS
     'look',
     {
       description:
-        'LAST RESORT; only image-returning tool (PNG, max 800px). Only after read/data/ocr failed, except use it on the relevant region for spatial or visual comparisons (charts, swatches, or drawn values): OCR text or an aria-label alone is not chart data. id or CSS selector.',
+        'Only image-returning tool (PNG, max 800px). Use it directly, not last, to compare colour, pattern, swatches, charts or drawn values: text, OCR or an aria-label cannot show them. For text or numbers try read/data/ocr first. id or CSS selector.',
       inputSchema: visual,
     },
     async ({ id, selector }) => {

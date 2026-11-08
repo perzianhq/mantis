@@ -53,7 +53,7 @@ describe('generic capture fixes', () => {
     const view = await browser.open(fixture('generic-content-images.html'));
     expect(view).toMatch(/#\d+ \[image "Product surface"\]/);
     expect(view).toMatch(/#\d+ \[image\]/);
-    expect(view).toMatch(/images: 2 shown only visually; look\(\{id: \d+\}\) to view/);
+    expect(view).toMatch(/images: 3 not shown in this text; for colour, pattern or appearance use look\(\{id: \d+\}\)/);
     // Near misses: a small icon, aria-hidden visual, named-button icon, and header logo.
     for (const label of ['Small icon', 'Choose item', 'Brand mark']) expect(view).not.toContain(`[image "${label}"]`);
     const images = (await browser.snapshot()).nodes.filter((node) => node.kind === 'image');

@@ -69,7 +69,7 @@ it('retains neutral fallback order, visual targeting and human safety in compact
   const { tools } = await client.listTools();
   const description = (name: string) => tools.find((tool) => tool.name === name)!.description!;
   expect(description('media')).toContain('Only if read is insufficient');
-  expect(description('media')).toContain('media → data (prefer) → ocr → look (last resort) → ask_human');
+  expect(description('media')).toContain('media → data (prefer) → ocr → look (last resort for text; first for appearance) → ask_human');
   expect(description('media')).toContain('Numbered images/canvases/charts');
   expect(description('data')).toContain('Prefer; text only');
   expect(description('data')).toContain('image/SVG/chart alt, caption, text or Chart.js/ECharts/Highcharts values');
@@ -77,10 +77,10 @@ it('retains neutral fallback order, visual targeting and human safety in compact
   // Nonempty metadata is not necessarily sufficient: do not reintroduce the rejected stop cue.
   expect(description('data')).not.toMatch(/answer without|stop after|skip (?:OCR|look)/i);
   expect(description('ocr')).toContain('Text-only OCR for image/canvas. Use if data found nothing');
-  expect(description('look')).toContain('LAST RESORT; only image-returning tool (PNG, max 800px)');
-  expect(description('look')).toContain('Only after read/data/ocr failed');
-  expect(description('look')).toContain('spatial or visual comparisons');
-  expect(description('look')).toContain('aria-label alone is not chart data');
+  expect(description('look')).toContain('Only image-returning tool (PNG, max 800px). Use it directly, not last');
+  expect(description('look')).toContain('For text or numbers try read/data/ocr first');
+  expect(description('look')).toContain('compare colour, pattern, swatches, charts or drawn values');
+  expect(description('look')).toContain('aria-label cannot show them');
   for (const name of ['ocr', 'look']) expect(description(name)).toContain('id or CSS selector');
   expect(description('ask_human')).toContain('CAPTCHA, 2FA, payment or login; never solves CAPTCHAs');
   expect(description('ask_human')).toContain('Waits for a page change, then returns the page');
